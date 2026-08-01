@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/main.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
@@ -22,6 +23,7 @@ class TestRepository implements MovieRepository {
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final mockRepo = TestRepository();
@@ -36,6 +38,6 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('The Lounge'), findsWidgets);
+    expect(find.text('Movies'), findsWidgets);
   });
 }

@@ -7,130 +7,194 @@ enum AmbianceType {
 }
 
 class AppColors {
-  // Screening Room
-  static const Color screeningRoomBase =
-      Color(0xFF1C1917); // Near-black warm espresso
-  static const Color screeningRoomSurface = Color(0xFF292524);
-  static const Color screeningRoomAccent = Color(0xFFF3E5AB); // Champagne gold
+  // Screening Room CSS Variables
+  static const Color srBase = Color(0xFF171310);
+  static const Color srCard = Color(0xFF241B15);
+  static const Color srCard2 = Color(0xFF2C2018);
+  static const Color srLineRgba = Color.fromRGBO(201, 168, 106, 0.16);
+  static const Color srInk = Color(0xFFEFE6D8);
+  static const Color srSub = Color.fromRGBO(239, 230, 216, 0.55);
+  static const Color srAcc = Color(0xFFCBA86A);
+  static const Color srPh = Color.fromRGBO(239, 230, 216, 0.07);
+  static const Color srPill = Color.fromRGBO(239, 230, 216, 0.08);
 
-  // The Reading Room
-  static const Color readingRoomBase = Color(0xFFF5F5DC); // Parchment
-  static const Color readingRoomSurface =
-      Color(0xFFFAF9F6); // Lighter parchment
-  static const Color readingRoomAccent = Color(0xFFB7410E); // Rust / Terracotta
+  static const Color srStatusWatchlist = Color(0xFFCBA86A);
+  static const Color srStatusSave = Color(0xFFD69784);
+  static const Color srStatusWatched = Color(0xFF7E9BB5);
 
-  // Status Colors
-  // Watchlist: Champagne gold / Rust
-  static const Color statusWatchlistDark = Color(0xFFF3E5AB);
-  static const Color statusWatchlistLight = Color(0xFFB7410E);
-  // Save for later: Dusty rose / Copper-rose
-  static const Color statusSaveForLaterDark = Color(0xFFDCAE96);
-  static const Color statusSaveForLaterLight = Color(0xFFB87333);
-  // Watched: Cool steel
-  static const Color statusWatchedDark = Color(0xFFB0C4DE);
-  static const Color statusWatchedLight = Color(0xFF778899);
+  // Reading Room CSS Variables
+  static const Color rrBase = Color(0xFFEFE6D5);
+  static const Color rrCard = Color(0xFFF6EFE1);
+  static const Color rrCard2 = Color(0xFFF2E9D8);
+  static const Color rrLineRgba = Color.fromRGBO(160, 74, 42, 0.16);
+  static const Color rrInk = Color(0xFF2C2016);
+  static const Color rrSub = Color.fromRGBO(44, 32, 22, 0.55);
+  static const Color rrAcc = Color(0xFFB0512B);
+  static const Color rrPh = Color.fromRGBO(44, 32, 22, 0.07);
+  static const Color rrPill = Color.fromRGBO(44, 32, 22, 0.06);
+
+  static const Color rrStatusWatchlist = Color(0xFFB0512B);
+  static const Color rrStatusSave = Color(0xFFA76A50);
+  static const Color rrStatusWatched = Color(0xFF566F86);
 }
 
 class AppThemes {
   static ThemeData get screeningRoomTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: AppColors.screeningRoomBase,
-      primaryColor: AppColors.screeningRoomAccent,
+      scaffoldBackgroundColor: AppColors.srBase,
+      primaryColor: AppColors.srAcc,
       colorScheme: const ColorScheme.dark(
-        primary: AppColors.screeningRoomAccent,
-        surface: AppColors.screeningRoomSurface,
-        onPrimary: Colors.black,
-        onSurface: Colors.white70,
+        primary: AppColors.srAcc,
+        surface: AppColors.srBase,
+        onPrimary: Color(0xFF1A140C),
+        onSurface: AppColors.srInk,
+        surfaceContainerHighest: AppColors.srCard,
+        outline: AppColors.srLineRgba,
       ),
-      textTheme: _buildTextTheme(Colors.white),
+      dividerColor: AppColors.srLineRgba,
+      textTheme: _buildTextTheme(AppColors.srInk),
     );
   }
 
   static ThemeData get readingRoomTheme {
     return ThemeData(
       brightness: Brightness.light,
-      scaffoldBackgroundColor: AppColors.readingRoomBase,
-      primaryColor: AppColors.readingRoomAccent,
+      scaffoldBackgroundColor: AppColors.rrBase,
+      primaryColor: AppColors.rrAcc,
       colorScheme: const ColorScheme.light(
-        primary: AppColors.readingRoomAccent,
-        surface: AppColors.readingRoomSurface,
+        primary: AppColors.rrAcc,
+        surface: AppColors.rrBase,
         onPrimary: Colors.white,
-        onSurface: Colors.black87,
+        onSurface: AppColors.rrInk,
+        surfaceContainerHighest: AppColors.rrCard,
+        outline: AppColors.rrLineRgba,
       ),
-      textTheme: _buildTextTheme(Colors.black),
+      dividerColor: AppColors.rrLineRgba,
+      textTheme: _buildTextTheme(AppColors.rrInk),
     );
   }
 
   static TextTheme _buildTextTheme(Color textColor) {
     return TextTheme(
       displayLarge: GoogleFonts.bodoniModa(
-        fontSize: 57,
-        fontWeight: FontWeight.w400,
+        fontSize: 52,
+        fontWeight: FontWeight.w600,
+        fontStyle: FontStyle.italic,
         color: textColor,
+        height: 1.02,
       ),
       displayMedium: GoogleFonts.bodoniModa(
-        fontSize: 45,
-        fontWeight: FontWeight.w400,
+        fontSize: 30,
+        fontWeight: FontWeight.w600,
+        fontStyle: FontStyle.italic,
         color: textColor,
+        height: 1.05,
       ),
       displaySmall: GoogleFonts.bodoniModa(
-        fontSize: 36,
-        fontWeight: FontWeight.w400,
+        fontSize: 27,
+        fontWeight: FontWeight.w600,
+        fontStyle: FontStyle.italic,
         color: textColor,
+        height: 1.02,
       ),
       headlineLarge: GoogleFonts.bodoniModa(
-        fontSize: 32,
-        fontWeight: FontWeight.w400,
+        fontSize: 21,
+        fontWeight: FontWeight.w600,
+        fontStyle: FontStyle.italic,
         color: textColor,
       ),
-      titleLarge: GoogleFonts.bodoniModa(
-        fontSize: 22,
-        fontWeight: FontWeight.w500,
+      titleLarge: safeGeist(
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
         color: textColor,
       ),
-      bodyLarge: _safeGeist(
-        fontSize: 16,
-        fontWeight: FontWeight.w400,
-        color: textColor,
-      ),
-      bodyMedium: _safeGeist(
+      bodyLarge: safeGeist(
         fontSize: 14,
         fontWeight: FontWeight.w400,
         color: textColor,
       ),
-      bodySmall: _safeGeist(
-        fontSize: 12,
+      bodyMedium: safeGeist(
+        fontSize: 13,
         fontWeight: FontWeight.w400,
         color: textColor,
       ),
-      labelLarge: _safeGeist(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
+      bodySmall: safeGeist(
+        fontSize: 11,
+        fontWeight: FontWeight.w400,
+        color: textColor,
+      ),
+      labelLarge: safeGeist(
+        fontSize: 12.5,
+        fontWeight: FontWeight.w600,
         color: textColor,
       ),
     );
   }
 
-  static TextStyle _safeGeist({
+  static TextStyle safeGeist({
     double? fontSize,
     FontWeight? fontWeight,
+    FontStyle? fontStyle,
     Color? color,
+    Color? backgroundColor,
+    double? letterSpacing,
+    double? height,
+    TextStyle? textStyle,
   }) {
     try {
       return GoogleFonts.getFont(
         'Geist',
         fontSize: fontSize,
         fontWeight: fontWeight,
+        fontStyle: fontStyle,
         color: color,
+        backgroundColor: backgroundColor,
+        letterSpacing: letterSpacing,
+        height: height,
+        textStyle: textStyle,
       );
     } catch (_) {
-      // Fallback if Geist is not supported
       return GoogleFonts.inter(
         fontSize: fontSize,
         fontWeight: fontWeight,
+        fontStyle: fontStyle,
         color: color,
+        backgroundColor: backgroundColor,
+        letterSpacing: letterSpacing,
+        height: height,
+        textStyle: textStyle,
       );
     }
+  }
+
+  static BoxDecoration screeningRoomBackground() {
+    return const BoxDecoration(
+      color: AppColors.srBase,
+      gradient: RadialGradient(
+        center: Alignment(0, -1.16),
+        radius: 1.2,
+        colors: [
+          Color.fromRGBO(203, 168, 106, 0.14),
+          Colors.transparent,
+        ],
+        stops: [0.0, 0.6],
+      ),
+    );
+  }
+
+  static BoxDecoration readingRoomBackground() {
+    return const BoxDecoration(
+      color: AppColors.rrBase,
+      gradient: RadialGradient(
+        center: Alignment(0, -1.16),
+        radius: 1.2,
+        colors: [
+          Color.fromRGBO(176, 81, 43, 0.08),
+          Colors.transparent,
+        ],
+        stops: [0.0, 0.6],
+      ),
+    );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
@@ -60,6 +61,7 @@ class TestRepository implements MovieRepository {
 void main() {
   testWidgets('Discover screen swipe gestures update provider state',
       (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
     final mockRepo = TestRepository();
     final container = ProviderContainer(
       overrides: [
@@ -81,11 +83,16 @@ void main() {
     // Wait for the Future to complete and UI to update
     await tester.pumpAndSettle();
 
+    // Dismiss Legend Overlay
+    await tester.tapAt(const Offset(100, 100));
+    await tester.pumpAndSettle();
+
     // Verify Movie 1 is displayed
     expect(find.text('Movie 1'), findsOneWidget);
 
     // Simulate Right swipe (Maybe) by tapping the floating action button
-    await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.star));
+    // It's a star_border or star in our new UI (we used star_border)
+    await tester.tap(find.byIcon(Icons.star_border));
     await tester.pumpAndSettle();
 
     // Verify provider state
@@ -95,22 +102,22 @@ void main() {
     // Verify Movie 2 is now displayed
     expect(find.text('Movie 2'), findsOneWidget);
 
-    // Simulate Down swipe (Watchlist)
-    await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.bookmark));
+    // Simulate Down swipe (Watchlist) (we used bookmark_border)
+    await tester.tap(find.byIcon(Icons.bookmark_border));
     await tester.pumpAndSettle();
 
     state = container.read(mediaProvider);
     expect(state.watchlist.containsKey('2'), isTrue);
 
-    // Simulate Up swipe (Watched)
-    await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.check));
+    // Simulate Up swipe (Watched) (we used check)
+    await tester.tap(find.byIcon(Icons.check).last);
     await tester.pumpAndSettle();
 
     state = container.read(mediaProvider);
     expect(state.watchedList.containsKey('3'), isTrue);
 
-    // Simulate Left swipe (Skip)
-    await tester.tap(find.widgetWithIcon(FloatingActionButton, Icons.close));
+    // Simulate Left swipe (Skip) (we used close)
+    await tester.tap(find.byIcon(Icons.close).last);
     await tester.pumpAndSettle();
 
     // Verify it was skipped (not in any list)
@@ -119,6 +126,6 @@ void main() {
     expect(state.maybeList.containsKey('4'), isFalse);
     expect(state.watchedList.containsKey('4'), isFalse);
 
-    expect(find.text('You have seen all recommendations!'), findsOneWidget);
+    expect(find.text('No more recommendations!'), findsOneWidget);
   });
 }

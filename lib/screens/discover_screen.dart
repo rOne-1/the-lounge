@@ -1,9 +1,12 @@
+import '../constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'dart:math' as math;
 import '../providers/repository_provider.dart';
 import '../providers/media_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -15,6 +18,7 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   List<MediaItem> _pool = [];
   bool _loading = true;
+  bool _showLegend = true;
 
   @override
   void initState() {
@@ -28,7 +32,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final popular = await repo.getPopularMovies();
     if (mounted) {
       setState(() {
-        _pool = <MediaItem>{...trending, ...popular}.toList(); // naive dedupe
+        _pool = <MediaItem>{...trending, ...popular}.toList();
         _loading = false;
       });
     }
@@ -53,145 +57,274 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final subColor = isDark ? const Color.fromRGBO(239, 230, 216, 0.55) : const Color.fromRGBO(44, 32, 22, 0.55);
+    final accColor = isDark ? const Color(0xFFCBA86A) : const Color(0xFFB0512B);
+
     if (_loading) {
-      return const Center(child: CircularProgressIndicator());
+      return Container(color: isDark ? const Color(0xFF100C0A) : const Color(0xFFE7DDC9), child: const Center(child: CircularProgressIndicator()));
     }
 
-    if (_pool.isEmpty) {
-      return const Center(child: Text('You have seen all recommendations!'));
-    }
-
-    final isLarge = MediaQuery.of(context).size.width > 800;
-
-    return isLarge ? _buildLargeLayout() : _buildCompactLayout();
-  }
-
-  Widget _buildCompactLayout() {
-    return Column(
+    return Stack(
       children: [
-        const Padding(
-          padding: EdgeInsets.all(8.0),
-          child: Text(
-              'Swipe Legend: ← Skip | → Maybe | ↓ Watchlist | ↑ Watched',
-              style: TextStyle(fontSize: 12, color: Colors.grey)),
-        ),
-        Expanded(
-          child: Stack(
-            alignment: Alignment.center,
-            children: _pool.reversed.map((item) {
-              final isTop = item.id == _pool.first.id;
-              return SwipeCard(
-                key: ValueKey(item.id),
-                item: item,
-                isInteractive: isTop,
-                onSwipe: (dir) => _onSwipe(item, dir),
-              );
-            }).toList(),
-          ),
-        ),
-        _buildActionButtons(),
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _buildLargeLayout() {
-    return Row(
-      children: [
-        Expanded(
-          flex: 2,
+        Container(
+          color: isDark ? const Color(0xFF100C0A) : const Color(0xFFE7DDC9),
           child: Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Text(
-                    'Swipe Legend: ← Skip | → Maybe | ↓ Watchlist | ↑ Watched',
-                    style: TextStyle(fontSize: 12, color: Colors.grey)),
-              ),
-              Expanded(
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: _pool.reversed.map((item) {
-                    final isTop = item.id == _pool.first.id;
-                    return SwipeCard(
-                      key: ValueKey(item.id),
-                      item: item,
-                      isInteractive: isTop,
-                      onSwipe: (dir) => _onSwipe(item, dir),
-                    );
-                  }).toList(),
+              // Top bar: toggle + legend key
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 2, 18, 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final navState = ref.watch(navigationProvider);
+                        final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color.fromRGBO(239, 230, 216, 0.1) : const Color.fromRGBO(44, 32, 22, 0.08),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          padding: const EdgeInsets.all(3),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              GestureDetector(
+                                onTap: () => ref.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.movies),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: isMovies ? accColor : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text('Movies', style: AppThemes.safeGeist(fontSize: 11.5, fontWeight: FontWeight.w600, color: isMovies ? (isDark ? const Color(0xFF1A140C) : Colors.white) : subColor)),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => ref.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: !isMovies ? accColor : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text('TV', style: AppThemes.safeGeist(fontSize: 11.5, fontWeight: FontWeight.w600, color: !isMovies ? (isDark ? const Color(0xFF1A140C) : Colors.white) : subColor)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
+                    ),
+                    GestureDetector(
+                      onTap: () => setState(() => _showLegend = true),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: subColor, size: 15),
+                          const SizedBox(width: 6),
+                          Text('Legend', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: subColor)),
+                        ],
+                      ),
+                    )
+                  ],
                 ),
               ),
-              _buildActionButtons(),
-              const SizedBox(height: 32),
+              // Card Stack
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Stack(
+                    alignment: Alignment.topCenter,
+                    children: [
+                      // Back cards
+                      Positioned(
+                        top: 26, left: 8, right: 8, bottom: 20,
+                        child: Transform.scale(
+                          scale: 0.92,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF1C1510) : const Color(0xFFDCCDB2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: isDark ? const Color.fromRGBO(201, 168, 106, 0.1) : const Color.fromRGBO(160, 74, 42, 0.1)),
+                            ),
+                            child: Opacity(opacity: isDark ? 0.5 : 0.6),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 16, left: 4, right: 4, bottom: 20,
+                        child: Transform.scale(
+                          scale: 0.96,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF241A12) : const Color(0xFFE3D5BD),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: isDark ? const Color.fromRGBO(201, 168, 106, 0.14) : const Color.fromRGBO(160, 74, 42, 0.14)),
+                            ),
+                            child: Opacity(opacity: isDark ? 0.7 : 0.8),
+                          ),
+                        ),
+                      ),
+                      // Active cards
+                      if (_pool.isEmpty)
+                        const Center(child: Text('No more recommendations!'))
+                      else
+                        ..._pool.reversed.map((item) {
+                          final isTop = item.id == _pool.first.id;
+                          return SwipeCard(
+                            key: ValueKey(item.id),
+                            item: item,
+                            isInteractive: isTop,
+                            onSwipe: (dir) => _onSwipe(item, dir),
+                            isDark: isDark,
+                            accColor: accColor,
+                          );
+                        }),
+                    ],
+                  ),
+                ),
+              ),
+              // Action buttons row
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 14.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildActionButton(Icons.close, isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072), isDark ? const Color.fromRGBO(154, 144, 136, 0.5) : const Color.fromRGBO(138, 128, 114, 0.5), () => _onSwipe(_pool.first, 'Left')),
+                    const SizedBox(width: 14),
+                    _buildActionButton(Icons.star_border, isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50), isDark ? const Color.fromRGBO(214, 151, 132, 0.55) : const Color.fromRGBO(167, 106, 80, 0.55), () => _onSwipe(_pool.first, 'Right')),
+                    const SizedBox(width: 14),
+                    GestureDetector(
+                      onTap: () => _onSwipe(_pool.first, 'Down'),
+                      child: Container(
+                        width: 54, height: 54,
+                        decoration: BoxDecoration(
+                          color: accColor,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.bookmark_border, color: isDark ? const Color(0xFF1A140C) : Colors.white, size: 24),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    _buildActionButton(Icons.check, isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86), isDark ? const Color.fromRGBO(126, 155, 181, 0.55) : const Color.fromRGBO(86, 111, 134, 0.55), () => _onSwipe(_pool.first, 'Up')),
+                  ],
+                ),
+              )
             ],
           ),
         ),
-        const VerticalDivider(width: 1, thickness: 1),
-        Expanded(
-          flex: 1,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: _buildDetailsPanel(_pool.first),
+        if (_showLegend) _buildLegendOverlay(isDark, accColor),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(IconData icon, Color color, Color borderColor, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44, height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: borderColor),
+        ),
+        child: Icon(icon, color: color, size: 19),
+      ),
+    );
+  }
+
+  Widget _buildLegendOverlay(bool isDark, Color accColor) {
+    return Stack(
+      children: [
+        GestureDetector(
+          onTap: () => setState(() => _showLegend = false),
+          child: Container(
+            color: const Color.fromRGBO(6, 4, 3, 0.72),
+          ),
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(24, 26, 24, 34),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                colors: [Color(0xFF1C1510), Color(0xFF120D0A)],
+              ),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
+              border: Border(top: BorderSide(color: Color.fromRGBO(201, 168, 106, 0.25))),
+              boxShadow: [BoxShadow(color: Color.fromRGBO(255, 255, 255, 0.08), blurRadius: 0, spreadRadius: 0, offset: Offset(0, 1), blurStyle: BlurStyle.inner)],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 38, height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color.fromRGBO(239, 230, 216, 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                  margin: const EdgeInsets.only(bottom: 18),
+                ),
+                Text('How the deck works', style: GoogleFonts.bodoniModa(fontSize: 25, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic, color: Colors.white)),
+                const SizedBox(height: 5),
+                Text('Swipe a card, or use the buttons. Shown once.', style: AppThemes.safeGeist(fontSize: 12.5, color: const Color.fromRGBO(239, 230, 216, 0.55))),
+                const SizedBox(height: 20),
+                _buildLegendItem(Icons.arrow_back, 'Swipe left — Skip for now', 'Session only, won\'t reappear tonight — not permanent', const Color(0xFFB3A99F), const Color.fromRGBO(154, 144, 136, 0.16)),
+                const SizedBox(height: 12),
+                _buildLegendItem(Icons.arrow_forward, 'Swipe right — Save for later', 'A "maybe" bookmark → lands in your Maybe pile', const Color(0xFFE0A894), const Color.fromRGBO(214, 151, 132, 0.16)),
+                const SizedBox(height: 12),
+                _buildLegendItem(Icons.arrow_downward, 'Swipe down — Add to watchlist', 'A committed pick you intend to watch', const Color(0xFFC9A86A), const Color.fromRGBO(201, 168, 106, 0.16)),
+                const SizedBox(height: 12),
+                _buildLegendItem(Icons.arrow_upward, 'Swipe up — Already watched', 'Logs to Watched history', const Color(0xFF8FAEC4), const Color.fromRGBO(126, 155, 181, 0.16)),
+                const SizedBox(height: 12),
+                _buildLegendItem(Icons.touch_app, 'Tap — Open full details', 'The complete Movie / TV detail view', const Color(0xFFEFE6D8), const Color.fromRGBO(239, 230, 216, 0.08)),
+                const SizedBox(height: 22),
+                GestureDetector(
+                  onTap: () => setState(() => _showLegend = false),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFCBA86A),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text('Got it — start swiping', style: AppThemes.safeGeist(fontSize: 13.5, fontWeight: FontWeight.w600, color: const Color(0xFF1A140C))),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildDetailsPanel(MediaItem item) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+  Widget _buildLegendItem(IconData icon, String title, String subtitle, Color color, Color bgColor) {
+    return Row(
       children: [
-        Text(item.title, style: Theme.of(context).textTheme.headlineMedium),
-        const SizedBox(height: 16),
-        Text('Rating: ${item.rating}/10'),
-        const SizedBox(height: 16),
-        Text(item.overview),
-        const SizedBox(height: 16),
-        if (item.genres.isNotEmpty) ...[
-          const Text('Genres', style: TextStyle(fontWeight: FontWeight.bold)),
-          Wrap(
-            spacing: 8,
-            children: item.genres.map((g) => Chip(label: Text(g))).toList(),
+        Container(
+          width: 38, height: 38,
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(11),
           ),
-        ]
+          child: Icon(icon, color: color, size: 19),
+        ),
+        const SizedBox(width: 13),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+              Text(subtitle, style: AppThemes.safeGeist(fontSize: 11.5, color: const Color.fromRGBO(239, 230, 216, 0.5))),
+            ],
+          ),
+        )
       ],
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          FloatingActionButton(
-            heroTag: 'btnSkip',
-            onPressed: () => _onSwipe(_pool.first, 'Left'),
-            backgroundColor: Colors.red.shade100,
-            child: const Icon(Icons.close, color: Colors.red),
-          ),
-          FloatingActionButton(
-            heroTag: 'btnWatchlist',
-            onPressed: () => _onSwipe(_pool.first, 'Down'),
-            backgroundColor: Colors.blue.shade100,
-            child: const Icon(Icons.bookmark, color: Colors.blue),
-          ),
-          FloatingActionButton(
-            heroTag: 'btnMaybe',
-            onPressed: () => _onSwipe(_pool.first, 'Right'),
-            backgroundColor: Colors.orange.shade100,
-            child: const Icon(Icons.star, color: Colors.orange),
-          ),
-          FloatingActionButton(
-            heroTag: 'btnWatched',
-            onPressed: () => _onSwipe(_pool.first, 'Up'),
-            backgroundColor: Colors.green.shade100,
-            child: const Icon(Icons.check, color: Colors.green),
-          ),
-        ],
-      ),
     );
   }
 }
@@ -200,12 +333,16 @@ class SwipeCard extends StatefulWidget {
   final MediaItem item;
   final bool isInteractive;
   final Function(String) onSwipe;
+  final bool isDark;
+  final Color accColor;
 
   const SwipeCard({
     super.key,
     required this.item,
     required this.isInteractive,
     required this.onSwipe,
+    required this.isDark,
+    required this.accColor,
   });
 
   @override
@@ -218,69 +355,79 @@ class _SwipeCardState extends State<SwipeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    final cardWidth = size.width > 600 ? 400.0 : size.width * 0.8;
-    final cardHeight = cardWidth * 1.5;
+    final phColor = widget.isDark ? const Color.fromRGBO(239, 230, 216, 0.09) : const Color.fromRGBO(44, 32, 22, 0.09);
+    final borderColor = widget.isDark ? const Color.fromRGBO(201, 168, 106, 0.22) : const Color.fromRGBO(160, 74, 42, 0.24);
 
     Widget card = Container(
-      width: cardWidth,
-      height: cardHeight,
+      margin: const EdgeInsets.only(top: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 8,
-            offset: Offset(0, 4),
-          ),
-        ],
+        color: phColor,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: borderColor),
+        boxShadow: [
+          BoxShadow(color: widget.isDark ? const Color.fromRGBO(0, 0, 0, 0.6) : const Color.fromRGBO(80, 55, 30, 0.4), blurRadius: 40, offset: const Offset(0, 20), spreadRadius: -12),
+          BoxShadow(color: widget.isDark ? const Color.fromRGBO(255, 255, 255, 0.06) : const Color.fromRGBO(255, 255, 255, 0.4), blurRadius: 0, spreadRadius: 0, offset: const Offset(0, 1), blurStyle: BlurStyle.inner),
+        ]
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              widget.item.posterUrl ?? '',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: Colors.grey),
-            ),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16.0),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.transparent, Colors.black87],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          if (widget.item.posterUrl != null)
+            Image.network(widget.item.posterUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Container()),
+          
+          // Edge hints
+          if (_dragOffset.dy < -20)
+            Positioned(top: 12, left: 0, right: 0, child: Column(children: [Icon(Icons.check, color: widget.isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86)), Text('Watched', style: AppThemes.safeGeist(fontSize: 9, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86), backgroundColor: Colors.black54))])),
+          if (_dragOffset.dy > 20)
+            Positioned(bottom: 80, left: 0, right: 0, child: Column(children: [Text('Watchlist', style: AppThemes.safeGeist(fontSize: 9, fontWeight: FontWeight.w600, color: widget.accColor, backgroundColor: Colors.black54)), Icon(Icons.bookmark, color: widget.accColor)])),
+          if (_dragOffset.dx < -20)
+            Positioned(top: 250, left: 10, child: Row(children: [Icon(Icons.close, color: widget.isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072)), Text('Skip', style: AppThemes.safeGeist(fontSize: 9, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072), backgroundColor: Colors.black54))])),
+          if (_dragOffset.dx > 20)
+            Positioned(top: 250, right: 10, child: Row(children: [Text('Maybe', style: AppThemes.safeGeist(fontSize: 9, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50), backgroundColor: Colors.black54)), Icon(Icons.star, color: widget.isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50))])),
+
+          // Title Block
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, widget.isDark ? const Color.fromRGBO(0, 0, 0, 0.82) : const Color.fromRGBO(50, 30, 15, 0.78)],
+                )
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(color: widget.accColor, borderRadius: BorderRadius.circular(5)),
+                        child: Text('★ ${widget.item.rating}', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFF1A140C) : Colors.white)),
+                      ),
+                      const SizedBox(width: 8),
+                      Text('2024 · Sci-fi', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: const Color.fromRGBO(255, 255, 255, 0.8))),
+                    ],
                   ),
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(widget.item.title,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(widget.item.genres.join(', '),
-                        style: const TextStyle(color: Colors.white70)),
-                  ],
-                ),
+                  const SizedBox(height: 6),
+                  Text(widget.item.title, style: GoogleFonts.bodoniModa(fontSize: 27, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic, color: Colors.white, height: 1.02)),
+                  const SizedBox(height: 5),
+                  Text(widget.item.overview, style: AppThemes.safeGeist(fontSize: 12, height: 1.45, color: const Color.fromRGBO(255, 255, 255, 0.72)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 8),
+                  Text('Tap for full details ↗', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: widget.isDark ? widget.accColor : const Color(0xFFF0C9A0))),
+                ],
               ),
             ),
-          ],
-        ),
+          )
+        ],
       ),
     );
 
-    if (!widget.isInteractive) {
-      return card;
-    }
+    if (!widget.isInteractive) return card;
 
     return GestureDetector(
       onPanUpdate: (details) {
@@ -308,10 +455,7 @@ class _SwipeCardState extends State<SwipeCard> {
       },
       child: Transform.translate(
         offset: _dragOffset,
-        child: Transform.rotate(
-          angle: _angle,
-          child: card,
-        ),
+        child: Transform.rotate(angle: _angle, child: card),
       ),
     );
   }

@@ -16,118 +16,283 @@ class ShellScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final navigationState = ref.watch(navigationProvider);
-    final ambiance = ref.watch(ambianceProvider);
-
     final navigationNotifier = ref.read(navigationProvider.notifier);
+    final ambiance = ref.watch(ambianceProvider);
     final ambianceNotifier = ref.read(ambianceProvider.notifier);
+    final isDark = ambiance == AmbianceType.screeningRoom;
 
-    return ResponsiveLayout(
-      compact: (context) => Scaffold(
-        appBar: _buildAppBar(
-            navigationState, navigationNotifier, ambiance, ambianceNotifier),
-        body: _buildBody(navigationState.currentTab),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: navigationState.currentTab.index,
-          onTap: (index) => navigationNotifier.setTab(AppTab.values[index]),
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.explore), label: 'Discover'),
-            BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.person), label: 'Your Space'),
-            BottomNavigationBarItem(
-                icon: Icon(Icons.calendar_month), label: 'Calendar'),
-          ],
+    return Container(
+      decoration: isDark
+          ? AppThemes.screeningRoomBackground()
+          : AppThemes.readingRoomBackground(),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        body: ResponsiveLayout(
+          compact: (context) => _buildCompactLayout(
+            context,
+            navigationState,
+            navigationNotifier,
+            ambiance,
+            ambianceNotifier,
+            isDark,
+          ),
+          medium: (context) => _buildLargeLayout(
+            context,
+            navigationState,
+            navigationNotifier,
+            ambiance,
+            ambianceNotifier,
+            isDark,
+          ),
+          large: (context) => _buildLargeLayout(
+            context,
+            navigationState,
+            navigationNotifier,
+            ambiance,
+            ambianceNotifier,
+            isDark,
+          ),
         ),
-      ),
-      medium: (context) => Scaffold(
-        appBar: _buildAppBar(
-            navigationState, navigationNotifier, ambiance, ambianceNotifier),
-        body: _buildMediumLargeLayout(navigationState, navigationNotifier),
-      ),
-      large: (context) => Scaffold(
-        appBar: _buildAppBar(
-            navigationState, navigationNotifier, ambiance, ambianceNotifier),
-        body: _buildMediumLargeLayout(navigationState, navigationNotifier),
       ),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(
-    NavigationState navigationState,
-    NavigationNotifier navigationNotifier,
+  Widget _buildTopBarToggle(
+    BuildContext context,
+    NavigationState state,
+    NavigationNotifier notifier,
+    bool isDark,
+  ) {
+    final bgColor = isDark ? AppColors.srPill : AppColors.rrPill;
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final onAccColor = isDark ? const Color(0xFF1A140C) : Colors.white;
+
+    Widget buildSegment(MediaTypeToggle type, String label) {
+      final isSelected = state.activeMediaType == type;
+      return GestureDetector(
+        onTap: () => notifier.setMediaType(type),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? accColor : Colors.transparent,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Geist',
+              fontWeight: FontWeight.w600,
+              fontSize: 12.5,
+              color: isSelected ? onAccColor : subColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      padding: const EdgeInsets.all(3),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          buildSegment(MediaTypeToggle.movies, 'Movies'),
+          const SizedBox(width: 2),
+          buildSegment(MediaTypeToggle.tv, 'TV'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactLayout(
+    BuildContext context,
+    NavigationState state,
+    NavigationNotifier notifier,
     AmbianceType ambiance,
     AmbianceNotifier ambianceNotifier,
+    bool isDark,
   ) {
-    return AppBar(
-      title: const Text('The Lounge'),
-      actions: [
-        SegmentedButton<MediaTypeToggle>(
-          segments: const [
-            ButtonSegment<MediaTypeToggle>(
-              value: MediaTypeToggle.movies,
-              label: Text('Movies'),
-              icon: Icon(Icons.movie),
+    return Column(
+      children: [
+        SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildTopBarToggle(context, state, notifier, isDark),
+                IconButton(
+                  icon: Icon(
+                    isDark ? Icons.light_mode : Icons.dark_mode,
+                    color: isDark ? AppColors.srSub : AppColors.rrSub,
+                    size: 20,
+                  ),
+                  onPressed: () => ambianceNotifier.toggleAmbiance(),
+                ),
+              ],
             ),
-            ButtonSegment<MediaTypeToggle>(
-              value: MediaTypeToggle.tv,
-              label: Text('TV'),
-              icon: Icon(Icons.tv),
-            ),
-          ],
-          selected: {navigationState.activeMediaType},
-          onSelectionChanged: (Set<MediaTypeToggle> newSelection) {
-            navigationNotifier.setMediaType(newSelection.first);
-          },
-        ),
-        const SizedBox(width: 8),
-        IconButton(
-          icon: Icon(
-            ambiance == AmbianceType.screeningRoom
-                ? Icons.light_mode
-                : Icons.dark_mode,
           ),
-          onPressed: () {
-            ambianceNotifier.toggleAmbiance();
-          },
         ),
-        const SizedBox(width: 8),
+        Expanded(
+          child: Stack(
+            children: [
+              Positioned.fill(child: _buildBody(state.currentTab)),
+              Positioned(
+                bottom: 16,
+                left: 16,
+                right: 16,
+                child: SafeArea(
+                  top: false,
+                  child: Container(
+                    height: 66,
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? const Color.fromRGBO(12, 9, 7, 0.82)
+                          : const Color.fromRGBO(240, 232, 216, 0.86),
+                      border: Border.all(
+                        color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                      ),
+                      borderRadius: BorderRadius.circular(33),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: _buildNavItems(state, notifier, isDark),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _buildMediumLargeLayout(
+  Widget _buildLargeLayout(
+    BuildContext context,
     NavigationState state,
     NavigationNotifier notifier,
+    AmbianceType ambiance,
+    AmbianceNotifier ambianceNotifier,
+    bool isDark,
   ) {
     return Row(
       children: [
-        NavigationRail(
-          selectedIndex: state.currentTab.index,
-          onDestinationSelected: (index) =>
-              notifier.setTab(AppTab.values[index]),
-          labelType: NavigationRailLabelType.all,
-          destinations: const [
-            NavigationRailDestination(
-                icon: Icon(Icons.home), label: Text('Home')),
-            NavigationRailDestination(
-                icon: Icon(Icons.explore), label: Text('Discover')),
-            NavigationRailDestination(
-                icon: Icon(Icons.search), label: Text('Search')),
-            NavigationRailDestination(
-                icon: Icon(Icons.person), label: Text('Your Space')),
-            NavigationRailDestination(
-                icon: Icon(Icons.calendar_month), label: Text('Calendar')),
-          ],
+        Container(
+          width: 80,
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color.fromRGBO(12, 9, 7, 0.82)
+                : const Color.fromRGBO(240, 232, 216, 0.86),
+            border: Border(
+              right: BorderSide(
+                color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+              ),
+            ),
+          ),
+          child: SafeArea(
+            right: false,
+            child: Column(
+              children: [
+                const SizedBox(height: 24),
+                IconButton(
+                  icon: Icon(
+                    isDark ? Icons.light_mode : Icons.dark_mode,
+                    color: isDark ? AppColors.srSub : AppColors.rrSub,
+                    size: 20,
+                  ),
+                  onPressed: () => ambianceNotifier.toggleAmbiance(),
+                ),
+                const SizedBox(height: 32),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: _buildNavItems(state, notifier, isDark, isRail: true),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-        const VerticalDivider(thickness: 1, width: 1),
         Expanded(
-          child: _buildBody(state.currentTab),
+          child: Column(
+            children: [
+              SafeArea(
+                bottom: false,
+                left: false,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: _buildTopBarToggle(context, state, notifier, isDark),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: _buildBody(state.currentTab),
+              ),
+            ],
+          ),
         ),
       ],
     );
+  }
+
+  List<Widget> _buildNavItems(
+    NavigationState state,
+    NavigationNotifier notifier,
+    bool isDark, {
+    bool isRail = false,
+  }) {
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+
+    Widget buildItem(AppTab tab, String label, IconData icon) {
+      final isSelected = state.currentTab == tab;
+      final color = isSelected ? accColor : subColor;
+
+      final content = Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 21),
+          const SizedBox(height: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Geist',
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              fontSize: 9.5,
+              color: color,
+            ),
+          ),
+        ],
+      );
+
+      return GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => notifier.setTab(tab),
+        child: isRail
+            ? Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: content,
+              )
+            : content,
+      );
+    }
+
+    return [
+      buildItem(AppTab.home, 'Home', Icons.home_outlined),
+      buildItem(AppTab.discover, 'Discover', Icons.style_outlined),
+      buildItem(AppTab.search, 'Search', Icons.search),
+      buildItem(AppTab.yourSpace, 'Your space', Icons.bookmark_outline),
+      buildItem(AppTab.calendar, 'Calendar', Icons.calendar_today_outlined),
+    ];
   }
 
   Widget _buildBody(AppTab tab) {

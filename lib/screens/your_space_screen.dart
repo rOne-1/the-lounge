@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/media_provider.dart';
 import '../models/media_item.dart';
 import 'detail_screen.dart';
+import '../constants.dart';
 
 class YourSpaceScreen extends ConsumerWidget {
   const YourSpaceScreen({super.key});
@@ -10,43 +11,61 @@ class YourSpaceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mediaState = ref.watch(mediaProvider);
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    
+    final baseColor = isDark ? AppColors.srBase : AppColors.rrBase;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
 
-    return DefaultTabController(
-      length: 3,
-      child: Column(
-        children: [
-          const TabBar(
-            tabs: [
-              Tab(text: 'Watchlist'),
-              Tab(text: 'Maybe'),
-              Tab(text: 'Watched'),
-            ],
-          ),
-          Expanded(
-            child: TabBarView(
-              children: [
-                _buildGrid(mediaState.watchlist.values.toList()),
-                _buildGrid(mediaState.maybeList.values.toList()),
-                _buildGrid(mediaState.watchedList.values.toList()),
+    return Container(
+      color: baseColor,
+      child: DefaultTabController(
+        length: 3,
+        child: Column(
+          children: [
+            TabBar(
+              labelColor: accColor,
+              unselectedLabelColor: subColor,
+              indicatorColor: accColor,
+              labelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600),
+              unselectedLabelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w500),
+              tabs: const [
+                Tab(text: 'Watchlist'),
+                Tab(text: 'Maybe'),
+                Tab(text: 'Watched'),
               ],
             ),
-          ),
-        ],
+            Expanded(
+              child: TabBarView(
+                children: [
+                  _buildGrid(mediaState.watchlist.values.toList(), isDark, subColor),
+                  _buildGrid(mediaState.maybeList.values.toList(), isDark, subColor),
+                  _buildGrid(mediaState.watchedList.values.toList(), isDark, subColor),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildGrid(List<MediaItem> items) {
+  Widget _buildGrid(List<MediaItem> items, bool isDark, Color subColor) {
     if (items.isEmpty) {
-      return const Center(child: Text('Nothing here yet.'));
+      return Center(child: Text('Nothing here yet.', style: AppThemes.safeGeist(fontSize: 14, color: subColor)));
     }
+    
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
     return GridView.builder(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 150,
+        maxCrossAxisExtent: 120,
         childAspectRatio: 2 / 3,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {
@@ -56,12 +75,18 @@ class YourSpaceScreen extends ConsumerWidget {
             context,
             MaterialPageRoute(builder: (_) => DetailScreen(id: item.id)),
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: Image.network(
-              item.posterUrl ?? '',
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(color: Colors.grey),
+          child: Container(
+            decoration: BoxDecoration(
+              color: phColor,
+              borderRadius: BorderRadius.circular(11),
+              border: Border.all(color: lineRgba),
+              boxShadow: [
+                BoxShadow(color: isDark ? const Color.fromRGBO(255, 255, 255, 0.05) : const Color.fromRGBO(255, 255, 255, 0.4), blurRadius: 0, spreadRadius: 0, offset: const Offset(0, 1), blurStyle: BlurStyle.inner)
+              ],
+              image: item.posterUrl != null ? DecorationImage(
+                image: NetworkImage(item.posterUrl!),
+                fit: BoxFit.cover,
+              ) : null,
             ),
           ),
         );
