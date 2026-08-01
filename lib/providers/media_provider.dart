@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/media_item.dart';
+import 'ambiance_provider.dart';
 
 class MediaState {
   final Map<String, MediaItem> watchlist;
@@ -35,9 +36,21 @@ class MediaState {
 }
 
 class MediaNotifier extends Notifier<MediaState> {
+  static const _watchProvidersCountryKey = 'watch_providers_country';
+
   @override
   MediaState build() {
-    return const MediaState();
+    String initialCountry = 'US';
+    try {
+      final prefs = ref.watch(sharedPreferencesProvider);
+      final stored = prefs.getString(_watchProvidersCountryKey);
+      if (stored != null && stored.isNotEmpty) {
+        initialCountry = stored;
+      }
+    } catch (_) {
+      // Defensively catch missing SharedPreferences override in unit tests
+    }
+    return MediaState(watchProvidersCountry: initialCountry);
   }
 
   void addToWatchlist(MediaItem item) {
@@ -45,17 +58,25 @@ class MediaNotifier extends Notifier<MediaState> {
 
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
       ..[item.id] = item;
-    // Remove from other lists if necessary
-    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
-      ..remove(item.id);
-    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
-      ..remove(item.id);
 
-    state = state.copyWith(
-      watchlist: newWatchlist,
-      maybeList: newMaybeList,
-      watchedList: newWatchedList,
-    );
+    state = state.copyWith(watchlist: newWatchlist);
+  }
+
+  void removeFromWatchlist(String id) {
+    if (!state.watchlist.containsKey(id)) return;
+
+    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
+      ..remove(id);
+
+    state = state.copyWith(watchlist: newWatchlist);
+  }
+
+  void toggleWatchlist(MediaItem item) {
+    if (state.watchlist.containsKey(item.id)) {
+      removeFromWatchlist(item.id);
+    } else {
+      addToWatchlist(item);
+    }
   }
 
   void addToMaybeList(MediaItem item) {
@@ -63,34 +84,56 @@ class MediaNotifier extends Notifier<MediaState> {
 
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
       ..[item.id] = item;
-    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
-      ..remove(item.id);
-    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
-      ..remove(item.id);
 
-    state = state.copyWith(
-      watchlist: newWatchlist,
-      maybeList: newMaybeList,
-      watchedList: newWatchedList,
-    );
+    state = state.copyWith(maybeList: newMaybeList);
   }
+
+  void removeFromMaybeList(String id) {
+    if (!state.maybeList.containsKey(id)) return;
+
+    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
+      ..remove(id);
+
+    state = state.copyWith(maybeList: newMaybeList);
+  }
+
+  void toggleMaybe(MediaItem item) {
+    if (state.maybeList.containsKey(item.id)) {
+      removeFromMaybeList(item.id);
+    } else {
+      addToMaybeList(item);
+    }
+  }
+
+  void toggleMaybeList(MediaItem item) => toggleMaybe(item);
 
   void addToWatchedList(MediaItem item) {
     if (state.watchedList.containsKey(item.id)) return;
 
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
       ..[item.id] = item;
-    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
-      ..remove(item.id);
-    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
-      ..remove(item.id);
 
-    state = state.copyWith(
-      watchlist: newWatchlist,
-      maybeList: newMaybeList,
-      watchedList: newWatchedList,
-    );
+    state = state.copyWith(watchedList: newWatchedList);
   }
+
+  void removeFromWatchedList(String id) {
+    if (!state.watchedList.containsKey(id)) return;
+
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+      ..remove(id);
+
+    state = state.copyWith(watchedList: newWatchedList);
+  }
+
+  void toggleWatched(MediaItem item) {
+    if (state.watchedList.containsKey(item.id)) {
+      removeFromWatchedList(item.id);
+    } else {
+      addToWatchedList(item);
+    }
+  }
+
+  void toggleWatchedList(MediaItem item) => toggleWatched(item);
 
   void removeFromAllLists(String id) {
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
@@ -118,8 +161,14 @@ class MediaNotifier extends Notifier<MediaState> {
     }
   }
 
-  void setWatchProvidersCountry(String countryCode) {
+  Future<void> setWatchProvidersCountry(String countryCode) async {
     state = state.copyWith(watchProvidersCountry: countryCode);
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.setString(_watchProvidersCountryKey, countryCode);
+    } catch (_) {
+      // Defensively catch missing SharedPreferences override in unit tests
+    }
   }
 }
 

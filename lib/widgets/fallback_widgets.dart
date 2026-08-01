@@ -1,4 +1,148 @@
 import 'package:flutter/material.dart';
+import '../constants.dart';
+import '../models/media_item.dart';
+
+class MediaPosterFallback extends StatelessWidget {
+  final String title;
+  final MediaType? type;
+  final IconData? icon;
+  final double? iconSize;
+  final double? titleFontSize;
+  final bool showTitle;
+
+  const MediaPosterFallback({
+    super.key,
+    required this.title,
+    this.type,
+    this.icon,
+    this.iconSize,
+    this.titleFontSize,
+    this.showTitle = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final iconColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final textColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
+    final borderColor = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    final resolvedIcon = icon ??
+        (type == MediaType.tv ? Icons.tv_outlined : Icons.movie_outlined);
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.maxHeight;
+        final isVerySmall = height > 0 && height < 80;
+        final effectiveIconSize = iconSize ?? (isVerySmall ? 18.0 : 26.0);
+        final effectiveFontSize = titleFontSize ?? (isVerySmall ? 9.0 : 11.0);
+
+        return Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            color: cardBg,
+            border: Border.all(color: borderColor),
+          ),
+          padding: EdgeInsets.symmetric(
+            horizontal: isVerySmall ? 4.0 : 8.0,
+            vertical: isVerySmall ? 4.0 : 8.0,
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                resolvedIcon,
+                color: iconColor.withValues(alpha: 0.85),
+                size: effectiveIconSize,
+              ),
+              if (showTitle && title.isNotEmpty) ...[
+                SizedBox(height: isVerySmall ? 2 : 5),
+                Flexible(
+                  child: Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    maxLines: isVerySmall ? 1 : 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppThemes.safeGeist(
+                      fontSize: effectiveFontSize,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                      height: 1.15,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class MediaImage extends StatelessWidget {
+  final MediaItem? item;
+  final String? imageUrl;
+  final String title;
+  final MediaType? type;
+  final BoxFit fit;
+  final BorderRadius? borderRadius;
+  final Widget? fallback;
+  final bool showFallbackTitle;
+
+  const MediaImage({
+    super.key,
+    this.item,
+    this.imageUrl,
+    this.title = '',
+    this.type,
+    this.fit = BoxFit.cover,
+    this.borderRadius,
+    this.fallback,
+    this.showFallbackTitle = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final effectiveUrl = imageUrl ?? item?.posterUrl;
+    final effectiveTitle = item?.title ?? title;
+    final effectiveType = item?.type ?? type;
+    final willFail = item?.imageLoadWillFail ?? false;
+
+    final fallbackWidget = fallback ??
+        MediaPosterFallback(
+          title: effectiveTitle,
+          type: effectiveType,
+          showTitle: showFallbackTitle,
+        );
+
+    Widget imageContent;
+    if (effectiveUrl == null || effectiveUrl.isEmpty || willFail) {
+      imageContent = fallbackWidget;
+    } else {
+      imageContent = Image.network(
+        effectiveUrl,
+        fit: fit,
+        width: double.infinity,
+        height: double.infinity,
+        errorBuilder: (context, error, stackTrace) => fallbackWidget,
+      );
+    }
+
+    if (borderRadius != null) {
+      return ClipRRect(
+        borderRadius: borderRadius!,
+        child: imageContent,
+      );
+    }
+    return imageContent;
+  }
+}
 
 class FullScreenErrorWidget extends StatelessWidget {
   final String message;

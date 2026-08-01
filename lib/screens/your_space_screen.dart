@@ -4,6 +4,7 @@ import '../providers/media_provider.dart';
 import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
+import '../widgets/fallback_widgets.dart';
 
 class YourSpaceScreen extends ConsumerWidget {
   const YourSpaceScreen({super.key});
@@ -14,13 +15,10 @@ class YourSpaceScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     
-    final baseColor = isDark ? AppColors.srBase : AppColors.rrBase;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
 
-    return Container(
-      color: baseColor,
-      child: DefaultTabController(
+    return DefaultTabController(
         length: 3,
         child: Column(
           children: [
@@ -47,8 +45,7 @@ class YourSpaceScreen extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
+      );
   }
 
   Widget _buildGrid(List<MediaItem> items, bool isDark, Color subColor) {
@@ -83,10 +80,11 @@ class YourSpaceScreen extends ConsumerWidget {
               boxShadow: [
                 BoxShadow(color: isDark ? const Color.fromRGBO(255, 255, 255, 0.05) : const Color.fromRGBO(255, 255, 255, 0.4), blurRadius: 0, spreadRadius: 0, offset: const Offset(0, 1), blurStyle: BlurStyle.inner)
               ],
-              image: item.posterUrl != null ? DecorationImage(
-                image: NetworkImage(item.posterUrl!),
-                fit: BoxFit.cover,
-              ) : null,
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: MediaImage(
+              item: item,
+              fit: BoxFit.cover,
             ),
           ),
         );

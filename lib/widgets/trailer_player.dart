@@ -16,12 +16,14 @@ class TrailerPlayer extends ConsumerStatefulWidget {
 }
 
 class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
-  late YoutubePlayerController _controller;
+  YoutubePlayerController? _controller;
+  double _sliderValue = 0.0;
 
   @override
   void initState() {
     super.initState();
-    if (kIsWeb || defaultTargetPlatform == TargetPlatform.android) {
+    if (widget.item.hasTrailer &&
+        (kIsWeb || defaultTargetPlatform == TargetPlatform.android)) {
       _controller = YoutubePlayerController.fromVideoId(
         videoId: 'dQw4w9WgXcQ', // Placeholder
         autoPlay: true,
@@ -32,10 +34,26 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
 
   @override
   void dispose() {
-    if (kIsWeb || defaultTargetPlatform == TargetPlatform.android) {
-      _controller.close();
-    }
+    _controller?.close();
     super.dispose();
+  }
+
+  void _showWindowsUnavailableFeedback() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Trailer playback isn't available on Windows yet."),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  String _formatDuration(double progress) {
+    final totalSeconds = (progress * 150).round();
+    final minutes = totalSeconds ~/ 60;
+    final seconds = totalSeconds % 60;
+    return '$minutes:${seconds.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -59,10 +77,10 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          if (isYoutubePlatform)
+          if (isYoutubePlatform && _controller != null)
             Center(
               child: YoutubePlayer(
-                controller: _controller,
+                controller: _controller!,
                 aspectRatio: 16 / 9,
               ),
             )
@@ -83,21 +101,25 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
   }
 
   Widget _buildWindowsMockPlayer() {
+    final imageUrl = widget.item.backdropUrl ?? widget.item.posterUrl;
     return Stack(
       fit: StackFit.expand,
       children: [
-        Image.network(
-          widget.item.backdropUrl ?? widget.item.posterUrl ?? '',
-          fit: BoxFit.cover,
-          color: Colors.black54,
-          colorBlendMode: BlendMode.darken,
-          errorBuilder: (_, __, ___) => Container(color: Colors.black),
-        ),
+        if (imageUrl != null && imageUrl.isNotEmpty && !widget.item.imageLoadWillFail)
+          Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            color: Colors.black54,
+            colorBlendMode: BlendMode.darken,
+            errorBuilder: (_, __, ___) => Container(color: Colors.black),
+          )
+        else
+          Container(color: Colors.black),
         Center(
           child: IconButton(
             iconSize: 64,
             icon: const Icon(Icons.play_circle_fill, color: Colors.white),
-            onPressed: () {},
+            onPressed: _showWindowsUnavailableFeedback,
           ),
         ),
         Positioned(
@@ -106,20 +128,34 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
           right: 20,
           child: Row(
             children: [
-              const Icon(Icons.play_arrow, color: Colors.white),
+              IconButton(
+                icon: const Icon(Icons.play_arrow, color: Colors.white),
+                onPressed: _showWindowsUnavailableFeedback,
+              ),
               const SizedBox(width: 8),
-              const Text('0:00', style: TextStyle(color: Colors.white)),
+              Text(
+                _formatDuration(_sliderValue),
+                style: const TextStyle(color: Colors.white),
+              ),
               const SizedBox(width: 8),
               Expanded(
                 child: Slider(
-                  value: 0.0,
-                  onChanged: (val) {},
+                  value: _sliderValue,
+                  onChanged: (val) {
+                    setState(() {
+                      _sliderValue = val;
+                    });
+                  },
+                  onChangeEnd: (_) => _showWindowsUnavailableFeedback(),
                 ),
               ),
               const SizedBox(width: 8),
               const Text('2:30', style: TextStyle(color: Colors.white)),
               const SizedBox(width: 8),
-              const Icon(Icons.fullscreen, color: Colors.white),
+              IconButton(
+                icon: const Icon(Icons.fullscreen, color: Colors.white),
+                onPressed: _showWindowsUnavailableFeedback,
+              ),
             ],
           ),
         ),

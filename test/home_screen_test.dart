@@ -1,0 +1,111 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:the_lounge/screens/home_screen.dart';
+import 'package:the_lounge/screens/detail_screen.dart';
+import 'package:the_lounge/providers/repository_provider.dart';
+import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/repositories/movie_repository.dart';
+
+class MockTestRepository implements MovieRepository {
+  final List<MediaItem> trendingMovies;
+  final List<MediaItem> popularMovies;
+  final List<MediaItem> trendingTvShows;
+
+  MockTestRepository({
+    required this.trendingMovies,
+    required this.popularMovies,
+    required this.trendingTvShows,
+  });
+
+  @override
+  Future<List<MediaItem>> getTrendingMovies() async => trendingMovies;
+
+  @override
+  Future<List<MediaItem>> getPopularMovies() async => popularMovies;
+
+  @override
+  Future<List<MediaItem>> getTrendingTvShows() async => trendingTvShows;
+
+  @override
+  Future<MediaItem?> getMediaDetails(String id) async {
+    final all = [...trendingMovies, ...popularMovies, ...trendingTvShows];
+    return all.firstWhere((item) => item.id == id);
+  }
+
+  @override
+  Future<List<MediaItem>> searchMedia(String query) async => [];
+}
+
+void main() {
+  setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  List<MediaItem> createMockItems(int count, String prefix, MediaType type) {
+    return List.generate(
+      count,
+      (index) => MediaItem(
+        id: '$prefix-$index',
+        title: '$prefix Movie $index',
+        type: type,
+        rating: 8.0,
+        overview: 'Overview for $prefix $index',
+        genres: const ['Action'],
+      ),
+    );
+  }
+
+  testWidgets('HomeScreen displays dynamic greeting, trending carousel, and continue watching list', (WidgetTester tester) async {
+    final trending = createMockItems(6, 'Trending', MediaType.movie);
+    final popular = createMockItems(4, 'Continue', MediaType.movie);
+    final mockRepo = MockTestRepository(
+      trendingMovies: trending,
+      popularMovies: popular,
+      trendingTvShows: [],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: HomeScreen(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify dynamic greeting contains current day name
+    const dayNames = [
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRIDAY',
+      'SATURDAY',
+      'SUNDAY',
+    ];
+    final currentDay = dayNames[DateTime.now().weekday - 1];
+    expect(find.textContaining(currentDay), findsOneWidget);
+
+    // Verify Continue watching items are rendered without stub box
+    expect(find.text('Continue Movie 0'), findsOneWidget);
+    expect(find.text('Continue Movie 1'), findsOneWidget);
+
+    // Verify Trending carousel items are rendered
+    expect(find.text('Trending now'), findsOneWidget);
+
+    // Verify tapping on a Continue Watching item navigates to DetailScreen
+    await tester.tap(find.text('Continue Movie 0'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(DetailScreen), findsOneWidget);
+    expect(find.text('Continue Movie 0'), findsOneWidget);
+  });
+}

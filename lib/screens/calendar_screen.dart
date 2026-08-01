@@ -51,49 +51,44 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final baseColor = isDark ? AppColors.srBase : AppColors.rrBase;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
 
     if (_loading) {
-      return Container(color: baseColor, child: const Center(child: CircularProgressIndicator()));
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_groupedItems.isEmpty) {
-      return Container(
-        color: baseColor,
-        child: Center(child: Text('No upcoming releases.', style: AppThemes.safeGeist(color: subColor))),
+      return Center(
+        child: Text('No upcoming releases.', style: AppThemes.safeGeist(color: subColor)),
       );
     }
 
     final sortedDates = _groupedItems.keys.toList()..sort();
 
-    return Container(
-      color: baseColor,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(18.0),
-        itemCount: sortedDates.length,
-        itemBuilder: (context, index) {
-          final date = sortedDates[index];
-          final items = _groupedItems[date]!;
-          final isToday = date.difference(DateTime.now()).inDays == 0;
+    return ListView.builder(
+      padding: const EdgeInsets.all(18.0),
+      itemCount: sortedDates.length,
+      itemBuilder: (context, index) {
+        final date = sortedDates[index];
+        final items = _groupedItems[date]!;
+        final isToday = date.difference(DateTime.now()).inDays == 0;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12.0),
-                child: Text(
-                  isToday ? 'Today' : '${_monthName(date.month)} ${date.day}',
-                  style: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.1, color: subColor, textStyle: const TextStyle(textBaseline: TextBaseline.alphabetic)),
-                ),
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12.0),
+              child: Text(
+                isToday ? 'Today' : '${_monthName(date.month)} ${date.day}',
+                style: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.1, color: subColor, textStyle: const TextStyle(textBaseline: TextBaseline.alphabetic)),
               ),
-              ...items.map((item) => _buildAgendaCard(item, isDark, inkColor, subColor)),
-              const SizedBox(height: 12),
-            ],
-          );
-        },
-      ),
+            ),
+            ...items.map((item) => _buildAgendaCard(item, isDark, inkColor, subColor)),
+            const SizedBox(height: 12),
+          ],
+        );
+      },
     );
   }
 

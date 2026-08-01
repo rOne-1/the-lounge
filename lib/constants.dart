@@ -175,8 +175,8 @@ class AppThemes {
         center: Alignment(0, -1.16),
         radius: 1.2,
         colors: [
-          Color.fromRGBO(203, 168, 106, 0.14),
-          Colors.transparent,
+          Color(0xFF241812),
+          AppColors.srBase,
         ],
         stops: [0.0, 0.6],
       ),
@@ -190,8 +190,8 @@ class AppThemes {
         center: Alignment(0, -1.16),
         radius: 1.2,
         colors: [
-          Color.fromRGBO(176, 81, 43, 0.08),
-          Colors.transparent,
+          Color(0xFFE8DCC8),
+          AppColors.rrBase,
         ],
         stops: [0.0, 0.6],
       ),

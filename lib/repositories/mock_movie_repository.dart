@@ -382,7 +382,7 @@ class MockMovieRepository implements MovieRepository {
   @override
   Future<List<MediaItem>> getTrendingMovies() async {
     await Future.delayed(const Duration(milliseconds: 800));
-    return _mockData.where((m) => m.type == MediaType.movie).take(5).toList();
+    return _mockData.where((m) => m.type == MediaType.movie).toList();
   }
 
   @override

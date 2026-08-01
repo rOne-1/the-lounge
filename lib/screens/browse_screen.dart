@@ -6,6 +6,7 @@ import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../widgets/fallback_widgets.dart';
 
 class BrowseScreen extends ConsumerStatefulWidget {
   const BrowseScreen({super.key});
@@ -32,18 +33,24 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final baseColor = isDark ? AppColors.srBase : AppColors.rrBase;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
 
-    return Scaffold(
-      backgroundColor: baseColor,
-      appBar: AppBar(
-        title: Text('Browse', style: GoogleFonts.bodoniModa(fontStyle: FontStyle.italic, color: inkColor)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: inkColor),
+    return SizedBox.expand(
+      child: DecoratedBox(
+        decoration: isDark
+            ? AppThemes.screeningRoomBackground()
+            : AppThemes.readingRoomBackground(),
+        child: Scaffold(
+          backgroundColor: isDark ? AppColors.srBase : AppColors.rrBase,
+          appBar: AppBar(
+            title: Text('Browse', style: GoogleFonts.bodoniModa(fontStyle: FontStyle.italic, color: inkColor)),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            iconTheme: IconThemeData(color: inkColor),
+          ),
+          body: isLarge ? _buildLargeLayout(repo, isDark) : _buildCompactLayout(repo, isDark),
+        ),
       ),
-      body: isLarge ? _buildLargeLayout(repo, isDark) : _buildCompactLayout(repo, isDark),
     );
   }
 
@@ -209,10 +216,11 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   color: phColor,
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(color: lineRgba),
-                  image: item.posterUrl != null ? DecorationImage(
-                    image: NetworkImage(item.posterUrl!),
-                    fit: BoxFit.cover,
-                  ) : null,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: MediaImage(
+                  item: item,
+                  fit: BoxFit.cover,
                 ),
               ),
             );

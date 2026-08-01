@@ -4,6 +4,7 @@ import '../providers/repository_provider.dart';
 import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
+import '../widgets/fallback_widgets.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -49,16 +50,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     
-    final baseColor = isDark ? AppColors.srBase : AppColors.rrBase;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
 
-    return Container(
-      color: baseColor,
-      child: Column(
+    return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
@@ -105,8 +103,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: _buildBody(isDark, inkColor, subColor, lineRgba, phColor, accColor),
           ),
         ],
-      ),
-    );
+      );
   }
 
   Widget _buildBody(bool isDark, Color inkColor, Color subColor, Color lineRgba, Color phColor, Color accColor) {
@@ -164,7 +161,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     decoration: BoxDecoration(
                       color: phColor,
                       borderRadius: BorderRadius.circular(6),
-                      image: item.posterUrl != null ? DecorationImage(image: NetworkImage(item.posterUrl!), fit: BoxFit.cover) : null,
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: MediaImage(
+                      item: item,
+                      fit: BoxFit.cover,
+                      showFallbackTitle: false,
                     ),
                   ),
                   const SizedBox(width: 14),

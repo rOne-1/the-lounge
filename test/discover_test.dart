@@ -128,4 +128,42 @@ void main() {
 
     expect(find.text('No more recommendations!'), findsOneWidget);
   });
+
+  testWidgets('Tapping Discover card navigates to DetailScreen',
+      (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    final mockRepo = TestRepository();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+      ],
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: DiscoverScreen(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Dismiss Legend Overlay
+    await tester.tap(find.text('Got it — start swiping'));
+    await tester.pumpAndSettle();
+
+    // Verify Movie 1 is displayed
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    // Tap on the card
+    await tester.tap(find.text('Movie 1'));
+    await tester.pumpAndSettle();
+
+    // Verify we navigated to DetailScreen (e.g. Back button or detail layout appears)
+    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+  });
 }

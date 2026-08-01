@@ -21,37 +21,39 @@ class ShellScreen extends ConsumerWidget {
     final ambianceNotifier = ref.read(ambianceProvider.notifier);
     final isDark = ambiance == AmbianceType.screeningRoom;
 
-    return Container(
-      decoration: isDark
-          ? AppThemes.screeningRoomBackground()
-          : AppThemes.readingRoomBackground(),
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        extendBody: true,
-        body: ResponsiveLayout(
-          compact: (context) => _buildCompactLayout(
-            context,
-            navigationState,
-            navigationNotifier,
-            ambiance,
-            ambianceNotifier,
-            isDark,
-          ),
-          medium: (context) => _buildLargeLayout(
-            context,
-            navigationState,
-            navigationNotifier,
-            ambiance,
-            ambianceNotifier,
-            isDark,
-          ),
-          large: (context) => _buildLargeLayout(
-            context,
-            navigationState,
-            navigationNotifier,
-            ambiance,
-            ambianceNotifier,
-            isDark,
+    return SizedBox.expand(
+      child: DecoratedBox(
+        decoration: isDark
+            ? AppThemes.screeningRoomBackground()
+            : AppThemes.readingRoomBackground(),
+        child: Scaffold(
+          backgroundColor: isDark ? AppColors.srBase : AppColors.rrBase,
+          extendBody: true,
+          body: ResponsiveLayout(
+            compact: (context) => _buildCompactLayout(
+              context,
+              navigationState,
+              navigationNotifier,
+              ambiance,
+              ambianceNotifier,
+              isDark,
+            ),
+            medium: (context) => _buildLargeLayout(
+              context,
+              navigationState,
+              navigationNotifier,
+              ambiance,
+              ambianceNotifier,
+              isDark,
+            ),
+            large: (context) => _buildLargeLayout(
+              context,
+              navigationState,
+              navigationNotifier,
+              ambiance,
+              ambianceNotifier,
+              isDark,
+            ),
           ),
         ),
       ),
