@@ -1,0 +1,41 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:the_lounge/main.dart';
+import 'package:the_lounge/providers/ambiance_provider.dart';
+import 'package:the_lounge/providers/repository_provider.dart';
+import 'package:the_lounge/repositories/movie_repository.dart';
+import 'package:the_lounge/models/media_item.dart';
+
+class TestRepository implements MovieRepository {
+  @override
+  Future<List<MediaItem>> getTrendingMovies() async => [];
+  @override
+  Future<List<MediaItem>> getPopularMovies() async => [];
+  @override
+  Future<List<MediaItem>> getTrendingTvShows() async => [];
+  @override
+  Future<MediaItem?> getMediaDetails(String id) async => null;
+  @override
+  Future<List<MediaItem>> searchMedia(String query) async => [];
+}
+
+void main() {
+  testWidgets('App smoke test', (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final mockRepo = TestRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+        child: const MyApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('The Lounge'), findsWidgets);
+  });
+}
