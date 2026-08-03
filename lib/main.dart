@@ -20,7 +20,9 @@ void main() async {
 }
 
 class MyApp extends ConsumerWidget {
-  const MyApp({super.key});
+  final bool? enableAnimation;
+
+  const MyApp({super.key, this.enableAnimation});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +33,7 @@ class MyApp extends ConsumerWidget {
       theme: ambiance == AmbianceType.screeningRoom
           ? AppThemes.screeningRoomTheme
           : AppThemes.readingRoomTheme,
-      home: const ShellScreen(),
+      home: ShellScreen(enableAnimation: enableAnimation),
     );
   }
 }

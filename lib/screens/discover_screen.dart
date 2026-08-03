@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'dart:math' as math;
-import '../providers/repository_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
@@ -12,6 +11,8 @@ import '../widgets/segmented_toggle.dart';
 import '../widgets/pressable_scale.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'detail_screen.dart';
+
+import '../widgets/drag_to_dismiss_sheet.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -25,6 +26,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   bool _loading = true;
   bool _showLegend = true;
   bool _isSwiping = false;
+  String? _activeSwipeDirection;
   final Map<String, GlobalKey<_SwipeCardState>> _cardKeys = {};
 
   @override
@@ -45,6 +47,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     }
   }
 
+  void _onDirectionChanged(String? direction) {
+    if (_activeSwipeDirection != direction) {
+      setState(() {
+        _activeSwipeDirection = direction;
+      });
+    }
+  }
+
   void _onSwipe(MediaItem item, String direction) {
     final notifier = ref.read(mediaProvider.notifier);
     if (direction == 'Left') {
@@ -59,6 +69,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     if (mounted) {
       setState(() {
+        _activeSwipeDirection = null;
         if (_pool.isNotEmpty) {
           final removed = _pool.removeAt(0);
           _cardKeys.remove(removed.id);
@@ -70,6 +81,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   void _triggerSwipe(String direction) {
     if (_pool.isEmpty || _isSwiping) return;
     _isSwiping = true;
+    setState(() {
+      _activeSwipeDirection = direction;
+    });
     final topItem = _pool.first;
     final topKey = _cardKeys[topItem.id];
 
@@ -185,6 +199,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           item: item,
                           isInteractive: isTop,
                           onSwipe: (dir) => _onSwipe(item, dir),
+                          onDirectionChanged: isTop ? _onDirectionChanged : null,
                           isDark: isDark,
                           accColor: accColor,
                         );
@@ -199,23 +214,35 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildActionButton(Icons.close, isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072), isDark ? const Color.fromRGBO(154, 144, 136, 0.5) : const Color.fromRGBO(138, 128, 114, 0.5), () => _triggerSwipe('Left')),
-                  const SizedBox(width: 14),
-                  _buildActionButton(Icons.star_border, isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50), isDark ? const Color.fromRGBO(214, 151, 132, 0.55) : const Color.fromRGBO(167, 106, 80, 0.55), () => _triggerSwipe('Right')),
-                  const SizedBox(width: 14),
-                  PressableScale(
-                    onTap: () => _triggerSwipe('Down'),
-                    child: Container(
-                      width: 54, height: 54,
-                      decoration: BoxDecoration(
-                        color: accColor,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.bookmark_border, color: isDark ? const Color(0xFF1A140C) : Colors.white, size: 24),
-                    ),
+                  _buildActionButton(
+                    icon: Icons.close,
+                    color: isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072),
+                    borderColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.5) : const Color.fromRGBO(138, 128, 114, 0.5),
+                    direction: 'Left',
+                    onTap: () => _triggerSwipe('Left'),
+                    isDark: isDark,
                   ),
                   const SizedBox(width: 14),
-                  _buildActionButton(Icons.check, isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86), isDark ? const Color.fromRGBO(126, 155, 181, 0.55) : const Color.fromRGBO(86, 111, 134, 0.55), () => _triggerSwipe('Up')),
+                  _buildActionButton(
+                    icon: Icons.star_border,
+                    activeIcon: Icons.star,
+                    color: isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50),
+                    borderColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.55) : const Color.fromRGBO(167, 106, 80, 0.55),
+                    direction: 'Right',
+                    onTap: () => _triggerSwipe('Right'),
+                    isDark: isDark,
+                  ),
+                  const SizedBox(width: 14),
+                  _buildWatchlistActionButton(isDark: isDark, accColor: accColor),
+                  const SizedBox(width: 14),
+                  _buildActionButton(
+                    icon: Icons.check,
+                    color: isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86),
+                    borderColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.55) : const Color.fromRGBO(86, 111, 134, 0.55),
+                    direction: 'Up',
+                    onTap: () => _triggerSwipe('Up'),
+                    isDark: isDark,
+                  ),
                 ],
               ),
             )
@@ -226,16 +253,114 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     );
   }
 
-  Widget _buildActionButton(IconData icon, Color color, Color borderColor, VoidCallback onTap) {
-    return PressableScale(
-      onTap: onTap,
-      child: Container(
-        width: 44, height: 44,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: borderColor),
+  Widget _buildActionButton({
+    required IconData icon,
+    IconData? activeIcon,
+    required Color color,
+    required Color borderColor,
+    required String direction,
+    required VoidCallback onTap,
+    required bool isDark,
+  }) {
+    final isActive = _activeSwipeDirection == direction;
+    final effectiveIcon = isActive && activeIcon != null ? activeIcon : icon;
+    final activeBg = color.withValues(alpha: isDark ? 0.35 : 0.25);
+
+    return AnimatedScale(
+      scale: isActive ? 1.12 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      child: PressableScale(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isActive ? activeBg : Colors.transparent,
+            border: Border.all(
+              color: isActive ? color : borderColor,
+              width: isActive ? 2.0 : 1.0,
+            ),
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: color.withValues(alpha: isDark ? 0.5 : 0.4),
+                      blurRadius: 12,
+                      spreadRadius: 2,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Icon(
+            effectiveIcon,
+            color: color,
+            size: isActive ? 21 : 19,
+          ),
         ),
-        child: Icon(icon, color: color, size: 19),
+      ),
+    );
+  }
+
+  Widget _buildWatchlistActionButton({
+    required bool isDark,
+    required Color accColor,
+  }) {
+    final isActive = _activeSwipeDirection == 'Down';
+    final glowColor = isDark ? accColor : const Color(0xFFB0512B);
+
+    return AnimatedScale(
+      scale: isActive ? 1.12 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      child: PressableScale(
+        onTap: () => _triggerSwipe('Down'),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
+          width: 54,
+          height: 54,
+          decoration: isDark
+              ? BoxDecoration(
+                  color: accColor,
+                  shape: BoxShape.circle,
+                  border: isActive
+                      ? Border.all(color: Colors.white, width: 2)
+                      : null,
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: glowColor.withValues(alpha: 0.6),
+                            blurRadius: 16,
+                            spreadRadius: 3,
+                          ),
+                        ]
+                      : null,
+                )
+              : BoxDecoration(
+                  gradient: AppColors.rrPrimaryGradient,
+                  shape: BoxShape.circle,
+                  border: isActive
+                      ? Border.all(color: const Color(0xFFB0512B), width: 2)
+                      : null,
+                  boxShadow: isActive
+                      ? [
+                          BoxShadow(
+                            color: glowColor.withValues(alpha: 0.5),
+                            blurRadius: 16,
+                            spreadRadius: 3,
+                          ),
+                        ]
+                      : null,
+                ),
+          child: Icon(
+            isActive ? Icons.bookmark : Icons.bookmark_border,
+            color: isDark ? const Color(0xFF1A140C) : Colors.white,
+            size: isActive ? 26 : 24,
+          ),
+        ),
       ),
     );
   }
@@ -243,7 +368,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildLegendOverlay(bool isDark, Color accColor) {
     final titleColor = isDark ? const Color(0xFFEFE6D8) : const Color(0xFF2C2016);
     final subColor = isDark ? const Color.fromRGBO(239, 230, 216, 0.55) : const Color.fromRGBO(44, 32, 22, 0.55);
-    final handleColor = isDark ? const Color.fromRGBO(239, 230, 216, 0.25) : const Color.fromRGBO(44, 32, 22, 0.25);
     final borderColor = isDark ? const Color.fromRGBO(201, 168, 106, 0.25) : const Color.fromRGBO(160, 74, 42, 0.25);
     final backdropColor = isDark ? const Color.fromRGBO(6, 4, 3, 0.72) : const Color.fromRGBO(44, 32, 22, 0.45);
     final sheetBgColors = isDark
@@ -277,122 +401,122 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 duration: const Duration(milliseconds: 250),
                 curve: Curves.easeOutCubic,
                 opacity: _showLegend ? 1.0 : 0.0,
-                child: Container(
-                  padding: const EdgeInsets.fromLTRB(24, 26, 24, 34),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: sheetBgColors,
+                child: DragToDismissSheet(
+                  isDark: isDark,
+                  onDismiss: () => setState(() => _showLegend = false),
+                  child: Container(
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      10,
+                      24,
+                      34.0 + MediaQuery.of(context).padding.bottom,
                     ),
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
-                    border: Border(top: BorderSide(color: borderColor)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: innerShadowColor,
-                        blurRadius: 0,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 1),
-                        blurStyle: BlurStyle.inner,
-                      )
-                    ],
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 38,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: handleColor,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        margin: const EdgeInsets.only(bottom: 18),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: sheetBgColors,
                       ),
-                      Text(
-                        'How the deck works',
-                        style: GoogleFonts.bodoniModa(
-                          fontSize: 25,
-                          fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
-                          color: titleColor,
-                        ),
-                      ),
-                      const SizedBox(height: 5),
-                      Text(
-                        'Swipe a card, or use the buttons. Shown once.',
-                        style: AppThemes.safeGeist(
-                          fontSize: 12.5,
-                          color: subColor,
-                        ),
-                      ),
-                      const SizedBox(height: 20),
-                      _buildLegendItem(
-                        isDark: isDark,
-                        icon: Icons.arrow_back,
-                        title: 'Swipe left — Skip for now',
-                        subtitle: 'Session only, won\'t reappear tonight — not permanent',
-                        color: isDark ? const Color(0xFFB3A99F) : const Color(0xFF8A8072),
-                        bgColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.16) : const Color.fromRGBO(138, 128, 114, 0.16),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildLegendItem(
-                        isDark: isDark,
-                        icon: Icons.arrow_forward,
-                        title: 'Swipe right — Save for later',
-                        subtitle: 'A "maybe" bookmark → lands in your Maybe pile',
-                        color: isDark ? const Color(0xFFE0A894) : const Color(0xFFA76A50),
-                        bgColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.16) : const Color.fromRGBO(167, 106, 80, 0.16),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildLegendItem(
-                        isDark: isDark,
-                        icon: Icons.arrow_downward,
-                        title: 'Swipe down — Add to watchlist',
-                        subtitle: 'A committed pick you intend to watch',
-                        color: isDark ? const Color(0xFFC9A86A) : const Color(0xFFB0512B),
-                        bgColor: isDark ? const Color.fromRGBO(201, 168, 106, 0.16) : const Color.fromRGBO(176, 81, 43, 0.16),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildLegendItem(
-                        isDark: isDark,
-                        icon: Icons.arrow_upward,
-                        title: 'Swipe up — Already watched',
-                        subtitle: 'Logs to Watched history',
-                        color: isDark ? const Color(0xFF8FAEC4) : const Color(0xFF566F86),
-                        bgColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.16) : const Color.fromRGBO(86, 111, 134, 0.16),
-                      ),
-                      const SizedBox(height: 12),
-                      _buildLegendItem(
-                        isDark: isDark,
-                        icon: Icons.touch_app,
-                        title: 'Tap — Open full details',
-                        subtitle: 'The complete Movie / TV detail view',
-                        color: isDark ? const Color(0xFFEFE6D8) : const Color(0xFF2C2016),
-                        bgColor: isDark ? const Color.fromRGBO(239, 230, 216, 0.08) : const Color.fromRGBO(44, 32, 22, 0.08),
-                      ),
-                      const SizedBox(height: 22),
-                      PressableScale(
-                        onTap: () => setState(() => _showLegend = false),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: accColor,
-                            borderRadius: BorderRadius.circular(12),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+                      border: Border(top: BorderSide(color: borderColor)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: innerShadowColor,
+                          blurRadius: 0,
+                          spreadRadius: 0,
+                          offset: const Offset(0, 1),
+                          blurStyle: BlurStyle.inner,
+                        )
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'How the deck works',
+                          style: GoogleFonts.bodoniModa(
+                            fontSize: 25,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FontStyle.italic,
+                            color: titleColor,
                           ),
-                          alignment: Alignment.center,
-                          child: Text(
-                            'Got it — start swiping',
-                            style: AppThemes.safeGeist(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w600,
-                              color: btnTextColor,
+                        ),
+                        const SizedBox(height: 5),
+                        Text(
+                          'Swipe a card, or use the buttons. Shown once.',
+                          style: AppThemes.safeGeist(
+                            fontSize: 12.5,
+                            color: subColor,
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        _buildLegendItem(
+                          isDark: isDark,
+                          icon: Icons.arrow_back,
+                          title: 'Swipe left — Skip for now',
+                          subtitle: 'Session only, won\'t reappear tonight — not permanent',
+                          color: isDark ? const Color(0xFFB3A99F) : const Color(0xFF8A8072),
+                          bgColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.16) : const Color.fromRGBO(138, 128, 114, 0.16),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLegendItem(
+                          isDark: isDark,
+                          icon: Icons.arrow_forward,
+                          title: 'Swipe right — Save for later',
+                          subtitle: 'A "maybe" bookmark → lands in your Maybe pile',
+                          color: isDark ? const Color(0xFFE0A894) : const Color(0xFFA76A50),
+                          bgColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.16) : const Color.fromRGBO(167, 106, 80, 0.16),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLegendItem(
+                          isDark: isDark,
+                          icon: Icons.arrow_downward,
+                          title: 'Swipe down — Add to watchlist',
+                          subtitle: 'A committed pick you intend to watch',
+                          color: isDark ? const Color(0xFFC9A86A) : const Color(0xFFB0512B),
+                          bgColor: isDark ? const Color.fromRGBO(201, 168, 106, 0.16) : const Color.fromRGBO(176, 81, 43, 0.16),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLegendItem(
+                          isDark: isDark,
+                          icon: Icons.arrow_upward,
+                          title: 'Swipe up — Already watched',
+                          subtitle: 'Logs to Watched history',
+                          color: isDark ? const Color(0xFF8FAEC4) : const Color(0xFF566F86),
+                          bgColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.16) : const Color.fromRGBO(86, 111, 134, 0.16),
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLegendItem(
+                          isDark: isDark,
+                          icon: Icons.touch_app,
+                          title: 'Tap — Open full details',
+                          subtitle: 'The complete Movie / TV detail view',
+                          color: isDark ? const Color(0xFFEFE6D8) : const Color(0xFF2C2016),
+                          bgColor: isDark ? const Color.fromRGBO(239, 230, 216, 0.08) : const Color.fromRGBO(44, 32, 22, 0.08),
+                        ),
+                        const SizedBox(height: 22),
+                        PressableScale(
+                          onTap: () => setState(() => _showLegend = false),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: AppColors.primaryButtonDecoration(
+                              isDark: isDark,
+                              borderRadius: 12,
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Got it — start swiping',
+                              style: AppThemes.safeGeist(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w600,
+                                color: btnTextColor,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -457,6 +581,7 @@ class SwipeCard extends StatefulWidget {
   final MediaItem item;
   final bool isInteractive;
   final Function(String) onSwipe;
+  final ValueChanged<String?>? onDirectionChanged;
   final bool isDark;
   final Color accColor;
 
@@ -465,6 +590,7 @@ class SwipeCard extends StatefulWidget {
     required this.item,
     required this.isInteractive,
     required this.onSwipe,
+    this.onDirectionChanged,
     required this.isDark,
     required this.accColor,
   });
@@ -476,28 +602,118 @@ class SwipeCard extends StatefulWidget {
 class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMixin {
   Offset _dragOffset = Offset.zero;
   double _angle = 0;
-  late AnimationController _flyOffController;
-  Animation<Offset>? _flyOffAnimation;
+  late AnimationController _motionController;
+  OffsetSpringSimulation? _currentSimulation;
+  VoidCallback? _onFlyOffComplete;
   bool _isFlyingOff = false;
+  bool _hasTriggeredComplete = false;
+  String? _flyOffDirection;
+  String? _lastNotifiedDirection;
 
   @override
   void initState() {
     super.initState();
-    _flyOffController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 200),
-    );
+    _motionController = AnimationController.unbounded(vsync: this);
+    _motionController.addListener(() {
+      if (_currentSimulation != null && mounted) {
+        final elapsed = _motionController.lastElapsedDuration != null
+            ? _motionController.lastElapsedDuration!.inMicroseconds / 1000000.0
+            : 0.0;
+        final newOffset = _currentSimulation!.dxOffset(elapsed);
+        setState(() {
+          _dragOffset = newOffset;
+          _angle = _dragOffset.dx / 300 * (math.pi / 8);
+        });
+        _updateActiveDirection();
+        _checkEarlyCompletion();
+      }
+    });
+    _motionController.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        _triggerFlyOffComplete();
+      }
+    });
+  }
+
+  void _updateActiveDirection() {
+    if (!widget.isInteractive) return;
+
+    String? currentDir;
+    if (_isFlyingOff) {
+      currentDir = _flyOffDirection;
+    } else {
+      final dx = _dragOffset.dx;
+      final dy = _dragOffset.dy;
+      const threshold = 30.0;
+
+      if (dx.abs() > threshold || dy.abs() > threshold) {
+        if (dx.abs() > dy.abs()) {
+          currentDir = dx > 0 ? 'Right' : 'Left';
+        } else {
+          currentDir = dy > 0 ? 'Down' : 'Up';
+        }
+      }
+    }
+
+    if (_lastNotifiedDirection != currentDir) {
+      _lastNotifiedDirection = currentDir;
+      widget.onDirectionChanged?.call(currentDir);
+    }
+  }
+
+  void _checkEarlyCompletion() {
+    if (!_isFlyingOff || _hasTriggeredComplete || !mounted) return;
+    final size = MediaQuery.maybeOf(context)?.size;
+    if (size != null) {
+      if (_dragOffset.dx.abs() > size.width * 0.7 || _dragOffset.dy.abs() > size.height * 0.7) {
+        _triggerFlyOffComplete();
+      }
+    }
+  }
+
+  void _triggerFlyOffComplete() {
+    if (_isFlyingOff && !_hasTriggeredComplete) {
+      _hasTriggeredComplete = true;
+      _onFlyOffComplete?.call();
+    }
   }
 
   @override
   void dispose() {
-    _flyOffController.dispose();
+    if (_lastNotifiedDirection != null) {
+      widget.onDirectionChanged?.call(null);
+    }
+    _motionController.dispose();
     super.dispose();
   }
 
-  void flyOff(String direction, VoidCallback onComplete) {
+  void _settleSpring({Offset velocity = Offset.zero}) {
+    _isFlyingOff = false;
+    _flyOffDirection = null;
+    _hasTriggeredComplete = false;
+    _onFlyOffComplete = null;
+
+    final sim = OffsetSpringSimulation(
+      startX: _dragOffset.dx,
+      endX: 0.0,
+      velocityX: velocity.dx,
+      startY: _dragOffset.dy,
+      endY: 0.0,
+      velocityY: velocity.dy,
+    );
+
+    _motionController.stop();
+    _currentSimulation = sim;
+    _motionController.animateWith(sim);
+    _updateActiveDirection();
+  }
+
+  void flyOff(String direction, VoidCallback onComplete, {Offset velocity = Offset.zero}) {
     if (_isFlyingOff) return;
     _isFlyingOff = true;
+    _flyOffDirection = direction;
+    _hasTriggeredComplete = false;
+    _onFlyOffComplete = onComplete;
 
     final size = MediaQuery.of(context).size;
     Offset targetOffset;
@@ -518,28 +734,27 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
         targetOffset = Offset(-size.width * 1.5, _dragOffset.dy);
     }
 
-    _flyOffAnimation = Tween<Offset>(
-      begin: _dragOffset,
-      end: targetOffset,
-    ).animate(CurvedAnimation(
-      parent: _flyOffController,
-      curve: Curves.easeOutCubic,
-    ));
+    final effectiveVelocity = (velocity.dx.abs() < 10 && velocity.dy.abs() < 10)
+        ? Offset(
+            targetOffset.dx.clamp(-1200.0, 1200.0),
+            targetOffset.dy.clamp(-1200.0, 1200.0),
+          )
+        : velocity;
 
-    _flyOffController.addListener(() {
-      if (mounted) {
-        setState(() {
-          if (_flyOffAnimation != null) {
-            _dragOffset = _flyOffAnimation!.value;
-            _angle = _dragOffset.dx / 300 * (math.pi / 8);
-          }
-        });
-      }
-    });
+    final sim = OffsetSpringSimulation(
+      startX: _dragOffset.dx,
+      endX: targetOffset.dx,
+      velocityX: effectiveVelocity.dx,
+      startY: _dragOffset.dy,
+      endY: targetOffset.dy,
+      velocityY: effectiveVelocity.dy,
+    );
 
-    _flyOffController.forward(from: 0.0).then((_) {
-      onComplete();
-    });
+    _currentSimulation = sim;
+    _motionController.stop();
+    _motionController.animateWith(sim);
+    _updateActiveDirection();
+    _checkEarlyCompletion();
   }
 
   @override
@@ -642,7 +857,7 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
     if (!widget.isInteractive) return card;
 
     return OpenContainer(
-      transitionDuration: const Duration(milliseconds: 300),
+      transitionDuration: AppPhysics.houseSpringDuration,
       closedElevation: 0,
       openElevation: 0,
       closedColor: Colors.transparent,
@@ -658,6 +873,9 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
             onTap: openContainer,
             onPanUpdate: (details) {
               if (_isFlyingOff) return;
+              if (_motionController.isAnimating) {
+                _motionController.stop();
+              }
               setState(() {
                 _dragOffset += details.delta;
                 _angle = _dragOffset.dx / 300 * (math.pi / 8);
@@ -667,18 +885,15 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
               if (_isFlyingOff) return;
               final velocity = details.velocity.pixelsPerSecond;
               if (_dragOffset.dx > 100 || velocity.dx > 500) {
-                flyOff('Right', () => widget.onSwipe('Right'));
+                flyOff('Right', () => widget.onSwipe('Right'), velocity: velocity);
               } else if (_dragOffset.dx < -100 || velocity.dx < -500) {
-                flyOff('Left', () => widget.onSwipe('Left'));
+                flyOff('Left', () => widget.onSwipe('Left'), velocity: velocity);
               } else if (_dragOffset.dy > 100 || velocity.dy > 500) {
-                flyOff('Down', () => widget.onSwipe('Down'));
+                flyOff('Down', () => widget.onSwipe('Down'), velocity: velocity);
               } else if (_dragOffset.dy < -100 || velocity.dy < -500) {
-                flyOff('Up', () => widget.onSwipe('Up'));
+                flyOff('Up', () => widget.onSwipe('Up'), velocity: velocity);
               } else {
-                setState(() {
-                  _dragOffset = Offset.zero;
-                  _angle = 0;
-                });
+                _settleSpring(velocity: velocity);
               }
             },
             child: Transform.translate(

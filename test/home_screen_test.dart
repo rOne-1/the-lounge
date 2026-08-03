@@ -73,7 +73,7 @@ void main() {
         ],
         child: const MaterialApp(
           home: Scaffold(
-            body: HomeScreen(),
+            body: HomeScreen(enableAnimation: false),
           ),
         ),
       ),
@@ -108,4 +108,37 @@ void main() {
     expect(find.byType(DetailScreen), findsOneWidget);
     expect(find.text('Continue Movie 0'), findsOneWidget);
   });
+
+  testWidgets('HomeScreen contains AnimatedSize, AnimatedCrossFade and AnimatedSwitcher transitions for section 7', (WidgetTester tester) async {
+    final trending = createMockItems(6, 'Trending', MediaType.movie);
+    final popular = createMockItems(4, 'Continue', MediaType.movie);
+    final mockRepo = MockTestRepository(
+      trendingMovies: trending,
+      popularMovies: popular,
+      trendingTvShows: [],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+        child: const MaterialApp(
+          home: Scaffold(
+            body: HomeScreen(enableAnimation: false),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Verify AnimatedSize & AnimatedCrossFade exist for Next Episode card
+    expect(find.byType(AnimatedSize), findsAtLeastNWidgets(1));
+    expect(find.byType(AnimatedCrossFade), findsAtLeastNWidgets(1));
+
+    // Verify AnimatedSwitcher exists for Continue Watching & Trending sections
+    expect(find.byType(AnimatedSwitcher), findsAtLeastNWidgets(2));
+  });
 }
+

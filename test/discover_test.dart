@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
-import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/repositories/movie_repository.dart';
 
@@ -166,4 +165,102 @@ void main() {
     // Verify we navigated to DetailScreen (e.g. Back button or detail layout appears)
     expect(find.byIcon(Icons.arrow_back), findsOneWidget);
   });
+
+  testWidgets('Swiping drag gesture triggers early completion when exceeding 70% threshold',
+      (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    final mockRepo = TestRepository();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+      ],
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: DiscoverScreen(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Dismiss Legend Overlay
+    await tester.tap(find.text('Got it — start swiping'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    // Drag Movie 1 to the right past 70% of screen width (e.g. 500px)
+    await tester.drag(find.text('Movie 1'), const Offset(600, 0));
+    await tester.pump(const Duration(milliseconds: 50));
+
+    // Movie 1 should be removed and Movie 2 should now be visible
+    expect(find.text('Movie 2'), findsOneWidget);
+  });
+
+  testWidgets('Action button visual highlight triggers on swipe gesture and direct button tap',
+      (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    final mockRepo = TestRepository();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+      ],
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: DiscoverScreen(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Dismiss Legend Overlay
+    await tester.tap(find.text('Got it — start swiping'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    // Tap Right action button (Save/Maybe)
+    await tester.tap(find.byIcon(Icons.star_border));
+    await tester.pump();
+
+    // During tap/flyoff animation, Right action button highlights with scale 1.12
+    final tapScales = tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
+    expect(tapScales.any((s) => (s.scale - 1.12).abs() < 0.01), isTrue);
+
+    await tester.pumpAndSettle();
+
+    // Movie 2 is now displayed and all action button scales revert to 1.0
+    expect(find.text('Movie 2'), findsOneWidget);
+    final settledScales = tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
+    expect(settledScales.every((s) => (s.scale - 1.0).abs() < 0.01), isTrue);
+
+    // Tap Down action button (Watchlist)
+    await tester.tap(find.byIcon(Icons.bookmark_border));
+    await tester.pump();
+
+    // During flyoff animation, Watchlist button highlights with scale 1.12
+    final watchlistScales = tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
+    expect(watchlistScales.any((s) => (s.scale - 1.12).abs() < 0.01), isTrue);
+
+    await tester.pumpAndSettle();
+
+    // Movie 3 is now displayed
+    expect(find.text('Movie 3'), findsOneWidget);
+  });
 }
+
+
+

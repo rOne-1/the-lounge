@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../models/media_item.dart';
 import 'fallback_widgets.dart';
+import 'pressable_scale.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/media_provider.dart';
 
@@ -86,9 +87,12 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.of(context).pop(),
+                    PressableScale(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: IconButton(
+                        icon: const Icon(Icons.arrow_back, color: Colors.white),
+                        onPressed: () => Navigator.of(context).pop(),
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(

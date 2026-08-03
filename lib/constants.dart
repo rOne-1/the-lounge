@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+export 'constants/app_physics.dart';
+
 enum AmbianceType {
   screeningRoom,
   readingRoom,
@@ -22,20 +24,49 @@ class AppColors {
   static const Color srStatusSave = Color(0xFFD69784);
   static const Color srStatusWatched = Color(0xFF7E9BB5);
 
+  static const Color srGlow1 = Color(0xFFCBA86A);
+  static const Color srGlow2 = Color(0xFFD69784);
+
   // Reading Room CSS Variables
   static const Color rrBase = Color(0xFFEFE6D5);
   static const Color rrCard = Color(0xFFF6EFE1);
   static const Color rrCard2 = Color(0xFFF2E9D8);
   static const Color rrLineRgba = Color.fromRGBO(160, 74, 42, 0.16);
   static const Color rrInk = Color(0xFF2C2016);
-  static const Color rrSub = Color.fromRGBO(44, 32, 22, 0.55);
+  static const Color rrSub = Color(0xFF5C4C3D);
   static const Color rrAcc = Color(0xFFB0512B);
+  static const Color rrAccGradientEnd = Color(0xFF8F3E1E);
   static const Color rrPh = Color.fromRGBO(44, 32, 22, 0.07);
   static const Color rrPill = Color.fromRGBO(44, 32, 22, 0.06);
+
+  static const LinearGradient rrPrimaryGradient = LinearGradient(
+    colors: [rrAcc, rrAccGradientEnd],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static BoxDecoration primaryButtonDecoration({
+    required bool isDark,
+    double borderRadius = 999,
+  }) {
+    if (isDark) {
+      return BoxDecoration(
+        color: srAcc,
+        borderRadius: BorderRadius.circular(borderRadius),
+      );
+    }
+    return BoxDecoration(
+      gradient: rrPrimaryGradient,
+      borderRadius: BorderRadius.circular(borderRadius),
+    );
+  }
 
   static const Color rrStatusWatchlist = Color(0xFFB0512B);
   static const Color rrStatusSave = Color(0xFFA76A50);
   static const Color rrStatusWatched = Color(0xFF566F86);
+
+  static const Color rrGlow1 = Color(0xFFA76A50);
+  static const Color rrGlow2 = Color(0xFFB0512B);
 }
 
 class AppThemes {

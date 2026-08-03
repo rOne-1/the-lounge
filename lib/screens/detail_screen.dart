@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../providers/repository_provider.dart';
 import '../providers/media_provider.dart';
 import '../models/media_item.dart';
 import '../widgets/trailer_player.dart';
@@ -17,7 +16,7 @@ class DetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final repo = ref.watch(movieRepositoryProvider);
+    final detailAsync = ref.watch(mediaDetailsProvider(id));
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
@@ -30,6 +29,10 @@ class DetailScreen extends ConsumerWidget {
         child: Scaffold(
           backgroundColor: isDark ? AppColors.srBase : AppColors.rrBase,
           appBar: AppBar(
+            leading: PressableScale(
+              onTap: () => Navigator.maybePop(context),
+              child: Icon(Icons.arrow_back, color: inkColor),
+            ),
             title: Text(
               'Details',
               style: GoogleFonts.bodoniModa(
@@ -41,19 +44,11 @@ class DetailScreen extends ConsumerWidget {
             elevation: 0,
             iconTheme: IconThemeData(color: inkColor),
           ),
-          body: FutureBuilder<MediaItem?>(
-            future: repo.getMediaDetails(id),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError ||
-                  !snapshot.hasData ||
-                  snapshot.data == null) {
+          body: detailAsync.when(
+            data: (item) {
+              if (item == null) {
                 return const Center(child: Text('Failed to load details.'));
               }
-
-              final item = snapshot.data!;
               final isLarge = MediaQuery.of(context).size.width > 800;
 
               if (isLarge) {
@@ -61,6 +56,9 @@ class DetailScreen extends ConsumerWidget {
               }
               return _buildCompactLayout(context, ref, item, isDark);
             },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (_, __) =>
+                const Center(child: Text('Failed to load details.')),
           ),
         ),
       ),
@@ -80,43 +78,70 @@ class DetailScreen extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHero(context, item, isDark),
+          _buildHero(context, item, isDark)
+              .animate()
+              .fade(duration: 250.ms),
           Padding(
             padding: const EdgeInsets.all(18.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  style: GoogleFonts.bodoniModa(
-                    fontSize: 30,
-                    fontWeight: FontWeight.w600,
-                    fontStyle: FontStyle.italic,
-                    color: inkColor,
-                    height: 1.05,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _buildMetaRow(item, isDark),
-                if (item.genres.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  _buildGenreChips(item, isDark),
-                ],
-                const SizedBox(height: 18),
-                _buildActionButtons(ref, item, isDark),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: GoogleFonts.bodoniModa(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w600,
+                        fontStyle: FontStyle.italic,
+                        color: inkColor,
+                        height: 1.05,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _buildMetaRow(item, isDark),
+                    if (item.genres.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      _buildGenreChips(item, isDark),
+                    ],
+                    const SizedBox(height: 18),
+                    _buildActionButtons(ref, item, isDark),
+                    const SizedBox(height: 22),
+                    ExpandableOverviewText(
+                      text: item.overview,
+                      style: AppThemes.safeGeist(
+                        fontSize: 14,
+                        height: 1.5,
+                        color: subColor,
+                      ),
+                      isDark: isDark,
+                    ),
+                  ],
+                )
+                    .animate(delay: 100.ms)
+                    .fade(duration: 250.ms)
+                    .slideY(
+                      begin: 0.08,
+                      end: 0,
+                      curve: AppPhysics.houseSpringCurve,
+                    ),
                 const SizedBox(height: 22),
-                Text(
-                  item.overview,
-                  style: AppThemes.safeGeist(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: subColor,
-                  ),
-                ),
-                const SizedBox(height: 22),
-                _buildCastStrip(item, isDark),
-                const SizedBox(height: 22),
-                _buildWatchProvidersSection(context, ref, item, isDark),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCastStrip(item, isDark),
+                    const SizedBox(height: 22),
+                    _buildWatchProvidersSection(context, ref, item, isDark),
+                  ],
+                )
+                    .animate(delay: 220.ms)
+                    .fade(duration: 250.ms)
+                    .slideY(
+                      begin: 0.08,
+                      end: 0,
+                      curve: AppPhysics.houseSpringCurve,
+                    ),
                 const SizedBox(height: 24),
               ],
             ),
@@ -141,7 +166,9 @@ class DetailScreen extends ConsumerWidget {
         Expanded(
           flex: 1,
           child: SingleChildScrollView(
-            child: _buildHero(context, item, isDark),
+            child: _buildHero(context, item, isDark)
+                .animate()
+                .fade(duration: 250.ms),
           ),
         ),
         Expanded(
@@ -151,37 +178,62 @@ class DetailScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  style: GoogleFonts.bodoniModa(
-                    fontSize: 34,
-                    fontWeight: FontWeight.w600,
-                    fontStyle: FontStyle.italic,
-                    color: inkColor,
-                    height: 1.05,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                _buildMetaRow(item, isDark),
-                if (item.genres.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  _buildGenreChips(item, isDark),
-                ],
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: GoogleFonts.bodoniModa(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w600,
+                        fontStyle: FontStyle.italic,
+                        color: inkColor,
+                        height: 1.05,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    _buildMetaRow(item, isDark),
+                    if (item.genres.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _buildGenreChips(item, isDark),
+                    ],
+                    const SizedBox(height: 24),
+                    _buildActionButtons(ref, item, isDark),
+                    const SizedBox(height: 24),
+                    ExpandableOverviewText(
+                      text: item.overview,
+                      style: AppThemes.safeGeist(
+                        fontSize: 15,
+                        height: 1.5,
+                        color: subColor,
+                      ),
+                      isDark: isDark,
+                    ),
+                  ],
+                )
+                    .animate(delay: 100.ms)
+                    .fade(duration: 250.ms)
+                    .slideY(
+                      begin: 0.08,
+                      end: 0,
+                      curve: AppPhysics.houseSpringCurve,
+                    ),
                 const SizedBox(height: 24),
-                _buildActionButtons(ref, item, isDark),
-                const SizedBox(height: 24),
-                Text(
-                  item.overview,
-                  style: AppThemes.safeGeist(
-                    fontSize: 15,
-                    height: 1.5,
-                    color: subColor,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                _buildCastStrip(item, isDark),
-                const SizedBox(height: 24),
-                _buildWatchProvidersSection(context, ref, item, isDark),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildCastStrip(item, isDark),
+                    const SizedBox(height: 24),
+                    _buildWatchProvidersSection(context, ref, item, isDark),
+                  ],
+                )
+                    .animate(delay: 220.ms)
+                    .fade(duration: 250.ms)
+                    .slideY(
+                      begin: 0.08,
+                      end: 0,
+                      curve: AppPhysics.houseSpringCurve,
+                    ),
                 const SizedBox(height: 24),
               ],
             ),
@@ -467,9 +519,6 @@ class DetailScreen extends ConsumerWidget {
     VoidCallback onTap,
     bool isDark,
   ) {
-    final bgColor = isSelected
-        ? accentColor
-        : (isDark ? const Color(0xFF100C0A) : const Color(0xFFE7DDC9));
     final textColor = isSelected
         ? (isDark ? const Color(0xFF1A140C) : Colors.white)
         : (isDark ? AppColors.srSub : AppColors.rrSub);
@@ -477,40 +526,84 @@ class DetailScreen extends ConsumerWidget {
         ? accentColor
         : (isDark ? accentColor.withAlpha(50) : accentColor.withAlpha(50));
 
-    return PressableScale(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutCubic,
-        height: 44,
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: borderColor),
-          boxShadow: isSelected
-              ? [
+    final IconData iconData;
+    if (label == 'Watchlist') {
+      iconData = isSelected ? Icons.bookmark : Icons.bookmark_outline;
+    } else if (label == 'Save') {
+      iconData = isSelected ? Icons.star : Icons.star_border;
+    } else {
+      iconData = isSelected ? Icons.check_circle : Icons.check_circle_outline;
+    }
+
+    final decoration = isSelected
+        ? (isDark
+            ? BoxDecoration(
+                color: accentColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: borderColor),
+                boxShadow: const [
                   BoxShadow(
-                    color: isDark
-                        ? const Color.fromRGBO(0, 0, 0, 0.15)
-                        : const Color.fromRGBO(0, 0, 0, 0.1),
+                    color: Color.fromRGBO(0, 0, 0, 0.15),
                     blurRadius: 0,
                     spreadRadius: 0,
-                    offset: const Offset(0, 1),
+                    offset: Offset(0, 1),
                     blurStyle: BlurStyle.inner,
-                  )
-                ]
-              : [],
-        ),
-        alignment: Alignment.center,
-        child: AnimatedDefaultTextStyle(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutCubic,
-          style: AppThemes.safeGeist(
-            fontSize: 13,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-            color: textColor,
+                  ),
+                ],
+              )
+            : AppColors.primaryButtonDecoration(
+                isDark: false,
+                borderRadius: 12,
+              ))
+        : BoxDecoration(
+            color: isDark ? const Color(0xFF100C0A) : const Color(0xFFE7DDC9),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor),
+          );
+
+    return StatusPulseRing(
+      isSelected: isSelected,
+      accentColor: accentColor,
+      child: PressableScale(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
+          height: 44,
+          decoration: decoration,
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedSwitcher(
+                duration: AppPhysics.houseSpringDuration,
+                switchInCurve: AppPhysics.houseSpringCurve,
+                switchOutCurve: Curves.easeOut,
+                transitionBuilder: (child, animation) => ScaleTransition(
+                  scale: animation,
+                  child: child,
+                ),
+                child: Icon(
+                  iconData,
+                  key: ValueKey('$label-$isSelected'),
+                  size: 15,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(width: 5),
+              AnimatedDefaultTextStyle(
+                duration: AppPhysics.houseSpringDuration,
+                curve: AppPhysics.houseSpringCurve,
+                style: AppThemes.safeGeist(
+                  fontSize: 12.5,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: textColor,
+                ),
+                child: Text(label),
+              ),
+            ],
           ),
-          child: Text(label),
         ),
       ),
     );
@@ -718,5 +811,184 @@ class DetailScreen extends ConsumerWidget {
       'Dec'
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+}
+
+class StatusPulseRing extends StatefulWidget {
+  final Widget child;
+  final bool isSelected;
+  final Color accentColor;
+
+  const StatusPulseRing({
+    super.key,
+    required this.child,
+    required this.isSelected,
+    required this.accentColor,
+  });
+
+  @override
+  State<StatusPulseRing> createState() => _StatusPulseRingState();
+}
+
+class _StatusPulseRingState extends State<StatusPulseRing> with SingleTickerProviderStateMixin {
+  late AnimationController _pulseController;
+  late Animation<double> _pulseScale;
+  late Animation<double> _pulseOpacity;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: AppPhysics.houseSpringDuration,
+    );
+    _pulseScale = Tween<double>(begin: 1.0, end: 1.35).animate(
+      CurvedAnimation(parent: _pulseController, curve: AppPhysics.houseSpringCurve),
+    );
+    _pulseOpacity = Tween<double>(begin: 0.7, end: 0.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: AppPhysics.houseSpringCurve),
+    );
+  }
+
+  @override
+  void didUpdateWidget(StatusPulseRing oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isSelected && !oldWidget.isSelected) {
+      _pulseController.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _pulseController,
+      builder: (context, child) {
+        return Stack(
+          alignment: Alignment.center,
+          clipBehavior: Clip.none,
+          children: [
+            if (_pulseController.isAnimating)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Transform.scale(
+                    scale: _pulseScale.value,
+                    child: Opacity(
+                      opacity: _pulseOpacity.value.clamp(0.0, 1.0),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: widget.accentColor, width: 2),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            widget.child,
+          ],
+        );
+      },
+    );
+  }
+}
+
+class ExpandableOverviewText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  final bool isDark;
+  final int maxLinesCollapsed;
+
+  const ExpandableOverviewText({
+    super.key,
+    required this.text,
+    required this.style,
+    required this.isDark,
+    this.maxLinesCollapsed = 3,
+  });
+
+  @override
+  State<ExpandableOverviewText> createState() => _ExpandableOverviewTextState();
+}
+
+class _ExpandableOverviewTextState extends State<ExpandableOverviewText> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final accentColor = widget.isDark ? AppColors.srAcc : AppColors.rrAcc;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final span = TextSpan(text: widget.text, style: widget.style);
+        final tp = TextPainter(
+          text: span,
+          maxLines: widget.maxLinesCollapsed,
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: constraints.maxWidth);
+
+        final isOverflowing = tp.didExceedMaxLines;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: AppPhysics.houseSpringCurve,
+              alignment: Alignment.topCenter,
+              child: Text(
+                widget.text,
+                style: widget.style,
+                maxLines: _isExpanded ? null : widget.maxLinesCollapsed,
+                overflow: _isExpanded ? TextOverflow.clip : TextOverflow.ellipsis,
+              ),
+            ),
+            if (isOverflowing) ...[
+              const SizedBox(height: 6),
+              PressableScale(
+                onTap: () {
+                  setState(() {
+                    _isExpanded = !_isExpanded;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _isExpanded ? 'Show less' : 'Show more',
+                        style: AppThemes.safeGeist(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w600,
+                          color: accentColor,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      AnimatedRotation(
+                        turns: _isExpanded ? 0.5 : 0.0,
+                        duration: const Duration(milliseconds: 300),
+                        curve: AppPhysics.houseSpringCurve,
+                        child: Icon(
+                          Icons.keyboard_arrow_down,
+                          size: 16,
+                          color: accentColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
   }
 }

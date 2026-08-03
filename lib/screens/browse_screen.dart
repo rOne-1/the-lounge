@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import '../repositories/movie_repository.dart';
 import '../providers/repository_provider.dart';
-import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/drag_to_dismiss_sheet.dart';
 
 class BrowseScreen extends ConsumerStatefulWidget {
   const BrowseScreen({super.key});
@@ -29,9 +28,157 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     'Comedy'
   ];
 
+  void _showFilterBottomSheet(BuildContext context, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) {
+        final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
+        final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+        final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+
+        return DragToDismissSheet(
+          isDark: isDark,
+          onDismiss: () => Navigator.pop(context),
+          child: Container(
+            padding: EdgeInsets.fromLTRB(
+              20,
+              8,
+              20,
+              32.0 + MediaQuery.of(context).padding.bottom,
+            ),
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                ),
+              ),
+            ),
+            child: StatefulBuilder(
+              builder: (context, setSheetState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Filter catalog',
+                          style: GoogleFonts.bodoniModa(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FontStyle.italic,
+                            color: inkColor,
+                          ),
+                        ),
+                        PressableScale(
+                          onTap: () => Navigator.pop(context),
+                          child: Icon(Icons.close, color: subColor, size: 20),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Genre',
+                      style: AppThemes.safeGeist(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: inkColor,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _genres.map((genre) {
+                        final isSelected = _selectedGenre == genre;
+                        return PressableScale(
+                          onTap: () {
+                            setState(() => _selectedGenre = genre);
+                            setSheetState(() {});
+                          },
+                          child: AnimatedScale(
+                            scale: isSelected ? 1.05 : 1.0,
+                            duration: AppPhysics.houseSpringDuration,
+                            curve: AppPhysics.houseSpringCurve,
+                            child: AnimatedContainer(
+                              duration: AppPhysics.houseSpringDuration,
+                              curve: AppPhysics.houseSpringCurve,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                              decoration: isSelected
+                                  ? AppColors.primaryButtonDecoration(
+                                      isDark: isDark, borderRadius: 999)
+                                  : BoxDecoration(
+                                      color: isDark
+                                          ? AppColors.srPill
+                                          : AppColors.rrPill,
+                                      borderRadius: BorderRadius.circular(999),
+                                      border: Border.all(
+                                        color: isDark
+                                            ? AppColors.srLineRgba
+                                            : AppColors.rrLineRgba,
+                                      ),
+                                    ),
+                              child: Text(
+                                genre,
+                                style: GoogleFonts.getFont(
+                                  'Geist',
+                                  fontSize: 13,
+                                  fontWeight: isSelected
+                                      ? FontWeight.w600
+                                      : FontWeight.w400,
+                                  color: isSelected
+                                      ? (isDark
+                                          ? const Color(0xFF1A140C)
+                                          : Colors.white)
+                                      : inkColor,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 24),
+                    PressableScale(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: AppColors.primaryButtonDecoration(
+                          isDark: isDark,
+                          borderRadius: 12,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Apply Filters',
+                          style: AppThemes.safeGeist(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? const Color(0xFF1A140C)
+                                : Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final repo = ref.watch(movieRepositoryProvider);
     final isLarge = MediaQuery.of(context).size.width > 800;
     
     final theme = Theme.of(context);
@@ -50,26 +197,35 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(color: inkColor),
+            actions: [
+              PressableScale(
+                onTap: () => _showFilterBottomSheet(context, isDark),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Icon(Icons.filter_list, color: inkColor, size: 22),
+                ),
+              ),
+            ],
           ),
-          body: isLarge ? _buildLargeLayout(repo, isDark) : _buildCompactLayout(repo, isDark),
+          body: isLarge ? _buildLargeLayout(isDark) : _buildCompactLayout(isDark),
         ),
       ),
     );
   }
 
-  Widget _buildCompactLayout(MovieRepository repo, bool isDark) {
+  Widget _buildCompactLayout(bool isDark) {
     return Column(
       children: [
         _buildFilterBar(isDark),
-        Expanded(child: _buildGrid(repo, isDark)),
+        Expanded(child: _buildGrid(isDark)),
       ],
     );
   }
 
-  Widget _buildLargeLayout(MovieRepository repo, bool isDark) {
+  Widget _buildLargeLayout(bool isDark) {
     return Row(
       children: [
-        Expanded(child: _buildGrid(repo, isDark)),
+        Expanded(child: _buildGrid(isDark)),
         VerticalDivider(width: 1, thickness: 1, color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba),
         SizedBox(
           width: 250,
@@ -80,7 +236,6 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildFilterBar(bool isDark) {
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
@@ -100,21 +255,31 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
               onTap: () {
                 setState(() => _selectedGenre = genre);
               },
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                decoration: BoxDecoration(
-                  color: isSelected ? accColor : pillColor,
-                  borderRadius: BorderRadius.circular(999),
-                  border: isSelected ? null : Border.all(color: lineRgba),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  genre,
-                  style: GoogleFonts.getFont(
-                    'Geist',
-                    fontSize: 13,
-                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                    color: isSelected ? (isDark ? const Color(0xFF1A140C) : Colors.white) : inkColor,
+              child: AnimatedScale(
+                scale: isSelected ? 1.05 : 1.0,
+                duration: AppPhysics.houseSpringDuration,
+                curve: AppPhysics.houseSpringCurve,
+                child: AnimatedContainer(
+                  duration: AppPhysics.houseSpringDuration,
+                  curve: AppPhysics.houseSpringCurve,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: isSelected
+                      ? AppColors.primaryButtonDecoration(
+                          isDark: isDark, borderRadius: 999)
+                      : BoxDecoration(
+                          color: pillColor,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: lineRgba),
+                        ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    genre,
+                    style: GoogleFonts.getFont(
+                      'Geist',
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: isSelected ? (isDark ? const Color(0xFF1A140C) : Colors.white) : inkColor,
+                    ),
                   ),
                 ),
               ),
@@ -126,7 +291,6 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildFilterPanel(bool isDark) {
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
@@ -149,20 +313,30 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 onTap: () {
                   setState(() => _selectedGenre = genre);
                 },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isSelected ? accColor : pillColor,
-                    borderRadius: BorderRadius.circular(999),
-                    border: isSelected ? null : Border.all(color: lineRgba),
-                  ),
-                  child: Text(
-                    genre,
-                    style: GoogleFonts.getFont(
-                      'Geist',
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected ? (isDark ? const Color(0xFF1A140C) : Colors.white) : inkColor,
+                child: AnimatedScale(
+                  scale: isSelected ? 1.05 : 1.0,
+                  duration: AppPhysics.houseSpringDuration,
+                  curve: AppPhysics.houseSpringCurve,
+                  child: AnimatedContainer(
+                    duration: AppPhysics.houseSpringDuration,
+                    curve: AppPhysics.houseSpringCurve,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: isSelected
+                        ? AppColors.primaryButtonDecoration(
+                            isDark: isDark, borderRadius: 999)
+                        : BoxDecoration(
+                            color: pillColor,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: lineRgba),
+                          ),
+                    child: Text(
+                      genre,
+                      style: GoogleFonts.getFont(
+                        'Geist',
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected ? (isDark ? const Color(0xFF1A140C) : Colors.white) : inkColor,
+                      ),
                     ),
                   ),
                 ),
@@ -174,28 +348,24 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
-  Widget _buildGrid(MovieRepository repo, bool isDark) {
+  Widget _buildGrid(bool isDark) {
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
 
-    return FutureBuilder<List<MediaItem>>(
-      future: repo.getPopularMovies(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError || !snapshot.hasData) {
-          return Center(child: Text('Error loading media.', style: AppThemes.safeGeist(color: subColor)));
-        }
+    final popularAsync = ref.watch(popularMoviesProvider);
 
-        final items = snapshot.data!.where((item) {
+    return popularAsync.when(
+      data: (allItems) {
+        final items = allItems.where((item) {
           if (_selectedGenre == 'All') return true;
           return item.genres.contains(_selectedGenre);
         }).toList();
 
         if (items.isEmpty) {
-          return Center(child: Text('No media found matching filters.', style: AppThemes.safeGeist(color: subColor)));
+          return Center(
+              child: Text('No media found matching filters.',
+                  style: AppThemes.safeGeist(color: subColor)));
         }
 
         return GridView.builder(
@@ -211,7 +381,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             final item = items[index];
             return PressableScale(
               child: OpenContainer(
-                transitionDuration: const Duration(milliseconds: 300),
+                transitionDuration: AppPhysics.houseSpringDuration,
                 closedElevation: 0,
                 openElevation: 0,
                 closedColor: Colors.transparent,
@@ -246,6 +416,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           },
         );
       },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => Center(
+          child: Text('Error loading media.',
+              style: AppThemes.safeGeist(color: subColor))),
     );
   }
 }

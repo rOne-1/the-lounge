@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/media_item.dart';
 import 'ambiance_provider.dart';
+export 'repository_provider.dart';
 
 class MediaState {
   final Map<String, MediaItem> watchlist;
@@ -108,12 +109,24 @@ class MediaNotifier extends Notifier<MediaState> {
   void toggleMaybeList(MediaItem item) => toggleMaybe(item);
 
   void addToWatchedList(MediaItem item) {
-    if (state.watchedList.containsKey(item.id)) return;
+    if (state.watchedList.containsKey(item.id) &&
+        !state.watchlist.containsKey(item.id) &&
+        !state.maybeList.containsKey(item.id)) {
+      return;
+    }
 
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
       ..[item.id] = item;
+    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
+      ..remove(item.id);
+    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
+      ..remove(item.id);
 
-    state = state.copyWith(watchedList: newWatchedList);
+    state = state.copyWith(
+      watchlist: newWatchlist,
+      maybeList: newMaybeList,
+      watchedList: newWatchedList,
+    );
   }
 
   void removeFromWatchedList(String id) {

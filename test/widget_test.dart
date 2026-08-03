@@ -34,7 +34,7 @@ void main() {
           sharedPreferencesProvider.overrideWithValue(prefs),
           movieRepositoryProvider.overrideWithValue(mockRepo),
         ],
-        child: const MyApp(),
+        child: const MyApp(enableAnimation: false),
       ),
     );
     await tester.pumpAndSettle();

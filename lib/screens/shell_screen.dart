@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/ambiance_provider.dart';
+import '../widgets/noise_texture_overlay.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/segmented_toggle.dart';
 import '../widgets/pressable_scale.dart';
@@ -14,7 +15,9 @@ import 'your_space_screen.dart';
 import 'calendar_screen.dart';
 
 class ShellScreen extends ConsumerWidget {
-  const ShellScreen({super.key});
+  final bool? enableAnimation;
+
+  const ShellScreen({super.key, this.enableAnimation});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,46 +29,53 @@ class ShellScreen extends ConsumerWidget {
 
     return SizedBox.expand(
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 550),
-        curve: Curves.easeInOutCubic,
+        duration: AppPhysics.houseSpringDuration,
+        curve: AppPhysics.houseSpringCurve,
         decoration: isDark
             ? AppThemes.screeningRoomBackground()
             : AppThemes.readingRoomBackground(),
         child: AnimatedTheme(
-          duration: const Duration(milliseconds: 550),
-          curve: Curves.easeInOutCubic,
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
           data: isDark
               ? AppThemes.screeningRoomTheme
               : AppThemes.readingRoomTheme,
-          child: Scaffold(
-            backgroundColor: Colors.transparent,
-            extendBody: true,
-            body: ResponsiveLayout(
-              compact: (context) => _buildCompactLayout(
-                context,
-                navigationState,
-                navigationNotifier,
-                ambiance,
-                ambianceNotifier,
-                isDark,
+          child: Stack(
+            children: [
+              Scaffold(
+                backgroundColor: Colors.transparent,
+                extendBody: true,
+                body: ResponsiveLayout(
+                  compact: (context) => _buildCompactLayout(
+                    context,
+                    navigationState,
+                    navigationNotifier,
+                    ambiance,
+                    ambianceNotifier,
+                    isDark,
+                  ),
+                  medium: (context) => _buildLargeLayout(
+                    context,
+                    navigationState,
+                    navigationNotifier,
+                    ambiance,
+                    ambianceNotifier,
+                    isDark,
+                  ),
+                  large: (context) => _buildLargeLayout(
+                    context,
+                    navigationState,
+                    navigationNotifier,
+                    ambiance,
+                    ambianceNotifier,
+                    isDark,
+                  ),
+                ),
               ),
-              medium: (context) => _buildLargeLayout(
-                context,
-                navigationState,
-                navigationNotifier,
-                ambiance,
-                ambianceNotifier,
-                isDark,
+              const Positioned.fill(
+                child: AppNoiseTexture(),
               ),
-              large: (context) => _buildLargeLayout(
-                context,
-                navigationState,
-                navigationNotifier,
-                ambiance,
-                ambianceNotifier,
-                isDark,
-              ),
-            ),
+            ],
           ),
         ),
       ),
@@ -102,22 +112,29 @@ class ShellScreen extends ConsumerWidget {
           bottom: false,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildTopBarToggle(context, state, notifier, isDark),
-                PressableScale(
-                  onTap: () => ambianceNotifier.toggleAmbiance(),
-                  child: IconButton(
-                    icon: Icon(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: PressableScale(
+                onTap: () => ambianceNotifier.toggleAmbiance(),
+                child: IconButton(
+                  icon: AnimatedSwitcher(
+                    duration: AppPhysics.houseSpringDuration,
+                    switchInCurve: AppPhysics.houseSpringCurve,
+                    switchOutCurve: Curves.easeOut,
+                    transitionBuilder: (child, animation) => ScaleTransition(
+                      scale: animation,
+                      child: child,
+                    ),
+                    child: Icon(
                       isDark ? Icons.light_mode : Icons.dark_mode,
+                      key: ValueKey(isDark),
                       color: isDark ? AppColors.srSub : AppColors.rrSub,
                       size: 20,
                     ),
-                    onPressed: () => ambianceNotifier.toggleAmbiance(),
                   ),
+                  onPressed: () => ambianceNotifier.toggleAmbiance(),
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -144,8 +161,8 @@ class ShellScreen extends ConsumerWidget {
                 child: SafeArea(
                   top: false,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 550),
-                    curve: Curves.easeInOutCubic,
+                    duration: AppPhysics.houseSpringDuration,
+                    curve: AppPhysics.houseSpringCurve,
                     height: 66,
                     decoration: BoxDecoration(
                       color: isDark
@@ -181,8 +198,8 @@ class ShellScreen extends ConsumerWidget {
     return Row(
       children: [
         AnimatedContainer(
-          duration: const Duration(milliseconds: 550),
-          curve: Curves.easeInOutCubic,
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
           width: 80,
           decoration: BoxDecoration(
             color: isDark
@@ -202,10 +219,20 @@ class ShellScreen extends ConsumerWidget {
                 PressableScale(
                   onTap: () => ambianceNotifier.toggleAmbiance(),
                   child: IconButton(
-                    icon: Icon(
-                      isDark ? Icons.light_mode : Icons.dark_mode,
-                      color: isDark ? AppColors.srSub : AppColors.rrSub,
-                      size: 20,
+                    icon: AnimatedSwitcher(
+                      duration: AppPhysics.houseSpringDuration,
+                      switchInCurve: AppPhysics.houseSpringCurve,
+                      switchOutCurve: Curves.easeOut,
+                      transitionBuilder: (child, animation) => ScaleTransition(
+                        scale: animation,
+                        child: child,
+                      ),
+                      child: Icon(
+                        isDark ? Icons.light_mode : Icons.dark_mode,
+                        key: ValueKey(isDark),
+                        color: isDark ? AppColors.srSub : AppColors.rrSub,
+                        size: 20,
+                      ),
                     ),
                     onPressed: () => ambianceNotifier.toggleAmbiance(),
                   ),
@@ -300,7 +327,10 @@ class ShellScreen extends ConsumerWidget {
     Widget child;
     switch (tab) {
       case AppTab.home:
-        child = const HomeScreen(key: ValueKey(AppTab.home));
+        child = HomeScreen(
+          key: const ValueKey(AppTab.home),
+          enableAnimation: enableAnimation,
+        );
       case AppTab.discover:
         child = const DiscoverScreen(key: ValueKey(AppTab.discover));
       case AppTab.search:

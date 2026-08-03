@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
+import 'pressable_scale.dart';
 
 class MediaPosterFallback extends StatelessWidget {
   final String title;
@@ -291,9 +292,12 @@ class PlaybackUnavailableWidget extends StatelessWidget {
       },
       child: Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.of(context).pop(),
+          leading: PressableScale(
+            onTap: () => Navigator.of(context).pop(),
+            child: IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
           ),
         ),
         body: Center(

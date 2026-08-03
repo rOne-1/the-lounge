@@ -109,7 +109,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     return PressableScale(
       child: OpenContainer(
-        transitionDuration: const Duration(milliseconds: 300),
+        transitionDuration: AppPhysics.houseSpringDuration,
         closedElevation: 0,
         openElevation: 0,
         closedColor: Colors.transparent,

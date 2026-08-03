@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
-import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -313,4 +312,133 @@ void main() {
       expect(find.text('Where to Watch'), findsOneWidget);
     });
   });
+
+  group('Motion Identity Pass Section 4 & Section 5 Tests', () {
+    final longOverviewMovie = MediaItem(
+      id: 'movie-long',
+      title: 'Long Movie Overview Test',
+      type: MediaType.movie,
+      rating: 8.4,
+      releaseOrAirDate: DateTime(2024, 5, 10),
+      overview: 'This is line 1 of a very detailed overview text. '
+          'This is line 2 containing additional plot information about characters and setting. '
+          'This is line 3 which continues the complex backstory of the protagonist and their journey. '
+          'This is line 4 describing key dramatic conflicts, thematic depth, and secondary character arcs. '
+          'This is line 5 concluding the comprehensive summary of the media item.',
+      genres: const ['Drama', 'Sci-Fi'],
+      runtime: 135,
+      watchProviders: const ['Netflix'],
+    );
+
+    testWidgets('Section 4: StatusPulseRing animates when status toggles are activated',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = MockDetailRepository({'movie-long': longOverviewMovie});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            movieRepositoryProvider.overrideWithValue(mockRepo),
+          ],
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-long'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Find status toggle buttons
+      final watchlistFinder = find.text('Watchlist');
+      expect(watchlistFinder, findsOneWidget);
+
+      // Verify StatusPulseRing widgets exist wrapping the buttons
+      expect(find.byType(StatusPulseRing), findsNWidgets(3));
+
+      // Tap Watchlist button to activate it
+      await tester.tap(watchlistFinder);
+      await tester.pump(); // Start animation frame
+
+      // Pulse animation should be running
+      await tester.pump(const Duration(milliseconds: 150));
+      // Settle animation
+      await tester.pumpAndSettle();
+
+      // Tap Save button to activate it
+      final saveFinder = find.text('Save');
+      await tester.tap(saveFinder);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // Tap Watched button to activate it
+      final watchedFinder = find.text('Watched');
+      await tester.tap(watchedFinder);
+      await tester.pump();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('Section 5: ExpandableOverviewText expands/collapses with AnimatedSize and AnimatedRotation',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = MockDetailRepository({'movie-long': longOverviewMovie});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            movieRepositoryProvider.overrideWithValue(mockRepo),
+          ],
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-long'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify ExpandableOverviewText and AnimatedSize / AnimatedRotation exist
+      expect(find.byType(ExpandableOverviewText), findsOneWidget);
+      expect(find.byType(AnimatedSize), findsOneWidget);
+
+      final showMoreFinder = find.text('Show more');
+      expect(showMoreFinder, findsOneWidget);
+
+      // Verify initial AnimatedRotation has turns 0.0
+      final animatedRotationBefore = tester.widget<AnimatedRotation>(
+        find.byType(AnimatedRotation),
+      );
+      expect(animatedRotationBefore.turns, equals(0.0));
+
+      // Tap 'Show more'
+      await tester.tap(showMoreFinder);
+      await tester.pump(); // Start animation
+
+      // Pump partially through animation duration (300ms curve: houseSpringCurve)
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpAndSettle();
+
+      // Text should now show 'Show less'
+      expect(find.text('Show less'), findsOneWidget);
+
+      // Verify AnimatedRotation has turns 0.5 (rotated 180 degrees)
+      final animatedRotationAfter = tester.widget<AnimatedRotation>(
+        find.byType(AnimatedRotation),
+      );
+      expect(animatedRotationAfter.turns, equals(0.5));
+
+      // Tap 'Show less' to collapse again
+      await tester.tap(find.text('Show less'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Show more'), findsOneWidget);
+      final animatedRotationCollapsed = tester.widget<AnimatedRotation>(
+        find.byType(AnimatedRotation),
+      );
+      expect(animatedRotationCollapsed.turns, equals(0.0));
+    });
+  });
 }
+
