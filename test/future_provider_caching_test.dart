@@ -49,6 +49,9 @@ class CachingTestRepository implements MovieRepository {
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
+
+  @override
+  Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
 }
 
 void main() {
@@ -128,6 +131,13 @@ void main() {
         movies: [testMovie],
         tvShows: [testTv],
       );
+
+      tester.view.physicalSize = const Size(500, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
       await tester.pumpWidget(
         ProviderScope(

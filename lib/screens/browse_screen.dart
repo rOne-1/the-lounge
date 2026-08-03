@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
@@ -18,8 +19,7 @@ class BrowseScreen extends ConsumerStatefulWidget {
 }
 
 class _BrowseScreenState extends ConsumerState<BrowseScreen> {
-  String _selectedGenre = 'All';
-  final List<String> _genres = [
+  final List<String> _baseGenres = [
     'All',
     'Action',
     'Sci-Fi',
@@ -27,6 +27,13 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     'Drama',
     'Comedy'
   ];
+
+  List<String> _getGenres(String activeGenre) {
+    if (activeGenre != 'All' && !_baseGenres.contains(activeGenre)) {
+      return ['All', activeGenre, ..._baseGenres.where((g) => g != 'All')];
+    }
+    return _baseGenres;
+  }
 
   void _showFilterBottomSheet(BuildContext context, bool isDark) {
     showModalBottomSheet(
@@ -57,8 +64,11 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 ),
               ),
             ),
-            child: StatefulBuilder(
-              builder: (context, setSheetState) {
+            child: Consumer(
+              builder: (context, ref, _) {
+                final selectedGenre = ref.watch(browseGenreProvider);
+                final genres = _getGenres(selectedGenre);
+
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,12 +104,11 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: _genres.map((genre) {
-                        final isSelected = _selectedGenre == genre;
+                      children: genres.map((genre) {
+                        final isSelected = selectedGenre == genre;
                         return PressableScale(
                           onTap: () {
-                            setState(() => _selectedGenre = genre);
-                            setSheetState(() {});
+                            ref.read(browseGenreProvider.notifier).setGenre(genre);
                           },
                           child: AnimatedScale(
                             scale: isSelected ? 1.05 : 1.0,
@@ -177,6 +186,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     final isLarge = MediaQuery.of(context).size.width > 800;
@@ -239,21 +249,23 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final selectedGenre = ref.watch(browseGenreProvider);
+    final genres = _getGenres(selectedGenre);
 
     return SizedBox(
       height: 60,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        itemCount: _genres.length,
+        itemCount: genres.length,
         itemBuilder: (context, index) {
-          final genre = _genres[index];
-          final isSelected = _selectedGenre == genre;
+          final genre = genres[index];
+          final isSelected = selectedGenre == genre;
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: PressableScale(
               onTap: () {
-                setState(() => _selectedGenre = genre);
+                ref.read(browseGenreProvider.notifier).setGenre(genre);
               },
               child: AnimatedScale(
                 scale: isSelected ? 1.05 : 1.0,
@@ -294,6 +306,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final selectedGenre = ref.watch(browseGenreProvider);
+    final genres = _getGenres(selectedGenre);
 
     return Padding(
       padding: const EdgeInsets.all(18.0),
@@ -307,11 +321,11 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _genres.map((genre) {
-              final isSelected = _selectedGenre == genre;
+            children: genres.map((genre) {
+              final isSelected = selectedGenre == genre;
               return PressableScale(
                 onTap: () {
-                  setState(() => _selectedGenre = genre);
+                  ref.read(browseGenreProvider.notifier).setGenre(genre);
                 },
                 child: AnimatedScale(
                   scale: isSelected ? 1.05 : 1.0,
@@ -353,13 +367,14 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
 
+    final selectedGenre = ref.watch(browseGenreProvider);
     final popularAsync = ref.watch(popularMoviesProvider);
 
     return popularAsync.when(
       data: (allItems) {
         final items = allItems.where((item) {
-          if (_selectedGenre == 'All') return true;
-          return item.genres.contains(_selectedGenre);
+          if (selectedGenre == 'All') return true;
+          return item.genres.contains(selectedGenre);
         }).toList();
 
         if (items.isEmpty) {
@@ -407,7 +422,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                     ),
                   );
                 },
-                openBuilder: (context, _) => DetailScreen(id: item.id),
+                openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
               ),
             ).animate().fade(duration: 250.ms).slideY(
                 begin: 0.1,

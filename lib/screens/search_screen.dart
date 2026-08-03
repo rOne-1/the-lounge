@@ -21,6 +21,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   String _query = '';
   List<MediaItem>? _results;
   bool _loading = false;
+  Object? _searchError;
 
   void _onSearch(String query) async {
     if (query.trim().isEmpty) {
@@ -28,6 +29,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         _query = '';
         _results = null;
         _loading = false;
+        _searchError = null;
       });
       return;
     }
@@ -35,16 +37,26 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     setState(() {
       _query = query.trim();
       _loading = true;
+      _searchError = null;
     });
 
-    final repo = ref.read(movieRepositoryProvider);
-    final results = await repo.searchMedia(_query);
+    try {
+      final repo = ref.read(movieRepositoryProvider);
+      final results = await repo.searchMedia(_query);
 
-    if (mounted) {
-      setState(() {
-        _results = results;
-        _loading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _results = results;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _searchError = e;
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -59,11 +71,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
 
+    final isLarge = MediaQuery.of(context).size.width >= 600;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.all(18.0),
+          padding: EdgeInsets.fromLTRB(
+              isLarge ? 24.0 : 18.0, isLarge ? 4.0 : 18.0, isLarge ? 24.0 : 18.0, 18.0),
           child: Container(
             height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -114,6 +129,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (_searchError != null) {
+      final errorMessage = _searchError.toString().replaceAll('Exception: ', '');
+      return FullScreenErrorWidget(
+        message: errorMessage.isNotEmpty
+            ? errorMessage
+            : 'Failed to perform search. Please check your connection.',
+        onRetry: () => _onSearch(_query),
+      );
+    }
+
     if (_query.isEmpty) {
       return Center(
         child: Column(
@@ -130,12 +155,36 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     if (_results != null && _results!.isEmpty) {
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('No results found for "$_query"',
-                style: AppThemes.safeGeist(color: subColor, fontSize: 15)),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: subColor),
+              const SizedBox(height: 16),
+              Text(
+                'No results found for "$_query"',
+                textAlign: TextAlign.center,
+                style: AppThemes.safeGeist(
+                    color: inkColor, fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Check spelling or try searching for another title or actor.',
+                textAlign: TextAlign.center,
+                style: AppThemes.safeGeist(color: subColor, fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: () {
+                  _controller.clear();
+                  _onSearch('');
+                },
+                icon: const Icon(Icons.clear),
+                label: const Text('Clear search'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -199,7 +248,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ),
                 );
               },
-              openBuilder: (context, _) => DetailScreen(id: item.id),
+              openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
             ),
           ).animate().fade(duration: 250.ms).slideY(
               begin: 0.1,

@@ -60,3 +60,17 @@ final navigationProvider =
     NotifierProvider<NavigationNotifier, NavigationState>(() {
   return NavigationNotifier();
 });
+
+class BrowseGenreNotifier extends Notifier<String> {
+  @override
+  String build() => 'All';
+
+  void setGenre(String genre) {
+    state = genre;
+  }
+}
+
+final browseGenreProvider = NotifierProvider<BrowseGenreNotifier, String>(() {
+  return BrowseGenreNotifier();
+});
+

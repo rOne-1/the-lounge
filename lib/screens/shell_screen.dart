@@ -255,7 +255,7 @@ class ShellScreen extends ConsumerWidget {
                 bottom: false,
                 left: false,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: _buildTopBarToggle(context, state, notifier, isDark),

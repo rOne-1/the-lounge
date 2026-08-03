@@ -19,6 +19,8 @@ class TestRepository implements MovieRepository {
   Future<MediaItem?> getMediaDetails(String id) async => null;
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
+  @override
+  Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
 }
 
 void main() {

@@ -3,6 +3,65 @@ enum MediaType {
   tv,
 }
 
+class CastMember {
+  final String id;
+  final String name;
+  final String? character;
+  final String? profileUrl;
+
+  const CastMember({
+    required this.id,
+    required this.name,
+    this.character,
+    this.profileUrl,
+  });
+
+  CastMember copyWith({
+    String? id,
+    String? name,
+    String? character,
+    String? profileUrl,
+  }) {
+    return CastMember(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      character: character ?? this.character,
+      profileUrl: profileUrl ?? this.profileUrl,
+    );
+  }
+}
+
+class WatchProviderInfo {
+  final String providerName;
+  final String category; // 'Stream', 'Rent', 'Buy'
+
+  const WatchProviderInfo({
+    required this.providerName,
+    required this.category,
+  });
+
+  WatchProviderInfo copyWith({
+    String? providerName,
+    String? category,
+  }) {
+    return WatchProviderInfo(
+      providerName: providerName ?? this.providerName,
+      category: category ?? this.category,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is WatchProviderInfo &&
+          runtimeType == other.runtimeType &&
+          providerName == other.providerName &&
+          category == other.category;
+
+  @override
+  int get hashCode => providerName.hashCode ^ category.hashCode;
+}
+
 class MediaItem {
   final String id;
   final String title;
@@ -12,6 +71,7 @@ class MediaItem {
   final String overview;
   final List<String> genres;
   final String? posterUrl;
+  final String? detailPosterUrl;
   final String? backdropUrl;
   final int? runtime;
   final int? seasonsCount;
@@ -20,9 +80,12 @@ class MediaItem {
   final DateTime? nextEpisodeAirDate;
   final Duration? airCountdown;
   final bool hasTrailer;
+  final String? trailerVideoId;
   final bool imageLoadWillFail;
   final List<String> watchProviders;
+  final Map<String, List<WatchProviderInfo>> watchProvidersByCountry;
   final List<String> cast;
+  final List<CastMember> castMembers;
 
   const MediaItem({
     required this.id,
@@ -33,6 +96,7 @@ class MediaItem {
     required this.overview,
     required this.genres,
     this.posterUrl,
+    this.detailPosterUrl,
     this.backdropUrl,
     this.runtime,
     this.seasonsCount,
@@ -41,10 +105,38 @@ class MediaItem {
     this.nextEpisodeAirDate,
     this.airCountdown,
     this.hasTrailer = false,
+    this.trailerVideoId,
     this.imageLoadWillFail = false,
     this.watchProviders = const [],
+    this.watchProvidersByCountry = const {},
     this.cast = const [],
+    this.castMembers = const [],
   });
+
+  /// Returns watch providers for specified country, falling back to legacy US watchProviders list.
+  List<WatchProviderInfo> getWatchProvidersForCountry(String countryCode) {
+    final list = watchProvidersByCountry[countryCode];
+    if (list != null && list.isNotEmpty) {
+      return list;
+    }
+    if (countryCode == 'US' && watchProviders.isNotEmpty) {
+      return watchProviders
+          .map((p) => WatchProviderInfo(providerName: p, category: 'Stream'))
+          .toList();
+    }
+    return const [];
+  }
+
+  /// Convenience getter for poster in detail view.
+  String? get effectiveDetailPosterUrl => detailPosterUrl ?? posterUrl;
+
+  /// Returns the ID strictly type-prefixed (e.g. "movie_123" or "tv_123").
+  String get prefixedId {
+    if (id.startsWith('movie_') || id.startsWith('tv_')) {
+      return id;
+    }
+    return '${type == MediaType.tv ? 'tv' : 'movie'}_$id';
+  }
 
   MediaItem copyWith({
     String? id,
@@ -55,6 +147,7 @@ class MediaItem {
     String? overview,
     List<String>? genres,
     String? posterUrl,
+    String? detailPosterUrl,
     String? backdropUrl,
     int? runtime,
     int? seasonsCount,
@@ -63,9 +156,12 @@ class MediaItem {
     DateTime? nextEpisodeAirDate,
     Duration? airCountdown,
     bool? hasTrailer,
+    String? trailerVideoId,
     bool? imageLoadWillFail,
     List<String>? watchProviders,
+    Map<String, List<WatchProviderInfo>>? watchProvidersByCountry,
     List<String>? cast,
+    List<CastMember>? castMembers,
   }) {
     return MediaItem(
       id: id ?? this.id,
@@ -76,6 +172,7 @@ class MediaItem {
       overview: overview ?? this.overview,
       genres: genres ?? this.genres,
       posterUrl: posterUrl ?? this.posterUrl,
+      detailPosterUrl: detailPosterUrl ?? this.detailPosterUrl,
       backdropUrl: backdropUrl ?? this.backdropUrl,
       runtime: runtime ?? this.runtime,
       seasonsCount: seasonsCount ?? this.seasonsCount,
@@ -84,9 +181,13 @@ class MediaItem {
       nextEpisodeAirDate: nextEpisodeAirDate ?? this.nextEpisodeAirDate,
       airCountdown: airCountdown ?? this.airCountdown,
       hasTrailer: hasTrailer ?? this.hasTrailer,
+      trailerVideoId: trailerVideoId ?? this.trailerVideoId,
       imageLoadWillFail: imageLoadWillFail ?? this.imageLoadWillFail,
       watchProviders: watchProviders ?? this.watchProviders,
+      watchProvidersByCountry:
+          watchProvidersByCountry ?? this.watchProvidersByCountry,
       cast: cast ?? this.cast,
+      castMembers: castMembers ?? this.castMembers,
     );
   }
 }

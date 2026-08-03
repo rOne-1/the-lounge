@@ -31,11 +31,17 @@ class MockTestRepository implements MovieRepository {
   @override
   Future<MediaItem?> getMediaDetails(String id) async {
     final all = [...trendingMovies, ...popularMovies, ...trendingTvShows];
-    return all.firstWhere((item) => item.id == id);
+    final cleanId = id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+    return all.firstWhere(
+      (item) => item.id == id || item.prefixedId == id || item.id == cleanId,
+    );
   }
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
+
+  @override
+  Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
 }
 
 void main() {

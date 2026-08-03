@@ -55,6 +55,9 @@ class TestRepository implements MovieRepository {
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
+
+  @override
+  Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
 }
 
 void main() {
@@ -125,7 +128,7 @@ void main() {
     expect(state.maybeList.containsKey('4'), isFalse);
     expect(state.watchedList.containsKey('4'), isFalse);
 
-    expect(find.text('No more recommendations!'), findsOneWidget);
+    expect(find.text('No titles in recommendations'), findsOneWidget);
   });
 
   testWidgets('Tapping Discover card navigates to DetailScreen',

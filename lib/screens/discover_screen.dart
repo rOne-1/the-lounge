@@ -24,6 +24,7 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   List<MediaItem> _pool = [];
   bool _loading = true;
+  Object? _error;
   bool _showLegend = true;
   bool _isSwiping = false;
   String? _activeSwipeDirection;
@@ -36,14 +37,29 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   Future<void> _loadPool() async {
-    final repo = ref.read(movieRepositoryProvider);
-    final trending = await repo.getTrendingMovies();
-    final popular = await repo.getPopularMovies();
-    if (mounted) {
-      setState(() {
-        _pool = <MediaItem>{...trending, ...popular}.toList();
-        _loading = false;
-      });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final repo = ref.read(movieRepositoryProvider);
+      final trending = await repo.getTrendingMovies();
+      final popular = await repo.getPopularMovies();
+      if (mounted) {
+        setState(() {
+          final seen = <String>{};
+          final merged = [...trending, ...popular].where((item) => seen.add(item.id)).toList();
+          _pool = merged;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e;
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -114,38 +130,58 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       return const Center(child: CircularProgressIndicator());
     }
 
+    if (_error != null) {
+      final message = _error.toString().replaceAll('Exception: ', '');
+      return FullScreenErrorWidget(
+        message: message.isNotEmpty
+            ? message
+            : 'Failed to load recommendations. Please check your connection.',
+        onRetry: _loadPool,
+      );
+    }
+
+    final isLarge = MediaQuery.of(context).size.width >= 600;
+
     return Stack(
       children: [
         Column(
           children: [
             // Top bar: toggle + legend key
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 2, 18, 10),
+              padding: EdgeInsets.fromLTRB(
+                  isLarge ? 24 : 18, isLarge ? 0 : 2, isLarge ? 24 : 18, 10),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: isLarge
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.spaceBetween,
                 children: [
-                  Consumer(
-                    builder: (context, ref, child) {
-                      final navState = ref.watch(navigationProvider);
-                      return SegmentedMediaTypeToggle(
-                        activeType: navState.activeMediaType,
-                        onChanged: (type) => ref
-                            .read(navigationProvider.notifier)
-                            .setMediaType(type),
-                        isDark: isDark,
-                        height: 28,
-                        segmentWidth: 58,
-                        fontSize: 11.5,
-                      );
-                    },
-                  ),
+                  if (!isLarge)
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final navState = ref.watch(navigationProvider);
+                        return SegmentedMediaTypeToggle(
+                          activeType: navState.activeMediaType,
+                          onChanged: (type) => ref
+                              .read(navigationProvider.notifier)
+                              .setMediaType(type),
+                          isDark: isDark,
+                          height: 28,
+                          segmentWidth: 58,
+                          fontSize: 11.5,
+                        );
+                      },
+                    ),
                   PressableScale(
                     onTap: () => setState(() => _showLegend = true),
                     child: Row(
                       children: [
                         Icon(Icons.info_outline, color: subColor, size: 15),
                         const SizedBox(width: 6),
-                        Text('Legend', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: subColor)),
+                        Text('Legend',
+                            style: AppThemes.safeGeist(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color: subColor)),
                       ],
                     ),
                   )
@@ -190,7 +226,41 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     ),
                     // Active cards
                     if (_pool.isEmpty)
-                      const Center(child: Text('No more recommendations!'))
+                      Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(24.0),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.movie_filter_outlined,
+                                  size: 64, color: subColor),
+                              const SizedBox(height: 16),
+                              Text(
+                                'No titles in recommendations',
+                                style: AppThemes.safeGeist(
+                                    color: isDark
+                                        ? AppColors.srInk
+                                        : AppColors.rrInk,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'You\'ve gone through all available recommendations in this stack.',
+                                textAlign: TextAlign.center,
+                                style: AppThemes.safeGeist(
+                                    color: subColor, fontSize: 13),
+                              ),
+                              const SizedBox(height: 20),
+                              FilledButton.icon(
+                                onPressed: _loadPool,
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Reload deck'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                     else
                       ..._pool.reversed.map((item) {
                         final isTop = item.id == _pool.first.id;
@@ -903,7 +973,7 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
           ),
         );
       },
-      openBuilder: (context, _) => DetailScreen(id: widget.item.id),
+      openBuilder: (context, _) => DetailScreen(id: widget.item.prefixedId),
     );
   }
 }

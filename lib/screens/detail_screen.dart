@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/media_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import '../widgets/trailer_player.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'browse_screen.dart';
 
 class DetailScreen extends ConsumerWidget {
   final String id;
@@ -47,7 +49,10 @@ class DetailScreen extends ConsumerWidget {
           body: detailAsync.when(
             data: (item) {
               if (item == null) {
-                return const Center(child: Text('Failed to load details.'));
+                return FullScreenErrorWidget(
+                  message: 'Failed to load media details.',
+                  onRetry: () => ref.invalidate(mediaDetailsProvider(id)),
+                );
               }
               final isLarge = MediaQuery.of(context).size.width > 800;
 
@@ -57,8 +62,15 @@ class DetailScreen extends ConsumerWidget {
               return _buildCompactLayout(context, ref, item, isDark);
             },
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) =>
-                const Center(child: Text('Failed to load details.')),
+            error: (err, stack) {
+              final message = err.toString().replaceAll('Exception: ', '');
+              return FullScreenErrorWidget(
+                message: message.isNotEmpty
+                    ? message
+                    : 'Failed to load media details.',
+                onRetry: () => ref.invalidate(mediaDetailsProvider(id)),
+              );
+            },
           ),
         ),
       ),
@@ -103,7 +115,7 @@ class DetailScreen extends ConsumerWidget {
                     _buildMetaRow(item, isDark),
                     if (item.genres.isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      _buildGenreChips(item, isDark),
+                      _buildGenreChips(context, ref, item, isDark),
                     ],
                     const SizedBox(height: 18),
                     _buildActionButtons(ref, item, isDark),
@@ -195,7 +207,7 @@ class DetailScreen extends ConsumerWidget {
                     _buildMetaRow(item, isDark),
                     if (item.genres.isNotEmpty) ...[
                       const SizedBox(height: 14),
-                      _buildGenreChips(item, isDark),
+                      _buildGenreChips(context, ref, item, isDark),
                     ],
                     const SizedBox(height: 24),
                     _buildActionButtons(ref, item, isDark),
@@ -431,7 +443,7 @@ class DetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildGenreChips(MediaItem item, bool isDark) {
+  Widget _buildGenreChips(BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
@@ -441,6 +453,12 @@ class DetailScreen extends ConsumerWidget {
       runSpacing: 8,
       children: item.genres.map((genre) {
         return PressableScale(
+          onTap: () {
+            ref.read(browseGenreProvider.notifier).setGenre(genre);
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const BrowseScreen()),
+            );
+          },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
@@ -635,6 +653,28 @@ class DetailScreen extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             itemCount: item.cast.length,
             itemBuilder: (context, index) {
+              final castName = item.cast[index];
+              final castMember = (index < item.castMembers.length)
+                  ? item.castMembers[index]
+                  : null;
+              final profileUrl = castMember?.profileUrl;
+
+              Widget avatarContent;
+              if (profileUrl != null && profileUrl.isNotEmpty) {
+                avatarContent = ClipOval(
+                  child: Image.network(
+                    profileUrl,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        Icon(Icons.person, color: subColor),
+                  ),
+                );
+              } else {
+                avatarContent = Icon(Icons.person, color: subColor);
+              }
+
               return Padding(
                 padding: const EdgeInsets.only(right: 14.0),
                 child: Column(
@@ -647,13 +687,13 @@ class DetailScreen extends ConsumerWidget {
                         shape: BoxShape.circle,
                         border: Border.all(color: lineRgba),
                       ),
-                      child: Icon(Icons.person, color: subColor),
+                      child: avatarContent,
                     ),
                     const SizedBox(height: 8),
                     SizedBox(
                       width: 70,
                       child: Text(
-                        item.cast[index],
+                        castName,
                         style: AppThemes.safeGeist(
                           fontSize: 11,
                           color: subColor,
@@ -682,6 +722,7 @@ class DetailScreen extends ConsumerWidget {
     final mediaState = ref.watch(mediaProvider);
     final selectedCountry = mediaState.watchProvidersCountry;
     final notifier = ref.read(mediaProvider.notifier);
+    final regionsAsync = ref.watch(watchProviderRegionsProvider);
 
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
@@ -689,10 +730,32 @@ class DetailScreen extends ConsumerWidget {
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
 
-    const supportedCountries = ['US', 'GB', 'CA', 'AU', 'DE', 'FR', 'JP'];
-    final currentCountry = supportedCountries.contains(selectedCountry)
+    final defaultRegions = const [
+      {'code': 'US', 'name': 'United States'},
+      {'code': 'GB', 'name': 'United Kingdom'},
+      {'code': 'CA', 'name': 'Canada'},
+      {'code': 'AU', 'name': 'Australia'},
+      {'code': 'DE', 'name': 'Germany'},
+      {'code': 'FR', 'name': 'France'},
+      {'code': 'JP', 'name': 'Japan'},
+    ];
+
+    final availableRegions = regionsAsync.maybeWhen(
+      data: (list) => list.isNotEmpty ? list : defaultRegions,
+      orElse: () => defaultRegions,
+    );
+
+    final hasSelected = availableRegions.any((r) => r['code'] == selectedCountry);
+    final currentCountry = hasSelected
         ? selectedCountry
-        : 'US';
+        : (availableRegions.isNotEmpty ? availableRegions.first['code']! : 'US');
+
+    final countryProviders = item.getWatchProvidersForCountry(currentCountry);
+
+    final grouped = <String, List<WatchProviderInfo>>{};
+    for (final p in countryProviders) {
+      grouped.putIfAbsent(p.category, () => []).add(p);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,11 +795,12 @@ class DetailScreen extends ConsumerWidget {
                         notifier.setWatchProvidersCountry(newCountry);
                       }
                     },
-                    items: supportedCountries
-                        .map<DropdownMenuItem<String>>((String country) {
+                    items: availableRegions
+                        .map<DropdownMenuItem<String>>((region) {
+                      final code = region['code'] ?? 'US';
                       return DropdownMenuItem<String>(
-                        value: country,
-                        child: Text(country),
+                        value: code,
+                        child: Text(code),
                       );
                     }).toList(),
                   ),
@@ -746,38 +810,66 @@ class DetailScreen extends ConsumerWidget {
           ],
         ),
         const SizedBox(height: 12),
-        if (item.watchProviders.isNotEmpty)
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: item.watchProviders.map((provider) {
-              return PressableScale(
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                  decoration: BoxDecoration(
-                    color: phColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: lineRgba),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.tv, size: 14, color: accColor),
-                      const SizedBox(width: 6),
-                      Text(
-                        provider,
-                        style: AppThemes.safeGeist(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: inkColor,
-                        ),
+        if (countryProviders.isNotEmpty)
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              for (final cat in ['Stream', 'Rent', 'Buy'])
+                if (grouped.containsKey(cat) && grouped[cat]!.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4, bottom: 6),
+                    child: Text(
+                      cat,
+                      style: AppThemes.safeGeist(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: subColor,
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: grouped[cat]!.map((provider) {
+                      return PressableScale(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 7),
+                          decoration: BoxDecoration(
+                            color: phColor,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: lineRgba),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                cat == 'Stream'
+                                    ? Icons.tv
+                                    : (cat == 'Rent'
+                                        ? Icons.shopping_bag_outlined
+                                        : Icons.shopping_cart_outlined),
+                                size: 14,
+                                color: accColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                provider.providerName,
+                                style: AppThemes.safeGeist(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: inkColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+            ],
           ).animate(key: ValueKey(currentCountry)).fade(duration: 250.ms)
         else
           Padding(

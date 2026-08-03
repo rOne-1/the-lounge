@@ -19,6 +19,7 @@ class MockMovieRepository implements MovieRepository {
           'https://image.tmdb.org/t/p/original/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
       runtime: 148,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Netflix', 'Amazon Prime'],
       cast: [
         'Leonardo DiCaprio',
@@ -47,6 +48,7 @@ class MockMovieRepository implements MovieRepository {
         'Chapter Two: The Weirdo on Maple Street'
       ],
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Netflix'],
       cast: [
         'Millie Bobby Brown',
@@ -70,6 +72,7 @@ class MockMovieRepository implements MovieRepository {
           'https://image.tmdb.org/t/p/original/dqK9Hag1054tghRQSqLSfrkvQnA.jpg',
       runtime: 152,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['HBO Max'],
       cast: [
         'Christian Bale',
@@ -94,6 +97,7 @@ class MockMovieRepository implements MovieRepository {
       seasonsCount: 5,
       episodesCount: 62,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Netflix'],
       cast: ['Bryan Cranston', 'Aaron Paul', 'Anna Gunn', 'Dean Norris'],
     ),
@@ -128,6 +132,7 @@ class MockMovieRepository implements MovieRepository {
       backdropUrl: 'https://example.com/broken_backdrop.jpg',
       runtime: 120,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       imageLoadWillFail: true,
       watchProviders: ['Hulu'],
       cast: ['John Doe', 'Jane Smith'],
@@ -147,6 +152,7 @@ class MockMovieRepository implements MovieRepository {
           'https://image.tmdb.org/t/p/original/ncEsesgOJDNrTUED89hYbA117jy.jpg',
       runtime: 136,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['HBO Max'],
       cast: [
         'Keanu Reeves',
@@ -171,6 +177,7 @@ class MockMovieRepository implements MovieRepository {
       seasonsCount: 9,
       episodesCount: 201,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Peacock'],
       cast: ['Steve Carell', 'Rainn Wilson', 'John Krasinski', 'Jenna Fischer'],
     ),
@@ -189,6 +196,7 @@ class MockMovieRepository implements MovieRepository {
           'https://image.tmdb.org/t/p/original/xJHokMbljvjEVAz543vPhkCPEm5.jpg',
       runtime: 169,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Paramount+'],
       cast: [
         'Matthew McConaughey',
@@ -213,6 +221,7 @@ class MockMovieRepository implements MovieRepository {
       seasonsCount: 8,
       episodesCount: 73,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['HBO Max'],
       cast: ['Emilia Clarke', 'Kit Harington', 'Peter Dinklage', 'Lena Headey'],
     ),
@@ -231,6 +240,7 @@ class MockMovieRepository implements MovieRepository {
           'https://image.tmdb.org/t/p/original/vL5LR6WdxWPjUUegeVkVqBMyA.jpg',
       runtime: 162,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Disney+'],
       cast: [
         'Sam Worthington',
@@ -255,6 +265,7 @@ class MockMovieRepository implements MovieRepository {
       seasonsCount: 3,
       episodesCount: 24,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Disney+'],
       cast: [
         'Pedro Pascal',
@@ -278,6 +289,7 @@ class MockMovieRepository implements MovieRepository {
           'https://image.tmdb.org/t/p/original/suaEOtk1N1sgg2MTM7oZd2cfVp3.jpg',
       runtime: 154,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Paramount+'],
       cast: [
         'John Travolta',
@@ -302,6 +314,7 @@ class MockMovieRepository implements MovieRepository {
       seasonsCount: 10,
       episodesCount: 236,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['HBO Max'],
       cast: [
         'Jennifer Aniston',
@@ -346,6 +359,7 @@ class MockMovieRepository implements MovieRepository {
       seasonsCount: 6,
       episodesCount: 63,
       hasTrailer: true,
+      trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Netflix', 'AMC+'],
       cast: [
         'Bob Odenkirk',
@@ -404,8 +418,9 @@ class MockMovieRepository implements MovieRepository {
   @override
   Future<MediaItem?> getMediaDetails(String id) async {
     await Future.delayed(const Duration(milliseconds: 500));
+    final cleanId = id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
     try {
-      return _mockData.firstWhere((m) => m.id == id);
+      return _mockData.firstWhere((m) => m.id == id || m.id == cleanId);
     } catch (e) {
       return null;
     }
@@ -421,5 +436,18 @@ class MockMovieRepository implements MovieRepository {
           m.cast.any((actor) => actor.toLowerCase().contains(lowerQuery));
       return titleMatch || castMatch;
     }).toList();
+  }
+
+  @override
+  Future<List<Map<String, String>>> getWatchProviderRegions() async {
+    return const [
+      {'code': 'US', 'name': 'United States'},
+      {'code': 'GB', 'name': 'United Kingdom'},
+      {'code': 'CA', 'name': 'Canada'},
+      {'code': 'AU', 'name': 'Australia'},
+      {'code': 'DE', 'name': 'Germany'},
+      {'code': 'FR', 'name': 'France'},
+      {'code': 'JP', 'name': 'Japan'},
+    ];
   }
 }

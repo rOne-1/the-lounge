@@ -5,9 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
+import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/repositories/movie_repository.dart';
+import 'package:the_lounge/widgets/pressable_scale.dart';
 
 class MockDetailRepository implements MovieRepository {
   final Map<String, MediaItem> items;
@@ -28,6 +30,12 @@ class MockDetailRepository implements MovieRepository {
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
+
+  @override
+  Future<List<Map<String, String>>> getWatchProviderRegions() async => const [
+        {'code': 'US', 'name': 'United States'},
+        {'code': 'GB', 'name': 'United Kingdom'},
+      ];
 }
 
 void main() {
@@ -169,6 +177,44 @@ void main() {
       expect(find.text('Where to Watch'), findsOneWidget);
       expect(find.text('Netflix'), findsOneWidget);
       expect(find.text('Amazon Prime'), findsOneWidget);
+    });
+
+    testWidgets('tapping a genre chip updates browseGenreProvider and navigates to BrowseScreen',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = MockDetailRepository({'movie-1': testMovie});
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-1'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final genreChip = find.ancestor(
+        of: find.text('Sci-Fi'),
+        matching: find.byType(PressableScale),
+      );
+      expect(genreChip, findsOneWidget);
+
+      await tester.ensureVisible(genreChip);
+      await tester.pumpAndSettle();
+      await tester.tap(genreChip);
+
+      expect(container.read(browseGenreProvider), equals('Sci-Fi'));
     });
 
     testWidgets(

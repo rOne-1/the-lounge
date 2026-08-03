@@ -6,4 +6,5 @@ abstract class MovieRepository {
   Future<List<MediaItem>> getTrendingTvShows();
   Future<MediaItem?> getMediaDetails(String id);
   Future<List<MediaItem>> searchMedia(String query);
+  Future<List<Map<String, String>>> getWatchProviderRegions();
 }

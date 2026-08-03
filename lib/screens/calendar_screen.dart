@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
 import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/segmented_toggle.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -16,7 +18,8 @@ class CalendarScreen extends ConsumerStatefulWidget {
 }
 
 class _CalendarScreenState extends ConsumerState<CalendarScreen> {
-  Map<DateTime, List<MediaItem>> _groupedItems = {};
+  List<MediaItem> _allMovies = [];
+  List<MediaItem> _allTvShows = [];
   bool _loading = true;
 
   @override
@@ -30,21 +33,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final movies = await repo.getTrendingMovies();
     final tvShows = await repo.getTrendingTvShows();
 
-    final allItems = [...movies, ...tvShows]
-        .where((m) => m.releaseOrAirDate != null)
-        .toList();
-
-    // Group by Date (ignoring time)
-    final Map<DateTime, List<MediaItem>> grouped = {};
-    for (final item in allItems) {
-      final date = item.releaseOrAirDate!;
-      final dateKey = DateTime(date.year, date.month, date.day);
-      grouped.putIfAbsent(dateKey, () => []).add(item);
-    }
-
     if (mounted) {
       setState(() {
-        _groupedItems = grouped;
+        _allMovies = movies.where((m) => m.releaseOrAirDate != null).toList();
+        _allTvShows = tvShows.where((m) => m.releaseOrAirDate != null).toList();
         _loading = false;
       });
     }
@@ -57,24 +49,82 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
 
+    final navState = ref.watch(navigationProvider);
+    final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
+    final targetItems = isMovies ? _allMovies : _allTvShows;
+
+    final Map<DateTime, List<MediaItem>> grouped = {};
+    for (final item in targetItems) {
+      final date = item.releaseOrAirDate!;
+      final dateKey = DateTime(date.year, date.month, date.day);
+      grouped.putIfAbsent(dateKey, () => []).add(item);
+    }
+
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_groupedItems.isEmpty) {
-      return Center(
-        child: Text('No upcoming releases.', style: AppThemes.safeGeist(color: subColor)),
+    final isLarge = MediaQuery.of(context).size.width >= 600;
+
+    if (grouped.isEmpty) {
+      return Column(
+        children: [
+          if (!isLarge) ...[
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: SegmentedMediaTypeToggle(
+                  activeType: navState.activeMediaType,
+                  onChanged: (type) =>
+                      ref.read(navigationProvider.notifier).setMediaType(type),
+                  isDark: isDark,
+                ),
+              ),
+            ),
+          ],
+          Expanded(
+            child: Center(
+              child: Text(
+                isMovies ? 'No upcoming movie premieres.' : 'No upcoming TV episodes.',
+                style: AppThemes.safeGeist(color: subColor),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
-    final sortedDates = _groupedItems.keys.toList()..sort();
+    final sortedDates = grouped.keys.toList()..sort();
+
+    final itemCount = sortedDates.length + (!isLarge ? 1 : 0);
 
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 18.0 + MediaQuery.of(context).padding.bottom),
-      itemCount: sortedDates.length,
+      padding: EdgeInsets.fromLTRB(
+          isLarge ? 24.0 : 18.0,
+          isLarge ? 4.0 : 12.0,
+          isLarge ? 24.0 : 18.0,
+          18.0 + MediaQuery.of(context).padding.bottom),
+      itemCount: itemCount,
       itemBuilder: (context, index) {
-        final date = sortedDates[index];
-        final items = _groupedItems[date]!;
+        if (!isLarge && index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: SegmentedMediaTypeToggle(
+                activeType: navState.activeMediaType,
+                onChanged: (type) =>
+                    ref.read(navigationProvider.notifier).setMediaType(type),
+                isDark: isDark,
+              ),
+            ),
+          );
+        }
+
+        final dateIndex = !isLarge ? index - 1 : index;
+        final date = sortedDates[dateIndex];
+        final items = grouped[date]!;
         final isToday = date.difference(DateTime.now()).inDays == 0;
 
         return Column(
@@ -84,7 +134,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               padding: const EdgeInsets.symmetric(vertical: 12.0),
               child: Text(
                 isToday ? 'Today' : '${_monthName(date.month)} ${date.day}',
-                style: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600, letterSpacing: 1.1, color: subColor, textStyle: const TextStyle(textBaseline: TextBaseline.alphabetic)),
+                style: AppThemes.safeGeist(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 1.1,
+                    color: subColor,
+                    textStyle: const TextStyle(
+                        textBaseline: TextBaseline.alphabetic)),
               ),
             ),
             ...items.asMap().entries.map((entry) => _buildAgendaCard(
@@ -92,7 +148,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                   isDark,
                   inkColor,
                   subColor,
-                  index: index + entry.key,
+                  index: dateIndex + entry.key,
                 )),
             const SizedBox(height: 12),
           ],
@@ -163,7 +219,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
           );
         },
-        openBuilder: (context, _) => DetailScreen(id: item.id),
+        openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
       ),
     ).animate().fade(duration: 250.ms).slideY(
         begin: 0.1,

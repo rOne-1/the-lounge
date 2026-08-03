@@ -57,9 +57,27 @@ class HomeScreen extends ConsumerWidget {
 
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
+    if (trendingAsync.hasError && popularAsync.hasError) {
+      final err = trendingAsync.error ?? popularAsync.error;
+      final message = err.toString().replaceAll('Exception: ', '');
+      return FullScreenErrorWidget(
+        message: message.isNotEmpty
+            ? message
+            : 'Failed to load content. Please check your connection.',
+        onRetry: () {
+          ref.invalidate(trendingMoviesProvider);
+          ref.invalidate(trendingTvShowsProvider);
+          ref.invalidate(popularMoviesProvider);
+        },
+      );
+    }
+
+    final isLarge = MediaQuery.of(context).size.width >= 600;
+
     return SingleChildScrollView(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(18.0, 4.0, 18.0, 4.0 + bottomPadding),
+        padding: EdgeInsets.fromLTRB(
+            isLarge ? 24.0 : 18.0, 4.0, isLarge ? 24.0 : 18.0, 4.0 + bottomPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -109,16 +127,19 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            // Movie / TV Toggle
-            SegmentedMediaTypeToggle(
-              activeType: navState.activeMediaType,
-              onChanged: (type) => ref
-                  .read(navigationProvider.notifier)
-                  .setMediaType(type),
-              isDark: isDark,
-            ),
-            const SizedBox(height: 22),
+            if (!isLarge) ...[
+              const SizedBox(height: 16),
+              // Movie / TV Toggle
+              SegmentedMediaTypeToggle(
+                activeType: navState.activeMediaType,
+                onChanged: (type) => ref
+                    .read(navigationProvider.notifier)
+                    .setMediaType(type),
+                isDark: isDark,
+              ),
+              const SizedBox(height: 22),
+            ] else
+              const SizedBox(height: 16),
 
             // Continue Watching
             Row(
@@ -287,7 +308,7 @@ class HomeScreen extends ConsumerWidget {
                                   ),
                                 );
                               },
-                              openBuilder: (context, _) => DetailScreen(id: item.id),
+                              openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
                             ),
                           ),
                         ).animate().fade(duration: 250.ms).slideY(
@@ -298,7 +319,13 @@ class HomeScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (err, stack) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: InlinePartialErrorWidget(
+                      message: 'Failed to load Continue Watching',
+                      onRetry: () => ref.invalidate(popularMoviesProvider),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -515,7 +542,7 @@ class HomeScreen extends ConsumerWidget {
                                   ),
                                 );
                               },
-                              openBuilder: (context, _) => DetailScreen(id: item.id),
+                              openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
                             ),
                           ),
                         ).animate().fade(duration: 250.ms).slideY(
@@ -526,7 +553,14 @@ class HomeScreen extends ConsumerWidget {
                     );
                   },
                   loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (err, stack) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: InlinePartialErrorWidget(
+                      message: 'Failed to load Trending titles',
+                      onRetry: () => ref.invalidate(
+                          isMovies ? trendingMoviesProvider : trendingTvShowsProvider),
+                    ),
+                  ),
                 ),
               ),
             ),

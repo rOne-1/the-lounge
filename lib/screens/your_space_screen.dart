@@ -58,9 +58,11 @@ class YourSpaceScreen extends ConsumerWidget {
     
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final isLarge = MediaQuery.of(context).size.width >= 600;
 
     return GridView.builder(
-      padding: EdgeInsets.fromLTRB(18, 18, 18, 18.0 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(
+          isLarge ? 24.0 : 18.0, isLarge ? 12.0 : 18.0, isLarge ? 24.0 : 18.0, 18.0 + MediaQuery.of(context).padding.bottom),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 120,
         childAspectRatio: 2 / 3,
@@ -101,7 +103,7 @@ class YourSpaceScreen extends ConsumerWidget {
                 ),
               );
             },
-            openBuilder: (context, _) => DetailScreen(id: item.id),
+            openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
           ),
         ).animate().fade(duration: 250.ms).slideY(
             begin: 0.1,

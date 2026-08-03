@@ -14,6 +14,7 @@ void main() {
     overview: 'A great movie test overview',
     genres: ['Action', 'Sci-Fi'],
     hasTrailer: true,
+    trailerVideoId: 'dQw4w9WgXcQ',
   );
 
   const itemWithoutTrailer = MediaItem(
@@ -74,7 +75,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text("Trailer playback isn't available on Windows yet."),
+        find.text("Trailer playback isn't available for this title"),
         findsOneWidget,
       );
 
@@ -83,7 +84,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text("Trailer playback isn't available on Windows yet."),
+        find.text("Trailer playback isn't available for this title"),
         findsOneWidget,
       );
 
@@ -92,7 +93,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text("Trailer playback isn't available on Windows yet."),
+        find.text("Trailer playback isn't available for this title"),
         findsOneWidget,
       );
 
@@ -130,7 +131,7 @@ void main() {
 
       // Feedback should also be shown
       expect(
-        find.text("Trailer playback isn't available on Windows yet."),
+        find.text("Trailer playback isn't available for this title"),
         findsOneWidget,
       );
 

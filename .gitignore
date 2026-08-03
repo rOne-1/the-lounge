@@ -121,3 +121,7 @@ app.*.symbols
 # Local notes
 local-notes/
 /local-notes/
+
+# Environment variables
+.env
+.env.*
