@@ -32,55 +32,66 @@ class MediaPosterFallback extends StatelessWidget {
     final resolvedIcon = icon ??
         (type == MediaType.tv ? Icons.tv_outlined : Icons.movie_outlined);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final height = constraints.maxHeight;
-        final isVerySmall = height > 0 && height < 80;
-        final effectiveIconSize = iconSize ?? (isVerySmall ? 18.0 : 26.0);
-        final effectiveFontSize = titleFontSize ?? (isVerySmall ? 9.0 : 11.0);
-
-        return Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: BoxDecoration(
-            color: cardBg,
-            border: Border.all(color: borderColor),
-          ),
-          padding: EdgeInsets.symmetric(
-            horizontal: isVerySmall ? 4.0 : 8.0,
-            vertical: isVerySmall ? 4.0 : 8.0,
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                resolvedIcon,
-                color: iconColor.withValues(alpha: 0.85),
-                size: effectiveIconSize,
-              ),
-              if (showTitle && title.isNotEmpty) ...[
-                SizedBox(height: isVerySmall ? 2 : 5),
-                Flexible(
-                  child: Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    maxLines: isVerySmall ? 1 : 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppThemes.safeGeist(
-                      fontSize: effectiveFontSize,
-                      fontWeight: FontWeight.w600,
-                      color: textColor,
-                      height: 1.15,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      builder: (context, opacity, child) {
+        return Opacity(
+          opacity: opacity,
+          child: child,
         );
       },
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final height = constraints.maxHeight;
+          final isVerySmall = height > 0 && height < 80;
+          final effectiveIconSize = iconSize ?? (isVerySmall ? 18.0 : 26.0);
+          final effectiveFontSize = titleFontSize ?? (isVerySmall ? 9.0 : 11.0);
+
+          return Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: BoxDecoration(
+              color: cardBg,
+              border: Border.all(color: borderColor),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: isVerySmall ? 4.0 : 8.0,
+              vertical: isVerySmall ? 4.0 : 8.0,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  resolvedIcon,
+                  color: iconColor.withValues(alpha: 0.85),
+                  size: effectiveIconSize,
+                ),
+                if (showTitle && title.isNotEmpty) ...[
+                  SizedBox(height: isVerySmall ? 2 : 5),
+                  Flexible(
+                    child: Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      maxLines: isVerySmall ? 1 : 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppThemes.safeGeist(
+                        fontSize: effectiveFontSize,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                        height: 1.15,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 }
@@ -156,30 +167,41 @@ class FullScreenErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Try again'),
-            ),
-          ],
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      builder: (context, opacity, child) {
+        return Opacity(
+          opacity: opacity,
+          child: child,
+        );
+      },
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.error_outline,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Try again'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -198,35 +220,46 @@ class InlinePartialErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            Icons.warning_amber_rounded,
-            color: Theme.of(context).colorScheme.onErrorContainer,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onErrorContainer,
-                  ),
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      builder: (context, opacity, child) {
+        return Opacity(
+          opacity: opacity,
+          child: child,
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              Icons.warning_amber_rounded,
+              color: Theme.of(context).colorScheme.onErrorContainer,
             ),
-          ),
-          TextButton(
-            onPressed: onRetry,
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+              ),
             ),
-            child: const Text('Retry'),
-          ),
-        ],
+            TextButton(
+              onPressed: onRetry,
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.onErrorContainer,
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -246,43 +279,54 @@ class PlaybackUnavailableWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.close),
-          onPressed: () => Navigator.of(context).pop(),
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+      builder: (context, opacity, child) {
+        return Opacity(
+          opacity: opacity,
+          child: child,
+        );
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
         ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.videocam_off,
-                size: 80,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyLarge,
-              ),
-              const SizedBox(height: 32),
-              FilledButton.tonalIcon(
-                onPressed: onAddWatchlist,
-                icon: const Icon(Icons.bookmark_add),
-                label: const Text('Add to watchlist'),
-              ),
-            ],
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.videocam_off,
+                  size: 80,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: 32),
+                FilledButton.tonalIcon(
+                  onPressed: onAddWatchlist,
+                  icon: const Icon(Icons.bookmark_add),
+                  label: const Text('Add to watchlist'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

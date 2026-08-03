@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:animations/animations.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
 import '../models/media_item.dart';
@@ -7,6 +9,8 @@ import 'detail_screen.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/fallback_widgets.dart';
+import '../widgets/segmented_toggle.dart';
+import '../widgets/pressable_scale.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
@@ -49,9 +53,11 @@ class HomeScreen extends ConsumerWidget {
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
 
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 4.0),
+        padding: EdgeInsets.fromLTRB(18.0, 4.0, 18.0, 4.0 + bottomPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -85,80 +91,30 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: pillColor,
-                    borderRadius: BorderRadius.circular(12),
+                PressableScale(
+                  onTap: () => ref
+                      .read(navigationProvider.notifier)
+                      .setTab(AppTab.search),
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: pillColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(Icons.search, color: accColor, size: 19),
                   ),
-                  child: Icon(Icons.search, color: accColor, size: 19),
                 ),
               ],
             ),
             const SizedBox(height: 16),
             // Movie / TV Toggle
-            Container(
-              decoration: BoxDecoration(
-                color: pillColor,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              padding: const EdgeInsets.all(3),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  GestureDetector(
-                    onTap: () => ref
-                        .read(navigationProvider.notifier)
-                        .setMediaType(MediaTypeToggle.movies),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isMovies ? accColor : Colors.transparent,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        'Movies',
-                        style: AppThemes.safeGeist(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: isMovies
-                              ? (isDark
-                                  ? const Color(0xFF1A140C)
-                                  : Colors.white)
-                              : subColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => ref
-                        .read(navigationProvider.notifier)
-                        .setMediaType(MediaTypeToggle.tv),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: !isMovies ? accColor : Colors.transparent,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        'TV',
-                        style: AppThemes.safeGeist(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: !isMovies
-                              ? (isDark
-                                  ? const Color(0xFF1A140C)
-                                  : Colors.white)
-                              : subColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+            SegmentedMediaTypeToggle(
+              activeType: navState.activeMediaType,
+              onChanged: (type) => ref
+                  .read(navigationProvider.notifier)
+                  .setMediaType(type),
+              isDark: isDark,
             ),
             const SizedBox(height: 22),
 
@@ -176,12 +132,17 @@ class HomeScreen extends ConsumerWidget {
                     color: inkColor,
                   ),
                 ),
-                Text(
-                  'See all',
-                  style: AppThemes.safeGeist(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: subColor,
+                PressableScale(
+                  onTap: () => ref
+                      .read(navigationProvider.notifier)
+                      .setTab(AppTab.yourSpace),
+                  child: Text(
+                    'See all',
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: subColor,
+                    ),
                   ),
                 ),
               ],
@@ -205,118 +166,132 @@ class HomeScreen extends ConsumerWidget {
                       final item = items[index];
                       return Padding(
                         padding: const EdgeInsets.only(right: 12.0),
-                        child: GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DetailScreen(id: item.id),
+                        child: PressableScale(
+                          child: OpenContainer(
+                            transitionDuration: const Duration(milliseconds: 300),
+                            closedElevation: 0,
+                            openElevation: 0,
+                            closedColor: Colors.transparent,
+                            openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+                            middleColor: Colors.transparent,
+                            closedShape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ),
-                          child: SizedBox(
-                            width: 132,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  height: 82.5, // aspect-ratio 16:10 roughly
-                                  decoration: BoxDecoration(
-                                    color: phColor,
-                                    border: Border.all(color: lineRgba),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: isDark
-                                            ? const Color.fromRGBO(
-                                                255, 255, 255, 0.05)
-                                            : const Color.fromRGBO(
-                                                255, 255, 255, 0.5),
-                                        blurRadius: 0,
-                                        spreadRadius: 0,
-                                        offset: const Offset(0, 1),
-                                        blurStyle: BlurStyle.inner,
-                                      )
-                                    ],
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Stack(
-                                    fit: StackFit.expand,
+                            closedBuilder: (context, openContainer) {
+                              return GestureDetector(
+                                onTap: openContainer,
+                                child: SizedBox(
+                                  width: 132,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      MediaImage(
-                                        item: item,
-                                        fit: BoxFit.cover,
-                                        showFallbackTitle: false,
-                                      ),
-                                      Positioned(
-                                        top: 8,
-                                        left: 8,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(
-                                              horizontal: 7, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: isDark
-                                                ? const Color.fromRGBO(
-                                                    0, 0, 0, 0.55)
-                                                : const Color.fromRGBO(
-                                                    44, 32, 22, 0.7),
-                                            borderRadius:
-                                                BorderRadius.circular(6),
-                                          ),
-                                          child: Text(
-                                            'S2 · E4',
-                                            style: AppThemes.safeGeist(
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.white,
+                                      Container(
+                                        height: 82.5, // aspect-ratio 16:10 roughly
+                                        decoration: BoxDecoration(
+                                          color: phColor,
+                                          border: Border.all(color: lineRgba),
+                                          borderRadius: BorderRadius.circular(12),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: isDark
+                                                  ? const Color.fromRGBO(
+                                                      255, 255, 255, 0.05)
+                                                  : const Color.fromRGBO(
+                                                      255, 255, 255, 0.5),
+                                              blurRadius: 0,
+                                              spreadRadius: 0,
+                                              offset: const Offset(0, 1),
+                                              blurStyle: BlurStyle.inner,
+                                            )
+                                          ],
+                                        ),
+                                        clipBehavior: Clip.antiAlias,
+                                        child: Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            MediaImage(
+                                              item: item,
+                                              fit: BoxFit.cover,
+                                              showFallbackTitle: false,
                                             ),
-                                          ),
+                                            Positioned(
+                                              top: 8,
+                                              left: 8,
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(
+                                                    horizontal: 7, vertical: 3),
+                                                decoration: BoxDecoration(
+                                                  color: isDark
+                                                      ? const Color.fromRGBO(
+                                                          0, 0, 0, 0.55)
+                                                      : const Color.fromRGBO(
+                                                          44, 32, 22, 0.7),
+                                                  borderRadius:
+                                                      BorderRadius.circular(6),
+                                                ),
+                                                child: Text(
+                                                  'S2 · E4',
+                                                  style: AppThemes.safeGeist(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Positioned(
+                                              left: 0,
+                                              right: 0,
+                                              bottom: 0,
+                                              child: Container(
+                                                height: 4,
+                                                color: isDark
+                                                    ? const Color.fromRGBO(
+                                                        0, 0, 0, 0.4)
+                                                    : const Color.fromRGBO(
+                                                        44, 32, 22, 0.18),
+                                                alignment: Alignment.centerLeft,
+                                                child: FractionallySizedBox(
+                                                  widthFactor: 0.62,
+                                                  child: Container(color: accColor),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
-                                      Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        bottom: 0,
-                                        child: Container(
-                                          height: 4,
-                                          color: isDark
-                                              ? const Color.fromRGBO(
-                                                  0, 0, 0, 0.4)
-                                              : const Color.fromRGBO(
-                                                  44, 32, 22, 0.18),
-                                          alignment: Alignment.centerLeft,
-                                          child: FractionallySizedBox(
-                                            widthFactor: 0.62,
-                                            child: Container(color: accColor),
-                                          ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        item.title,
+                                        style: AppThemes.safeGeist(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: inkColor,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        '18 min left',
+                                        style: AppThemes.safeGeist(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w400,
+                                          color: subColor,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  item.title,
-                                  style: AppThemes.safeGeist(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: inkColor,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '18 min left',
-                                  style: AppThemes.safeGeist(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w400,
-                                    color: subColor,
-                                  ),
-                                ),
-                              ],
-                            ),
+                              );
+                            },
+                            openBuilder: (context, _) => DetailScreen(id: item.id),
                           ),
                         ),
-                      );
+                      ).animate().fade(duration: 250.ms).slideY(
+                          begin: 0.1,
+                          end: 0,
+                          delay: (index.clamp(0, 5) * 40).ms);
                     },
                   );
                 },
@@ -326,113 +301,118 @@ class HomeScreen extends ConsumerWidget {
             // Next episode highlight
             if (!isMovies) ...[
               const SizedBox(height: 22),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: isDark
-                        ? [
-                            const Color.fromRGBO(214, 151, 132, 0.22),
-                            const Color.fromRGBO(214, 151, 132, 0.05)
-                          ]
-                        : [
-                            const Color.fromRGBO(167, 106, 80, 0.22),
-                            const Color.fromRGBO(167, 106, 80, 0.06)
-                          ],
-                  ),
-                  border: Border.all(
-                    color: isDark
-                        ? const Color.fromRGBO(214, 151, 132, 0.42)
-                        : const Color.fromRGBO(167, 106, 80, 0.42),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
+              PressableScale(
+                onTap: () => ref
+                    .read(navigationProvider.notifier)
+                    .setTab(AppTab.calendar),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: isDark
+                          ? [
+                              const Color.fromRGBO(214, 151, 132, 0.22),
+                              const Color.fromRGBO(214, 151, 132, 0.05)
+                            ]
+                          : [
+                              const Color.fromRGBO(167, 106, 80, 0.22),
+                              const Color.fromRGBO(167, 106, 80, 0.06)
+                            ],
+                    ),
+                    border: Border.all(
                       color: isDark
-                          ? const Color.fromRGBO(255, 255, 255, 0.08)
-                          : const Color.fromRGBO(255, 255, 255, 0.5),
-                      offset: const Offset(0, 1),
-                      blurStyle: BlurStyle.inner,
-                    )
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 84, // 2/3 aspect ratio
-                      decoration: BoxDecoration(
-                        color: phColor,
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(
-                          color: isDark
-                              ? const Color.fromRGBO(214, 151, 132, 0.32)
-                              : const Color.fromRGBO(167, 106, 80, 0.34),
+                          ? const Color.fromRGBO(214, 151, 132, 0.42)
+                          : const Color.fromRGBO(167, 106, 80, 0.42),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark
+                            ? const Color.fromRGBO(255, 255, 255, 0.08)
+                            : const Color.fromRGBO(255, 255, 255, 0.5),
+                        offset: const Offset(0, 1),
+                        blurStyle: BlurStyle.inner,
+                      )
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 84, // 2/3 aspect ratio
+                        decoration: BoxDecoration(
+                          color: phColor,
+                          borderRadius: BorderRadius.circular(9),
+                          border: Border.all(
+                            color: isDark
+                                ? const Color.fromRGBO(214, 151, 132, 0.32)
+                                : const Color.fromRGBO(167, 106, 80, 0.34),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 13),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      const SizedBox(width: 13),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'NEXT EPISODE',
+                              style: AppThemes.safeGeist(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 1.1,
+                                color: isDark
+                                    ? const Color(0xFFE0A894)
+                                    : const Color(0xFFA76A50),
+                              ),
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              'Severance · S2 E6',
+                              style: AppThemes.safeGeist(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: inkColor,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              'Airs in 2 days · Fri, Aug 2',
+                              style: AppThemes.safeGeist(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                                color: subColor,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Column(
                         children: [
+                          Icon(
+                            Icons.calendar_today_outlined,
+                            color: isDark
+                                ? const Color(0xFFE0A894)
+                                : const Color(0xFFA76A50),
+                            size: 22,
+                          ),
+                          const SizedBox(height: 4),
                           Text(
-                            'NEXT EPISODE',
+                            'Calendar',
                             style: AppThemes.safeGeist(
-                              fontSize: 11,
+                              fontSize: 9,
                               fontWeight: FontWeight.w600,
-                              letterSpacing: 1.1,
                               color: isDark
                                   ? const Color(0xFFE0A894)
                                   : const Color(0xFFA76A50),
                             ),
                           ),
-                          const SizedBox(height: 3),
-                          Text(
-                            'Severance · S2 E6',
-                            style: AppThemes.safeGeist(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: inkColor,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Airs in 2 days · Fri, Aug 2',
-                            style: AppThemes.safeGeist(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w400,
-                              color: subColor,
-                            ),
-                          ),
                         ],
-                      ),
-                    ),
-                    Column(
-                      children: [
-                        Icon(
-                          Icons.calendar_today_outlined,
-                          color: isDark
-                              ? const Color(0xFFE0A894)
-                              : const Color(0xFFA76A50),
-                          size: 22,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Calendar',
-                          style: AppThemes.safeGeist(
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? const Color(0xFFE0A894)
-                                : const Color(0xFFA76A50),
-                          ),
-                        ),
-                      ],
-                    )
-                  ],
+                      )
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -452,12 +432,17 @@ class HomeScreen extends ConsumerWidget {
                     color: inkColor,
                   ),
                 ),
-                Text(
-                  'See all',
-                  style: AppThemes.safeGeist(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: subColor,
+                PressableScale(
+                  onTap: () => ref
+                      .read(navigationProvider.notifier)
+                      .setTab(AppTab.search),
+                  child: Text(
+                    'See all',
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: subColor,
+                    ),
                   ),
                 ),
               ],
@@ -481,40 +466,54 @@ class HomeScreen extends ConsumerWidget {
                       final item = items[index];
                       return Padding(
                         padding: const EdgeInsets.only(right: 12),
-                        child: GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => DetailScreen(id: item.id),
-                            ),
-                          ),
-                          child: Container(
-                            width: 96,
-                            height: 144, // 2/3 ratio
-                            decoration: BoxDecoration(
-                              color: phColor,
-                              border: Border.all(color: lineRgba),
+                        child: PressableScale(
+                          child: OpenContainer(
+                            transitionDuration: const Duration(milliseconds: 300),
+                            closedElevation: 0,
+                            openElevation: 0,
+                            closedColor: Colors.transparent,
+                            openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+                            middleColor: Colors.transparent,
+                            closedShape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(11),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: isDark
-                                      ? const Color.fromRGBO(
-                                          255, 255, 255, 0.05)
-                                      : const Color.fromRGBO(
-                                          255, 255, 255, 0.5),
-                                  offset: const Offset(0, 1),
-                                  blurStyle: BlurStyle.inner,
+                            ),
+                            closedBuilder: (context, openContainer) {
+                              return GestureDetector(
+                                onTap: openContainer,
+                                child: Container(
+                                  width: 96,
+                                  height: 144, // 2/3 ratio
+                                  decoration: BoxDecoration(
+                                    color: phColor,
+                                    border: Border.all(color: lineRgba),
+                                    borderRadius: BorderRadius.circular(11),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: isDark
+                                            ? const Color.fromRGBO(
+                                                255, 255, 255, 0.05)
+                                            : const Color.fromRGBO(
+                                                255, 255, 255, 0.5),
+                                        offset: const Offset(0, 1),
+                                        blurStyle: BlurStyle.inner,
+                                      ),
+                                    ],
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: MediaImage(
+                                    item: item,
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
-                              ],
-                            ),
-                            clipBehavior: Clip.antiAlias,
-                            child: MediaImage(
-                              item: item,
-                              fit: BoxFit.cover,
-                            ),
+                              );
+                            },
+                            openBuilder: (context, _) => DetailScreen(id: item.id),
                           ),
                         ),
-                      );
+                      ).animate().fade(duration: 250.ms).slideY(
+                          begin: 0.1,
+                          end: 0,
+                          delay: (index.clamp(0, 5) * 40).ms);
                     },
                   );
                 },
@@ -578,7 +577,7 @@ class HomeScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 13),
-                  GestureDetector(
+                  PressableScale(
                     onTap: () => ref
                         .read(navigationProvider.notifier)
                         .setTab(AppTab.discover),
@@ -624,3 +623,4 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 }
+

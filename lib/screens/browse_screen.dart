@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:animations/animations.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../repositories/movie_repository.dart';
 import '../providers/repository_provider.dart';
 import '../models/media_item.dart';
@@ -7,6 +9,7 @@ import 'detail_screen.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/fallback_widgets.dart';
+import '../widgets/pressable_scale.dart';
 
 class BrowseScreen extends ConsumerStatefulWidget {
   const BrowseScreen({super.key});
@@ -93,7 +96,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           final isSelected = _selectedGenre == genre;
           return Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: GestureDetector(
+            child: PressableScale(
               onTap: () {
                 setState(() => _selectedGenre = genre);
               },
@@ -142,7 +145,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             runSpacing: 8,
             children: _genres.map((genre) {
               final isSelected = _selectedGenre == genre;
-              return GestureDetector(
+              return PressableScale(
                 onTap: () {
                   setState(() => _selectedGenre = genre);
                 },
@@ -206,24 +209,40 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           itemCount: items.length,
           itemBuilder: (context, index) {
             final item = items[index];
-            return GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => DetailScreen(id: item.id)),
-              ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: phColor,
+            return PressableScale(
+              child: OpenContainer(
+                transitionDuration: const Duration(milliseconds: 300),
+                closedElevation: 0,
+                openElevation: 0,
+                closedColor: Colors.transparent,
+                openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+                middleColor: Colors.transparent,
+                closedShape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: lineRgba),
                 ),
-                clipBehavior: Clip.antiAlias,
-                child: MediaImage(
-                  item: item,
-                  fit: BoxFit.cover,
-                ),
+                closedBuilder: (context, openContainer) {
+                  return GestureDetector(
+                    onTap: openContainer,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: phColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: lineRgba),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: MediaImage(
+                        item: item,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  );
+                },
+                openBuilder: (context, _) => DetailScreen(id: item.id),
               ),
-            );
+            ).animate().fade(duration: 250.ms).slideY(
+                begin: 0.1,
+                end: 0,
+                delay: (index.clamp(0, 5) * 40).ms);
           },
         );
       },

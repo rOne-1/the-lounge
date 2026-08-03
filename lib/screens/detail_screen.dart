@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/repository_provider.dart';
 import '../providers/media_provider.dart';
 import '../models/media_item.dart';
 import '../widgets/trailer_player.dart';
 import '../widgets/fallback_widgets.dart';
+import '../widgets/pressable_scale.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -206,7 +208,7 @@ class DetailScreen extends ConsumerWidget {
             ),
           ),
           Center(
-            child: GestureDetector(
+            child: PressableScale(
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => TrailerPlayer(item: item)),
@@ -386,19 +388,21 @@ class DetailScreen extends ConsumerWidget {
       spacing: 8,
       runSpacing: 8,
       children: item.genres.map((genre) {
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-          decoration: BoxDecoration(
-            color: phColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: lineRgba),
-          ),
-          child: Text(
-            genre,
-            style: AppThemes.safeGeist(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: subColor,
+        return PressableScale(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+            decoration: BoxDecoration(
+              color: phColor,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: lineRgba),
+            ),
+            child: Text(
+              genre,
+              style: AppThemes.safeGeist(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: subColor,
+              ),
             ),
           ),
         );
@@ -473,9 +477,11 @@ class DetailScreen extends ConsumerWidget {
         ? accentColor
         : (isDark ? accentColor.withAlpha(50) : accentColor.withAlpha(50));
 
-    return GestureDetector(
+    return PressableScale(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutCubic,
         height: 44,
         decoration: BoxDecoration(
           color: bgColor,
@@ -496,13 +502,15 @@ class DetailScreen extends ConsumerWidget {
               : [],
         ),
         alignment: Alignment.center,
-        child: Text(
-          label,
+        child: AnimatedDefaultTextStyle(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
           style: AppThemes.safeGeist(
             fontSize: 13,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
             color: textColor,
           ),
+          child: Text(label),
         ),
       ),
     );
@@ -607,36 +615,38 @@ class DetailScreen extends ConsumerWidget {
                 color: inkColor,
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-              decoration: BoxDecoration(
-                color: phColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: lineRgba),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: currentCountry,
-                  dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
-                  icon: Icon(Icons.arrow_drop_down, color: subColor, size: 20),
-                  isDense: true,
-                  style: AppThemes.safeGeist(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: inkColor,
+            PressableScale(
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+                decoration: BoxDecoration(
+                  color: phColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: lineRgba),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: currentCountry,
+                    dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
+                    icon: Icon(Icons.arrow_drop_down, color: subColor, size: 20),
+                    isDense: true,
+                    style: AppThemes.safeGeist(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: inkColor,
+                    ),
+                    onChanged: (String? newCountry) {
+                      if (newCountry != null) {
+                        notifier.setWatchProvidersCountry(newCountry);
+                      }
+                    },
+                    items: supportedCountries
+                        .map<DropdownMenuItem<String>>((String country) {
+                      return DropdownMenuItem<String>(
+                        value: country,
+                        child: Text(country),
+                      );
+                    }).toList(),
                   ),
-                  onChanged: (String? newCountry) {
-                    if (newCountry != null) {
-                      notifier.setWatchProvidersCountry(newCountry);
-                    }
-                  },
-                  items: supportedCountries
-                      .map<DropdownMenuItem<String>>((String country) {
-                    return DropdownMenuItem<String>(
-                      value: country,
-                      child: Text(country),
-                    );
-                  }).toList(),
                 ),
               ),
             ),
@@ -648,32 +658,34 @@ class DetailScreen extends ConsumerWidget {
             spacing: 8,
             runSpacing: 8,
             children: item.watchProviders.map((provider) {
-              return Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: phColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: lineRgba),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.tv, size: 14, color: accColor),
-                    const SizedBox(width: 6),
-                    Text(
-                      provider,
-                      style: AppThemes.safeGeist(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: inkColor,
+              return PressableScale(
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: phColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: lineRgba),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.tv, size: 14, color: accColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        provider,
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: inkColor,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             }).toList(),
-          )
+          ).animate(key: ValueKey(currentCountry)).fade(duration: 250.ms)
         else
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4.0),
@@ -685,7 +697,7 @@ class DetailScreen extends ConsumerWidget {
                 fontStyle: FontStyle.italic,
               ),
             ),
-          ),
+          ).animate(key: ValueKey(currentCountry)).fade(duration: 250.ms),
       ],
     );
   }

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:animations/animations.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../widgets/responsive_layout.dart';
+import '../widgets/segmented_toggle.dart';
+import '../widgets/pressable_scale.dart';
 import '../constants.dart';
 import 'home_screen.dart';
 import 'discover_screen.dart';
@@ -22,37 +25,46 @@ class ShellScreen extends ConsumerWidget {
     final isDark = ambiance == AmbianceType.screeningRoom;
 
     return SizedBox.expand(
-      child: DecoratedBox(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 550),
+        curve: Curves.easeInOutCubic,
         decoration: isDark
             ? AppThemes.screeningRoomBackground()
             : AppThemes.readingRoomBackground(),
-        child: Scaffold(
-          backgroundColor: isDark ? AppColors.srBase : AppColors.rrBase,
-          extendBody: true,
-          body: ResponsiveLayout(
-            compact: (context) => _buildCompactLayout(
-              context,
-              navigationState,
-              navigationNotifier,
-              ambiance,
-              ambianceNotifier,
-              isDark,
-            ),
-            medium: (context) => _buildLargeLayout(
-              context,
-              navigationState,
-              navigationNotifier,
-              ambiance,
-              ambianceNotifier,
-              isDark,
-            ),
-            large: (context) => _buildLargeLayout(
-              context,
-              navigationState,
-              navigationNotifier,
-              ambiance,
-              ambianceNotifier,
-              isDark,
+        child: AnimatedTheme(
+          duration: const Duration(milliseconds: 550),
+          curve: Curves.easeInOutCubic,
+          data: isDark
+              ? AppThemes.screeningRoomTheme
+              : AppThemes.readingRoomTheme,
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
+            extendBody: true,
+            body: ResponsiveLayout(
+              compact: (context) => _buildCompactLayout(
+                context,
+                navigationState,
+                navigationNotifier,
+                ambiance,
+                ambianceNotifier,
+                isDark,
+              ),
+              medium: (context) => _buildLargeLayout(
+                context,
+                navigationState,
+                navigationNotifier,
+                ambiance,
+                ambianceNotifier,
+                isDark,
+              ),
+              large: (context) => _buildLargeLayout(
+                context,
+                navigationState,
+                navigationNotifier,
+                ambiance,
+                ambianceNotifier,
+                isDark,
+              ),
             ),
           ),
         ),
@@ -66,48 +78,10 @@ class ShellScreen extends ConsumerWidget {
     NavigationNotifier notifier,
     bool isDark,
   ) {
-    final bgColor = isDark ? AppColors.srPill : AppColors.rrPill;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final onAccColor = isDark ? const Color(0xFF1A140C) : Colors.white;
-
-    Widget buildSegment(MediaTypeToggle type, String label) {
-      final isSelected = state.activeMediaType == type;
-      return GestureDetector(
-        onTap: () => notifier.setMediaType(type),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
-          decoration: BoxDecoration(
-            color: isSelected ? accColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(999),
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontFamily: 'Geist',
-              fontWeight: FontWeight.w600,
-              fontSize: 12.5,
-              color: isSelected ? onAccColor : subColor,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      padding: const EdgeInsets.all(3),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          buildSegment(MediaTypeToggle.movies, 'Movies'),
-          const SizedBox(width: 2),
-          buildSegment(MediaTypeToggle.tv, 'TV'),
-        ],
-      ),
+    return SegmentedMediaTypeToggle(
+      activeType: state.activeMediaType,
+      onChanged: notifier.setMediaType,
+      isDark: isDark,
     );
   }
 
@@ -119,6 +93,9 @@ class ShellScreen extends ConsumerWidget {
     AmbianceNotifier ambianceNotifier,
     bool isDark,
   ) {
+    final mediaQuery = MediaQuery.of(context);
+    final reservedBottomInset = 66.0 + 16.0 + 16.0 + mediaQuery.padding.bottom;
+
     return Column(
       children: [
         SafeArea(
@@ -129,13 +106,16 @@ class ShellScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 _buildTopBarToggle(context, state, notifier, isDark),
-                IconButton(
-                  icon: Icon(
-                    isDark ? Icons.light_mode : Icons.dark_mode,
-                    color: isDark ? AppColors.srSub : AppColors.rrSub,
-                    size: 20,
+                PressableScale(
+                  onTap: () => ambianceNotifier.toggleAmbiance(),
+                  child: IconButton(
+                    icon: Icon(
+                      isDark ? Icons.light_mode : Icons.dark_mode,
+                      color: isDark ? AppColors.srSub : AppColors.rrSub,
+                      size: 20,
+                    ),
+                    onPressed: () => ambianceNotifier.toggleAmbiance(),
                   ),
-                  onPressed: () => ambianceNotifier.toggleAmbiance(),
                 ),
               ],
             ),
@@ -144,14 +124,28 @@ class ShellScreen extends ConsumerWidget {
         Expanded(
           child: Stack(
             children: [
-              Positioned.fill(child: _buildBody(state.currentTab)),
+              Positioned.fill(
+                child: MediaQuery(
+                  data: mediaQuery.copyWith(
+                    padding: mediaQuery.padding.copyWith(
+                      bottom: reservedBottomInset,
+                    ),
+                    viewPadding: mediaQuery.viewPadding.copyWith(
+                      bottom: reservedBottomInset,
+                    ),
+                  ),
+                  child: _buildBody(state.currentTab),
+                ),
+              ),
               Positioned(
                 bottom: 16,
                 left: 16,
                 right: 16,
                 child: SafeArea(
                   top: false,
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 550),
+                    curve: Curves.easeInOutCubic,
                     height: 66,
                     decoration: BoxDecoration(
                       color: isDark
@@ -186,7 +180,9 @@ class ShellScreen extends ConsumerWidget {
   ) {
     return Row(
       children: [
-        Container(
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 550),
+          curve: Curves.easeInOutCubic,
           width: 80,
           decoration: BoxDecoration(
             color: isDark
@@ -203,13 +199,16 @@ class ShellScreen extends ConsumerWidget {
             child: Column(
               children: [
                 const SizedBox(height: 24),
-                IconButton(
-                  icon: Icon(
-                    isDark ? Icons.light_mode : Icons.dark_mode,
-                    color: isDark ? AppColors.srSub : AppColors.rrSub,
-                    size: 20,
+                PressableScale(
+                  onTap: () => ambianceNotifier.toggleAmbiance(),
+                  child: IconButton(
+                    icon: Icon(
+                      isDark ? Icons.light_mode : Icons.dark_mode,
+                      color: isDark ? AppColors.srSub : AppColors.rrSub,
+                      size: 20,
+                    ),
+                    onPressed: () => ambianceNotifier.toggleAmbiance(),
                   ),
-                  onPressed: () => ambianceNotifier.toggleAmbiance(),
                 ),
                 const SizedBox(height: 32),
                 Expanded(
@@ -276,8 +275,7 @@ class ShellScreen extends ConsumerWidget {
         ],
       );
 
-      return GestureDetector(
-        behavior: HitTestBehavior.opaque,
+      return PressableScale(
         onTap: () => notifier.setTab(tab),
         child: isRail
             ? Padding(
@@ -297,18 +295,38 @@ class ShellScreen extends ConsumerWidget {
     ];
   }
 
+
   Widget _buildBody(AppTab tab) {
+    Widget child;
     switch (tab) {
       case AppTab.home:
-        return const HomeScreen();
+        child = const HomeScreen(key: ValueKey(AppTab.home));
       case AppTab.discover:
-        return const DiscoverScreen();
+        child = const DiscoverScreen(key: ValueKey(AppTab.discover));
       case AppTab.search:
-        return const SearchScreen();
+        child = const SearchScreen(key: ValueKey(AppTab.search));
       case AppTab.yourSpace:
-        return const YourSpaceScreen();
+        child = const YourSpaceScreen(key: ValueKey(AppTab.yourSpace));
       case AppTab.calendar:
-        return const CalendarScreen();
+        child = const CalendarScreen(key: ValueKey(AppTab.calendar));
     }
+
+    return PageTransitionSwitcher(
+      duration: const Duration(milliseconds: 180),
+      transitionBuilder: (
+        Widget child,
+        Animation<double> primaryAnimation,
+        Animation<double> secondaryAnimation,
+      ) {
+        return SharedAxisTransition(
+          animation: primaryAnimation,
+          secondaryAnimation: secondaryAnimation,
+          transitionType: SharedAxisTransitionType.horizontal,
+          fillColor: Colors.transparent,
+          child: child,
+        );
+      },
+      child: child,
+    );
   }
 }

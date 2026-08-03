@@ -75,25 +75,48 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
 
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
+      body: Column(
         children: [
-          if (isYoutubePlatform && _controller != null)
-            Center(
-              child: YoutubePlayer(
-                controller: _controller!,
-                aspectRatio: 16 / 9,
-              ),
-            )
-          else
-            _buildWindowsMockPlayer(),
-          SafeArea(
-            child: Align(
-              alignment: Alignment.topLeft,
-              child: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                onPressed: () => Navigator.of(context).pop(),
+          Container(
+            color: Colors.black,
+            child: SafeArea(
+              bottom: false,
+              child: Container(
+                height: 52,
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.item.title,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
+          ),
+          Expanded(
+            child: isYoutubePlatform && _controller != null
+                ? Center(
+                    child: YoutubePlayer(
+                      controller: _controller!,
+                      aspectRatio: 16 / 9,
+                    ),
+                  )
+                : _buildWindowsMockPlayer(),
           ),
         ],
       ),
