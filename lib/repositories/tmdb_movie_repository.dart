@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import '../services/tmdb_api_service.dart';
 import '../services/tmdb_cache_service.dart';
@@ -222,6 +223,225 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getTopRatedMovies();
+      }
+      throw Exception('TMDB API token is missing or unconfigured.');
+    }
+    try {
+      await _ensureGenresLoaded();
+      final key = cacheService
+          .generateKey('/movie/top_rated', {'page': 1, 'include_adult': false});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = await apiService.getTopRatedMovies();
+        await cacheService.put(key, res);
+      }
+      final results =
+          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.movie))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to fetch top rated movies from TMDB API.', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getTopRatedMovies();
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getTopRatedTvShows();
+      }
+      throw Exception('TMDB API token is missing or unconfigured.');
+    }
+    try {
+      await _ensureGenresLoaded();
+      final key = cacheService
+          .generateKey('/tv/top_rated', {'page': 1, 'include_adult': false});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = await apiService.getTopRatedTvShows();
+        await cacheService.put(key, res);
+      }
+      final results =
+          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.tv))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to fetch top rated TV shows from TMDB API.', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getTopRatedTvShows();
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getNowPlayingMovies();
+      }
+      throw Exception('TMDB API token is missing or unconfigured.');
+    }
+    try {
+      await _ensureGenresLoaded();
+      final key = cacheService
+          .generateKey('/movie/now_playing', {'page': 1, 'include_adult': false});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = await apiService.getNowPlayingMovies();
+        await cacheService.put(key, res);
+      }
+      final results =
+          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.movie))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to fetch now playing movies from TMDB API.', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getNowPlayingMovies();
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getAiringTodayTvShows();
+      }
+      throw Exception('TMDB API token is missing or unconfigured.');
+    }
+    try {
+      await _ensureGenresLoaded();
+      final key = cacheService
+          .generateKey('/tv/airing_today', {'page': 1, 'include_adult': false});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = await apiService.getAiringTodayTvShows();
+        await cacheService.put(key, res);
+      }
+      final results =
+          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.tv))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to fetch airing today TV shows from TMDB API.', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getAiringTodayTvShows();
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getUpcomingMovies();
+      }
+      throw Exception('TMDB API token is missing or unconfigured.');
+    }
+    try {
+      await _ensureGenresLoaded();
+      final key = cacheService
+          .generateKey('/movie/upcoming', {'page': 1, 'include_adult': false});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = await apiService.getUpcomingMovies();
+        await cacheService.put(key, res);
+      }
+      final results =
+          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.movie))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to fetch upcoming movies from TMDB API.', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getUpcomingMovies();
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getOnTheAirTvShows();
+      }
+      throw Exception('TMDB API token is missing or unconfigured.');
+    }
+    try {
+      await _ensureGenresLoaded();
+      final key = cacheService
+          .generateKey('/tv/on_the_air', {'page': 1, 'include_adult': false});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = await apiService.getOnTheAirTvShows();
+        await cacheService.put(key, res);
+      }
+      final results =
+          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.tv))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to fetch on the air TV shows from TMDB API.', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getOnTheAirTvShows();
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getTvSeasonDetails(tvId, seasonNumber);
+      }
+      return null;
+    }
+    try {
+      final cleanId = tvId.replaceFirst(RegExp(r'^(tv_|movie_)'), '');
+      final key = cacheService.generateKey('/tv/$cleanId/season/$seasonNumber');
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = await apiService.getTvSeasonDetails(cleanId, seasonNumber);
+        await cacheService.put(key, res);
+      }
+      return _mapJsonToTvSeason(res);
+    } catch (e, stack) {
+      _logError('Failed to fetch TV season details for $tvId S$seasonNumber', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getTvSeasonDetails(tvId, seasonNumber);
+      }
+      return null;
+    }
+  }
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async {
     if (!isConfigured) {
       _logWarning(
@@ -409,6 +629,146 @@ class TmdbMovieRepository implements MovieRepository {
         return fallbackRepository!.getWatchProviderRegions();
       }
       return _defaultRegions;
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+  }) async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.discoverMedia(
+          isMovies: isMovies,
+          params: params,
+        );
+      }
+      throw Exception('TMDB API token is missing or unconfigured.');
+    }
+    try {
+      await _ensureGenresLoaded();
+      final endpoint = isMovies ? '/discover/movie' : '/discover/tv';
+      final queryParams = <String, dynamic>{
+        'page': 1,
+        'include_adult': false,
+      };
+      if (params.genreId != null) {
+        queryParams['with_genres'] = params.genreId;
+      } else if (params.genreName != null && params.genreName!.isNotEmpty) {
+        final entry = _genreMap.entries.cast<MapEntry<int, String>?>().firstWhere(
+              (e) => e!.value.toLowerCase() == params.genreName!.toLowerCase(),
+              orElse: () => null,
+            );
+        if (entry != null) {
+          queryParams['with_genres'] = entry.key;
+        }
+      }
+      if (params.keywordId != null) {
+        queryParams['with_keywords'] = params.keywordId;
+      }
+      if (params.personId != null) queryParams['with_people'] = params.personId;
+      if (params.providerId != null) {
+        queryParams['with_watch_providers'] = params.providerId;
+      }
+      if (params.watchRegion != null && params.watchRegion!.isNotEmpty) {
+        queryParams['watch_region'] = params.watchRegion;
+      }
+      if (params.minRuntime != null) {
+        queryParams['with_runtime.gte'] = params.minRuntime;
+      }
+      if (params.maxRuntime != null) {
+        queryParams['with_runtime.lte'] = params.maxRuntime;
+      }
+      if (params.minVoteCount != null) {
+        queryParams['vote_count.gte'] = params.minVoteCount;
+      }
+      if (params.originalLanguage != null &&
+          params.originalLanguage!.isNotEmpty) {
+        queryParams['with_original_language'] = params.originalLanguage;
+      }
+      if (!isMovies && params.tvNetworkId != null) {
+        queryParams['with_networks'] = params.tvNetworkId;
+      }
+      if (!isMovies &&
+          params.tvStatus != null &&
+          params.tvStatus!.isNotEmpty) {
+        queryParams['with_status'] = params.tvStatus;
+      }
+      if (params.releaseYear != null) {
+        if (isMovies) {
+          queryParams['primary_release_year'] = params.releaseYear;
+        } else {
+          queryParams['first_air_date_year'] = params.releaseYear;
+        }
+      }
+      if (params.minRating != null) {
+        queryParams['vote_average.gte'] = params.minRating;
+      }
+      queryParams['sort_by'] = params.sortBy;
+
+      final key = cacheService.generateKey(endpoint, queryParams);
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = isMovies
+            ? await apiService.discoverMovies(params: params)
+            : await apiService.discoverTvShows(params: params);
+        await cacheService.put(key, res);
+      }
+      final results =
+          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(
+                item,
+                overrideType: isMovies ? MediaType.movie : MediaType.tv,
+              ))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to discover media from TMDB API.', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.discoverMedia(
+          isMovies: isMovies,
+          params: params,
+        );
+      }
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async {
+    if (!isConfigured) {
+      _logWarning('TMDB token is missing or unconfigured.');
+      if (fallbackRepository != null) {
+        return fallbackRepository!.searchPersons(query);
+      }
+      return [];
+    }
+    try {
+      final key = cacheService.generateKey('/search/person', {
+        'query': query,
+        'page': 1,
+        'include_adult': false,
+      });
+      Map<String, dynamic>? res =
+          await cacheService.get(key, isSessionOnly: true);
+      if (res == null) {
+        res = await apiService.searchPersons(query);
+        await cacheService.put(key, res, isSessionOnly: true);
+      }
+      final results =
+          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results;
+    } catch (e, stack) {
+      _logError(
+          'Failed to search persons for query "$query" from TMDB API.',
+          e,
+          stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.searchPersons(query);
+      }
+      return [];
     }
   }
 
@@ -838,4 +1198,58 @@ class TmdbMovieRepository implements MovieRepository {
 
     return map;
   }
+
+  TvSeason _mapJsonToTvSeason(Map<String, dynamic> json) {
+    final seasonId = (json['id'] as num?)?.toInt() ?? 0;
+    final seasonNum = (json['season_number'] as num?)?.toInt() ?? 1;
+    final name = json['name'] as String? ?? 'Season $seasonNum';
+    final overview = json['overview'] as String?;
+    final posterPath = json['poster_path'] as String?;
+    final posterUrl = TmdbImageHelper.getPosterThumbnailUrl(posterPath);
+    DateTime? airDate;
+    final airDateStr = json['air_date'] as String?;
+    if (airDateStr != null && airDateStr.isNotEmpty) {
+      airDate = DateTime.tryParse(airDateStr);
+    }
+    final episodesJson =
+        (json['episodes'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final episodes = episodesJson.map((ep) {
+      final epId = (ep['id'] as num?)?.toInt() ?? 0;
+      final epNum = (ep['episode_number'] as num?)?.toInt() ?? 1;
+      final epSeasonNum = (ep['season_number'] as num?)?.toInt() ?? seasonNum;
+      final epName = ep['name'] as String? ?? 'Episode $epNum';
+      final epOverview = ep['overview'] as String?;
+      final epStillPath = ep['still_path'] as String?;
+      final epStillUrl = TmdbImageHelper.w500(epStillPath);
+      DateTime? epAirDate;
+      final epAirDateStr = ep['air_date'] as String?;
+      if (epAirDateStr != null && epAirDateStr.isNotEmpty) {
+        epAirDate = DateTime.tryParse(epAirDateStr);
+      }
+      final epVote = (ep['vote_average'] as num?)?.toDouble();
+      final epRuntime = (ep['runtime'] as num?)?.toInt();
+      return TvEpisode(
+        id: epId,
+        episodeNumber: epNum,
+        seasonNumber: epSeasonNum,
+        name: epName,
+        overview: epOverview,
+        stillUrl: epStillUrl,
+        airDate: epAirDate,
+        voteAverage: epVote,
+        runtime: epRuntime,
+      );
+    }).toList();
+
+    return TvSeason(
+      id: seasonId,
+      seasonNumber: seasonNum,
+      name: name,
+      overview: overview,
+      posterUrl: posterUrl,
+      airDate: airDate,
+      episodes: episodes,
+    );
+  }
 }
+

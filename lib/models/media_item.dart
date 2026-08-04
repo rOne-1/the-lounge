@@ -3,6 +3,109 @@ enum MediaType {
   tv,
 }
 
+class TvEpisode {
+  final int id;
+  final int episodeNumber;
+  final int seasonNumber;
+  final String name;
+  final String? overview;
+  final String? stillUrl;
+  final DateTime? airDate;
+  final double? voteAverage;
+  final int? runtime;
+
+  const TvEpisode({
+    required this.id,
+    required this.episodeNumber,
+    required this.seasonNumber,
+    required this.name,
+    this.overview,
+    this.stillUrl,
+    this.airDate,
+    this.voteAverage,
+    this.runtime,
+  });
+
+  TvEpisode copyWith({
+    int? id,
+    int? episodeNumber,
+    int? seasonNumber,
+    String? name,
+    String? overview,
+    String? stillUrl,
+    DateTime? airDate,
+    double? voteAverage,
+    int? runtime,
+  }) {
+    return TvEpisode(
+      id: id ?? this.id,
+      episodeNumber: episodeNumber ?? this.episodeNumber,
+      seasonNumber: seasonNumber ?? this.seasonNumber,
+      name: name ?? this.name,
+      overview: overview ?? this.overview,
+      stillUrl: stillUrl ?? this.stillUrl,
+      airDate: airDate ?? this.airDate,
+      voteAverage: voteAverage ?? this.voteAverage,
+      runtime: runtime ?? this.runtime,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TvEpisode &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          episodeNumber == other.episodeNumber &&
+          seasonNumber == other.seasonNumber &&
+          name == other.name;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^ episodeNumber.hashCode ^ seasonNumber.hashCode ^ name.hashCode;
+}
+
+class TvSeason {
+  final int id;
+  final int seasonNumber;
+  final String name;
+  final String? overview;
+  final String? posterUrl;
+  final DateTime? airDate;
+  final List<TvEpisode> episodes;
+
+  const TvSeason({
+    required this.id,
+    required this.seasonNumber,
+    required this.name,
+    this.overview,
+    this.posterUrl,
+    this.airDate,
+    this.episodes = const [],
+  });
+
+  TvSeason copyWith({
+    int? id,
+    int? seasonNumber,
+    String? name,
+    String? overview,
+    String? posterUrl,
+    DateTime? airDate,
+    List<TvEpisode>? episodes,
+  }) {
+    return TvSeason(
+      id: id ?? this.id,
+      seasonNumber: seasonNumber ?? this.seasonNumber,
+      name: name ?? this.name,
+      overview: overview ?? this.overview,
+      posterUrl: posterUrl ?? this.posterUrl,
+      airDate: airDate ?? this.airDate,
+      episodes: episodes ?? this.episodes,
+    );
+  }
+}
+
+
 class CastMember {
   final String id;
   final String name;

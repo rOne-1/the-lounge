@@ -96,5 +96,153 @@ void main() {
       expect(state.maybeList.containsKey(testItem.id), isFalse);
       expect(state.watchedList.containsKey(testItem.id), isFalse);
     });
+
+    const tvShowItem = MediaItem(
+      id: 'tv-200',
+      title: 'Breaking Bad',
+      type: MediaType.tv,
+      rating: 9.5,
+      overview: 'A chemistry teacher...',
+      genres: ['Drama'],
+    );
+
+    test('toggleEpisodeWatched updates watchedEpisodes state and syncs show watch status when all episodes watched', () {
+      final notifier = container.read(mediaProvider.notifier);
+
+      expect(notifier.isEpisodeWatched(tvShowItem.id, 1, 1), isFalse);
+
+      // Toggle watched on S1E1 with totalEpisodeCount: 2 (partial watched)
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        showItem: tvShowItem,
+        totalEpisodeCount: 2,
+      );
+
+      var state = container.read(mediaProvider);
+      expect(notifier.isEpisodeWatched(tvShowItem.id, 1, 1), isTrue);
+      expect(state.watchedEpisodes[tvShowItem.id], contains('S1E1'));
+      // Show is not added to watchedList yet because only 1 of 2 episodes is watched
+      expect(state.watchedList.containsKey(tvShowItem.id), isFalse);
+
+      // Toggle watched on S1E2 (all episodes watched)
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 2,
+        showItem: tvShowItem,
+        totalEpisodeCount: 2,
+      );
+
+      state = container.read(mediaProvider);
+      expect(notifier.isEpisodeWatched(tvShowItem.id, 1, 2), isTrue);
+      expect(state.watchedList.containsKey(tvShowItem.id), isTrue);
+
+      // Toggle off S1E2 (partial watched again) -> show should be removed from watchedList, progress kept in watchedEpisodes
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 2,
+        showItem: tvShowItem,
+        totalEpisodeCount: 2,
+      );
+
+      state = container.read(mediaProvider);
+      expect(notifier.isEpisodeWatched(tvShowItem.id, 1, 2), isFalse);
+      expect(state.watchedEpisodes[tvShowItem.id], contains('S1E1'));
+      expect(state.watchedList.containsKey(tvShowItem.id), isFalse);
+    });
+
+    test('getNextUnwatchedEpisode returns first unwatched TvEpisode sequentially', () {
+      final notifier = container.read(mediaProvider.notifier);
+
+      const season1 = TvSeason(
+        id: 101,
+        seasonNumber: 1,
+        name: 'Season 1',
+        episodes: [
+          TvEpisode(id: 1001, episodeNumber: 1, seasonNumber: 1, name: 'Pilot'),
+          TvEpisode(id: 1002, episodeNumber: 2, seasonNumber: 1, name: 'Cat\'s in the Bag...'),
+        ],
+      );
+
+      const season2 = TvSeason(
+        id: 102,
+        seasonNumber: 2,
+        name: 'Season 2',
+        episodes: [
+          TvEpisode(id: 1003, episodeNumber: 1, seasonNumber: 2, name: 'Seven Thirty-Seven'),
+        ],
+      );
+
+      final seasons = [season1, season2];
+
+      // Initially next unwatched is S1E1
+      var nextEp = notifier.getNextUnwatchedEpisode(showId: tvShowItem.id, seasons: seasons);
+      expect(nextEp?.name, 'Pilot');
+
+      // Watch S1E1
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        showItem: tvShowItem,
+      );
+
+      nextEp = notifier.getNextUnwatchedEpisode(showId: tvShowItem.id, seasons: seasons);
+      expect(nextEp?.name, 'Cat\'s in the Bag...');
+
+      // Watch S1E2
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 2,
+        showItem: tvShowItem,
+      );
+
+      nextEp = notifier.getNextUnwatchedEpisode(showId: tvShowItem.id, seasons: seasons);
+      expect(nextEp?.name, 'Seven Thirty-Seven');
+
+      // Watch S2E1
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 2,
+        episodeNumber: 1,
+        showItem: tvShowItem,
+      );
+
+      nextEp = notifier.getNextUnwatchedEpisode(showId: tvShowItem.id, seasons: seasons);
+      expect(nextEp, isNull);
+    });
+
+    test('removeFromWatchedList and removeFromAllLists clear watchedEpisodes', () {
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        showItem: tvShowItem,
+      );
+
+      expect(notifier.isEpisodeWatched(tvShowItem.id, 1, 1), isTrue);
+
+      notifier.removeFromWatchedList(tvShowItem.id);
+      var state = container.read(mediaProvider);
+      expect(state.watchedEpisodes.containsKey(tvShowItem.id), isFalse);
+
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        showItem: tvShowItem,
+      );
+      expect(notifier.isEpisodeWatched(tvShowItem.id, 1, 1), isTrue);
+
+      notifier.removeFromAllLists(tvShowItem.id);
+      state = container.read(mediaProvider);
+      expect(state.watchedEpisodes.containsKey(tvShowItem.id), isFalse);
+    });
   });
 }

@@ -26,7 +26,28 @@ class MockDetailRepository implements MovieRepository {
   Future<List<MediaItem>> getTrendingTvShows() async => items.values.toList();
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async => items.values.toList();
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async => items.values.toList();
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async => items.values.toList();
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async => items.values.toList();
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async => items.values.toList();
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async => items.values.toList();
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async => items[id];
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
@@ -36,6 +57,16 @@ class MockDetailRepository implements MovieRepository {
         {'code': 'US', 'name': 'United States'},
         {'code': 'GB', 'name': 'United Kingdom'},
       ];
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required dynamic params,
+  }) async =>
+      items.values.toList();
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
 }
 
 void main() {
@@ -254,6 +285,49 @@ void main() {
       expect(find.text('34 Episodes'), findsOneWidget);
       expect(find.text('Next: Aug 10, 2026'), findsOneWidget);
       expect(find.text('Jul 15, 2016'), findsOneWidget);
+    });
+
+    testWidgets('TV Detail Screen displays Seasons & Episodes section with interactive episode watched checkmark toggle',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = MockDetailRepository({'tv-1': testTvShow});
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DetailScreen(id: 'tv-1'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify Seasons & Episodes section is rendered
+      expect(find.text('Seasons & Episodes'), findsOneWidget);
+
+      // Verify checkmark icon buttons are rendered for episodes
+      final checkmarkIcons = find.byIcon(Icons.check_outlined);
+      expect(checkmarkIcons, findsAtLeastNWidgets(1));
+
+      // Tap first episode watched toggle button
+      await tester.ensureVisible(checkmarkIcons.first);
+      await tester.pumpAndSettle();
+      await tester.tap(checkmarkIcons.first);
+      await tester.pumpAndSettle();
+
+      // Verify episode is marked watched in mediaProvider
+      final mediaState = container.read(mediaProvider);
+      expect(mediaState.watchedEpisodes['tv-1']?.contains('S1E1'), isTrue);
     });
 
     testWidgets('country selector dropdown updates provider state and preferences',

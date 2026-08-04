@@ -24,13 +24,44 @@ class MockCalendarRepository implements MovieRepository {
   Future<List<MediaItem>> getTrendingTvShows() async => tvShows;
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async => movies;
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async => tvShows;
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async => movies;
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async => tvShows;
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async => movies;
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async => tvShows;
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async => null;
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
 
   @override
   Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required dynamic params,
+  }) async =>
+      isMovies ? movies : tvShows;
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
 }
 
 void main() {

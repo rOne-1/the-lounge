@@ -37,7 +37,28 @@ class FailingMovieRepository implements MovieRepository {
   Future<List<MediaItem>> getTrendingTvShows() async => throw errorToThrow;
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async => throw errorToThrow;
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async => throw errorToThrow;
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async => throw errorToThrow;
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async => throw errorToThrow;
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async => throw errorToThrow;
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async => throw errorToThrow;
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async => throw errorToThrow;
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => throw errorToThrow;
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async {
@@ -49,6 +70,17 @@ class FailingMovieRepository implements MovieRepository {
 
   @override
   Future<List<Map<String, String>>> getWatchProviderRegions() async => throw errorToThrow;
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required dynamic params,
+  }) async =>
+      throw errorToThrow;
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async =>
+      throw errorToThrow;
 }
 
 class EmptyMovieRepository implements MovieRepository {
@@ -62,13 +94,44 @@ class EmptyMovieRepository implements MovieRepository {
   Future<List<MediaItem>> getTrendingTvShows() async => [];
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async => [];
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async => [];
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async => [];
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async => [];
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async => [];
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async => null;
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
 
   @override
   Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required dynamic params,
+  }) async =>
+      [];
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
 }
 
 void main() {
@@ -164,7 +227,7 @@ void main() {
       expect(find.byType(InlinePartialErrorWidget), findsOneWidget);
       expect(find.text('Failed to load Trending titles'), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
-      expect(find.text('Inception'), findsOneWidget);
+      expect(find.text('Inception'), findsWidgets);
     });
 
     testWidgets('FullScreenErrorWidget appears on DetailScreen when media details fetch fails',

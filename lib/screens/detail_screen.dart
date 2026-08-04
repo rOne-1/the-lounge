@@ -143,6 +143,7 @@ class DetailScreen extends ConsumerWidget {
                       ),
                       isDark: isDark,
                     ),
+                    _buildSeasonsSection(context, ref, item, isDark),
                   ],
                 )
                     .animate(delay: 100.ms)
@@ -252,6 +253,7 @@ class DetailScreen extends ConsumerWidget {
                       ),
                       isDark: isDark,
                     ),
+                    _buildSeasonsSection(context, ref, item, isDark),
                   ],
                 )
                     .animate(delay: 100.ms)
@@ -523,6 +525,14 @@ class DetailScreen extends ConsumerWidget {
           onTap: () {
             ref.read(browseGenreProvider.notifier).setGenre(genre);
             ref.read(browseKeywordProvider.notifier).clearKeyword();
+            ref.read(discoverFilterProvider.notifier).setGenre(
+                  genreId: getGenreIdForName(genre),
+                  genreName: genre,
+                );
+            ref.read(discoverFilterProvider.notifier).setKeyword(
+                  keywordId: null,
+                  keywordName: null,
+                );
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const BrowseScreen()),
             );
@@ -578,6 +588,14 @@ class DetailScreen extends ConsumerWidget {
               onTap: () {
                 ref.read(browseKeywordProvider.notifier).setKeyword(kw.name);
                 ref.read(browseGenreProvider.notifier).setGenre('All');
+                ref.read(discoverFilterProvider.notifier).setKeyword(
+                      keywordId: kw.id,
+                      keywordName: kw.name,
+                    );
+                ref.read(discoverFilterProvider.notifier).setGenre(
+                      genreId: null,
+                      genreName: null,
+                    );
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const BrowseScreen()),
                 );
@@ -1380,6 +1398,15 @@ class DetailScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildSeasonsSection(
+    BuildContext context,
+    WidgetRef ref,
+    MediaItem item,
+    bool isDark,
+  ) {
+    return SeasonsSectionWidget(item: item, isDark: isDark);
+  }
+
   String _formatDate(DateTime dt) {
     const months = [
       'Jan',
@@ -1577,3 +1604,281 @@ class _ExpandableOverviewTextState extends State<ExpandableOverviewText> {
     );
   }
 }
+
+class SeasonsSectionWidget extends ConsumerStatefulWidget {
+  final MediaItem item;
+  final bool isDark;
+
+  const SeasonsSectionWidget({
+    super.key,
+    required this.item,
+    required this.isDark,
+  });
+
+  @override
+  ConsumerState<SeasonsSectionWidget> createState() =>
+      _SeasonsSectionWidgetState();
+}
+
+class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
+  int _selectedSeason = 1;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.item.type != MediaType.tv) return const SizedBox.shrink();
+
+    final inkColor = widget.isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = widget.isDark ? AppColors.srSub : AppColors.rrSub;
+    final phColor = widget.isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = widget.isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final accColor = widget.isDark ? AppColors.srAcc : AppColors.rrAcc;
+
+    final seasonsCount = widget.item.seasonsCount ?? 1;
+
+    final seasonAsync = ref.watch(
+      tvSeasonDetailsProvider((tvId: widget.item.id, seasonNumber: _selectedSeason)),
+    );
+
+    ref.watch(mediaProvider);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        Text(
+          'Seasons & Episodes',
+          style: AppThemes.safeGeist(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (seasonsCount > 1)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: List.generate(seasonsCount, (index) {
+                final seasonNum = index + 1;
+                final isSelected = seasonNum == _selectedSeason;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: PressableScale(
+                    onTap: () {
+                      setState(() {
+                        _selectedSeason = seasonNum;
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isSelected ? accColor : phColor,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isSelected ? accColor : lineRgba,
+                        ),
+                      ),
+                      child: Text(
+                        'Season $seasonNum',
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          color: isSelected
+                              ? (widget.isDark
+                                  ? const Color(0xFF1A140C)
+                                  : Colors.white)
+                              : subColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ),
+          ),
+        const SizedBox(height: 12),
+        seasonAsync.when(
+          data: (seasonData) {
+            final List<TvEpisode> episodes;
+            if (seasonData != null && seasonData.episodes.isNotEmpty) {
+              episodes = seasonData.episodes;
+            } else if (widget.item.episodesList != null &&
+                widget.item.episodesList!.isNotEmpty) {
+              episodes = List.generate(
+                widget.item.episodesList!.length,
+                (i) => TvEpisode(
+                  id: (_selectedSeason * 100) + i + 1,
+                  episodeNumber: i + 1,
+                  seasonNumber: _selectedSeason,
+                  name: widget.item.episodesList![i],
+                  runtime: 45,
+                ),
+              );
+            } else {
+              final count = widget.item.episodesCount ?? 8;
+              episodes = List.generate(
+                count,
+                (i) => TvEpisode(
+                  id: (_selectedSeason * 100) + i + 1,
+                  episodeNumber: i + 1,
+                  seasonNumber: _selectedSeason,
+                  name: 'Episode ${i + 1}',
+                  runtime: 45,
+                ),
+              );
+            }
+
+            return ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: episodes.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final episode = episodes[index];
+                final isWatched = ref.read(mediaProvider.notifier).isEpisodeWatched(
+                      widget.item.id,
+                      episode.seasonNumber,
+                      episode.episodeNumber,
+                    );
+
+                return Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: phColor,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isWatched
+                          ? accColor.withAlpha(128)
+                          : lineRgba,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: widget.isDark
+                              ? AppColors.srCard
+                              : AppColors.rrCard,
+                          borderRadius: BorderRadius.circular(6),
+                          image: episode.stillUrl != null
+                              ? DecorationImage(
+                                  image: NetworkImage(episode.stillUrl!),
+                                  fit: BoxFit.cover,
+                                )
+                              : null,
+                        ),
+                        child: episode.stillUrl == null
+                            ? Icon(Icons.play_circle_outline,
+                                size: 20, color: subColor)
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'E${episode.episodeNumber} · ${episode.name}',
+                              style: AppThemes.safeGeist(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: inkColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (episode.overview != null &&
+                                episode.overview!.isNotEmpty) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                episode.overview!,
+                                style: AppThemes.safeGeist(
+                                  fontSize: 11,
+                                  color: subColor,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Interactive watched toggle checkmark icon button
+                      PressableScale(
+                        onTap: () {
+                          final allSeasons = ref
+                              .read(tvShowSeasonsProvider(widget.item))
+                              .asData
+                              ?.value;
+                          final totalEpisodes = allSeasons != null &&
+                                  allSeasons.isNotEmpty
+                              ? allSeasons.fold<int>(
+                                  0, (sum, s) => sum + s.episodes.length)
+                              : (widget.item.episodesCount ??
+                                  ((widget.item.seasonsCount ?? 1) *
+                                      (widget.item.episodesList?.length ??
+                                          episodes.length)));
+
+                          ref
+                              .read(mediaProvider.notifier)
+                              .toggleEpisodeWatched(
+                                showId: widget.item.id,
+                                seasonNumber: episode.seasonNumber,
+                                episodeNumber: episode.episodeNumber,
+                                showItem: widget.item,
+                                totalEpisodeCount: totalEpisodes,
+                                seasons: allSeasons,
+                              );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isWatched ? accColor : Colors.transparent,
+                            border: Border.all(
+                              color: isWatched
+                                  ? accColor
+                                  : subColor.withAlpha(128),
+                            ),
+                          ),
+                          child: Icon(
+                            isWatched ? Icons.check : Icons.check_outlined,
+                            size: 16,
+                            color: isWatched
+                                ? (widget.isDark
+                                    ? const Color(0xFF1A140C)
+                                    : Colors.white)
+                                : subColor,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          },
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (err, stack) => Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0),
+            child: InlinePartialErrorWidget(
+              message: 'Failed to load season details',
+              onRetry: () => ref.invalidate(
+                tvSeasonDetailsProvider(
+                    (tvId: widget.item.id, seasonNumber: _selectedSeason)),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+

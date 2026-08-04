@@ -29,6 +29,24 @@ class MockTestRepository implements MovieRepository {
   Future<List<MediaItem>> getTrendingTvShows() async => trendingTvShows;
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async => trendingMovies;
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async => trendingTvShows;
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async => trendingMovies;
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async => trendingTvShows;
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async => trendingMovies;
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async => trendingTvShows;
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async {
     final all = [...trendingMovies, ...popularMovies, ...trendingTvShows];
     final cleanId = id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
@@ -38,10 +56,23 @@ class MockTestRepository implements MovieRepository {
   }
 
   @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+
+  @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
 
   @override
   Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required dynamic params,
+  }) async =>
+      isMovies ? trendingMovies : trendingTvShows;
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
 }
 
 void main() {
@@ -105,7 +136,7 @@ void main() {
     expect(find.text('Continue Movie 1'), findsOneWidget);
 
     // Verify Trending carousel items are rendered
-    expect(find.text('Trending now'), findsOneWidget);
+    expect(find.text('Trending This Week'), findsOneWidget);
 
     // Verify tapping on a Continue Watching item navigates to DetailScreen
     await tester.tap(find.text('Continue Movie 0'));

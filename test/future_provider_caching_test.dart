@@ -41,6 +41,24 @@ class CachingTestRepository implements MovieRepository {
   }
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async => movies;
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async => tvShows;
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async => movies;
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async => tvShows;
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async => movies;
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async => tvShows;
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async {
     getMediaDetailsCalls++;
     final all = [...movies, ...tvShows];
@@ -48,10 +66,23 @@ class CachingTestRepository implements MovieRepository {
   }
 
   @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+
+  @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
 
   @override
   Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required dynamic params,
+  }) async =>
+      isMovies ? movies : tvShows;
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
 }
 
 void main() {
@@ -161,7 +192,7 @@ void main() {
       await tester.tap(find.text('TV'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Test TV 1'), findsOneWidget);
+      expect(find.text('Test TV 1'), findsWidgets);
       expect(find.byType(CircularProgressIndicator), findsNothing);
 
       // Switch back to Movies toggle

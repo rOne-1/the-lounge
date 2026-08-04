@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/navigation_provider.dart';
-import '../providers/repository_provider.dart';
+import '../providers/media_provider.dart';
+import '../models/media_item.dart';
 import 'detail_screen.dart';
+import 'media_list_screen.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/fallback_widgets.dart';
@@ -25,7 +27,18 @@ class HomeScreen extends ConsumerWidget {
     final trendingAsync = isMovies
         ? ref.watch(trendingMoviesProvider)
         : ref.watch(trendingTvShowsProvider);
+    final topRatedAsync = isMovies
+        ? ref.watch(topRatedMoviesProvider)
+        : ref.watch(topRatedTvShowsProvider);
+    final rail4Async = isMovies
+        ? ref.watch(nowPlayingMoviesProvider)
+        : ref.watch(airingTodayTvShowsProvider);
+    final rail5Async = isMovies
+        ? ref.watch(upcomingMoviesProvider)
+        : ref.watch(onTheAirTvShowsProvider);
+
     final popularAsync = ref.watch(popularMoviesProvider);
+    final mediaState = ref.watch(mediaProvider);
 
     String greeting() {
       final now = DateTime.now();
@@ -53,7 +66,6 @@ class HomeScreen extends ConsumerWidget {
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
 
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
@@ -68,11 +80,60 @@ class HomeScreen extends ConsumerWidget {
           ref.invalidate(trendingMoviesProvider);
           ref.invalidate(trendingTvShowsProvider);
           ref.invalidate(popularMoviesProvider);
+          ref.invalidate(topRatedMoviesProvider);
+          ref.invalidate(topRatedTvShowsProvider);
         },
       );
     }
 
     final isLarge = MediaQuery.of(context).size.width >= 600;
+
+    // Collect Rail 1 items based on active media type
+    List<MediaItem> getRail1Items() {
+      if (isMovies) {
+        final watchlistMovies = mediaState.watchlist.values
+            .where((m) => m.type == MediaType.movie)
+            .toList();
+        if (watchlistMovies.isNotEmpty) {
+          return watchlistMovies;
+        }
+        // Fallback to popular movies if watchlist is empty
+        return popularAsync.maybeWhen(
+          data: (items) => items.where((m) => m.type == MediaType.movie).toList(),
+          orElse: () => const [],
+        );
+      } else {
+        // TV mode: collect TV shows from watchedEpisodes keys or watchedList/watchlist
+        final watchedTvIds = mediaState.watchedEpisodes.keys.toSet();
+        final tvItems = <MediaItem>[];
+
+        for (final id in watchedTvIds) {
+          final item = mediaState.watchedList[id] ?? mediaState.watchlist[id];
+          if (item != null && item.type == MediaType.tv) {
+            tvItems.add(item);
+          }
+        }
+
+        // Add any other TV shows in watchedList/watchlist not yet added
+        for (final item in [...mediaState.watchedList.values, ...mediaState.watchlist.values]) {
+          if (item.type == MediaType.tv && !tvItems.any((i) => i.id == item.id)) {
+            tvItems.add(item);
+          }
+        }
+
+        if (tvItems.isNotEmpty) {
+          return tvItems;
+        }
+
+        // Fallback to trending TV shows if no watched TV shows in state
+        return trendingAsync.maybeWhen(
+          data: (items) => items.where((m) => m.type == MediaType.tv).toList(),
+          orElse: () => const [],
+        );
+      }
+    }
+
+    final rail1Items = getRail1Items();
 
     return SingleChildScrollView(
       child: Padding(
@@ -81,7 +142,7 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Greeting
+            // Greeting Header
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -141,18 +202,20 @@ class HomeScreen extends ConsumerWidget {
             ] else
               const SizedBox(height: 16),
 
-            // Continue Watching
+            // RAIL 1: Continue Watching / Up Next From Your Watchlist
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text(
-                  'Continue watching',
-                  style: AppThemes.safeGeist(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: inkColor,
+                Expanded(
+                  child: Text(
+                    isMovies ? 'Up Next From Your Watchlist' : 'Continue watching',
+                    style: AppThemes.safeGeist(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: inkColor,
+                    ),
                   ),
                 ),
                 PressableScale(
@@ -176,161 +239,45 @@ class HomeScreen extends ConsumerWidget {
               switchInCurve: Curves.easeInOutCubic,
               switchOutCurve: Curves.easeInOutCubic,
               child: SizedBox(
-                key: ValueKey('continue_watching_$isMovies'),
+                key: ValueKey('continue_watching_${isMovies}_${rail1Items.length}'),
                 height: 140,
-                child: popularAsync.when(
-                  data: (items) {
-                    if (items.isEmpty) return const SizedBox.shrink();
-
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final item = items[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12.0),
-                          child: PressableScale(
-                            child: OpenContainer(
-                              transitionDuration: AppPhysics.houseSpringDuration,
-                              closedElevation: 0,
-                              openElevation: 0,
-                              closedColor: Colors.transparent,
-                              openColor: isDark ? AppColors.srBase : AppColors.rrBase,
-                              middleColor: Colors.transparent,
-                              closedShape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              closedBuilder: (context, openContainer) {
-                                return GestureDetector(
-                                  onTap: openContainer,
-                                  child: SizedBox(
-                                    width: 132,
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Container(
-                                          height: 82.5, // aspect-ratio 16:10 roughly
-                                          decoration: BoxDecoration(
-                                            color: phColor,
-                                            border: Border.all(color: lineRgba),
-                                            borderRadius: BorderRadius.circular(12),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: isDark
-                                                    ? const Color.fromRGBO(
-                                                        255, 255, 255, 0.05)
-                                                    : const Color.fromRGBO(
-                                                        255, 255, 255, 0.5),
-                                                blurRadius: 0,
-                                                spreadRadius: 0,
-                                                offset: const Offset(0, 1),
-                                                blurStyle: BlurStyle.inner,
-                                              )
-                                            ],
-                                          ),
-                                          clipBehavior: Clip.antiAlias,
-                                          child: Stack(
-                                            fit: StackFit.expand,
-                                            children: [
-                                              MediaImage(
-                                                item: item,
-                                                fit: BoxFit.cover,
-                                                showFallbackTitle: false,
-                                              ),
-                                              Positioned(
-                                                top: 8,
-                                                left: 8,
-                                                child: Container(
-                                                  padding: const EdgeInsets.symmetric(
-                                                      horizontal: 7, vertical: 3),
-                                                  decoration: BoxDecoration(
-                                                    color: isDark
-                                                        ? const Color.fromRGBO(
-                                                            0, 0, 0, 0.55)
-                                                        : const Color.fromRGBO(
-                                                            44, 32, 22, 0.7),
-                                                    borderRadius:
-                                                        BorderRadius.circular(6),
-                                                  ),
-                                                  child: Text(
-                                                    'S2 · E4',
-                                                    style: AppThemes.safeGeist(
-                                                      fontSize: 10,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Colors.white,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                              Positioned(
-                                                left: 0,
-                                                right: 0,
-                                                bottom: 0,
-                                                child: Container(
-                                                  height: 4,
-                                                  color: isDark
-                                                      ? const Color.fromRGBO(
-                                                          0, 0, 0, 0.4)
-                                                      : const Color.fromRGBO(
-                                                          44, 32, 22, 0.18),
-                                                  alignment: Alignment.centerLeft,
-                                                  child: FractionallySizedBox(
-                                                    widthFactor: 0.62,
-                                                    child: Container(color: accColor),
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          item.title,
-                                          style: AppThemes.safeGeist(
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600,
-                                            color: inkColor,
-                                          ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          '18 min left',
-                                          style: AppThemes.safeGeist(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w400,
-                                            color: subColor,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              },
-                              openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+                child: rail1Items.isNotEmpty
+                    ? ListView.builder(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: rail1Items.length,
+                        itemBuilder: (context, index) {
+                          final item = rail1Items[index];
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 12.0),
+                            child: PressableScale(
+                              child: isMovies
+                                  ? MovieWatchlistCard(item: item, isDark: isDark)
+                                  : TvContinueWatchingCard(item: item, isDark: isDark),
                             ),
+                          ).animate().fade(duration: 250.ms).slideY(
+                              begin: 0.1,
+                              end: 0,
+                              delay: (index.clamp(0, 5) * 40).ms);
+                        },
+                      )
+                    : Container(
+                        alignment: Alignment.centerLeft,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Text(
+                          isMovies
+                              ? 'Your watchlist is empty. Save movies to see them here!'
+                              : 'No shows in progress. Explore and start watching!',
+                          style: AppThemes.safeGeist(
+                            fontSize: 12.5,
+                            fontStyle: FontStyle.italic,
+                            color: subColor,
                           ),
-                        ).animate().fade(duration: 250.ms).slideY(
-                            begin: 0.1,
-                            end: 0,
-                            delay: (index.clamp(0, 5) * 40).ms);
-                      },
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: InlinePartialErrorWidget(
-                      message: 'Failed to load Continue Watching',
-                      onRetry: () => ref.invalidate(popularMoviesProvider),
-                    ),
-                  ),
-                ),
+                        ),
+                      ),
               ),
             ),
 
-            // Next episode highlight
+            // Next episode highlight banner (TV Mode)
             AnimatedSize(
               duration: const Duration(milliseconds: 350),
               curve: AppPhysics.houseSpringCurve,
@@ -372,7 +319,7 @@ class HomeScreen extends ConsumerWidget {
                           children: [
                             Container(
                               width: 56,
-                              height: 84, // 2/3 aspect ratio
+                              height: 84,
                               decoration: BoxDecoration(
                                 color: phColor,
                                 borderRadius: BorderRadius.circular(9),
@@ -452,117 +399,84 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
 
-            // Trending Carousel
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(
-                  'Trending now',
-                  style: AppThemes.safeGeist(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: inkColor,
-                  ),
-                ),
-                PressableScale(
-                  onTap: () => ref
-                      .read(navigationProvider.notifier)
-                      .setTab(AppTab.search),
-                  child: Text(
-                    'See all',
-                    style: AppThemes.safeGeist(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: subColor,
+            // RAIL 2: Trending This Week
+            MediaRail(
+              title: 'Trending This Week',
+              itemsAsync: trendingAsync,
+              isDark: isDark,
+              onSeeAll: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MediaListScreen(
+                      title: isMovies ? 'Trending Movies' : 'Trending TV Shows',
+                      itemsProvider: isMovies
+                          ? trendingMoviesProvider
+                          : trendingTvShowsProvider,
                     ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
-            const SizedBox(height: 12),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              switchInCurve: Curves.easeInOutCubic,
-              switchOutCurve: Curves.easeInOutCubic,
-              child: SizedBox(
-                key: ValueKey('trending_$isMovies'),
-                height: 144,
-                child: trendingAsync.when(
-                  data: (items) {
-                    if (items.isEmpty) return const SizedBox.shrink();
 
-                    return ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final item = items[index];
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: PressableScale(
-                            child: OpenContainer(
-                              transitionDuration: AppPhysics.houseSpringDuration,
-                              closedElevation: 0,
-                              openElevation: 0,
-                              closedColor: Colors.transparent,
-                              openColor: isDark ? AppColors.srBase : AppColors.rrBase,
-                              middleColor: Colors.transparent,
-                              closedShape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(11),
-                              ),
-                              closedBuilder: (context, openContainer) {
-                                return GestureDetector(
-                                  onTap: openContainer,
-                                  child: Container(
-                                    width: 96,
-                                    height: 144, // 2/3 ratio
-                                    decoration: BoxDecoration(
-                                      color: phColor,
-                                      border: Border.all(color: lineRgba),
-                                      borderRadius: BorderRadius.circular(11),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: isDark
-                                              ? const Color.fromRGBO(
-                                                  255, 255, 255, 0.05)
-                                              : const Color.fromRGBO(
-                                                  255, 255, 255, 0.5),
-                                          offset: const Offset(0, 1),
-                                          blurStyle: BlurStyle.inner,
-                                        ),
-                                      ],
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: MediaImage(
-                                      item: item,
-                                      fit: BoxFit.cover,
-                                    ),
-                                  ),
-                                );
-                              },
-                              openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-                            ),
-                          ),
-                        ).animate().fade(duration: 250.ms).slideY(
-                            begin: 0.1,
-                            end: 0,
-                            delay: (index.clamp(0, 5) * 40).ms);
-                      },
-                    );
-                  },
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, stack) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: InlinePartialErrorWidget(
-                      message: 'Failed to load Trending titles',
-                      onRetry: () => ref.invalidate(
-                          isMovies ? trendingMoviesProvider : trendingTvShowsProvider),
+            // RAIL 3: Top Rated
+            MediaRail(
+              title: 'Top Rated',
+              itemsAsync: topRatedAsync,
+              isDark: isDark,
+              onSeeAll: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MediaListScreen(
+                      title: isMovies ? 'Top Rated Movies' : 'Top Rated TV Shows',
+                      itemsProvider: isMovies
+                          ? topRatedMoviesProvider
+                          : topRatedTvShowsProvider,
                     ),
                   ),
-                ),
-              ),
+                );
+              },
+            ),
+
+            // RAIL 4: Now Playing (Movies) / Airing Today (TV)
+            MediaRail(
+              title: isMovies ? 'Now Playing' : 'Airing Today',
+              itemsAsync: rail4Async,
+              isDark: isDark,
+              onSeeAll: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MediaListScreen(
+                      title: isMovies ? 'Now Playing in Theaters' : 'Airing Today',
+                      itemsProvider: isMovies
+                          ? nowPlayingMoviesProvider
+                          : airingTodayTvShowsProvider,
+                    ),
+                  ),
+                );
+              },
+            ),
+
+            // RAIL 5: Upcoming (Movies) / On The Air (TV)
+            MediaRail(
+              title: isMovies ? 'Upcoming' : 'On The Air',
+              itemsAsync: rail5Async,
+              isDark: isDark,
+              onSeeAll: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => MediaListScreen(
+                      title: isMovies ? 'Upcoming Movies' : 'On The Air',
+                      itemsProvider: isMovies
+                          ? upcomingMoviesProvider
+                          : onTheAirTvShowsProvider,
+                    ),
+                  ),
+                );
+              },
             ),
 
             // Discover Invitation
@@ -653,3 +567,391 @@ class HomeScreen extends ConsumerWidget {
   }
 }
 
+class TvContinueWatchingCard extends ConsumerWidget {
+  final MediaItem item;
+  final bool isDark;
+
+  const TvContinueWatchingCard({
+    super.key,
+    required this.item,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+
+    final seasonsAsync = ref.watch(tvShowSeasonsProvider(item));
+
+    return OpenContainer(
+      transitionDuration: AppPhysics.houseSpringDuration,
+      closedElevation: 0,
+      openElevation: 0,
+      closedColor: Colors.transparent,
+      openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+      middleColor: Colors.transparent,
+      closedShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      closedBuilder: (context, openContainer) {
+        final seasons = seasonsAsync.value ?? [];
+        final nextEp = ref.read(mediaProvider.notifier).getNextUnwatchedEpisode(
+              showId: item.id,
+              seasons: seasons,
+            );
+
+        final String subtitle;
+        final String badgeText;
+        if (nextEp != null) {
+          subtitle = 'Next: S${nextEp.seasonNumber} E${nextEp.episodeNumber} · ${nextEp.name}';
+          badgeText = 'S${nextEp.seasonNumber} · E${nextEp.episodeNumber}';
+        } else {
+          subtitle = 'All episodes watched';
+          badgeText = 'Done';
+        }
+
+        return GestureDetector(
+          onTap: openContainer,
+          child: SizedBox(
+            width: 140,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 85,
+                  decoration: BoxDecoration(
+                    color: phColor,
+                    border: Border.all(color: lineRgba),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark
+                            ? const Color.fromRGBO(255, 255, 255, 0.05)
+                            : const Color.fromRGBO(255, 255, 255, 0.5),
+                        blurRadius: 0,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 1),
+                        blurStyle: BlurStyle.inner,
+                      )
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      MediaImage(
+                        item: item,
+                        fit: BoxFit.cover,
+                        showFallbackTitle: false,
+                      ),
+                      Positioned(
+                        top: 8,
+                        left: 8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color.fromRGBO(0, 0, 0, 0.65)
+                                : const Color.fromRGBO(44, 32, 22, 0.75),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            badgeText,
+                            style: AppThemes.safeGeist(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          height: 3,
+                          color: isDark
+                              ? const Color.fromRGBO(0, 0, 0, 0.4)
+                              : const Color.fromRGBO(44, 32, 22, 0.18),
+                          alignment: Alignment.centerLeft,
+                          child: FractionallySizedBox(
+                            widthFactor: nextEp != null ? 0.4 : 1.0,
+                            child: Container(color: accColor),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  item.title,
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: inkColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppThemes.safeGeist(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: subColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+    );
+  }
+}
+
+class MovieWatchlistCard extends StatelessWidget {
+  final MediaItem item;
+  final bool isDark;
+
+  const MovieWatchlistCard({
+    super.key,
+    required this.item,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    final genreLabel = item.genres.isNotEmpty ? item.genres.first : 'Movie';
+    final runtimeLabel = item.runtime != null ? '${item.runtime} min' : 'Up Next';
+
+    return OpenContainer(
+      transitionDuration: AppPhysics.houseSpringDuration,
+      closedElevation: 0,
+      openElevation: 0,
+      closedColor: Colors.transparent,
+      openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+      middleColor: Colors.transparent,
+      closedShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      closedBuilder: (context, openContainer) {
+        return GestureDetector(
+          onTap: openContainer,
+          child: SizedBox(
+            width: 132,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  height: 82.5,
+                  decoration: BoxDecoration(
+                    color: phColor,
+                    border: Border.all(color: lineRgba),
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark
+                            ? const Color.fromRGBO(255, 255, 255, 0.05)
+                            : const Color.fromRGBO(255, 255, 255, 0.5),
+                        blurRadius: 0,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 1),
+                        blurStyle: BlurStyle.inner,
+                      )
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: MediaImage(
+                    item: item,
+                    fit: BoxFit.cover,
+                    showFallbackTitle: false,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  item.title,
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: inkColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '$genreLabel · $runtimeLabel',
+                  style: AppThemes.safeGeist(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                    color: subColor,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+      openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+    );
+  }
+}
+
+class MediaRail extends StatelessWidget {
+  final String title;
+  final AsyncValue<List<MediaItem>> itemsAsync;
+  final VoidCallback? onSeeAll;
+  final bool isDark;
+
+  const MediaRail({
+    super.key,
+    required this.title,
+    required this.itemsAsync,
+    this.onSeeAll,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Expanded(
+              child: Text(
+                title,
+                style: AppThemes.safeGeist(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+            ),
+            PressableScale(
+              onTap: onSeeAll,
+              child: Text(
+                'See all',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                  color: subColor,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 250),
+          switchInCurve: Curves.easeInOutCubic,
+          switchOutCurve: Curves.easeInOutCubic,
+          child: SizedBox(
+            key: ValueKey('${title}_${itemsAsync.isLoading}'),
+            height: 144,
+            child: itemsAsync.when(
+              data: (items) {
+                if (items.isEmpty) return const SizedBox.shrink();
+
+                return ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: PressableScale(
+                        child: OpenContainer(
+                          transitionDuration: AppPhysics.houseSpringDuration,
+                          closedElevation: 0,
+                          openElevation: 0,
+                          closedColor: Colors.transparent,
+                          openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+                          middleColor: Colors.transparent,
+                          closedShape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          closedBuilder: (context, openContainer) {
+                            return GestureDetector(
+                              onTap: openContainer,
+                              child: Container(
+                                width: 96,
+                                height: 144,
+                                decoration: BoxDecoration(
+                                  color: phColor,
+                                  border: Border.all(color: lineRgba),
+                                  borderRadius: BorderRadius.circular(11),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isDark
+                                          ? const Color.fromRGBO(255, 255, 255, 0.05)
+                                          : const Color.fromRGBO(255, 255, 255, 0.5),
+                                      offset: const Offset(0, 1),
+                                      blurStyle: BlurStyle.inner,
+                                    ),
+                                  ],
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                child: MediaImage(
+                                  item: item,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            );
+                          },
+                          openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+                        ),
+                      ),
+                    ).animate().fade(duration: 250.ms).slideY(
+                          begin: 0.1,
+                          end: 0,
+                          delay: (index.clamp(0, 5) * 40).ms,
+                        );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (err, stack) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: InlinePartialErrorWidget(
+                  message: title.startsWith('Trending')
+                      ? 'Failed to load Trending titles'
+                      : 'Failed to load $title',
+                  onRetry: () {},
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

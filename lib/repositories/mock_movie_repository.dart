@@ -1,4 +1,5 @@
 import 'dart:async';
+import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import 'movie_repository.dart';
 
@@ -476,6 +477,86 @@ class MockMovieRepository implements MovieRepository {
   }
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final movies = _mockData.where((m) => m.type == MediaType.movie).toList();
+    movies.sort((a, b) => b.rating.compareTo(a.rating));
+    return movies;
+  }
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final shows = _mockData.where((m) => m.type == MediaType.tv).toList();
+    shows.sort((a, b) => b.rating.compareTo(a.rating));
+    return shows;
+  }
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return _mockData.where((m) => m.type == MediaType.movie).take(4).toList();
+  }
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return _mockData.where((m) => m.type == MediaType.tv).take(4).toList();
+  }
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return _mockData.where((m) => m.type == MediaType.movie).skip(2).toList();
+  }
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    return _mockData.where((m) => m.type == MediaType.tv).skip(2).toList();
+  }
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final cleanId = tvId.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+    final item = _mockData.cast<MediaItem?>().firstWhere(
+      (m) => m?.id == tvId || m?.id == cleanId,
+      orElse: () => null,
+    );
+    if (item == null || item.type != MediaType.tv) return null;
+
+    final episodeCount = item.episodesCount ?? 10;
+    final episodes = List.generate(
+      episodeCount,
+      (index) => TvEpisode(
+        id: (seasonNumber * 100) + index + 1,
+        episodeNumber: index + 1,
+        seasonNumber: seasonNumber,
+        name: index < (item.episodesList?.length ?? 0)
+            ? item.episodesList![index]
+            : 'Episode ${index + 1}',
+        overview: 'Overview for S${seasonNumber}E${index + 1} of ${item.title}',
+        stillUrl: item.backdropUrl,
+        airDate: item.releaseOrAirDate?.add(Duration(days: index * 7)),
+        voteAverage: item.rating,
+        runtime: 45,
+      ),
+    );
+
+    return TvSeason(
+      id: seasonNumber * 100,
+      seasonNumber: seasonNumber,
+      name: 'Season $seasonNumber',
+      overview: 'Season $seasonNumber of ${item.title}',
+      posterUrl: item.posterUrl,
+      airDate: item.releaseOrAirDate,
+      episodes: episodes,
+    );
+  }
+
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final cleanId = id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
@@ -509,5 +590,113 @@ class MockMovieRepository implements MovieRepository {
       {'code': 'FR', 'name': 'France'},
       {'code': 'JP', 'name': 'Japan'},
     ];
+  }
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    final type = isMovies ? MediaType.movie : MediaType.tv;
+    var list = _mockData.where((m) => m.type == type).toList();
+
+    if (params.genreName != null && params.genreName!.isNotEmpty) {
+      list = list
+          .where((m) => m.genres.any((g) =>
+              g.toLowerCase().contains(params.genreName!.toLowerCase())))
+          .toList();
+    }
+
+    if (params.keywordName != null && params.keywordName!.isNotEmpty) {
+      final kw = params.keywordName!.toLowerCase();
+      list = list.where((m) {
+        return m.keywords != null &&
+            m.keywords!.any((k) => k.name.toLowerCase().contains(kw));
+      }).toList();
+    }
+
+    if (params.releaseYear != null) {
+      list = list
+          .where((m) => m.releaseOrAirDate?.year == params.releaseYear)
+          .toList();
+    }
+
+    if (params.minRating != null) {
+      list = list.where((m) => m.rating >= params.minRating!).toList();
+    }
+
+    if (params.minRuntime != null) {
+      list = list
+          .where((m) => (m.runtime ?? 0) >= params.minRuntime!)
+          .toList();
+    }
+
+    if (params.maxRuntime != null) {
+      list = list
+          .where((m) => (m.runtime ?? 0) <= params.maxRuntime!)
+          .toList();
+    }
+
+    if (params.minVoteCount != null) {
+      list = list
+          .where((m) => (m.voteCount ?? 0) >= params.minVoteCount!)
+          .toList();
+    }
+
+    if (params.personName != null && params.personName!.isNotEmpty) {
+      final pName = params.personName!.toLowerCase();
+      list = list.where((m) {
+        final castMatch = m.cast.any((c) => c.toLowerCase().contains(pName));
+        final dirMatch = m.director?.toLowerCase().contains(pName) == true;
+        return castMatch || dirMatch;
+      }).toList();
+    }
+
+    if (params.sortBy == 'vote_average.desc') {
+      list.sort((a, b) => b.rating.compareTo(a.rating));
+    } else if (params.sortBy.contains('release_date') ||
+        params.sortBy.contains('first_air_date')) {
+      list.sort((a, b) {
+        final da = a.releaseOrAirDate ?? DateTime(1900);
+        final db = b.releaseOrAirDate ?? DateTime(1900);
+        return db.compareTo(da);
+      });
+    }
+
+    return list;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (query.trim().isEmpty) return [];
+    final lower = query.toLowerCase();
+    final set = <String>{};
+    final List<Map<String, dynamic>> persons = [];
+
+    for (final item in _mockData) {
+      for (final actor in item.cast) {
+        if (actor.toLowerCase().contains(lower) && set.add(actor)) {
+          persons.add({
+            'id': actor.hashCode.abs(),
+            'name': actor,
+            'known_for_department': 'Acting',
+            'profile_path': null,
+          });
+        }
+      }
+      if (item.director != null &&
+          item.director!.toLowerCase().contains(lower) &&
+          set.add(item.director!)) {
+        persons.add({
+          'id': item.director!.hashCode.abs(),
+          'name': item.director!,
+          'known_for_department': 'Directing',
+          'profile_path': null,
+        });
+      }
+    }
+    return persons;
   }
 }

@@ -51,13 +51,44 @@ class TestRepository implements MovieRepository {
   Future<List<MediaItem>> getTrendingTvShows() async => [];
 
   @override
+  Future<List<MediaItem>> getTopRatedMovies() async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows() async => [];
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies() async => [];
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows() async => [];
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies() async => [];
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows() async => [];
+
+  @override
   Future<MediaItem?> getMediaDetails(String id) async => null;
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
 
   @override
   Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required dynamic params,
+  }) async =>
+      getTrendingMovies();
+
+  @override
+  Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
 }
 
 void main() {

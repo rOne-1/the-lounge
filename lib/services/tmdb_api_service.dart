@@ -1,5 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/discover_filter_params.dart';
+
 
 /// Container for search results filtered client-side into title matches vs person filmographies.
 class SearchFilterResult {
@@ -109,17 +111,98 @@ class TmdbApiService {
     });
   }
 
+  /// GET /3/movie/top_rated
+  Future<Map<String, dynamic>> getTopRatedMovies({int page = 1}) async {
+    return _get('/movie/top_rated', {
+      'page': page,
+      'include_adult': false,
+    });
+  }
+
+  /// GET /3/tv/top_rated
+  Future<Map<String, dynamic>> getTopRatedTvShows({int page = 1}) async {
+    return _get('/tv/top_rated', {
+      'page': page,
+      'include_adult': false,
+    });
+  }
+
+  /// GET /3/movie/now_playing
+  Future<Map<String, dynamic>> getNowPlayingMovies({int page = 1}) async {
+    return _get('/movie/now_playing', {
+      'page': page,
+      'include_adult': false,
+    });
+  }
+
+  /// GET /3/tv/airing_today
+  Future<Map<String, dynamic>> getAiringTodayTvShows({int page = 1}) async {
+    return _get('/tv/airing_today', {
+      'page': page,
+      'include_adult': false,
+    });
+  }
+
+  /// GET /3/movie/upcoming
+  Future<Map<String, dynamic>> getUpcomingMovies({int page = 1}) async {
+    return _get('/movie/upcoming', {
+      'page': page,
+      'include_adult': false,
+    });
+  }
+
+  /// GET /3/tv/on_the_air
+  Future<Map<String, dynamic>> getOnTheAirTvShows({int page = 1}) async {
+    return _get('/tv/on_the_air', {
+      'page': page,
+      'include_adult': false,
+    });
+  }
+
+
   /// GET /3/discover/movie
   Future<Map<String, dynamic>> discoverMovies({
     int? withGenres,
     String? sortBy,
     int page = 1,
+    DiscoverFilterParams? params,
     Map<String, dynamic>? extraParams,
   }) async {
     final query = <String, dynamic>{
       'page': page,
       'include_adult': false,
     };
+    if (params != null) {
+      if (params.genreId != null) query['with_genres'] = params.genreId;
+      if (params.keywordId != null) query['with_keywords'] = params.keywordId;
+      if (params.personId != null) query['with_people'] = params.personId;
+      if (params.providerId != null) {
+        query['with_watch_providers'] = params.providerId;
+      }
+      if (params.watchRegion != null && params.watchRegion!.isNotEmpty) {
+        query['watch_region'] = params.watchRegion;
+      }
+      if (params.minRuntime != null) {
+        query['with_runtime.gte'] = params.minRuntime;
+      }
+      if (params.maxRuntime != null) {
+        query['with_runtime.lte'] = params.maxRuntime;
+      }
+      if (params.minVoteCount != null) {
+        query['vote_count.gte'] = params.minVoteCount;
+      }
+      if (params.originalLanguage != null &&
+          params.originalLanguage!.isNotEmpty) {
+        query['with_original_language'] = params.originalLanguage;
+      }
+      if (params.releaseYear != null) {
+        query['primary_release_year'] = params.releaseYear;
+      }
+      if (params.minRating != null) {
+        query['vote_average.gte'] = params.minRating;
+      }
+      query['sort_by'] = params.sortBy;
+    }
     if (withGenres != null) query['with_genres'] = withGenres;
     if (sortBy != null) query['sort_by'] = sortBy;
     if (extraParams != null) query.addAll(extraParams);
@@ -131,12 +214,50 @@ class TmdbApiService {
     int? withGenres,
     String? sortBy,
     int page = 1,
+    DiscoverFilterParams? params,
     Map<String, dynamic>? extraParams,
   }) async {
     final query = <String, dynamic>{
       'page': page,
       'include_adult': false,
     };
+    if (params != null) {
+      if (params.genreId != null) query['with_genres'] = params.genreId;
+      if (params.keywordId != null) query['with_keywords'] = params.keywordId;
+      if (params.personId != null) query['with_people'] = params.personId;
+      if (params.providerId != null) {
+        query['with_watch_providers'] = params.providerId;
+      }
+      if (params.watchRegion != null && params.watchRegion!.isNotEmpty) {
+        query['watch_region'] = params.watchRegion;
+      }
+      if (params.minRuntime != null) {
+        query['with_runtime.gte'] = params.minRuntime;
+      }
+      if (params.maxRuntime != null) {
+        query['with_runtime.lte'] = params.maxRuntime;
+      }
+      if (params.minVoteCount != null) {
+        query['vote_count.gte'] = params.minVoteCount;
+      }
+      if (params.originalLanguage != null &&
+          params.originalLanguage!.isNotEmpty) {
+        query['with_original_language'] = params.originalLanguage;
+      }
+      if (params.tvNetworkId != null) {
+        query['with_networks'] = params.tvNetworkId;
+      }
+      if (params.tvStatus != null && params.tvStatus!.isNotEmpty) {
+        query['with_status'] = params.tvStatus;
+      }
+      if (params.releaseYear != null) {
+        query['first_air_date_year'] = params.releaseYear;
+      }
+      if (params.minRating != null) {
+        query['vote_average.gte'] = params.minRating;
+      }
+      query['sort_by'] = params.sortBy;
+    }
     if (withGenres != null) query['with_genres'] = withGenres;
     if (sortBy != null) query['sort_by'] = sortBy;
     if (extraParams != null) query.addAll(extraParams);
@@ -159,6 +280,18 @@ class TmdbApiService {
     int page = 1,
   }) async {
     return _get('/search/multi', {
+      'query': query,
+      'page': page,
+      'include_adult': false,
+    });
+  }
+
+  /// GET /3/search/person
+  Future<Map<String, dynamic>> searchPersons(
+    String query, {
+    int page = 1,
+  }) async {
+    return _get('/search/person', {
       'query': query,
       'page': page,
       'include_adult': false,

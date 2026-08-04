@@ -2,14 +2,79 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
+
+import '../constants.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
-import 'detail_screen.dart';
-import '../constants.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../widgets/fallback_widgets.dart';
-import '../widgets/pressable_scale.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
+import '../widgets/media_image.dart';
+import '../widgets/person_search_autocomplete.dart';
+import '../widgets/pressable_scale.dart';
+import 'detail_screen.dart';
+
+int? getGenreIdForName(String name) {
+  final lower = name.toLowerCase().trim();
+  switch (lower) {
+    case 'action':
+      return 28;
+    case 'adventure':
+      return 12;
+    case 'animation':
+      return 16;
+    case 'comedy':
+      return 35;
+    case 'crime':
+      return 80;
+    case 'documentary':
+      return 99;
+    case 'drama':
+      return 18;
+    case 'family':
+      return 10751;
+    case 'fantasy':
+      return 14;
+    case 'history':
+      return 36;
+    case 'horror':
+      return 27;
+    case 'music':
+      return 10402;
+    case 'mystery':
+      return 9648;
+    case 'romance':
+      return 10749;
+    case 'sci-fi':
+    case 'science fiction':
+      return 878;
+    case 'tv movie':
+      return 10770;
+    case 'thriller':
+      return 53;
+    case 'war':
+      return 10752;
+    case 'western':
+      return 37;
+    case 'action & adventure':
+      return 10759;
+    case 'kids':
+      return 10762;
+    case 'news':
+      return 10763;
+    case 'reality':
+      return 10764;
+    case 'sci-fi & fantasy':
+      return 10765;
+    case 'soap':
+      return 10766;
+    case 'talk':
+      return 10767;
+    case 'war & politics':
+      return 10768;
+    default:
+      return null;
+  }
+}
 
 class BrowseScreen extends ConsumerStatefulWidget {
   const BrowseScreen({super.key});
@@ -22,20 +87,99 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   final List<String> _baseGenres = [
     'All',
     'Action',
+    'Adventure',
+    'Animation',
+    'Comedy',
+    'Crime',
+    'Documentary',
+    'Drama',
+    'Family',
+    'Fantasy',
+    'History',
+    'Horror',
+    'Music',
+    'Mystery',
+    'Romance',
     'Sci-Fi',
     'Thriller',
-    'Drama',
-    'Comedy'
+    'War',
+    'Western',
   ];
 
-  List<String> _getGenres(String activeGenre) {
-    if (activeGenre != 'All' && !_baseGenres.contains(activeGenre)) {
-      return ['All', activeGenre, ..._baseGenres.where((g) => g != 'All')];
+  final List<Map<String, String>> _regions = const [
+    {'code': 'US', 'name': 'United States'},
+    {'code': 'GB', 'name': 'United Kingdom'},
+    {'code': 'CA', 'name': 'Canada'},
+    {'code': 'AU', 'name': 'Australia'},
+    {'code': 'DE', 'name': 'Germany'},
+    {'code': 'FR', 'name': 'France'},
+    {'code': 'JP', 'name': 'Japan'},
+  ];
+
+  final List<Map<String, dynamic>> _providers = const [
+    {'id': 8, 'name': 'Netflix'},
+    {'id': 337, 'name': 'Disney+'},
+    {'id': 9, 'name': 'Amazon Prime'},
+    {'id': 2, 'name': 'Apple TV+'},
+    {'id': 384, 'name': 'HBO Max'},
+    {'id': 15, 'name': 'Hulu'},
+    {'id': 531, 'name': 'Paramount+'},
+    {'id': 387, 'name': 'Peacock'},
+  ];
+
+  final List<Map<String, String>> _languages = const [
+    {'code': 'en', 'name': 'English'},
+    {'code': 'ja', 'name': 'Japanese'},
+    {'code': 'fr', 'name': 'French'},
+    {'code': 'es', 'name': 'Spanish'},
+    {'code': 'de', 'name': 'German'},
+    {'code': 'ko', 'name': 'Korean'},
+  ];
+
+  final List<Map<String, dynamic>> _tvNetworks = const [
+    {'id': 49, 'name': 'HBO'},
+    {'id': 213, 'name': 'Netflix'},
+    {'id': 174, 'name': 'AMC'},
+    {'id': 4, 'name': 'BBC One'},
+    {'id': 6, 'name': 'NBC'},
+    {'id': 2552, 'name': 'Apple TV+'},
+  ];
+
+  void _syncPreFilters() {
+    final browseGenre = ref.read(browseGenreProvider);
+    final browseKeyword = ref.read(browseKeywordProvider);
+    final filterNotifier = ref.read(discoverFilterProvider.notifier);
+    final currentParams = ref.read(discoverFilterProvider);
+
+    if (browseGenre != 'All') {
+      final genreId = getGenreIdForName(browseGenre);
+      if (currentParams.genreName != browseGenre) {
+        filterNotifier.setGenre(genreId: genreId, genreName: browseGenre);
+      }
     }
-    return _baseGenres;
+
+    if (browseKeyword != null && browseKeyword.isNotEmpty) {
+      if (currentParams.keywordName != browseKeyword) {
+        filterNotifier.setKeyword(keywordId: null, keywordName: browseKeyword);
+      }
+    }
   }
 
-  void _showFilterBottomSheet(BuildContext context, bool isDark) {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _syncPreFilters();
+    });
+  }
+
+  void _resetAllFilters() {
+    ref.read(discoverFilterProvider.notifier).resetFilters();
+    ref.read(browseGenreProvider.notifier).setGenre('All');
+    ref.read(browseKeywordProvider.notifier).clearKeyword();
+  }
+
+  void _showFilterBottomSheet(BuildContext context, bool isDark, bool isMovies) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -49,11 +193,14 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           isDark: isDark,
           onDismiss: () => Navigator.pop(context),
           child: Container(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.85,
+            ),
             padding: EdgeInsets.fromLTRB(
               20,
               8,
               20,
-              32.0 + MediaQuery.of(context).padding.bottom,
+              24.0 + MediaQuery.of(context).padding.bottom,
             ),
             decoration: BoxDecoration(
               color: cardBg,
@@ -64,164 +211,56 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 ),
               ),
             ),
-              child: Consumer(
-              builder: (context, ref, _) {
-                final selectedGenre = ref.watch(browseGenreProvider);
-                final selectedKeyword = ref.watch(browseKeywordProvider);
-                final genres = _getGenres(selectedGenre);
-
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Filter catalog',
-                          style: GoogleFonts.bodoniModa(
-                            fontSize: 22,
-                            fontWeight: FontWeight.w600,
-                            fontStyle: FontStyle.italic,
-                            color: inkColor,
-                          ),
-                        ),
-                        PressableScale(
-                          onTap: () => Navigator.pop(context),
-                          child: Icon(Icons.close, color: subColor, size: 20),
-                        ),
-                      ],
-                    ),
-                    if (selectedKeyword != null) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        'Active Keyword',
-                        style: AppThemes.safeGeist(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: inkColor,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: AppColors.primaryButtonDecoration(
-                          isDark: isDark,
-                          borderRadius: 999,
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              '#$selectedKeyword',
-                              style: AppThemes.safeGeist(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                                color: isDark ? const Color(0xFF1A140C) : Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            PressableScale(
-                              onTap: () {
-                                ref.read(browseKeywordProvider.notifier).clearKeyword();
-                              },
-                              child: Icon(
-                                Icons.close,
-                                size: 16,
-                                color: isDark ? const Color(0xFF1A140C) : Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 16),
                     Text(
-                      'Genre',
-                      style: AppThemes.safeGeist(
-                        fontSize: 13,
+                      'Filter Catalog',
+                      style: GoogleFonts.bodoniModa(
+                        fontSize: 22,
                         fontWeight: FontWeight.w600,
+                        fontStyle: FontStyle.italic,
                         color: inkColor,
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: genres.map((genre) {
-                        final isSelected = selectedGenre == genre;
-                        return PressableScale(
-                          onTap: () {
-                            ref.read(browseGenreProvider.notifier).setGenre(genre);
-                          },
-                          child: AnimatedScale(
-                            scale: isSelected ? 1.05 : 1.0,
-                            duration: AppPhysics.houseSpringDuration,
-                            curve: AppPhysics.houseSpringCurve,
-                            child: AnimatedContainer(
-                              duration: AppPhysics.houseSpringDuration,
-                              curve: AppPhysics.houseSpringCurve,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                              decoration: isSelected
-                                  ? AppColors.primaryButtonDecoration(
-                                      isDark: isDark, borderRadius: 999)
-                                  : BoxDecoration(
-                                      color: isDark
-                                          ? AppColors.srPill
-                                          : AppColors.rrPill,
-                                      borderRadius: BorderRadius.circular(999),
-                                      border: Border.all(
-                                        color: isDark
-                                            ? AppColors.srLineRgba
-                                            : AppColors.rrLineRgba,
-                                      ),
-                                    ),
-                              child: Text(
-                                genre,
-                                style: AppThemes.safeGeist(
-                                  fontSize: 13,
-                                  fontWeight: isSelected
-                                      ? FontWeight.w600
-                                      : FontWeight.w400,
-                                  color: isSelected
-                                      ? (isDark
-                                          ? const Color(0xFF1A140C)
-                                          : Colors.white)
-                                      : inkColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 24),
                     PressableScale(
                       onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(12),
-                        decoration: AppColors.primaryButtonDecoration(
-                          isDark: isDark,
-                          borderRadius: 12,
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Apply Filters',
-                          style: AppThemes.safeGeist(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? const Color(0xFF1A140C)
-                                : Colors.white,
-                          ),
-                        ),
-                      ),
+                      child: Icon(Icons.close, color: subColor, size: 20),
                     ),
                   ],
-                );
-              },
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: _buildAccordionFilterPanel(isDark, isMovies),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                PressableScale(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: AppColors.primaryButtonDecoration(
+                      isDark: isDark,
+                      borderRadius: 12,
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      'Apply Filters',
+                      style: AppThemes.safeGeist(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );
@@ -229,14 +268,39 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
+    ref.listen(browseGenreProvider, (previous, next) {
+      if (next != 'All') {
+        final genreId = getGenreIdForName(next);
+        ref
+            .read(discoverFilterProvider.notifier)
+            .setGenre(genreId: genreId, genreName: next);
+      } else if (previous != 'All') {
+        ref
+            .read(discoverFilterProvider.notifier)
+            .setGenre(genreId: null, genreName: null);
+      }
+    });
+
+    ref.listen(browseKeywordProvider, (previous, next) {
+      if (next != null && next.isNotEmpty) {
+        ref
+            .read(discoverFilterProvider.notifier)
+            .setKeyword(keywordId: null, keywordName: next);
+      } else if (previous != null) {
+        ref
+            .read(discoverFilterProvider.notifier)
+            .setKeyword(keywordId: null, keywordName: null);
+      }
+    });
+
     final isLarge = MediaQuery.of(context).size.width > 800;
-    
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final mediaType = ref.watch(navigationProvider).activeMediaType;
+    final isMovies = mediaType == MediaTypeToggle.movies;
 
     return SizedBox.expand(
       child: DecoratedBox(
@@ -246,105 +310,334 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         child: Scaffold(
           backgroundColor: isDark ? AppColors.srBase : AppColors.rrBase,
           appBar: AppBar(
-            title: Text('Browse', style: GoogleFonts.bodoniModa(fontStyle: FontStyle.italic, color: inkColor)),
+            title: Text(
+              isMovies ? 'Browse Movies' : 'Browse TV Shows',
+              style: GoogleFonts.bodoniModa(
+                fontStyle: FontStyle.italic,
+                color: inkColor,
+              ),
+            ),
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(color: inkColor),
             actions: [
-              PressableScale(
-                onTap: () => _showFilterBottomSheet(context, isDark),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Icon(Icons.filter_list, color: inkColor, size: 22),
+              if (!isLarge)
+                PressableScale(
+                  onTap: () => _showFilterBottomSheet(context, isDark, isMovies),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.filter_list, color: inkColor, size: 20),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Filters',
+                          style: AppThemes.safeGeist(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: inkColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
             ],
           ),
-          body: isLarge ? _buildLargeLayout(isDark) : _buildCompactLayout(isDark),
+          body: isLarge
+              ? _buildLargeLayout(isDark, isMovies)
+              : _buildCompactLayout(isDark, isMovies),
         ),
       ),
     );
   }
 
-  Widget _buildCompactLayout(bool isDark) {
+  Widget _buildCompactLayout(bool isDark, bool isMovies) {
     return Column(
       children: [
-        _buildFilterBar(isDark),
-        _buildKeywordFilterBar(isDark),
-        Expanded(child: _buildGrid(isDark)),
+        _buildActiveFilterChipBar(isDark),
+        Expanded(child: _buildGrid(isDark, isMovies)),
       ],
     );
   }
 
-  Widget _buildLargeLayout(bool isDark) {
+  Widget _buildLargeLayout(bool isDark, bool isMovies) {
     return Row(
       children: [
         Expanded(
           child: Column(
             children: [
-              _buildKeywordFilterBar(isDark),
-              Expanded(child: _buildGrid(isDark)),
+              _buildActiveFilterChipBar(isDark),
+              Expanded(child: _buildGrid(isDark, isMovies)),
             ],
           ),
         ),
-        VerticalDivider(width: 1, thickness: 1, color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba),
+        VerticalDivider(
+          width: 1,
+          thickness: 1,
+          color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+        ),
         SizedBox(
-          width: 250,
-          child: _buildFilterPanel(isDark),
+          width: 320,
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Filters',
+                      style: GoogleFonts.bodoniModa(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        fontStyle: FontStyle.italic,
+                        color: isDark ? AppColors.srInk : AppColors.rrInk,
+                      ),
+                    ),
+                    if (ref.watch(discoverFilterProvider).hasActiveFilters)
+                      PressableScale(
+                        onTap: _resetAllFilters,
+                        child: Text(
+                          'Reset All',
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: isDark
+                                ? AppColors.srAcc
+                                : AppColors.rrAcc,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: _buildAccordionFilterPanel(isDark, isMovies),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildKeywordFilterBar(bool isDark) {
-    final selectedKeyword = ref.watch(browseKeywordProvider);
-    if (selectedKeyword == null || selectedKeyword.isEmpty) {
+  Widget _buildActiveFilterChipBar(bool isDark) {
+    final filterParams = ref.watch(discoverFilterProvider);
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
+
+    final chips = <Widget>[];
+
+    if (filterParams.genreName != null && filterParams.genreName!.isNotEmpty) {
+      chips.add(_buildChip(
+        label: 'Genre: ${filterParams.genreName}',
+        onDelete: () {
+          ref
+              .read(discoverFilterProvider.notifier)
+              .setGenre(genreId: null, genreName: null);
+          ref.read(browseGenreProvider.notifier).setGenre('All');
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.keywordName != null &&
+        filterParams.keywordName!.isNotEmpty) {
+      chips.add(_buildChip(
+        label: 'Keyword: #${filterParams.keywordName}',
+        onDelete: () {
+          ref
+              .read(discoverFilterProvider.notifier)
+              .setKeyword(keywordId: null, keywordName: null);
+          ref.read(browseKeywordProvider.notifier).clearKeyword();
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.personName != null &&
+        filterParams.personName!.isNotEmpty) {
+      chips.add(_buildChip(
+        label: 'Person: ${filterParams.personName}',
+        onDelete: () {
+          ref
+              .read(discoverFilterProvider.notifier)
+              .setPerson(personId: null, personName: null);
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.providerName != null &&
+        filterParams.providerName!.isNotEmpty) {
+      chips.add(_buildChip(
+        label: 'Provider: ${filterParams.providerName}',
+        onDelete: () {
+          ref.read(discoverFilterProvider.notifier).setProvider(
+                providerId: null,
+                providerName: null,
+                watchRegion: filterParams.watchRegion,
+              );
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.watchRegion != null &&
+        filterParams.watchRegion!.isNotEmpty) {
+      chips.add(_buildChip(
+        label: 'Region: ${filterParams.watchRegion}',
+        onDelete: () {
+          ref.read(discoverFilterProvider.notifier).setProvider(
+                providerId: filterParams.providerId,
+                providerName: filterParams.providerName,
+                watchRegion: null,
+              );
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.minRating != null) {
+      chips.add(_buildChip(
+        label: 'Rating: ≥ ${filterParams.minRating!.toStringAsFixed(1)} ★',
+        onDelete: () {
+          ref.read(discoverFilterProvider.notifier).setMinRating(null);
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.minVoteCount != null) {
+      chips.add(_buildChip(
+        label: 'Votes: ≥ ${filterParams.minVoteCount}',
+        onDelete: () {
+          ref.read(discoverFilterProvider.notifier).setMinVoteCount(null);
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.sortBy != 'popularity.desc') {
+      String sortLabel = filterParams.sortBy;
+      if (sortLabel == 'vote_average.desc') sortLabel = 'Rating';
+      if (sortLabel == 'primary_release_date.desc' ||
+          sortLabel == 'first_air_date.desc') {
+        sortLabel = 'Release Date';
+      }
+      if (sortLabel == 'revenue.desc') sortLabel = 'Revenue';
+
+      chips.add(_buildChip(
+        label: 'Sort: $sortLabel',
+        onDelete: () {
+          ref
+              .read(discoverFilterProvider.notifier)
+              .setSortBy('popularity.desc');
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.minRuntime != null || filterParams.maxRuntime != null) {
+      final minR = filterParams.minRuntime ?? 0;
+      final maxR = filterParams.maxRuntime != null
+          ? '${filterParams.maxRuntime}m'
+          : '∞';
+      chips.add(_buildChip(
+        label: 'Runtime: ${minR}m - $maxR',
+        onDelete: () {
+          ref
+              .read(discoverFilterProvider.notifier)
+              .setRuntime(minRuntime: null, maxRuntime: null);
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.originalLanguage != null &&
+        filterParams.originalLanguage!.isNotEmpty) {
+      chips.add(_buildChip(
+        label: 'Language: ${filterParams.originalLanguage}',
+        onDelete: () {
+          ref.read(discoverFilterProvider.notifier).setOriginalLanguage(null);
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.tvStatus != null && filterParams.tvStatus!.isNotEmpty) {
+      chips.add(_buildChip(
+        label: 'Status: ${filterParams.tvStatus}',
+        onDelete: () {
+          ref.read(discoverFilterProvider.notifier).setTvStatus(null);
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (filterParams.tvNetworkName != null &&
+        filterParams.tvNetworkName!.isNotEmpty) {
+      chips.add(_buildChip(
+        label: 'Network: ${filterParams.tvNetworkName}',
+        onDelete: () {
+          ref.read(discoverFilterProvider.notifier).setTvNetwork(
+                tvNetworkId: null,
+                tvNetworkName: null,
+              );
+        },
+        isDark: isDark,
+      ));
+    }
+
+    if (chips.isEmpty) {
       return const SizedBox.shrink();
     }
 
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 6.0),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: pillColor.withAlpha(50),
+        border: Border(bottom: BorderSide(color: lineRgba)),
+      ),
       child: Row(
         children: [
-          Text(
-            'Keyword: ',
-            style: AppThemes.safeGeist(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
-              color: subColor,
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  ...chips.map((c) => Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: c,
+                      )),
+                ],
+              ),
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: AppColors.primaryButtonDecoration(
-              isDark: isDark,
-              borderRadius: 999,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '#$selectedKeyword',
-                  style: AppThemes.safeGeist(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: isDark ? const Color(0xFF1A140C) : Colors.white,
-                  ),
+          const SizedBox(width: 8),
+          PressableScale(
+            onTap: _resetAllFilters,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.srPill : AppColors.rrPill,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: lineRgba),
+              ),
+              child: Text(
+                'Reset All',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.srAcc : AppColors.rrAcc,
                 ),
-                const SizedBox(width: 8),
-                PressableScale(
-                  onTap: () {
-                    ref.read(browseKeywordProvider.notifier).clearKeyword();
-                  },
-                  child: Icon(
-                    Icons.close,
-                    size: 16,
-                    color: isDark ? const Color(0xFF1A140C) : Colors.white,
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ],
@@ -352,190 +645,875 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
-  Widget _buildFilterBar(bool isDark) {
-    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final selectedGenre = ref.watch(browseGenreProvider);
-    final genres = _getGenres(selectedGenre);
-
-    return SizedBox(
-      height: 60,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        itemCount: genres.length,
-        itemBuilder: (context, index) {
-          final genre = genres[index];
-          final isSelected = selectedGenre == genre;
-          return Padding(
-            padding: const EdgeInsets.only(right: 8.0),
-            child: PressableScale(
-              onTap: () {
-                ref.read(browseGenreProvider.notifier).setGenre(genre);
-              },
-              child: AnimatedScale(
-                scale: isSelected ? 1.05 : 1.0,
-                duration: AppPhysics.houseSpringDuration,
-                curve: AppPhysics.houseSpringCurve,
-                child: AnimatedContainer(
-                  duration: AppPhysics.houseSpringDuration,
-                  curve: AppPhysics.houseSpringCurve,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                  decoration: isSelected
-                      ? AppColors.primaryButtonDecoration(
-                          isDark: isDark, borderRadius: 999)
-                      : BoxDecoration(
-                          color: pillColor,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: lineRgba),
-                        ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    genre,
-                    style: AppThemes.safeGeist(
-                      fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                      color: isSelected ? (isDark ? const Color(0xFF1A140C) : Colors.white) : inkColor,
-                    ),
-                  ),
-                ),
-              ),
+  Widget _buildChip({
+    required String label,
+    required VoidCallback onDelete,
+    required bool isDark,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: AppColors.primaryButtonDecoration(
+        isDark: isDark,
+        borderRadius: 999,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: AppThemes.safeGeist(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isDark ? const Color(0xFF1A140C) : Colors.white,
             ),
-          );
-        },
+          ),
+          const SizedBox(width: 6),
+          PressableScale(
+            onTap: onDelete,
+            child: Icon(
+              Icons.close,
+              size: 14,
+              color: isDark ? const Color(0xFF1A140C) : Colors.white,
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildFilterPanel(bool isDark) {
+  Widget _buildAccordionFilterPanel(bool isDark, bool isMovies) {
+    final filterParams = ref.watch(discoverFilterProvider);
+    final filterNotifier = ref.read(discoverFilterProvider.notifier);
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final selectedGenre = ref.watch(browseGenreProvider);
-    final selectedKeyword = ref.watch(browseKeywordProvider);
-    final genres = _getGenres(selectedGenre);
+    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
 
-    return Padding(
-      padding: const EdgeInsets.all(18.0),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        dividerColor: Colors.transparent,
+      ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Filters', style: AppThemes.safeGeist(fontSize: 15, fontWeight: FontWeight.w600, color: inkColor)),
-          if (selectedKeyword != null) ...[
-            const SizedBox(height: 16),
-            Text('Active Keyword', style: AppThemes.safeGeist(fontSize: 13, color: inkColor)),
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: AppColors.primaryButtonDecoration(
-                isDark: isDark,
-                borderRadius: 999,
+          // 1. Genres & Keywords
+          _buildExpansionSection(
+            title: 'Genres & Keywords',
+            icon: Icons.category_outlined,
+            isDark: isDark,
+            initiallyExpanded: true,
+            children: [
+              Text(
+                'Genre',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '#$selectedKeyword',
-                    style: AppThemes.safeGeist(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF1A140C) : Colors.white,
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _baseGenres.map((genre) {
+                  final isSelected = (genre == 'All' &&
+                          (filterParams.genreName == null ||
+                              filterParams.genreName!.isEmpty)) ||
+                      filterParams.genreName == genre;
+                  return PressableScale(
+                    onTap: () {
+                      if (genre == 'All') {
+                        filterNotifier.setGenre(
+                            genreId: null, genreName: null);
+                        ref.read(browseGenreProvider.notifier).setGenre('All');
+                      } else {
+                        final genreId = getGenreIdForName(genre);
+                        filterNotifier.setGenre(
+                            genreId: genreId, genreName: genre);
+                        ref
+                            .read(browseGenreProvider.notifier)
+                            .setGenre(genre);
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: isSelected
+                          ? AppColors.primaryButtonDecoration(
+                              isDark: isDark, borderRadius: 999)
+                          : BoxDecoration(
+                              color: pillColor,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: lineRgba),
+                            ),
+                      child: Text(
+                        genre,
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
+                          color: isSelected
+                              ? (isDark
+                                  ? const Color(0xFF1A140C)
+                                  : Colors.white)
+                              : inkColor,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              if (filterParams.keywordName != null &&
+                  filterParams.keywordName!.isNotEmpty) ...[
+                const SizedBox(height: 16),
+                Text(
+                  'Active Keyword',
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: subColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildChip(
+                  label: '#${filterParams.keywordName}',
+                  onDelete: () {
+                    filterNotifier.setKeyword(
+                        keywordId: null, keywordName: null);
+                    ref.read(browseKeywordProvider.notifier).clearKeyword();
+                  },
+                  isDark: isDark,
+                ),
+              ],
+            ],
+          ),
+
+          // 2. Cast & Crew
+          _buildExpansionSection(
+            title: 'Cast & Crew',
+            icon: Icons.person_search_outlined,
+            isDark: isDark,
+            initiallyExpanded: filterParams.personName != null,
+            children: [
+              PersonSearchAutocomplete(isDark: isDark),
+            ],
+          ),
+
+          // 3. Where to Watch
+          _buildExpansionSection(
+            title: 'Where to Watch',
+            icon: Icons.tv_outlined,
+            isDark: isDark,
+            initiallyExpanded: filterParams.providerId != null ||
+                filterParams.watchRegion != null,
+            children: [
+              Text(
+                'Watch Region',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                initialValue: filterParams.watchRegion,
+                dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
+                style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  filled: true,
+                  fillColor: pillColor,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: lineRgba),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.srAcc : AppColors.rrAcc,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                ),
+                hint: Text(
+                  'Select Region (Default: US)',
+                  style: AppThemes.safeGeist(fontSize: 13, color: subColor),
+                ),
+                items: [
+                  DropdownMenuItem<String>(
+                    value: null,
+                    child: Text('Any Region',
+                        style: AppThemes.safeGeist(color: subColor)),
+                  ),
+                  ..._regions.map(
+                    (r) => DropdownMenuItem<String>(
+                      value: r['code'],
+                      child: Text('${r['name']} (${r['code']})',
+                          style: AppThemes.safeGeist(color: inkColor)),
+                    ),
+                  ),
+                ],
+                onChanged: (val) {
+                  filterNotifier.setProvider(
+                    providerId: filterParams.providerId,
+                    providerName: filterParams.providerName,
+                    watchRegion: val,
+                  );
+                },
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Streaming Provider',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
                   PressableScale(
                     onTap: () {
-                      ref.read(browseKeywordProvider.notifier).clearKeyword();
+                      filterNotifier.setProvider(
+                        providerId: null,
+                        providerName: null,
+                        watchRegion: filterParams.watchRegion,
+                      );
                     },
-                    child: Icon(
-                      Icons.close,
-                      size: 16,
-                      color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: filterParams.providerId == null
+                          ? AppColors.primaryButtonDecoration(
+                              isDark: isDark, borderRadius: 999)
+                          : BoxDecoration(
+                              color: pillColor,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: lineRgba),
+                            ),
+                      child: Text(
+                        'Any Provider',
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          color: filterParams.providerId == null
+                              ? (isDark
+                                  ? const Color(0xFF1A140C)
+                                  : Colors.white)
+                              : inkColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  ..._providers.map((p) {
+                    final isSelected = filterParams.providerId == p['id'];
+                    return PressableScale(
+                      onTap: () {
+                        filterNotifier.setProvider(
+                          providerId: p['id'] as int,
+                          providerName: p['name'] as String,
+                          watchRegion: filterParams.watchRegion,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: isSelected
+                            ? AppColors.primaryButtonDecoration(
+                                isDark: isDark, borderRadius: 999)
+                            : BoxDecoration(
+                                color: pillColor,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: lineRgba),
+                              ),
+                        child: Text(
+                          p['name'] as String,
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected
+                                ? (isDark
+                                    ? const Color(0xFF1A140C)
+                                    : Colors.white)
+                                : inkColor,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ],
+          ),
+
+          // 4. Rating & Popularity
+          _buildExpansionSection(
+            title: 'Rating & Popularity',
+            icon: Icons.star_outline,
+            isDark: isDark,
+            initiallyExpanded: filterParams.minRating != null ||
+                filterParams.minVoteCount != null ||
+                filterParams.sortBy != 'popularity.desc',
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Minimum Rating',
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: subColor,
+                    ),
+                  ),
+                  Text(
+                    filterParams.minRating != null
+                        ? '${filterParams.minRating!.toStringAsFixed(1)} ★'
+                        : 'Any',
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.srAcc : AppColors.rrAcc,
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Text('Genre', style: AppThemes.safeGeist(fontSize: 13, color: inkColor)),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: genres.map((genre) {
-              final isSelected = selectedGenre == genre;
-              return PressableScale(
-                onTap: () {
-                  ref.read(browseGenreProvider.notifier).setGenre(genre);
+              Slider(
+                value: filterParams.minRating ?? 0.0,
+                min: 0.0,
+                max: 10.0,
+                divisions: 20,
+                activeColor:
+                    isDark ? AppColors.srAcc : AppColors.rrAcc,
+                inactiveColor: lineRgba,
+                onChanged: (val) {
+                  filterNotifier
+                      .setMinRating(val == 0.0 ? null : (val * 10).round() / 10);
                 },
-                child: AnimatedScale(
-                  scale: isSelected ? 1.05 : 1.0,
-                  duration: AppPhysics.houseSpringDuration,
-                  curve: AppPhysics.houseSpringCurve,
-                  child: AnimatedContainer(
-                    duration: AppPhysics.houseSpringDuration,
-                    curve: AppPhysics.houseSpringCurve,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                    decoration: isSelected
-                        ? AppColors.primaryButtonDecoration(
-                            isDark: isDark, borderRadius: 999)
-                        : BoxDecoration(
-                            color: pillColor,
-                            borderRadius: BorderRadius.circular(999),
-                            border: Border.all(color: lineRgba),
-                          ),
-                    child: Text(
-                      genre,
-                      style: AppThemes.safeGeist(
-                        fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                        color: isSelected ? (isDark ? const Color(0xFF1A140C) : Colors.white) : inkColor,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Minimum Vote Count',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  null,
+                  50,
+                  100,
+                  500,
+                  1000,
+                ].map((vc) {
+                  final isSelected = filterParams.minVoteCount == vc;
+                  final label = vc == null ? 'Any' : '$vc+';
+                  return PressableScale(
+                    onTap: () => filterNotifier.setMinVoteCount(vc),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
                       ),
+                      decoration: isSelected
+                          ? AppColors.primaryButtonDecoration(
+                              isDark: isDark, borderRadius: 999)
+                          : BoxDecoration(
+                              color: pillColor,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: lineRgba),
+                            ),
+                      child: Text(
+                        label,
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w400,
+                          color: isSelected
+                              ? (isDark
+                                  ? const Color(0xFF1A140C)
+                                  : Colors.white)
+                              : inkColor,
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Sort By',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                initialValue: filterParams.sortBy,
+                dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
+                style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
+                decoration: InputDecoration(
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
+                  filled: true,
+                  fillColor: pillColor,
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(color: lineRgba),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: BorderSide(
+                      color: isDark ? AppColors.srAcc : AppColors.rrAcc,
                     ),
                   ),
                 ),
-              );
-            }).toList(),
+                items: [
+                  DropdownMenuItem(
+                    value: 'popularity.desc',
+                    child: Text('Most Popular',
+                        style: AppThemes.safeGeist(color: inkColor)),
+                  ),
+                  DropdownMenuItem(
+                    value: 'vote_average.desc',
+                    child: Text('Highest Rated',
+                        style: AppThemes.safeGeist(color: inkColor)),
+                  ),
+                  DropdownMenuItem(
+                    value: isMovies
+                        ? 'primary_release_date.desc'
+                        : 'first_air_date.desc',
+                    child: Text('Release Date (Newest)',
+                        style: AppThemes.safeGeist(color: inkColor)),
+                  ),
+                  DropdownMenuItem(
+                    value: 'revenue.desc',
+                    child: Text('Highest Revenue',
+                        style: AppThemes.safeGeist(color: inkColor)),
+                  ),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    filterNotifier.setSortBy(val);
+                  }
+                },
+              ),
+            ],
           ),
+
+          // 5. Runtime & Language
+          _buildExpansionSection(
+            title: 'Runtime & Language',
+            icon: Icons.timer_outlined,
+            isDark: isDark,
+            initiallyExpanded: filterParams.minRuntime != null ||
+                filterParams.maxRuntime != null ||
+                filterParams.originalLanguage != null,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Runtime Range',
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: subColor,
+                    ),
+                  ),
+                  Text(
+                    '${filterParams.minRuntime ?? 0}m - ${filterParams.maxRuntime != null ? '${filterParams.maxRuntime}m' : '240m+'}',
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                    ),
+                  ),
+                ],
+              ),
+              RangeSlider(
+                values: RangeValues(
+                  (filterParams.minRuntime ?? 0).toDouble(),
+                  (filterParams.maxRuntime ?? 240).toDouble(),
+                ),
+                min: 0.0,
+                max: 240.0,
+                divisions: 24,
+                activeColor:
+                    isDark ? AppColors.srAcc : AppColors.rrAcc,
+                inactiveColor: lineRgba,
+                onChanged: (values) {
+                  final minR = values.start == 0.0 ? null : values.start.toInt();
+                  final maxR = values.end == 240.0 ? null : values.end.toInt();
+                  filterNotifier.setRuntime(
+                    minRuntime: minR,
+                    maxRuntime: maxR,
+                  );
+                },
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Original Language',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  PressableScale(
+                    onTap: () => filterNotifier.setOriginalLanguage(null),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: filterParams.originalLanguage == null
+                          ? AppColors.primaryButtonDecoration(
+                              isDark: isDark, borderRadius: 999)
+                          : BoxDecoration(
+                              color: pillColor,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(color: lineRgba),
+                            ),
+                      child: Text(
+                        'Any Language',
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          color: filterParams.originalLanguage == null
+                              ? (isDark
+                                  ? const Color(0xFF1A140C)
+                                  : Colors.white)
+                              : inkColor,
+                        ),
+                      ),
+                    ),
+                  ),
+                  ..._languages.map((lang) {
+                    final isSelected =
+                        filterParams.originalLanguage == lang['code'];
+                    return PressableScale(
+                      onTap: () =>
+                          filterNotifier.setOriginalLanguage(lang['code']),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: isSelected
+                            ? AppColors.primaryButtonDecoration(
+                                isDark: isDark, borderRadius: 999)
+                            : BoxDecoration(
+                                color: pillColor,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: lineRgba),
+                              ),
+                        child: Text(
+                          lang['name']!,
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected
+                                ? (isDark
+                                    ? const Color(0xFF1A140C)
+                                    : Colors.white)
+                                : inkColor,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              ),
+            ],
+          ),
+
+          // 6. TV Specifics (visible when !isMovies)
+          if (!isMovies)
+            _buildExpansionSection(
+              title: 'TV Specifics',
+              icon: Icons.live_tv_outlined,
+              isDark: isDark,
+              initiallyExpanded: filterParams.tvStatus != null ||
+                  filterParams.tvNetworkId != null,
+              children: [
+                Text(
+                  'Show Status',
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: subColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    null,
+                    'Ended',
+                    'Returning Series',
+                  ].map((status) {
+                    final isSelected = filterParams.tvStatus == status;
+                    final label = status ?? 'Any Status';
+                    return PressableScale(
+                      onTap: () => filterNotifier.setTvStatus(status),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: isSelected
+                            ? AppColors.primaryButtonDecoration(
+                                isDark: isDark, borderRadius: 999)
+                            : BoxDecoration(
+                                color: pillColor,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: lineRgba),
+                              ),
+                        child: Text(
+                          label,
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected
+                                ? (isDark
+                                    ? const Color(0xFF1A140C)
+                                    : Colors.white)
+                                : inkColor,
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'TV Network',
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: subColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    PressableScale(
+                      onTap: () {
+                        filterNotifier.setTvNetwork(
+                          tvNetworkId: null,
+                          tvNetworkName: null,
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: filterParams.tvNetworkId == null
+                            ? AppColors.primaryButtonDecoration(
+                                isDark: isDark, borderRadius: 999)
+                            : BoxDecoration(
+                                color: pillColor,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: lineRgba),
+                              ),
+                        child: Text(
+                          'Any Network',
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            color: filterParams.tvNetworkId == null
+                                ? (isDark
+                                    ? const Color(0xFF1A140C)
+                                    : Colors.white)
+                                : inkColor,
+                          ),
+                        ),
+                      ),
+                    ),
+                    ..._tvNetworks.map((net) {
+                      final isSelected =
+                          filterParams.tvNetworkId == net['id'];
+                      return PressableScale(
+                        onTap: () {
+                          filterNotifier.setTvNetwork(
+                            tvNetworkId: net['id'] as int,
+                            tvNetworkName: net['name'] as String,
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: isSelected
+                              ? AppColors.primaryButtonDecoration(
+                                  isDark: isDark, borderRadius: 999)
+                              : BoxDecoration(
+                                  color: pillColor,
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: lineRgba),
+                                ),
+                          child: Text(
+                            net['name'] as String,
+                            style: AppThemes.safeGeist(
+                              fontSize: 12,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.w400,
+                              color: isSelected
+                                  ? (isDark
+                                      ? const Color(0xFF1A140C)
+                                      : Colors.white)
+                                  : inkColor,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ],
+                ),
+              ],
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildGrid(bool isDark) {
+  Widget _buildExpansionSection({
+    required String title,
+    required IconData icon,
+    required bool isDark,
+    required List<Widget> children,
+    bool initiallyExpanded = false,
+  }) {
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.srCard : AppColors.rrCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: lineRgba),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        initiallyExpanded: initiallyExpanded,
+        iconColor: inkColor,
+        collapsedIconColor: isDark ? AppColors.srSub : AppColors.rrSub,
+        title: Row(
+          children: [
+            Icon(
+              icon,
+              size: 18,
+              color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+            ),
+            const SizedBox(width: 10),
+            Text(
+              title,
+              style: AppThemes.safeGeist(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: inkColor,
+              ),
+            ),
+          ],
+        ),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        expandedCrossAxisAlignment: CrossAxisAlignment.start,
+        children: children,
+      ),
+    );
+  }
+
+  Widget _buildGrid(bool isDark, bool isMovies) {
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
 
-    final selectedGenre = ref.watch(browseGenreProvider);
-    final selectedKeyword = ref.watch(browseKeywordProvider);
-    final popularAsync = ref.watch(popularMoviesProvider);
+    final discoverAsync = ref.watch(discoverMediaProvider(isMovies));
 
-    return popularAsync.when(
-      data: (allItems) {
-        final items = allItems.where((item) {
-          final matchesGenre =
-              selectedGenre == 'All' || item.genres.contains(selectedGenre);
-          final matchesKeyword = selectedKeyword == null ||
-              selectedKeyword.isEmpty ||
-              (item.keywords != null &&
-                  item.keywords!.any((k) =>
-                      k.name.toLowerCase() == selectedKeyword.toLowerCase()));
-          return matchesGenre && matchesKeyword;
-        }).toList();
-
+    return discoverAsync.when(
+      data: (items) {
         if (items.isEmpty) {
           return Center(
-              child: Text('No media found matching filters.',
-                  style: AppThemes.safeGeist(color: subColor)));
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.movie_filter_outlined,
+                  size: 48,
+                  color: subColor,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No media found matching your filters.',
+                  style: AppThemes.safeGeist(
+                    fontSize: 14,
+                    color: subColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                PressableScale(
+                  onTap: _resetAllFilters,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: AppColors.primaryButtonDecoration(
+                      isDark: isDark,
+                      borderRadius: 999,
+                    ),
+                    child: Text(
+                      'Reset All Filters',
+                      style: AppThemes.safeGeist(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
         }
 
         return GridView.builder(
           padding: const EdgeInsets.all(18),
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 120,
+            maxCrossAxisExtent: 140,
             childAspectRatio: 2 / 3,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
@@ -574,17 +1552,40 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
               ),
             ).animate().fade(duration: 250.ms).slideY(
-                begin: 0.1,
-                end: 0,
-                delay: (index.clamp(0, 5) * 40).ms);
+                  begin: 0.1,
+                  end: 0,
+                  delay: (index.clamp(0, 5) * 40).ms,
+                );
           },
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => Center(
-          child: Text('Error loading media.',
-              style: AppThemes.safeGeist(color: subColor))),
+      loading: () => const Center(
+        child: CircularProgressIndicator(),
+      ),
+      error: (err, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, size: 40, color: Colors.redAccent),
+            const SizedBox(height: 12),
+            Text(
+              'Error loading discovered media.',
+              style: AppThemes.safeGeist(color: subColor),
+            ),
+            const SizedBox(height: 12),
+            PressableScale(
+              onTap: () => ref.refresh(discoverMediaProvider(isMovies)),
+              child: Text(
+                'Retry',
+                style: AppThemes.safeGeist(
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
-
