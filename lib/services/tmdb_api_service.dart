@@ -251,6 +251,14 @@ class TmdbApiService {
     return _get('/tv/$id', query);
   }
 
+  /// GET /3/tv/{id} (Alias for getTvDetails)
+  Future<Map<String, dynamic>> getTvShowDetails(
+    String id, {
+    String? appendToResponse,
+  }) async {
+    return getTvDetails(id, appendToResponse: appendToResponse);
+  }
+
   /// GET /3/movie/{id}/credits
   Future<Map<String, dynamic>> getMovieCredits(String id) async {
     return _get('/movie/$id/credits');

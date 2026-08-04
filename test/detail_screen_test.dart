@@ -486,5 +486,140 @@ void main() {
       expect(animatedRotationCollapsed.turns, equals(0.0));
     });
   });
+
+  group('Section 2 & 3 Detail View Overhaul & Interactivity Tests', () {
+    final detailedMovie = MediaItem(
+      id: 'movie-overhaul',
+      title: 'Inception Deluxe',
+      type: MediaType.movie,
+      rating: 8.8,
+      voteCount: 40000,
+      releaseOrAirDate: DateTime(2010, 7, 16),
+      overview: 'A thief who enters dreams to steal secrets...',
+      genres: const ['Action', 'Sci-Fi'],
+      runtime: 148,
+      tagline: 'Your mind is the scene of the crime',
+      director: 'Christopher Nolan',
+      certification: 'PG-13',
+      belongsToCollection: const MediaCollection(
+        id: 10,
+        name: 'Inception Collection',
+      ),
+      networks: const [
+        MediaNetwork(id: 1, name: 'HBO Max'),
+      ],
+      productionCompanies: const [
+        ProductionCompany(id: 2, name: 'Warner Bros. Pictures'),
+      ],
+      keywords: const [
+        MediaKeyword(id: 100, name: 'dream'),
+      ],
+      imdbId: 'tt1375666',
+      watchProviders: const ['Netflix'],
+    );
+
+    testWidgets(
+        'displays tagline, certification, vote count, director credit, collection banner, networks, production companies, and IMDb link',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1000, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = MockDetailRepository({'movie-overhaul': detailedMovie});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            movieRepositoryProvider.overrideWithValue(mockRepo),
+          ],
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-overhaul'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+
+      // Tagline
+      expect(find.text('"Your mind is the scene of the crime"'), findsOneWidget);
+
+      // Certification
+      expect(find.text('PG-13'), findsOneWidget);
+
+      // Rating with vote count
+      expect(find.text('★ 8.8 (40k votes)'), findsOneWidget);
+
+      // Director credit
+      expect(find.text('Director'), findsOneWidget);
+      expect(find.text('Christopher Nolan'), findsOneWidget);
+
+      // Collection banner
+      expect(find.text('Part of the Inception Collection'), findsOneWidget);
+
+      // Networks
+      expect(find.text('Networks'), findsOneWidget);
+      expect(find.text('HBO Max'), findsOneWidget);
+
+      // Production companies
+      expect(find.text('Production Companies'), findsOneWidget);
+      expect(find.text('Warner Bros. Pictures'), findsOneWidget);
+
+      // IMDb button
+      expect(find.text('View on IMDb'), findsOneWidget);
+
+      // Keywords chip
+      expect(find.text('Keywords'), findsOneWidget);
+      expect(find.text('#dream'), findsOneWidget);
+    });
+
+    testWidgets(
+        'tapping a keyword chip updates browseKeywordProvider and resets browseGenreProvider',
+        (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1000, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = MockDetailRepository({'movie-overhaul': detailedMovie});
+
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-overhaul'),
+          ),
+        ),
+      );
+
+      await container.read(mediaDetailsProvider('movie-overhaul').future);
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+
+      final keywordChip = find.text('#dream');
+      expect(keywordChip, findsOneWidget);
+
+      await tester.ensureVisible(keywordChip);
+      await tester.pumpAndSettle();
+      await tester.tap(keywordChip);
+
+      expect(container.read(browseKeywordProvider), equals('dream'));
+      expect(container.read(browseGenreProvider), equals('All'));
+    });
+  });
 }
+
+
 

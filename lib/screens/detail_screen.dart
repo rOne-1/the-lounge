@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
@@ -111,12 +112,25 @@ class DetailScreen extends ConsumerWidget {
                         height: 1.05,
                       ),
                     ),
+                    if (item.tagline != null && item.tagline!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '"${item.tagline}"',
+                        style: GoogleFonts.bodoniModa(
+                          fontSize: 16,
+                          fontStyle: FontStyle.italic,
+                          color: subColor,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     _buildMetaRow(item, isDark),
                     if (item.genres.isNotEmpty) ...[
                       const SizedBox(height: 12),
                       _buildGenreChips(context, ref, item, isDark),
                     ],
+                    if (item.belongsToCollection != null)
+                      _buildCollectionBanner(item, isDark),
                     const SizedBox(height: 18),
                     _buildActionButtons(ref, item, isDark),
                     const SizedBox(height: 22),
@@ -142,8 +156,12 @@ class DetailScreen extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildDirectorOrCreatorCredit(item, isDark),
                     _buildCastStrip(item, isDark),
                     const SizedBox(height: 22),
+                    _buildKeywordChips(context, ref, item, isDark),
+                    _buildNetworksSection(item, isDark),
+                    _buildProductionCompaniesSection(item, isDark),
                     _buildWatchProvidersSection(context, ref, item, isDark),
                   ],
                 )
@@ -203,12 +221,25 @@ class DetailScreen extends ConsumerWidget {
                         height: 1.05,
                       ),
                     ),
+                    if (item.tagline != null && item.tagline!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        '"${item.tagline}"',
+                        style: GoogleFonts.bodoniModa(
+                          fontSize: 18,
+                          fontStyle: FontStyle.italic,
+                          color: subColor,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 14),
                     _buildMetaRow(item, isDark),
                     if (item.genres.isNotEmpty) ...[
                       const SizedBox(height: 14),
                       _buildGenreChips(context, ref, item, isDark),
                     ],
+                    if (item.belongsToCollection != null)
+                      _buildCollectionBanner(item, isDark),
                     const SizedBox(height: 24),
                     _buildActionButtons(ref, item, isDark),
                     const SizedBox(height: 24),
@@ -234,8 +265,12 @@ class DetailScreen extends ConsumerWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _buildDirectorOrCreatorCredit(item, isDark),
                     _buildCastStrip(item, isDark),
                     const SizedBox(height: 24),
+                    _buildKeywordChips(context, ref, item, isDark),
+                    _buildNetworksSection(item, isDark),
+                    _buildProductionCompaniesSection(item, isDark),
                     _buildWatchProvidersSection(context, ref, item, isDark),
                   ],
                 )
@@ -299,6 +334,13 @@ class DetailScreen extends ConsumerWidget {
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     final textColor = isDark ? const Color(0xFF1A140C) : Colors.white;
 
+    final String ratingStr;
+    if (item.voteCount != null && item.voteCount! > 0) {
+      ratingStr = '★ ${item.rating.toStringAsFixed(1)} (${_formatVoteCount(item.voteCount!)})';
+    } else {
+      ratingStr = '★ ${item.rating.toStringAsFixed(1)}';
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
@@ -306,7 +348,7 @@ class DetailScreen extends ConsumerWidget {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        '★ ${item.rating.toStringAsFixed(1)}',
+        ratingStr,
         style: AppThemes.safeGeist(
           fontSize: 12,
           fontWeight: FontWeight.w700,
@@ -314,6 +356,18 @@ class DetailScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _formatVoteCount(int count) {
+    if (count >= 1000000) {
+      final m = count / 1000000;
+      return '${m.toStringAsFixed(m % 1 == 0 ? 0 : 1)}M votes';
+    } else if (count >= 1000) {
+      final k = count / 1000;
+      return '${k.toStringAsFixed(k % 1 == 0 ? 0 : 1)}k votes';
+    } else {
+      return '$count votes';
+    }
   }
 
   Widget _buildMetaRow(MediaItem item, bool isDark) {
@@ -325,6 +379,19 @@ class DetailScreen extends ConsumerWidget {
 
     // Rating badge
     metaPills.add(_buildRatingBadge(item, isDark));
+
+    // Certification badge
+    if (item.certification != null && item.certification!.isNotEmpty) {
+      metaPills.add(
+        _buildMetaPill(
+          Icons.verified_user_outlined,
+          item.certification!,
+          phColor,
+          lineRgba,
+          subColor,
+        ),
+      );
+    }
 
     if (item.type == MediaType.movie) {
       if (item.runtime != null) {
@@ -455,6 +522,7 @@ class DetailScreen extends ConsumerWidget {
         return PressableScale(
           onTap: () {
             ref.read(browseGenreProvider.notifier).setGenre(genre);
+            ref.read(browseKeywordProvider.notifier).clearKeyword();
             Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const BrowseScreen()),
             );
@@ -480,6 +548,359 @@ class DetailScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildKeywordChips(BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
+    if (item.keywords == null || item.keywords!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Keywords',
+          style: AppThemes.safeGeist(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: item.keywords!.map((kw) {
+            return PressableScale(
+              onTap: () {
+                ref.read(browseKeywordProvider.notifier).setKeyword(kw.name);
+                ref.read(browseGenreProvider.notifier).setGenre('All');
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BrowseScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: phColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: lineRgba),
+                ),
+                child: Text(
+                  '#${kw.name}',
+                  style: AppThemes.safeGeist(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w500,
+                    color: subColor,
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildCollectionBanner(MediaItem item, bool isDark) {
+    final collection = item.belongsToCollection;
+    if (collection == null) return const SizedBox.shrink();
+
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
+
+    final imageUrl = collection.backdropUrl ?? collection.posterUrl;
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: lineRgba),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          if (imageUrl != null)
+            Positioned.fill(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              ),
+            ),
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    isDark
+                        ? const Color(0xD9000000)
+                        : const Color(0xB3000000),
+                    isDark
+                        ? const Color(0x80000000)
+                        : const Color(0x66000000),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                if (collection.posterUrl != null) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      collection.posterUrl!,
+                      width: 48,
+                      height: 72,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 48,
+                        height: 72,
+                        color: phColor,
+                        child: const Icon(Icons.movie, color: Colors.white70),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                ],
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'COLLECTION',
+                        style: AppThemes.safeGeist(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                          color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Part of the ${collection.name}',
+                        style: GoogleFonts.bodoniModa(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _buildDirectorOrCreatorCredit(MediaItem item, bool isDark) {
+    final String? label;
+    final String? names;
+
+    if (item.director != null && item.director!.isNotEmpty) {
+      label = 'Director';
+      names = item.director;
+    } else if (item.createdBy != null && item.createdBy!.isNotEmpty) {
+      label = 'Created by';
+      names = item.createdBy!.join(', ');
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: phColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: lineRgba),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.video_camera_front_outlined, size: 20, color: subColor),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppThemes.safeGeist(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                names!,
+                style: AppThemes.safeGeist(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNetworksSection(MediaItem item, bool isDark) {
+    if (item.networks == null || item.networks!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Networks',
+          style: AppThemes.safeGeist(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: item.networks!.map((net) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: phColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: lineRgba),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (net.logoUrl != null && net.logoUrl!.isNotEmpty) ...[
+                    Image.network(
+                      net.logoUrl!,
+                      height: 16,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) =>
+                          Icon(Icons.tv, size: 16, color: subColor),
+                    ),
+                    const SizedBox(width: 8),
+                  ] else ...[
+                    Icon(Icons.tv, size: 16, color: subColor),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    net.name,
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: inkColor,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
+  Widget _buildProductionCompaniesSection(MediaItem item, bool isDark) {
+    if (item.productionCompanies == null || item.productionCompanies!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Production Companies',
+          style: AppThemes.safeGeist(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: item.productionCompanies!.map((pc) {
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: phColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: lineRgba),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (pc.logoUrl != null && pc.logoUrl!.isNotEmpty) ...[
+                    Image.network(
+                      pc.logoUrl!,
+                      height: 16,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) =>
+                          Icon(Icons.business, size: 16, color: subColor),
+                    ),
+                    const SizedBox(width: 8),
+                  ] else ...[
+                    Icon(Icons.business, size: 16, color: subColor),
+                    const SizedBox(width: 8),
+                  ],
+                  Text(
+                    pc.name,
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: inkColor,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+
   Widget _buildActionButtons(WidgetRef ref, MediaItem item, bool isDark) {
     final mediaState = ref.watch(mediaProvider);
     final notifier = ref.read(mediaProvider.notifier);
@@ -495,38 +916,107 @@ class DetailScreen extends ConsumerWidget {
     final watchedColor =
         isDark ? AppColors.srStatusWatched : AppColors.rrStatusWatched;
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: _buildStatusToggle(
-            'Watchlist',
-            inWatchlist,
-            watchColor,
-            () => notifier.toggleWatchlist(item),
-            isDark,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatusToggle(
+                'Watchlist',
+                inWatchlist,
+                watchColor,
+                () => notifier.toggleWatchlist(item),
+                isDark,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildStatusToggle(
+                'Save',
+                inMaybe,
+                saveColor,
+                () => notifier.toggleMaybe(item),
+                isDark,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildStatusToggle(
+                'Watched',
+                inWatched,
+                watchedColor,
+                () => notifier.toggleWatched(item),
+                isDark,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildStatusToggle(
-            'Save',
-            inMaybe,
-            saveColor,
-            () => notifier.toggleMaybe(item),
-            isDark,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildStatusToggle(
-            'Watched',
-            inWatched,
-            watchedColor,
-            () => notifier.toggleWatched(item),
-            isDark,
-          ),
-        ),
+        if (item.imdbId != null && item.imdbId!.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _buildImdbButton(item, isDark),
+        ],
       ],
+    );
+  }
+
+  Widget _buildImdbButton(MediaItem item, bool isDark) {
+    if (item.imdbId == null || item.imdbId!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return PressableScale(
+      onTap: () async {
+        final url = Uri.parse('https://www.imdb.com/title/${item.imdbId}');
+        if (await canLaunchUrl(url)) {
+          await launchUrl(url, mode: LaunchMode.externalApplication);
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2C2419) : const Color(0xFFF0E5D8),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5C518), // IMDb Yellow
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                'IMDb',
+                style: AppThemes.safeGeist(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.black,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'View on IMDb',
+              style: AppThemes.safeGeist(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.srInk : AppColors.rrInk,
+              ),
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.open_in_new,
+              size: 14,
+              color: isDark ? AppColors.srSub : AppColors.rrSub,
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -591,36 +1081,39 @@ class DetailScreen extends ConsumerWidget {
           decoration: decoration,
           alignment: Alignment.center,
           padding: const EdgeInsets.symmetric(horizontal: 6),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedSwitcher(
-                duration: AppPhysics.houseSpringDuration,
-                switchInCurve: AppPhysics.houseSpringCurve,
-                switchOutCurve: Curves.easeOut,
-                transitionBuilder: (child, animation) => ScaleTransition(
-                  scale: animation,
-                  child: child,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: AppPhysics.houseSpringDuration,
+                  switchInCurve: AppPhysics.houseSpringCurve,
+                  switchOutCurve: Curves.easeOut,
+                  transitionBuilder: (child, animation) => ScaleTransition(
+                    scale: animation,
+                    child: child,
+                  ),
+                  child: Icon(
+                    iconData,
+                    key: ValueKey('$label-$isSelected'),
+                    size: 15,
+                    color: textColor,
+                  ),
                 ),
-                child: Icon(
-                  iconData,
-                  key: ValueKey('$label-$isSelected'),
-                  size: 15,
-                  color: textColor,
+                const SizedBox(width: 5),
+                AnimatedDefaultTextStyle(
+                  duration: AppPhysics.houseSpringDuration,
+                  curve: AppPhysics.houseSpringCurve,
+                  style: AppThemes.safeGeist(
+                    fontSize: 12.5,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                    color: textColor,
+                  ),
+                  child: Text(label),
                 ),
-              ),
-              const SizedBox(width: 5),
-              AnimatedDefaultTextStyle(
-                duration: AppPhysics.houseSpringDuration,
-                curve: AppPhysics.houseSpringCurve,
-                style: AppThemes.safeGeist(
-                  fontSize: 12.5,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: textColor,
-                ),
-                child: Text(label),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

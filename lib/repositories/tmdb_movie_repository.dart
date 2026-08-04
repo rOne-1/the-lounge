@@ -248,14 +248,18 @@ class TmdbMovieRepository implements MovieRepository {
       Map<String, dynamic>? detailsJson;
       MediaType resolvedType = explicitType ?? MediaType.movie;
 
-      final queryParams = {'append_to_response': 'credits,videos,watch/providers'};
+      final queryParams = {
+        'append_to_response':
+            'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids'
+      };
 
       if (explicitType == MediaType.tv) {
         final key = cacheService.generateKey('/tv/$cleanId', queryParams);
         detailsJson = await cacheService.get(key);
         if (detailsJson == null) {
           detailsJson = await apiService.getTvDetails(cleanId,
-              appendToResponse: 'credits,videos,watch/providers');
+              appendToResponse:
+                  'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids');
           await cacheService.put(key, detailsJson);
         }
       } else if (explicitType == MediaType.movie) {
@@ -263,7 +267,8 @@ class TmdbMovieRepository implements MovieRepository {
         detailsJson = await cacheService.get(key);
         if (detailsJson == null) {
           detailsJson = await apiService.getMovieDetails(cleanId,
-              appendToResponse: 'credits,videos,watch/providers');
+              appendToResponse:
+                  'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids');
           await cacheService.put(key, detailsJson);
         }
       } else {
@@ -280,13 +285,15 @@ class TmdbMovieRepository implements MovieRepository {
           } else {
             try {
               detailsJson = await apiService.getMovieDetails(cleanId,
-                  appendToResponse: 'credits,videos,watch/providers');
+                  appendToResponse:
+                      'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids');
               await cacheService.put(movieKey, detailsJson);
               resolvedType = MediaType.movie;
             } catch (_) {
               // Fall back to trying TV details
               detailsJson = await apiService.getTvDetails(cleanId,
-                  appendToResponse: 'credits,videos,watch/providers');
+                  appendToResponse:
+                      'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids');
               await cacheService.put(tvKey, detailsJson);
               resolvedType = MediaType.tv;
             }
@@ -561,6 +568,199 @@ class TmdbMovieRepository implements MovieRepository {
             .toList() ??
         <String>[];
 
+    final tagline = (json['tagline'] as String?)?.isNotEmpty == true
+        ? json['tagline'] as String
+        : null;
+
+    String? director;
+    if (type == MediaType.movie) {
+      final creditsObj = json['credits'] as Map<String, dynamic>?;
+      if (creditsObj != null && creditsObj['crew'] is List) {
+        for (final member in creditsObj['crew'] as List) {
+          if (member is Map &&
+              member['job'] == 'Director' &&
+              member['name'] != null) {
+            director = member['name'].toString();
+            break;
+          }
+        }
+      }
+    } else if (type == MediaType.tv) {
+      if (json['created_by'] is List) {
+        final creators = (json['created_by'] as List)
+            .whereType<Map>()
+            .map((e) => e['name']?.toString())
+            .where((n) => n != null && n.isNotEmpty)
+            .cast<String>()
+            .toList();
+        if (creators.isNotEmpty) {
+          director = creators.join(', ');
+        }
+      }
+      if (director == null) {
+        final creditsObj = json['credits'] as Map<String, dynamic>?;
+        if (creditsObj != null && creditsObj['crew'] is List) {
+          for (final member in creditsObj['crew'] as List) {
+            if (member is Map &&
+                member['job'] == 'Director' &&
+                member['name'] != null) {
+              director = member['name'].toString();
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    String? certification;
+    if (type == MediaType.movie) {
+      final releaseDatesObj = json['release_dates'] as Map<String, dynamic>?;
+      if (releaseDatesObj != null && releaseDatesObj['results'] is List) {
+        final results = releaseDatesObj['results'] as List;
+        for (final country in results) {
+          if (country is Map && country['iso_3166_1'] == 'US') {
+            final dates = country['release_dates'];
+            if (dates is List) {
+              for (final d in dates) {
+                if (d is Map && d['certification'] != null) {
+                  final cert = d['certification'].toString().trim();
+                  if (cert.isNotEmpty) {
+                    certification = cert;
+                    break;
+                  }
+                }
+              }
+            }
+            if (certification != null) break;
+          }
+        }
+      }
+    } else if (type == MediaType.tv) {
+      final contentRatingsObj = json['content_ratings'] as Map<String, dynamic>?;
+      if (contentRatingsObj != null && contentRatingsObj['results'] is List) {
+        final results = contentRatingsObj['results'] as List;
+        for (final country in results) {
+          if (country is Map && country['iso_3166_1'] == 'US') {
+            final rating = country['rating']?.toString().trim();
+            if (rating != null && rating.isNotEmpty) {
+              certification = rating;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    MediaCollection? belongsToCollection;
+    if (json['belongs_to_collection'] is Map) {
+      final colMap = json['belongs_to_collection'] as Map<String, dynamic>;
+      final colId = (colMap['id'] as num?)?.toInt();
+      final colName = colMap['name'] as String?;
+      if (colId != null && colName != null) {
+        belongsToCollection = MediaCollection(
+          id: colId,
+          name: colName,
+          posterUrl: TmdbImageHelper.w500(colMap['poster_path'] as String?),
+          backdropUrl: TmdbImageHelper.w780(colMap['backdrop_path'] as String?),
+        );
+      }
+    }
+
+    List<String>? createdBy;
+    if (json['created_by'] is List) {
+      final list = (json['created_by'] as List)
+          .whereType<Map>()
+          .map((e) => e['name']?.toString())
+          .where((n) => n != null && n.isNotEmpty)
+          .cast<String>()
+          .toList();
+      if (list.isNotEmpty) {
+        createdBy = list;
+      }
+    }
+
+    List<MediaNetwork>? networks;
+    if (json['networks'] is List) {
+      final netList = <MediaNetwork>[];
+      for (final item in json['networks'] as List) {
+        if (item is Map) {
+          final netId = (item['id'] as num?)?.toInt();
+          final netName = item['name'] as String?;
+          if (netId != null && netName != null) {
+            netList.add(MediaNetwork(
+              id: netId,
+              name: netName,
+              logoUrl: TmdbImageHelper.w185(item['logo_path'] as String?),
+            ));
+          }
+        }
+      }
+      if (netList.isNotEmpty) {
+        networks = netList;
+      }
+    }
+
+    final voteCount = (json['vote_count'] as num?)?.toInt();
+
+    List<MediaKeyword>? keywords;
+    final keywordsObj = json['keywords'];
+    List? kwList;
+    if (keywordsObj is Map) {
+      if (keywordsObj['keywords'] is List) {
+        kwList = keywordsObj['keywords'] as List;
+      } else if (keywordsObj['results'] is List) {
+        kwList = keywordsObj['results'] as List;
+      }
+    } else if (keywordsObj is List) {
+      kwList = keywordsObj;
+    }
+
+    if (kwList != null) {
+      final parsedKw = <MediaKeyword>[];
+      for (final item in kwList) {
+        if (item is Map) {
+          final kwId = (item['id'] as num?)?.toInt();
+          final kwName = item['name'] as String?;
+          if (kwId != null && kwName != null) {
+            parsedKw.add(MediaKeyword(id: kwId, name: kwName));
+          }
+        }
+      }
+      if (parsedKw.isNotEmpty) {
+        keywords = parsedKw;
+      }
+    }
+
+    String? imdbId = json['imdb_id'] as String?;
+    if (imdbId == null || imdbId.isEmpty) {
+      final externalIds = json['external_ids'] as Map<String, dynamic>?;
+      if (externalIds != null) {
+        imdbId = externalIds['imdb_id'] as String?;
+      }
+    }
+    if (imdbId?.isEmpty == true) imdbId = null;
+
+    List<ProductionCompany>? productionCompanies;
+    if (json['production_companies'] is List) {
+      final pcList = <ProductionCompany>[];
+      for (final item in json['production_companies'] as List) {
+        if (item is Map) {
+          final pcId = (item['id'] as num?)?.toInt();
+          final pcName = item['name'] as String?;
+          if (pcId != null && pcName != null) {
+            pcList.add(ProductionCompany(
+              id: pcId,
+              name: pcName,
+              logoUrl: TmdbImageHelper.w185(item['logo_path'] as String?),
+            ));
+          }
+        }
+      }
+      if (pcList.isNotEmpty) {
+        productionCompanies = pcList;
+      }
+    }
+
     return MediaItem(
       id: rawId,
       title: title,
@@ -581,6 +781,16 @@ class TmdbMovieRepository implements MovieRepository {
       watchProvidersByCountry: watchProvidersByCountry,
       cast: cast,
       castMembers: castMembers,
+      tagline: tagline,
+      director: director,
+      certification: certification,
+      belongsToCollection: belongsToCollection,
+      createdBy: createdBy,
+      networks: networks,
+      voteCount: voteCount,
+      keywords: keywords,
+      imdbId: imdbId,
+      productionCompanies: productionCompanies,
     );
   }
 

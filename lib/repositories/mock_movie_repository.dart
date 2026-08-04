@@ -27,6 +27,19 @@ class MockMovieRepository implements MovieRepository {
         'Elliot Page',
         'Tom Hardy'
       ],
+      tagline: 'Your mind is the scene of the crime.',
+      director: 'Christopher Nolan',
+      certification: 'PG-13',
+      voteCount: 34500,
+      imdbId: 'tt1375666',
+      keywords: const [
+        MediaKeyword(id: 1, name: 'dream'),
+        MediaKeyword(id: 2, name: 'subconscious')
+      ],
+      productionCompanies: const [
+        ProductionCompany(id: 923, name: 'Legendary Entertainment', logoUrl: null),
+        ProductionCompany(id: 9996, name: 'Syncopy', logoUrl: null)
+      ],
     ),
     MediaItem(
       id: '2',
@@ -56,6 +69,20 @@ class MockMovieRepository implements MovieRepository {
         'David Harbour',
         'Finn Wolfhard'
       ],
+      tagline: 'Every story has a beginning.',
+      director: 'The Duffer Brothers',
+      certification: 'TV-14',
+      createdBy: const ['The Duffer Brothers'],
+      networks: const [MediaNetwork(id: 213, name: 'Netflix', logoUrl: null)],
+      voteCount: 16000,
+      imdbId: 'tt4574334',
+      keywords: const [
+        MediaKeyword(id: 3, name: '1980s'),
+        MediaKeyword(id: 4, name: 'monster')
+      ],
+      productionCompanies: const [
+        ProductionCompany(id: 2575, name: '21 Laps Entertainment', logoUrl: null)
+      ],
     ),
     MediaItem(
       id: '3',
@@ -80,6 +107,25 @@ class MockMovieRepository implements MovieRepository {
         'Aaron Eckhart',
         'Michael Caine'
       ],
+      tagline: 'Welcome to a world without rules.',
+      director: 'Christopher Nolan',
+      certification: 'PG-13',
+      belongsToCollection: const MediaCollection(
+        id: 263,
+        name: 'The Dark Knight Collection',
+        posterUrl: 'https://image.tmdb.org/t/p/w500/1hRoyzDtpg2FuMMp292v2mtGveT.jpg',
+        backdropUrl: 'https://image.tmdb.org/t/p/w780/nMK28FiMGfE0T2wMKlGExbkzcV1.jpg',
+      ),
+      voteCount: 30000,
+      imdbId: 'tt0468569',
+      keywords: const [
+        MediaKeyword(id: 5, name: 'joker'),
+        MediaKeyword(id: 6, name: 'batman')
+      ],
+      productionCompanies: const [
+        ProductionCompany(id: 923, name: 'Legendary Entertainment', logoUrl: null),
+        ProductionCompany(id: 429, name: 'DC Comics', logoUrl: null)
+      ],
     ),
     MediaItem(
       id: '4',
@@ -100,6 +146,20 @@ class MockMovieRepository implements MovieRepository {
       trailerVideoId: 'dQw4w9WgXcQ',
       watchProviders: ['Netflix'],
       cast: ['Bryan Cranston', 'Aaron Paul', 'Anna Gunn', 'Dean Norris'],
+      tagline: 'Change the equation.',
+      director: 'Vince Gilligan',
+      certification: 'TV-MA',
+      createdBy: const ['Vince Gilligan'],
+      networks: const [MediaNetwork(id: 174, name: 'AMC', logoUrl: null)],
+      voteCount: 12000,
+      imdbId: 'tt0903747',
+      keywords: const [
+        MediaKeyword(id: 7, name: 'methamphetamine'),
+        MediaKeyword(id: 8, name: 'chemistry')
+      ],
+      productionCompanies: const [
+        ProductionCompany(id: 11073, name: 'Sony Pictures Television', logoUrl: null)
+      ],
     ),
     MediaItem(
       id: '5',

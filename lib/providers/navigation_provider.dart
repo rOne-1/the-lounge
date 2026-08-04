@@ -74,3 +74,22 @@ final browseGenreProvider = NotifierProvider<BrowseGenreNotifier, String>(() {
   return BrowseGenreNotifier();
 });
 
+class BrowseKeywordNotifier extends Notifier<String?> {
+  @override
+  String? build() => null;
+
+  void setKeyword(String? keyword) {
+    state = keyword;
+  }
+
+  void clearKeyword() {
+    state = null;
+  }
+}
+
+final browseKeywordProvider =
+    NotifierProvider<BrowseKeywordNotifier, String?>(() {
+  return BrowseKeywordNotifier();
+});
+
+

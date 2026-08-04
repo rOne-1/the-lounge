@@ -62,6 +62,102 @@ class WatchProviderInfo {
   int get hashCode => providerName.hashCode ^ category.hashCode;
 }
 
+class MediaCollection {
+  final int id;
+  final String name;
+  final String? posterUrl;
+  final String? backdropUrl;
+
+  const MediaCollection({
+    required this.id,
+    required this.name,
+    this.posterUrl,
+    this.backdropUrl,
+  });
+
+  MediaCollection copyWith({
+    int? id,
+    String? name,
+    String? posterUrl,
+    String? backdropUrl,
+  }) {
+    return MediaCollection(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      posterUrl: posterUrl ?? this.posterUrl,
+      backdropUrl: backdropUrl ?? this.backdropUrl,
+    );
+  }
+}
+
+class MediaNetwork {
+  final int id;
+  final String name;
+  final String? logoUrl;
+
+  const MediaNetwork({
+    required this.id,
+    required this.name,
+    this.logoUrl,
+  });
+
+  MediaNetwork copyWith({
+    int? id,
+    String? name,
+    String? logoUrl,
+  }) {
+    return MediaNetwork(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      logoUrl: logoUrl ?? this.logoUrl,
+    );
+  }
+}
+
+class MediaKeyword {
+  final int id;
+  final String name;
+
+  const MediaKeyword({
+    required this.id,
+    required this.name,
+  });
+
+  MediaKeyword copyWith({
+    int? id,
+    String? name,
+  }) {
+    return MediaKeyword(
+      id: id ?? this.id,
+      name: name ?? this.name,
+    );
+  }
+}
+
+class ProductionCompany {
+  final int id;
+  final String name;
+  final String? logoUrl;
+
+  const ProductionCompany({
+    required this.id,
+    required this.name,
+    this.logoUrl,
+  });
+
+  ProductionCompany copyWith({
+    int? id,
+    String? name,
+    String? logoUrl,
+  }) {
+    return ProductionCompany(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      logoUrl: logoUrl ?? this.logoUrl,
+    );
+  }
+}
+
 class MediaItem {
   final String id;
   final String title;
@@ -86,6 +182,16 @@ class MediaItem {
   final Map<String, List<WatchProviderInfo>> watchProvidersByCountry;
   final List<String> cast;
   final List<CastMember> castMembers;
+  final String? tagline;
+  final String? director;
+  final String? certification;
+  final MediaCollection? belongsToCollection;
+  final List<String>? createdBy;
+  final List<MediaNetwork>? networks;
+  final int? voteCount;
+  final List<MediaKeyword>? keywords;
+  final String? imdbId;
+  final List<ProductionCompany>? productionCompanies;
 
   const MediaItem({
     required this.id,
@@ -111,6 +217,16 @@ class MediaItem {
     this.watchProvidersByCountry = const {},
     this.cast = const [],
     this.castMembers = const [],
+    this.tagline,
+    this.director,
+    this.certification,
+    this.belongsToCollection,
+    this.createdBy,
+    this.networks,
+    this.voteCount,
+    this.keywords,
+    this.imdbId,
+    this.productionCompanies,
   });
 
   /// Returns watch providers for specified country, falling back to legacy US watchProviders list.
@@ -162,6 +278,16 @@ class MediaItem {
     Map<String, List<WatchProviderInfo>>? watchProvidersByCountry,
     List<String>? cast,
     List<CastMember>? castMembers,
+    String? tagline,
+    String? director,
+    String? certification,
+    MediaCollection? belongsToCollection,
+    List<String>? createdBy,
+    List<MediaNetwork>? networks,
+    int? voteCount,
+    List<MediaKeyword>? keywords,
+    String? imdbId,
+    List<ProductionCompany>? productionCompanies,
   }) {
     return MediaItem(
       id: id ?? this.id,
@@ -188,6 +314,16 @@ class MediaItem {
           watchProvidersByCountry ?? this.watchProvidersByCountry,
       cast: cast ?? this.cast,
       castMembers: castMembers ?? this.castMembers,
+      tagline: tagline ?? this.tagline,
+      director: director ?? this.director,
+      certification: certification ?? this.certification,
+      belongsToCollection: belongsToCollection ?? this.belongsToCollection,
+      createdBy: createdBy ?? this.createdBy,
+      networks: networks ?? this.networks,
+      voteCount: voteCount ?? this.voteCount,
+      keywords: keywords ?? this.keywords,
+      imdbId: imdbId ?? this.imdbId,
+      productionCompanies: productionCompanies ?? this.productionCompanies,
     );
   }
 }

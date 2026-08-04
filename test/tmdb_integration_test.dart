@@ -233,7 +233,10 @@ void main() {
               jsonEncode({
                 'id': 550,
                 'title': 'Fight Club',
+                'tagline': 'Mischief. Mayhem. Soap.',
                 'vote_average': 8.4,
+                'vote_count': 25000,
+                'imdb_id': 'tt0137523',
                 'release_date': '1999-10-15',
                 'overview': 'An insomniac office worker...',
                 'genres': [
@@ -242,6 +245,12 @@ void main() {
                 'poster_path': '/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg',
                 'backdrop_path': '/hZkgoQYus5vesz7cgEz7Ieb3y2m.jpg',
                 'runtime': 139,
+                'belongs_to_collection': {
+                  'id': 1234,
+                  'name': 'Fight Club Collection',
+                  'poster_path': '/fc_poster.jpg',
+                  'backdrop_path': '/fc_backdrop.jpg'
+                },
                 'credits': {
                   'cast': [
                     {
@@ -256,8 +265,34 @@ void main() {
                       'character': 'The Narrator',
                       'profile_path': '/53St7eQk1n4C9z90s01t3N3n702.jpg'
                     }
+                  ],
+                  'crew': [
+                    {'job': 'Director', 'name': 'David Fincher'}
                   ]
                 },
+                'release_dates': {
+                  'results': [
+                    {
+                      'iso_3166_1': 'US',
+                      'release_dates': [
+                        {'certification': 'R'}
+                      ]
+                    }
+                  ]
+                },
+                'keywords': {
+                  'keywords': [
+                    {'id': 5, 'name': 'insomnia'},
+                    {'id': 6, 'name': 'fight'}
+                  ]
+                },
+                'production_companies': [
+                  {
+                    'id': 508,
+                    'name': 'Regency Enterprises',
+                    'logo_path': '/logo.png'
+                  }
+                ],
                 'videos': {
                   'results': [
                     {'type': 'Trailer', 'site': 'YouTube', 'key': 'O1tObeYv2Q'}
@@ -305,6 +340,29 @@ void main() {
       expect(details, isNotNull);
       expect(details!.id, equals('550'));
       expect(details.title, equals('Fight Club'));
+      expect(details.tagline, equals('Mischief. Mayhem. Soap.'));
+      expect(details.director, equals('David Fincher'));
+      expect(details.certification, equals('R'));
+      expect(details.voteCount, equals(25000));
+      expect(details.imdbId, equals('tt0137523'));
+      expect(details.belongsToCollection, isNotNull);
+      expect(details.belongsToCollection!.name, equals('Fight Club Collection'));
+      expect(
+        details.belongsToCollection!.posterUrl,
+        equals('https://image.tmdb.org/t/p/w500/fc_poster.jpg'),
+      );
+      expect(
+        details.belongsToCollection!.backdropUrl,
+        equals('https://image.tmdb.org/t/p/w780/fc_backdrop.jpg'),
+      );
+      expect(details.keywords?.length, equals(2));
+      expect(details.keywords?.first.name, equals('insomnia'));
+      expect(details.productionCompanies?.length, equals(1));
+      expect(details.productionCompanies?.first.name, equals('Regency Enterprises'));
+      expect(
+        details.productionCompanies?.first.logoUrl,
+        equals('https://image.tmdb.org/t/p/w185/logo.png'),
+      );
       expect(details.runtime, equals(139));
       expect(details.hasTrailer, isTrue);
       expect(details.cast, contains('Brad Pitt'));

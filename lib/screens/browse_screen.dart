@@ -64,9 +64,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 ),
               ),
             ),
-            child: Consumer(
+              child: Consumer(
               builder: (context, ref, _) {
                 final selectedGenre = ref.watch(browseGenreProvider);
+                final selectedKeyword = ref.watch(browseKeywordProvider);
                 final genres = _getGenres(selectedGenre);
 
                 return Column(
@@ -91,6 +92,49 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         ),
                       ],
                     ),
+                    if (selectedKeyword != null) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Active Keyword',
+                        style: AppThemes.safeGeist(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: inkColor,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: AppColors.primaryButtonDecoration(
+                          isDark: isDark,
+                          borderRadius: 999,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              '#$selectedKeyword',
+                              style: AppThemes.safeGeist(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            PressableScale(
+                              onTap: () {
+                                ref.read(browseKeywordProvider.notifier).clearKeyword();
+                              },
+                              child: Icon(
+                                Icons.close,
+                                size: 16,
+                                color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 16),
                     Text(
                       'Genre',
@@ -135,8 +179,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                                     ),
                               child: Text(
                                 genre,
-                                style: GoogleFonts.getFont(
-                                  'Geist',
+                                style: AppThemes.safeGeist(
                                   fontSize: 13,
                                   fontWeight: isSelected
                                       ? FontWeight.w600
@@ -227,6 +270,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     return Column(
       children: [
         _buildFilterBar(isDark),
+        _buildKeywordFilterBar(isDark),
         Expanded(child: _buildGrid(isDark)),
       ],
     );
@@ -235,13 +279,76 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   Widget _buildLargeLayout(bool isDark) {
     return Row(
       children: [
-        Expanded(child: _buildGrid(isDark)),
+        Expanded(
+          child: Column(
+            children: [
+              _buildKeywordFilterBar(isDark),
+              Expanded(child: _buildGrid(isDark)),
+            ],
+          ),
+        ),
         VerticalDivider(width: 1, thickness: 1, color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba),
         SizedBox(
           width: 250,
           child: _buildFilterPanel(isDark),
         ),
       ],
+    );
+  }
+
+  Widget _buildKeywordFilterBar(bool isDark) {
+    final selectedKeyword = ref.watch(browseKeywordProvider);
+    if (selectedKeyword == null || selectedKeyword.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 6.0),
+      child: Row(
+        children: [
+          Text(
+            'Keyword: ',
+            style: AppThemes.safeGeist(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: subColor,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: AppColors.primaryButtonDecoration(
+              isDark: isDark,
+              borderRadius: 999,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '#$selectedKeyword',
+                  style: AppThemes.safeGeist(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                PressableScale(
+                  onTap: () {
+                    ref.read(browseKeywordProvider.notifier).clearKeyword();
+                  },
+                  child: Icon(
+                    Icons.close,
+                    size: 16,
+                    color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -286,8 +393,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   alignment: Alignment.center,
                   child: Text(
                     genre,
-                    style: GoogleFonts.getFont(
-                      'Geist',
+                    style: AppThemes.safeGeist(
                       fontSize: 13,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                       color: isSelected ? (isDark ? const Color(0xFF1A140C) : Colors.white) : inkColor,
@@ -307,6 +413,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final selectedGenre = ref.watch(browseGenreProvider);
+    final selectedKeyword = ref.watch(browseKeywordProvider);
     final genres = _getGenres(selectedGenre);
 
     return Padding(
@@ -315,6 +422,42 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Filters', style: AppThemes.safeGeist(fontSize: 15, fontWeight: FontWeight.w600, color: inkColor)),
+          if (selectedKeyword != null) ...[
+            const SizedBox(height: 16),
+            Text('Active Keyword', style: AppThemes.safeGeist(fontSize: 13, color: inkColor)),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: AppColors.primaryButtonDecoration(
+                isDark: isDark,
+                borderRadius: 999,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '#$selectedKeyword',
+                    style: AppThemes.safeGeist(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  PressableScale(
+                    onTap: () {
+                      ref.read(browseKeywordProvider.notifier).clearKeyword();
+                    },
+                    child: Icon(
+                      Icons.close,
+                      size: 16,
+                      color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Text('Genre', style: AppThemes.safeGeist(fontSize: 13, color: inkColor)),
           const SizedBox(height: 12),
@@ -345,8 +488,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           ),
                     child: Text(
                       genre,
-                      style: GoogleFonts.getFont(
-                        'Geist',
+                      style: AppThemes.safeGeist(
                         fontSize: 13,
                         fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                         color: isSelected ? (isDark ? const Color(0xFF1A140C) : Colors.white) : inkColor,
@@ -368,13 +510,20 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
 
     final selectedGenre = ref.watch(browseGenreProvider);
+    final selectedKeyword = ref.watch(browseKeywordProvider);
     final popularAsync = ref.watch(popularMoviesProvider);
 
     return popularAsync.when(
       data: (allItems) {
         final items = allItems.where((item) {
-          if (selectedGenre == 'All') return true;
-          return item.genres.contains(selectedGenre);
+          final matchesGenre =
+              selectedGenre == 'All' || item.genres.contains(selectedGenre);
+          final matchesKeyword = selectedKeyword == null ||
+              selectedKeyword.isEmpty ||
+              (item.keywords != null &&
+                  item.keywords!.any((k) =>
+                      k.name.toLowerCase() == selectedKeyword.toLowerCase()));
+          return matchesGenre && matchesKeyword;
         }).toList();
 
         if (items.isEmpty) {
@@ -438,3 +587,4 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 }
+

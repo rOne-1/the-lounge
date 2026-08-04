@@ -23,6 +23,11 @@ class TmdbImageHelper {
 
   /// Cast headshot profile URL for cast list headshots (w185).
   static String? getCastHeadshotUrl(String? path) => buildUrl(path, 'w185');
+
+  /// Image size tier aliases
+  static String? w185(String? path) => buildUrl(path, 'w185');
+  static String? w500(String? path) => buildUrl(path, 'w500');
+  static String? w780(String? path) => buildUrl(path, 'w780');
 }
 
 /// Standalone top-level functions for convenience.
