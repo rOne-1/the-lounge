@@ -455,14 +455,16 @@ class MockMovieRepository implements MovieRepository {
   ];
 
   @override
-  Future<List<MediaItem>> getTrendingMovies() async {
-    await Future.delayed(const Duration(milliseconds: 800));
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     return _mockData.where((m) => m.type == MediaType.movie).toList();
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies() async {
-    await Future.delayed(const Duration(milliseconds: 800));
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     return _mockData
         .where((m) => m.type == MediaType.movie)
         .skip(5)
@@ -471,48 +473,55 @@ class MockMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows() async {
-    await Future.delayed(const Duration(milliseconds: 800));
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     return _mockData.where((m) => m.type == MediaType.tv).toList();
   }
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies() async {
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async {
     await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     final movies = _mockData.where((m) => m.type == MediaType.movie).toList();
     movies.sort((a, b) => b.rating.compareTo(a.rating));
     return movies;
   }
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows() async {
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async {
     await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     final shows = _mockData.where((m) => m.type == MediaType.tv).toList();
     shows.sort((a, b) => b.rating.compareTo(a.rating));
     return shows;
   }
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies() async {
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async {
     await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     return _mockData.where((m) => m.type == MediaType.movie).take(4).toList();
   }
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows() async {
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async {
     await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     return _mockData.where((m) => m.type == MediaType.tv).take(4).toList();
   }
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies() async {
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async {
     await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     return _mockData.where((m) => m.type == MediaType.movie).skip(2).toList();
   }
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows() async {
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async {
     await Future.delayed(const Duration(milliseconds: 100));
+    if (page > 1) return [];
     return _mockData.where((m) => m.type == MediaType.tv).skip(2).toList();
   }
 
@@ -596,6 +605,7 @@ class MockMovieRepository implements MovieRepository {
   Future<List<MediaItem>> discoverMedia({
     required bool isMovies,
     required DiscoverFilterParams params,
+    int page = 1,
   }) async {
     await Future.delayed(const Duration(milliseconds: 100));
     final type = isMovies ? MediaType.movie : MediaType.tv;

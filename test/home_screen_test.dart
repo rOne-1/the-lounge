@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/home_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
-import 'package:the_lounge/providers/repository_provider.dart';
+import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/movie_repository.dart';
 
 class MockTestRepository implements MovieRepository {
@@ -20,31 +21,31 @@ class MockTestRepository implements MovieRepository {
   });
 
   @override
-  Future<List<MediaItem>> getTrendingMovies() async => trendingMovies;
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => trendingMovies;
 
   @override
-  Future<List<MediaItem>> getPopularMovies() async => popularMovies;
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => popularMovies;
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows() async => trendingTvShows;
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => trendingTvShows;
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies() async => trendingMovies;
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => trendingMovies;
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows() async => trendingTvShows;
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => trendingTvShows;
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies() async => trendingMovies;
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => trendingMovies;
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows() async => trendingTvShows;
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => trendingTvShows;
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies() async => trendingMovies;
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => trendingMovies;
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows() async => trendingTvShows;
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => trendingTvShows;
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async {
@@ -67,7 +68,8 @@ class MockTestRepository implements MovieRepository {
   @override
   Future<List<MediaItem>> discoverMedia({
     required bool isMovies,
-    required dynamic params,
+    required DiscoverFilterParams params,
+    int page = 1,
   }) async =>
       isMovies ? trendingMovies : trendingTvShows;
 
@@ -103,11 +105,17 @@ void main() {
       trendingTvShows: [],
     );
 
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+      ],
+    );
+    container.read(mediaProvider.notifier).addToWatchingList(popular[0]);
+    container.read(mediaProvider.notifier).addToWatchingList(popular[1]);
+
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          movieRepositoryProvider.overrideWithValue(mockRepo),
-        ],
+      UncontrolledProviderScope(
+        container: container,
         child: const MaterialApp(
           home: Scaffold(
             body: HomeScreen(enableAnimation: false),

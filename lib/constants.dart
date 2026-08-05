@@ -22,6 +22,7 @@ class AppColors {
 
   static const Color srStatusWatchlist = Color(0xFFCBA86A);
   static const Color srStatusSave = Color(0xFFD69784);
+  static const Color srStatusWatching = Color(0xFF62A87C);
   static const Color srStatusWatched = Color(0xFF7E9BB5);
 
   static const Color srGlow1 = Color(0xFFCBA86A);
@@ -63,6 +64,7 @@ class AppColors {
 
   static const Color rrStatusWatchlist = Color(0xFFB0512B);
   static const Color rrStatusSave = Color(0xFFA76A50);
+  static const Color rrStatusWatching = Color(0xFF388E6C);
   static const Color rrStatusWatched = Color(0xFF566F86);
 
   static const Color rrGlow1 = Color(0xFFA76A50);

@@ -8,6 +8,7 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/movie_repository.dart';
 import 'package:the_lounge/widgets/pressable_scale.dart';
 
@@ -17,31 +18,31 @@ class MockDetailRepository implements MovieRepository {
   MockDetailRepository(this.items);
 
   @override
-  Future<List<MediaItem>> getTrendingMovies() async => items.values.toList();
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getPopularMovies() async => items.values.toList();
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows() async => items.values.toList();
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies() async => items.values.toList();
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows() async => items.values.toList();
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies() async => items.values.toList();
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows() async => items.values.toList();
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies() async => items.values.toList();
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows() async => items.values.toList();
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => items.values.toList();
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async => items[id];
@@ -61,7 +62,8 @@ class MockDetailRepository implements MovieRepository {
   @override
   Future<List<MediaItem>> discoverMedia({
     required bool isMovies,
-    required dynamic params,
+    required DiscoverFilterParams params,
+    int page = 1,
   }) async =>
       items.values.toList();
 
@@ -474,8 +476,8 @@ void main() {
       final watchlistFinder = find.text('Watchlist');
       expect(watchlistFinder, findsOneWidget);
 
-      // Verify StatusPulseRing widgets exist wrapping the buttons
-      expect(find.byType(StatusPulseRing), findsNWidgets(3));
+      // Verify StatusPulseRing widgets exist wrapping the 4 status buttons
+      expect(find.byType(StatusPulseRing), findsNWidgets(4));
 
       // Tap Watchlist button to activate it
       await tester.tap(watchlistFinder);
@@ -489,6 +491,12 @@ void main() {
       // Tap Save button to activate it
       final saveFinder = find.text('Save');
       await tester.tap(saveFinder);
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      // Tap Watching button to activate it
+      final watchingFinder = find.text('Watching');
+      await tester.tap(watchingFinder);
       await tester.pump();
       await tester.pumpAndSettle();
 

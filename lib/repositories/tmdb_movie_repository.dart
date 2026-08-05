@@ -115,22 +115,22 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getTrendingMovies() async {
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async {
     if (!isConfigured) {
       _logWarning(
           'TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getTrendingMovies();
+        return fallbackRepository!.getTrendingMovies(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/trending/movie/week', {'page': 1, 'include_adult': false});
+          .generateKey('/trending/movie/week', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getTrendingMovies();
+        res = await apiService.getTrendingMovies(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -144,29 +144,29 @@ class TmdbMovieRepository implements MovieRepository {
           e,
           stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getTrendingMovies();
+        return fallbackRepository!.getTrendingMovies(page: page);
       }
       rethrow;
     }
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies() async {
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async {
     if (!isConfigured) {
       _logWarning(
           'TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getPopularMovies();
+        return fallbackRepository!.getPopularMovies(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/movie/popular', {'page': 1, 'include_adult': false});
+          .generateKey('/movie/popular', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getPopularMovies();
+        res = await apiService.getPopularMovies(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -180,29 +180,29 @@ class TmdbMovieRepository implements MovieRepository {
           e,
           stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getPopularMovies();
+        return fallbackRepository!.getPopularMovies(page: page);
       }
       rethrow;
     }
   }
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows() async {
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async {
     if (!isConfigured) {
       _logWarning(
           'TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getTrendingTvShows();
+        return fallbackRepository!.getTrendingTvShows(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/trending/tv/week', {'page': 1, 'include_adult': false});
+          .generateKey('/trending/tv/week', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getTrendingTvShows();
+        res = await apiService.getTrendingTvShows(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -216,28 +216,28 @@ class TmdbMovieRepository implements MovieRepository {
           e,
           stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getTrendingTvShows();
+        return fallbackRepository!.getTrendingTvShows(page: page);
       }
       rethrow;
     }
   }
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies() async {
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getTopRatedMovies();
+        return fallbackRepository!.getTopRatedMovies(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/movie/top_rated', {'page': 1, 'include_adult': false});
+          .generateKey('/movie/top_rated', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getTopRatedMovies();
+        res = await apiService.getTopRatedMovies(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -248,28 +248,28 @@ class TmdbMovieRepository implements MovieRepository {
     } catch (e, stack) {
       _logError('Failed to fetch top rated movies from TMDB API.', e, stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getTopRatedMovies();
+        return fallbackRepository!.getTopRatedMovies(page: page);
       }
       rethrow;
     }
   }
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows() async {
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getTopRatedTvShows();
+        return fallbackRepository!.getTopRatedTvShows(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/tv/top_rated', {'page': 1, 'include_adult': false});
+          .generateKey('/tv/top_rated', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getTopRatedTvShows();
+        res = await apiService.getTopRatedTvShows(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -280,28 +280,28 @@ class TmdbMovieRepository implements MovieRepository {
     } catch (e, stack) {
       _logError('Failed to fetch top rated TV shows from TMDB API.', e, stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getTopRatedTvShows();
+        return fallbackRepository!.getTopRatedTvShows(page: page);
       }
       rethrow;
     }
   }
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies() async {
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getNowPlayingMovies();
+        return fallbackRepository!.getNowPlayingMovies(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/movie/now_playing', {'page': 1, 'include_adult': false});
+          .generateKey('/movie/now_playing', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getNowPlayingMovies();
+        res = await apiService.getNowPlayingMovies(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -312,28 +312,28 @@ class TmdbMovieRepository implements MovieRepository {
     } catch (e, stack) {
       _logError('Failed to fetch now playing movies from TMDB API.', e, stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getNowPlayingMovies();
+        return fallbackRepository!.getNowPlayingMovies(page: page);
       }
       rethrow;
     }
   }
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows() async {
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getAiringTodayTvShows();
+        return fallbackRepository!.getAiringTodayTvShows(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/tv/airing_today', {'page': 1, 'include_adult': false});
+          .generateKey('/tv/airing_today', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getAiringTodayTvShows();
+        res = await apiService.getAiringTodayTvShows(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -344,28 +344,28 @@ class TmdbMovieRepository implements MovieRepository {
     } catch (e, stack) {
       _logError('Failed to fetch airing today TV shows from TMDB API.', e, stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getAiringTodayTvShows();
+        return fallbackRepository!.getAiringTodayTvShows(page: page);
       }
       rethrow;
     }
   }
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies() async {
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getUpcomingMovies();
+        return fallbackRepository!.getUpcomingMovies(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/movie/upcoming', {'page': 1, 'include_adult': false});
+          .generateKey('/movie/upcoming', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getUpcomingMovies();
+        res = await apiService.getUpcomingMovies(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -376,28 +376,28 @@ class TmdbMovieRepository implements MovieRepository {
     } catch (e, stack) {
       _logError('Failed to fetch upcoming movies from TMDB API.', e, stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getUpcomingMovies();
+        return fallbackRepository!.getUpcomingMovies(page: page);
       }
       rethrow;
     }
   }
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows() async {
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getOnTheAirTvShows();
+        return fallbackRepository!.getOnTheAirTvShows(page: page);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/tv/on_the_air', {'page': 1, 'include_adult': false});
+          .generateKey('/tv/on_the_air', {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getOnTheAirTvShows();
+        res = await apiService.getOnTheAirTvShows(page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -408,7 +408,7 @@ class TmdbMovieRepository implements MovieRepository {
     } catch (e, stack) {
       _logError('Failed to fetch on the air TV shows from TMDB API.', e, stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getOnTheAirTvShows();
+        return fallbackRepository!.getOnTheAirTvShows(page: page);
       }
       rethrow;
     }
@@ -636,6 +636,7 @@ class TmdbMovieRepository implements MovieRepository {
   Future<List<MediaItem>> discoverMedia({
     required bool isMovies,
     required DiscoverFilterParams params,
+    int page = 1,
   }) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
@@ -643,6 +644,7 @@ class TmdbMovieRepository implements MovieRepository {
         return fallbackRepository!.discoverMedia(
           isMovies: isMovies,
           params: params,
+          page: page,
         );
       }
       throw Exception('TMDB API token is missing or unconfigured.');
@@ -651,7 +653,7 @@ class TmdbMovieRepository implements MovieRepository {
       await _ensureGenresLoaded();
       final endpoint = isMovies ? '/discover/movie' : '/discover/tv';
       final queryParams = <String, dynamic>{
-        'page': 1,
+        'page': page,
         'include_adult': false,
       };
       if (params.genreId != null) {
@@ -712,8 +714,8 @@ class TmdbMovieRepository implements MovieRepository {
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = isMovies
-            ? await apiService.discoverMovies(params: params)
-            : await apiService.discoverTvShows(params: params);
+            ? await apiService.discoverMovies(params: params, page: page)
+            : await apiService.discoverTvShows(params: params, page: page);
         await cacheService.put(key, res);
       }
       final results =
@@ -730,6 +732,7 @@ class TmdbMovieRepository implements MovieRepository {
         return fallbackRepository!.discoverMedia(
           isMovies: isMovies,
           params: params,
+          page: page,
         );
       }
       rethrow;

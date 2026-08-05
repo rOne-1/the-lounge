@@ -2,15 +2,15 @@ import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 
 abstract class MovieRepository {
-  Future<List<MediaItem>> getTrendingMovies();
-  Future<List<MediaItem>> getPopularMovies();
-  Future<List<MediaItem>> getTrendingTvShows();
-  Future<List<MediaItem>> getTopRatedMovies();
-  Future<List<MediaItem>> getTopRatedTvShows();
-  Future<List<MediaItem>> getNowPlayingMovies();
-  Future<List<MediaItem>> getAiringTodayTvShows();
-  Future<List<MediaItem>> getUpcomingMovies();
-  Future<List<MediaItem>> getOnTheAirTvShows();
+  Future<List<MediaItem>> getTrendingMovies({int page = 1});
+  Future<List<MediaItem>> getPopularMovies({int page = 1});
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1});
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1});
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1});
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1});
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1});
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1});
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1});
   Future<MediaItem?> getMediaDetails(String id);
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber);
   Future<List<MediaItem>> searchMedia(String query);
@@ -18,6 +18,7 @@ abstract class MovieRepository {
   Future<List<MediaItem>> discoverMedia({
     required bool isMovies,
     required DiscoverFilterParams params,
+    int page = 1,
   });
   Future<List<Map<String, dynamic>>> searchPersons(String query);
 }

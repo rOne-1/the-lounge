@@ -43,12 +43,47 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     });
     try {
       final repo = ref.read(movieRepositoryProvider);
-      final trending = await repo.getTrendingMovies();
-      final popular = await repo.getPopularMovies();
+      final mediaState = ref.read(mediaProvider);
+
+      final excludedIds = <String>{
+        ...mediaState.watchlist.keys,
+        ...mediaState.maybeList.keys,
+        ...mediaState.watchedList.keys,
+        ...mediaState.watchingList.keys,
+      };
+
+      bool isExcluded(MediaItem item) {
+        final cleanId = item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+        return excludedIds.contains(item.id) ||
+            excludedIds.contains(item.prefixedId) ||
+            excludedIds.contains(cleanId);
+      }
+
+      final navState = ref.read(navigationProvider);
+      final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
+
+      final List<MediaItem> rawList = [];
+
+      if (isMovies) {
+        final t1 = await repo.getTrendingMovies(page: 1);
+        final t2 = await repo.getTrendingMovies(page: 2);
+        final p1 = await repo.getPopularMovies(page: 1);
+        final p2 = await repo.getPopularMovies(page: 2);
+        rawList.addAll([...t1, ...t2, ...p1, ...p2]);
+      } else {
+        final t1 = await repo.getTrendingTvShows(page: 1);
+        final t2 = await repo.getTrendingTvShows(page: 2);
+        final top1 = await repo.getTopRatedTvShows(page: 1);
+        final top2 = await repo.getTopRatedTvShows(page: 2);
+        rawList.addAll([...t1, ...t2, ...top1, ...top2]);
+      }
+
       if (mounted) {
         setState(() {
           final seen = <String>{};
-          final merged = [...trending, ...popular].where((item) => seen.add(item.id)).toList();
+          final merged = rawList
+              .where((item) => !isExcluded(item) && seen.add(item.id))
+              .toList();
           _pool = merged;
           _loading = false;
         });

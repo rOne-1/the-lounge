@@ -24,7 +24,7 @@ void main() {
     });
 
     test(
-        'adding to watchlist and then to maybe-list leaves the item in BOTH lists',
+        'adding to watchlist and then to maybe-list moves the item to maybe-list',
         () {
       final notifier = container.read(mediaProvider.notifier);
 
@@ -32,88 +32,80 @@ void main() {
       var state = container.read(mediaProvider);
       expect(state.watchlist.containsKey(item.id), isTrue);
       expect(state.maybeList.containsKey(item.id), isFalse);
+      expect(state.watchingList.containsKey(item.id), isFalse);
       expect(state.watchedList.containsKey(item.id), isFalse);
 
       notifier.addToMaybeList(item);
       state = container.read(mediaProvider);
-      expect(state.watchlist.containsKey(item.id), isTrue,
-          reason: 'Item must remain in watchlist when added to maybe-list');
+      expect(state.watchlist.containsKey(item.id), isFalse,
+          reason: 'Item must be removed from watchlist when added to maybe-list');
       expect(state.maybeList.containsKey(item.id), isTrue,
           reason: 'Item must be in maybe-list');
+      expect(state.watchingList.containsKey(item.id), isFalse);
       expect(state.watchedList.containsKey(item.id), isFalse);
     });
 
-    test('toggling watchlist off leaves maybe-list intact', () {
+    test('toggling watching clears watchlist, maybe-list, and watched-list', () {
       final notifier = container.read(mediaProvider.notifier);
 
       notifier.addToWatchlist(item);
-      notifier.addToMaybeList(item);
-
       var state = container.read(mediaProvider);
       expect(state.watchlist.containsKey(item.id), isTrue);
-      expect(state.maybeList.containsKey(item.id), isTrue);
 
-      // Toggle watchlist off
-      notifier.toggleWatchlist(item);
+      // Toggle watching on
+      notifier.toggleWatching(item);
       state = container.read(mediaProvider);
 
+      expect(state.watchingList.containsKey(item.id), isTrue,
+          reason: 'Watching list must contain item');
       expect(state.watchlist.containsKey(item.id), isFalse,
-          reason: 'Watchlist should be toggled off');
-      expect(state.maybeList.containsKey(item.id), isTrue,
-          reason: 'Maybe-list must remain unaffected when toggling watchlist off');
+          reason: 'Watchlist should be cleared when toggling watching on');
+      expect(state.maybeList.containsKey(item.id), isFalse);
       expect(state.watchedList.containsKey(item.id), isFalse);
     });
 
-    test('toggling watched clears watchlist and maybe-list', () {
+    test('toggling watched clears watchlist, maybe-list, and watching-list', () {
       final notifier = container.read(mediaProvider.notifier);
 
-      // Start with item in both watchlist and maybe-list
-      notifier.toggleWatchlist(item);
-      notifier.toggleMaybe(item);
+      notifier.toggleWatching(item);
 
       var state = container.read(mediaProvider);
-      expect(state.watchlist.containsKey(item.id), isTrue);
-      expect(state.maybeList.containsKey(item.id), isTrue);
-      expect(state.watchedList.containsKey(item.id), isFalse);
+      expect(state.watchingList.containsKey(item.id), isTrue);
 
-      // Toggle watched on -> should clear watchlist and maybe-list
+      // Toggle watched on -> should clear watchingList
       notifier.toggleWatched(item);
       state = container.read(mediaProvider);
-      expect(state.watchlist.containsKey(item.id), isFalse,
-          reason: 'Watchlist must be cleared when toggling watched on');
-      expect(state.maybeList.containsKey(item.id), isFalse,
-          reason: 'Maybe-list must be cleared when toggling watched on');
+      expect(state.watchlist.containsKey(item.id), isFalse);
+      expect(state.maybeList.containsKey(item.id), isFalse);
+      expect(state.watchingList.containsKey(item.id), isFalse,
+          reason: 'WatchingList must be cleared when toggling watched on');
       expect(state.watchedList.containsKey(item.id), isTrue,
           reason: 'Watched must be active');
 
-      // Toggle watched off -> watchlist and maybe-list should NOT be restored
+      // Toggle watched off
       notifier.toggleWatched(item);
       state = container.read(mediaProvider);
-      expect(state.watchlist.containsKey(item.id), isFalse,
-          reason: 'Watchlist must remain cleared when toggling watched off');
-      expect(state.maybeList.containsKey(item.id), isFalse,
-          reason: 'Maybe-list must remain cleared when toggling watched off');
-      expect(state.watchedList.containsKey(item.id), isFalse,
-          reason: 'Watched must be toggled off');
+      expect(state.watchlist.containsKey(item.id), isFalse);
+      expect(state.maybeList.containsKey(item.id), isFalse);
+      expect(state.watchingList.containsKey(item.id), isFalse);
+      expect(state.watchedList.containsKey(item.id), isFalse);
     });
 
-    test('addToWatchedList clears watchlist and maybe-list', () {
+    test('addToWatchedList clears all other lists', () {
       final notifier = container.read(mediaProvider.notifier);
 
       notifier.addToWatchlist(item);
-      notifier.addToMaybeList(item);
 
       var state = container.read(mediaProvider);
       expect(state.watchlist.containsKey(item.id), isTrue);
-      expect(state.maybeList.containsKey(item.id), isTrue);
 
       notifier.addToWatchedList(item);
       state = container.read(mediaProvider);
       expect(state.watchedList.containsKey(item.id), isTrue);
       expect(state.watchlist.containsKey(item.id), isFalse,
           reason: 'addToWatchedList must clear watchlist');
-      expect(state.maybeList.containsKey(item.id), isFalse,
-          reason: 'addToWatchedList must clear maybeList');
+      expect(state.maybeList.containsKey(item.id), isFalse);
+      expect(state.watchingList.containsKey(item.id), isFalse);
 
       // Unmarking watched does not restore prior state
       notifier.removeFromWatchedList(item.id);
@@ -121,22 +113,22 @@ void main() {
       expect(state.watchedList.containsKey(item.id), isFalse);
       expect(state.watchlist.containsKey(item.id), isFalse);
       expect(state.maybeList.containsKey(item.id), isFalse);
+      expect(state.watchingList.containsKey(item.id), isFalse);
     });
 
     test('removeFromAllLists clears item from all active lists', () {
       final notifier = container.read(mediaProvider.notifier);
 
-      notifier.addToWatchlist(item);
-      notifier.addToMaybeList(item);
+      notifier.addToWatchingList(item);
 
       var state = container.read(mediaProvider);
-      expect(state.watchlist.containsKey(item.id), isTrue);
-      expect(state.maybeList.containsKey(item.id), isTrue);
+      expect(state.watchingList.containsKey(item.id), isTrue);
 
       notifier.removeFromAllLists(item.id);
       state = container.read(mediaProvider);
       expect(state.watchlist.containsKey(item.id), isFalse);
       expect(state.maybeList.containsKey(item.id), isFalse);
+      expect(state.watchingList.containsKey(item.id), isFalse);
       expect(state.watchedList.containsKey(item.id), isFalse);
     });
   });

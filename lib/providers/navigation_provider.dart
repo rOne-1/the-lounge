@@ -4,6 +4,7 @@ enum AppTab {
   home,
   discover,
   search,
+  browse,
   yourSpace,
   calendar,
 }

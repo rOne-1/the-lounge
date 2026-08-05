@@ -6,6 +6,7 @@ export 'repository_provider.dart';
 class MediaState {
   final Map<String, MediaItem> watchlist;
   final Map<String, MediaItem> maybeList; // 'Save for later' / Maybe
+  final Map<String, MediaItem> watchingList; // Explicit 4th State: Watching
   final Map<String, MediaItem> watchedList;
   final Map<String, Set<String>> watchedEpisodes; // showId -> set of "S1E1" episode keys
   final List<MediaItem> discoverPool;
@@ -14,6 +15,7 @@ class MediaState {
   const MediaState({
     this.watchlist = const {},
     this.maybeList = const {},
+    this.watchingList = const {},
     this.watchedList = const {},
     this.watchedEpisodes = const {},
     this.discoverPool = const [],
@@ -23,6 +25,7 @@ class MediaState {
   MediaState copyWith({
     Map<String, MediaItem>? watchlist,
     Map<String, MediaItem>? maybeList,
+    Map<String, MediaItem>? watchingList,
     Map<String, MediaItem>? watchedList,
     Map<String, Set<String>>? watchedEpisodes,
     List<MediaItem>? discoverPool,
@@ -31,6 +34,7 @@ class MediaState {
     return MediaState(
       watchlist: watchlist ?? this.watchlist,
       maybeList: maybeList ?? this.maybeList,
+      watchingList: watchingList ?? this.watchingList,
       watchedList: watchedList ?? this.watchedList,
       watchedEpisodes: watchedEpisodes ?? this.watchedEpisodes,
       discoverPool: discoverPool ?? this.discoverPool,
@@ -59,12 +63,28 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void addToWatchlist(MediaItem item) {
-    if (state.watchlist.containsKey(item.id)) return;
+    if (state.watchlist.containsKey(item.id) &&
+        !state.maybeList.containsKey(item.id) &&
+        !state.watchingList.containsKey(item.id) &&
+        !state.watchedList.containsKey(item.id)) {
+      return;
+    }
 
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
       ..[item.id] = item;
+    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
+      ..remove(item.id);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..remove(item.id);
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+      ..remove(item.id);
 
-    state = state.copyWith(watchlist: newWatchlist);
+    state = state.copyWith(
+      watchlist: newWatchlist,
+      maybeList: newMaybeList,
+      watchingList: newWatchingList,
+      watchedList: newWatchedList,
+    );
   }
 
   void removeFromWatchlist(String id) {
@@ -85,12 +105,28 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void addToMaybeList(MediaItem item) {
-    if (state.maybeList.containsKey(item.id)) return;
+    if (state.maybeList.containsKey(item.id) &&
+        !state.watchlist.containsKey(item.id) &&
+        !state.watchingList.containsKey(item.id) &&
+        !state.watchedList.containsKey(item.id)) {
+      return;
+    }
 
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
       ..[item.id] = item;
+    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
+      ..remove(item.id);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..remove(item.id);
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+      ..remove(item.id);
 
-    state = state.copyWith(maybeList: newMaybeList);
+    state = state.copyWith(
+      watchlist: newWatchlist,
+      maybeList: newMaybeList,
+      watchingList: newWatchingList,
+      watchedList: newWatchedList,
+    );
   }
 
   void removeFromMaybeList(String id) {
@@ -112,10 +148,55 @@ class MediaNotifier extends Notifier<MediaState> {
 
   void toggleMaybeList(MediaItem item) => toggleMaybe(item);
 
+  void addToWatchingList(MediaItem item) {
+    if (state.watchingList.containsKey(item.id) &&
+        !state.watchlist.containsKey(item.id) &&
+        !state.maybeList.containsKey(item.id) &&
+        !state.watchedList.containsKey(item.id)) {
+      return;
+    }
+
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..[item.id] = item;
+    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
+      ..remove(item.id);
+    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
+      ..remove(item.id);
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+      ..remove(item.id);
+
+    state = state.copyWith(
+      watchlist: newWatchlist,
+      maybeList: newMaybeList,
+      watchingList: newWatchingList,
+      watchedList: newWatchedList,
+    );
+  }
+
+  void removeFromWatchingList(String id) {
+    if (!state.watchingList.containsKey(id)) return;
+
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..remove(id);
+
+    state = state.copyWith(watchingList: newWatchingList);
+  }
+
+  void toggleWatching(MediaItem item) {
+    if (state.watchingList.containsKey(item.id)) {
+      removeFromWatchingList(item.id);
+    } else {
+      addToWatchingList(item);
+    }
+  }
+
+  void toggleWatchingList(MediaItem item) => toggleWatching(item);
+
   void addToWatchedList(MediaItem item) {
     if (state.watchedList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
-        !state.maybeList.containsKey(item.id)) {
+        !state.maybeList.containsKey(item.id) &&
+        !state.watchingList.containsKey(item.id)) {
       return;
     }
 
@@ -125,10 +206,13 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(item.id);
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
       ..remove(item.id);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..remove(item.id);
 
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
+      watchingList: newWatchingList,
       watchedList: newWatchedList,
     );
   }
@@ -199,20 +283,29 @@ class MediaNotifier extends Notifier<MediaState> {
     }
 
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList);
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist);
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList);
 
-    if (totalCount > 0 && showEpisodes.length == totalCount) {
+    if (showEpisodes.isNotEmpty && (totalCount == 0 || showEpisodes.length < totalCount)) {
+      newWatchingList[showItem.id] = showItem;
+      newWatchedList.remove(showItem.id);
+      newWatchlist.remove(showItem.id);
+      newMaybeList.remove(showItem.id);
+    } else if (totalCount > 0 && showEpisodes.length == totalCount) {
       newWatchedList[showItem.id] = showItem;
+      newWatchingList.remove(showItem.id);
       newWatchlist.remove(showItem.id);
       newMaybeList.remove(showItem.id);
     } else {
+      newWatchingList.remove(showItem.id);
       newWatchedList.remove(showItem.id);
     }
 
     state = state.copyWith(
       watchedEpisodes: currentMap,
       watchedList: newWatchedList,
+      watchingList: newWatchingList,
       watchlist: newWatchlist,
       maybeList: newMaybeList,
     );
@@ -253,6 +346,8 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(id);
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
       ..remove(id);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..remove(id);
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
       ..remove(id);
     final newWatchedEpisodes = Map<String, Set<String>>.from(
@@ -262,6 +357,7 @@ class MediaNotifier extends Notifier<MediaState> {
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
+      watchingList: newWatchingList,
       watchedList: newWatchedList,
       watchedEpisodes: newWatchedEpisodes,
     );

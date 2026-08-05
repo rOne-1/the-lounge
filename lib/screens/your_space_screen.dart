@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/media_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
@@ -15,14 +16,24 @@ class YourSpaceScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mediaState = ref.watch(mediaProvider);
+    final navState = ref.watch(navigationProvider);
+    final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
+    final activeType = isMovies ? MediaType.movie : MediaType.tv;
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
 
+    List<MediaItem> filterList(Map<String, MediaItem> itemsMap) {
+      return itemsMap.values
+          .where((item) => item.type == activeType)
+          .toList();
+    }
+
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Column(
         children: [
           TabBar(
@@ -34,15 +45,17 @@ class YourSpaceScreen extends ConsumerWidget {
             tabs: const [
               Tab(text: 'Watchlist'),
               Tab(text: 'Maybe'),
+              Tab(text: 'Watching'),
               Tab(text: 'Watched'),
             ],
           ),
           Expanded(
             child: TabBarView(
               children: [
-                _buildGrid(context, mediaState.watchlist.values.toList(), isDark, subColor),
-                _buildGrid(context, mediaState.maybeList.values.toList(), isDark, subColor),
-                _buildGrid(context, mediaState.watchedList.values.toList(), isDark, subColor),
+                _buildGrid(context, filterList(mediaState.watchlist), isDark, subColor),
+                _buildGrid(context, filterList(mediaState.maybeList), isDark, subColor),
+                _buildGrid(context, filterList(mediaState.watchingList), isDark, subColor),
+                _buildGrid(context, filterList(mediaState.watchedList), isDark, subColor),
               ],
             ),
           ),

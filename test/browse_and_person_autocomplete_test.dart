@@ -15,31 +15,31 @@ class _TestRepository implements MovieRepository {
   _TestRepository(this.items);
 
   @override
-  Future<List<MediaItem>> getTrendingMovies() async => items.values.toList();
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getPopularMovies() async => items.values.toList();
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows() async => items.values.toList();
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies() async => items.values.toList();
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows() async => items.values.toList();
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies() async => items.values.toList();
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows() async => items.values.toList();
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies() async => items.values.toList();
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows() async => items.values.toList();
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => items.values.toList();
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async => items[id] ?? items.values.firstOrNull;
@@ -48,7 +48,7 @@ class _TestRepository implements MovieRepository {
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
 
   @override
-  Future<List<MediaItem>> searchMedia(String query) async => [];
+  Future<List<MediaItem>> searchMedia(String query) async => items.values.toList();
 
   @override
   Future<List<Map<String, String>>> getWatchProviderRegions() async => const [
@@ -59,6 +59,7 @@ class _TestRepository implements MovieRepository {
   Future<List<MediaItem>> discoverMedia({
     required bool isMovies,
     required DiscoverFilterParams params,
+    int page = 1,
   }) async =>
       items.values.toList();
 
@@ -250,6 +251,60 @@ void main() {
 
       final filterState = container.read(discoverFilterProvider);
       expect(filterState.keywordName, equals('historical fiction'));
+    });
+
+    testWidgets('Dual-mode switching between Discover Mode and Search Mode with mode badge',
+        (WidgetTester tester) async {
+      final testItem = MediaItem(
+        id: 'movie_1',
+        title: 'Inception',
+        overview: 'A thief steals secrets.',
+        type: MediaType.movie,
+        rating: 8.8,
+        genres: const ['Action', 'Sci-Fi'],
+      );
+
+      final container = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(
+            _TestRepository({'movie_1': testItem}),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: BrowseScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Initially in Discover mode (no search mode badge)
+      expect(find.textContaining('⚡ Search Mode'), findsNothing);
+
+      // Enter text into search bar
+      final searchField = find.byType(TextField).first;
+      await tester.enterText(searchField, 'Inception');
+      await tester.pumpAndSettle();
+
+      // Now in Search mode: Mode badge is displayed
+      expect(
+        find.text('⚡ Search Mode: Filtering is scoped to search results for "Inception"'),
+        findsOneWidget,
+      );
+
+      // Clear search text
+      final clearButton = find.byIcon(Icons.close).first;
+      await tester.tap(clearButton);
+      await tester.pumpAndSettle();
+
+      // Returns to Discover Mode
+      expect(find.textContaining('⚡ Search Mode'), findsNothing);
     });
   });
 }

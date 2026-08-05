@@ -10,7 +10,7 @@ import '../widgets/pressable_scale.dart';
 import '../constants.dart';
 import 'home_screen.dart';
 import 'discover_screen.dart';
-import 'search_screen.dart';
+import 'browse_screen.dart';
 import 'your_space_screen.dart';
 import 'calendar_screen.dart';
 
@@ -334,7 +334,8 @@ class ShellScreen extends ConsumerWidget {
       case AppTab.discover:
         child = const DiscoverScreen(key: ValueKey(AppTab.discover));
       case AppTab.search:
-        child = const SearchScreen(key: ValueKey(AppTab.search));
+      case AppTab.browse:
+        child = const BrowseScreen(key: ValueKey(AppTab.search));
       case AppTab.yourSpace:
         child = const YourSpaceScreen(key: ValueKey(AppTab.yourSpace));
       case AppTab.calendar:

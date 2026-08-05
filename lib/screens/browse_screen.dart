@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../constants.dart';
+import '../models/discover_filter_params.dart';
+import '../models/media_item.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
-import '../widgets/media_image.dart';
+import '../widgets/fallback_widgets.dart';
 import '../widgets/person_search_autocomplete.dart';
 import '../widgets/pressable_scale.dart';
 import 'detail_screen.dart';
@@ -84,6 +85,92 @@ class BrowseScreen extends ConsumerStatefulWidget {
 }
 
 class _BrowseScreenState extends ConsumerState<BrowseScreen> {
+  int _currentPage = 1;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
+  final List<MediaItem> _accumulatedItems = [];
+  String? _lastParamsKey;
+
+  // Search mode state
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  List<MediaItem>? _searchResults;
+  bool _isSearching = false;
+  Object? _searchError;
+
+  void _onSearchChanged(String query) async {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
+      setState(() {
+        _searchQuery = '';
+        _searchResults = null;
+        _isSearching = false;
+        _searchError = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _searchQuery = trimmed;
+      _isSearching = true;
+      _searchError = null;
+    });
+
+    try {
+      final repo = ref.read(movieRepositoryProvider);
+      final results = await repo.searchMedia(trimmed);
+      if (mounted) {
+        setState(() {
+          _searchResults = results;
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _searchError = e;
+          _isSearching = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _loadMorePage(bool isMovies) async {
+    if (_isLoadingMore || !_hasMore) return;
+    setState(() {
+      _isLoadingMore = true;
+    });
+    try {
+      final repo = ref.read(movieRepositoryProvider);
+      final filterParams = ref.read(discoverFilterProvider);
+      final nextPage = _currentPage + 1;
+      final newItems = await repo.discoverMedia(
+        isMovies: isMovies,
+        params: filterParams,
+        page: nextPage,
+      );
+      if (mounted) {
+        final existingIds = _accumulatedItems.map((e) => e.id).toSet();
+        final fresh = newItems.where((e) => !existingIds.contains(e.id)).toList();
+        setState(() {
+          if (fresh.isEmpty) {
+            _hasMore = false;
+          } else {
+            _currentPage = nextPage;
+            _accumulatedItems.addAll(fresh);
+          }
+          _isLoadingMore = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _isLoadingMore = false;
+        });
+      }
+    }
+  }
+
   final List<String> _baseGenres = [
     'All',
     'Action',
@@ -171,6 +258,12 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _syncPreFilters();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _resetAllFilters() {
@@ -268,6 +361,88 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
+  List<MediaItem> _applyClientFilters(
+    List<MediaItem> items,
+    DiscoverFilterParams params,
+    bool isMovies,
+  ) {
+    final expectedType = isMovies ? MediaType.movie : MediaType.tv;
+
+    final filtered = items.where((item) {
+      // 1. Media Type toggle matching
+      if (item.type != expectedType) return false;
+
+      // 2. Genre filter
+      if (params.genreName != null &&
+          params.genreName!.isNotEmpty &&
+          params.genreName != 'All') {
+        final target = params.genreName!.toLowerCase();
+        final matchesGenre = item.genres.any((g) => g.toLowerCase() == target);
+        if (!matchesGenre) return false;
+      }
+
+      // 3. Min Rating filter
+      if (params.minRating != null) {
+        if (item.rating < params.minRating!) return false;
+      }
+
+      // 4. Min Vote Count filter
+      if (params.minVoteCount != null) {
+        if ((item.voteCount ?? 0) < params.minVoteCount!) return false;
+      }
+
+      // 5. Runtime filter
+      if (params.minRuntime != null) {
+        if (item.runtime != null && item.runtime! < params.minRuntime!) {
+          return false;
+        }
+      }
+      if (params.maxRuntime != null) {
+        if (item.runtime != null && item.runtime! > params.maxRuntime!) {
+          return false;
+        }
+      }
+
+      // 8. Person filter
+      if (params.personName != null && params.personName!.isNotEmpty) {
+        final targetPerson = params.personName!.toLowerCase();
+        final inCast =
+            item.cast.any((c) => c.toLowerCase().contains(targetPerson));
+        final inDirector =
+            item.director?.toLowerCase().contains(targetPerson) ?? false;
+        if (!inCast && !inDirector) return false;
+      }
+
+      // 9. Provider filter
+      if (params.providerName != null && params.providerName!.isNotEmpty) {
+        final targetProvider = params.providerName!.toLowerCase();
+        final hasProvider = item.watchProviders
+            .any((wp) => wp.toLowerCase().contains(targetProvider));
+        if (!hasProvider) return false;
+      }
+
+      return true;
+    }).toList();
+
+    filtered.sort((a, b) {
+      switch (params.sortBy) {
+        case 'vote_average.desc':
+          return b.rating.compareTo(a.rating);
+        case 'primary_release_date.desc':
+        case 'first_air_date.desc':
+          final aDate = a.releaseOrAirDate ?? DateTime(1900);
+          final bDate = b.releaseOrAirDate ?? DateTime(1900);
+          return bDate.compareTo(aDate);
+        case 'revenue.desc':
+        case 'popularity.desc':
+        default:
+          return (b.voteCount ?? 0).compareTo(a.voteCount ?? 0);
+      }
+    });
+
+    return filtered;
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen(browseGenreProvider, (previous, next) {
@@ -311,7 +486,9 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           backgroundColor: isDark ? AppColors.srBase : AppColors.rrBase,
           appBar: AppBar(
             title: Text(
-              isMovies ? 'Browse Movies' : 'Browse TV Shows',
+              _searchQuery.isNotEmpty
+                  ? (isMovies ? 'Search Movies' : 'Search TV Shows')
+                  : (isMovies ? 'Browse Movies' : 'Browse TV Shows'),
               style: GoogleFonts.bodoniModa(
                 fontStyle: FontStyle.italic,
                 color: inkColor,
@@ -353,11 +530,91 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
+  Widget _buildTopSearchBar(bool isDark) {
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: phColor,
+          border: Border.all(color: lineRgba),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.search, color: subColor, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: TextField(
+                controller: _searchController,
+                style: AppThemes.safeGeist(fontSize: 14, color: inkColor),
+                decoration: InputDecoration(
+                  hintText: 'Search across the catalog',
+                  hintStyle: AppThemes.safeGeist(fontSize: 14, color: subColor),
+                  border: InputBorder.none,
+                ),
+                onChanged: _onSearchChanged,
+              ),
+            ),
+            if (_searchQuery.isNotEmpty)
+              PressableScale(
+                onTap: () {
+                  _searchController.clear();
+                  _onSearchChanged('');
+                },
+                child: Icon(Icons.close, color: subColor, size: 20),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchModeBadge(bool isDark) {
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: accColor.withAlpha(25),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: accColor.withAlpha(100)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.flash_on, size: 16, color: accColor),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '⚡ Search Mode: Filtering is scoped to search results for "$_searchQuery"',
+              style: AppThemes.safeGeist(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: inkColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildCompactLayout(bool isDark, bool isMovies) {
     return Column(
       children: [
+        _buildTopSearchBar(isDark),
+        if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
         _buildActiveFilterChipBar(isDark),
-        Expanded(child: _buildGrid(isDark, isMovies)),
+        Expanded(child: _buildBody(isDark, isMovies)),
       ],
     );
   }
@@ -368,8 +625,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         Expanded(
           child: Column(
             children: [
+              _buildTopSearchBar(isDark),
+              if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
               _buildActiveFilterChipBar(isDark),
-              Expanded(child: _buildGrid(isDark, isMovies)),
+              Expanded(child: _buildBody(isDark, isMovies)),
             ],
           ),
         ),
@@ -404,9 +663,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           style: AppThemes.safeGeist(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isDark
-                                ? AppColors.srAcc
-                                : AppColors.rrAcc,
+                            color: isDark ? AppColors.srAcc : AppColors.rrAcc,
                           ),
                         ),
                       ),
@@ -423,6 +680,282 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildBody(bool isDark, bool isMovies) {
+    if (_searchQuery.isNotEmpty) {
+      return _buildSearchModeBody(isDark, isMovies);
+    } else {
+      return _buildDiscoverModeBody(isDark, isMovies);
+    }
+  }
+
+  Widget _buildSearchModeBody(bool isDark, bool isMovies) {
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final filterParams = ref.watch(discoverFilterProvider);
+
+    if (_isSearching) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_searchError != null) {
+      final errorMessage =
+          _searchError.toString().replaceAll('Exception: ', '');
+      return FullScreenErrorWidget(
+        message: errorMessage.isNotEmpty
+            ? errorMessage
+            : 'Failed to perform search. Please check your connection.',
+        onRetry: () => _onSearchChanged(_searchQuery),
+      );
+    }
+
+    final rawResults = _searchResults ?? [];
+    final filteredResults =
+        _applyClientFilters(rawResults, filterParams, isMovies);
+
+    if (filteredResults.isEmpty) {
+      return Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.search_off, size: 64, color: subColor),
+              const SizedBox(height: 16),
+              Text(
+                'No results found for "$_searchQuery"',
+                textAlign: TextAlign.center,
+                style: AppThemes.safeGeist(
+                  color: inkColor,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Check spelling or try searching for another title or actor.',
+                textAlign: TextAlign.center,
+                style: AppThemes.safeGeist(color: subColor, fontSize: 13),
+              ),
+              const SizedBox(height: 20),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: () {
+                      _searchController.clear();
+                      _onSearchChanged('');
+                    },
+                    icon: const Icon(Icons.clear),
+                    label: const Text('Clear search'),
+                  ),
+                  if (filterParams.hasActiveFilters)
+                    OutlinedButton.icon(
+                      onPressed: _resetAllFilters,
+                      icon: const Icon(Icons.filter_alt_off),
+                      label: const Text('Reset All Filters'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: GridView.builder(
+            padding: const EdgeInsets.all(18),
+            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+              maxCrossAxisExtent: 140,
+              childAspectRatio: 2 / 3,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
+            itemCount: filteredResults.length,
+            itemBuilder: (context, index) {
+              final item = filteredResults[index];
+              return _buildGridCard(item, isDark);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildDiscoverModeBody(bool isDark, bool isMovies) {
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+
+    final filterParams = ref.watch(discoverFilterProvider);
+    final currentParamKey = '${isMovies}_${filterParams.toString()}';
+    if (_lastParamsKey != currentParamKey) {
+      _lastParamsKey = currentParamKey;
+      _currentPage = 1;
+      _hasMore = true;
+      _accumulatedItems.clear();
+    }
+
+    final discoverAsync = ref.watch(discoverMediaProvider(isMovies));
+
+    return discoverAsync.when(
+      data: (items) {
+        if (_accumulatedItems.isEmpty && items.isNotEmpty) {
+          _accumulatedItems.addAll(items);
+        }
+
+        final displayItems =
+            _accumulatedItems.isNotEmpty ? _accumulatedItems : items;
+
+        if (displayItems.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.movie_filter_outlined,
+                  size: 48,
+                  color: subColor,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'No media found matching your filters.',
+                  style: AppThemes.safeGeist(
+                    fontSize: 14,
+                    color: subColor,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                PressableScale(
+                  onTap: _resetAllFilters,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                    decoration: AppColors.primaryButtonDecoration(
+                      isDark: isDark,
+                      borderRadius: 999,
+                    ),
+                    child: Text(
+                      'Reset All Filters',
+                      style: AppThemes.safeGeist(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.all(18),
+                gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 140,
+                  childAspectRatio: 2 / 3,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                ),
+                itemCount: displayItems.length,
+                itemBuilder: (context, index) {
+                  final item = displayItems[index];
+                  return _buildGridCard(item, isDark);
+                },
+              ),
+            ),
+            if (_hasMore) _buildLoadMoreFooter(isDark, isMovies),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => FullScreenErrorWidget(
+        message: err.toString().replaceAll('Exception: ', ''),
+        onRetry: () => ref.refresh(discoverMediaProvider(isMovies)),
+      ),
+    );
+  }
+
+  Widget _buildLoadMoreFooter(bool isDark, bool isMovies) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: _isLoadingMore
+          ? const SizedBox(
+              height: 24,
+              width: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            )
+          : PressableScale(
+              onTap: () => _loadMorePage(isMovies),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.srPill : AppColors.rrPill,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                  ),
+                ),
+                child: Text(
+                  'Load More',
+                  style: AppThemes.safeGeist(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.srInk : AppColors.rrInk,
+                  ),
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildGridCard(MediaItem item, bool isDark) {
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    return PressableScale(
+      child: OpenContainer(
+        transitionDuration: AppPhysics.houseSpringDuration,
+        closedElevation: 0,
+        openElevation: 0,
+        closedColor: Colors.transparent,
+        openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+        middleColor: Colors.transparent,
+        closedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        closedBuilder: (context, openContainer) {
+          return InkWell(
+            onTap: openContainer,
+            borderRadius: BorderRadius.circular(8),
+            child: Container(
+              decoration: BoxDecoration(
+                color: phColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: lineRgba),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: MediaImage(
+                item: item,
+                fit: BoxFit.cover,
+              ),
+            ),
+          );
+        },
+        openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+      ),
     );
   }
 
@@ -722,16 +1255,12 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   return PressableScale(
                     onTap: () {
                       if (genre == 'All') {
-                        filterNotifier.setGenre(
-                            genreId: null, genreName: null);
+                        filterNotifier.setGenre(genreId: null, genreName: null);
                         ref.read(browseGenreProvider.notifier).setGenre('All');
                       } else {
                         final genreId = getGenreIdForName(genre);
-                        filterNotifier.setGenre(
-                            genreId: genreId, genreName: genre);
-                        ref
-                            .read(browseGenreProvider.notifier)
-                            .setGenre(genre);
+                        filterNotifier.setGenre(genreId: genreId, genreName: genre);
+                        ref.read(browseGenreProvider.notifier).setGenre(genre);
                       }
                     },
                     child: Container(
@@ -754,9 +1283,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: isSelected
-                              ? (isDark
-                                  ? const Color(0xFF1A140C)
-                                  : Colors.white)
+                              ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                               : inkColor,
                         ),
                       ),
@@ -779,8 +1306,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 _buildChip(
                   label: '#${filterParams.keywordName}',
                   onDelete: () {
-                    filterNotifier.setKeyword(
-                        keywordId: null, keywordName: null);
+                    filterNotifier.setKeyword(keywordId: null, keywordName: null);
                     ref.read(browseKeywordProvider.notifier).clearKeyword();
                   },
                   isDark: isDark,
@@ -905,9 +1431,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         style: AppThemes.safeGeist(
                           fontSize: 12,
                           color: filterParams.providerId == null
-                              ? (isDark
-                                  ? const Color(0xFF1A140C)
-                                  : Colors.white)
+                              ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                               : inkColor,
                         ),
                       ),
@@ -943,9 +1467,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected
-                                ? (isDark
-                                    ? const Color(0xFF1A140C)
-                                    : Colors.white)
+                                ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                                 : inkColor,
                           ),
                         ),
@@ -994,8 +1516,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 min: 0.0,
                 max: 10.0,
                 divisions: 20,
-                activeColor:
-                    isDark ? AppColors.srAcc : AppColors.rrAcc,
+                activeColor: isDark ? AppColors.srAcc : AppColors.rrAcc,
                 inactiveColor: lineRgba,
                 onChanged: (val) {
                   filterNotifier
@@ -1046,9 +1567,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: isSelected
-                              ? (isDark
-                                  ? const Color(0xFF1A140C)
-                                  : Colors.white)
+                              ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                               : inkColor,
                         ),
                       ),
@@ -1159,8 +1678,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 min: 0.0,
                 max: 240.0,
                 divisions: 24,
-                activeColor:
-                    isDark ? AppColors.srAcc : AppColors.rrAcc,
+                activeColor: isDark ? AppColors.srAcc : AppColors.rrAcc,
                 inactiveColor: lineRgba,
                 onChanged: (values) {
                   final minR = values.start == 0.0 ? null : values.start.toInt();
@@ -1205,9 +1723,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         style: AppThemes.safeGeist(
                           fontSize: 12,
                           color: filterParams.originalLanguage == null
-                              ? (isDark
-                                  ? const Color(0xFF1A140C)
-                                  : Colors.white)
+                              ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                               : inkColor,
                         ),
                       ),
@@ -1239,9 +1755,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected
-                                ? (isDark
-                                    ? const Color(0xFF1A140C)
-                                    : Colors.white)
+                                ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                                 : inkColor,
                           ),
                         ),
@@ -1303,9 +1817,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected
-                                ? (isDark
-                                    ? const Color(0xFF1A140C)
-                                    : Colors.white)
+                                ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                                 : inkColor,
                           ),
                         ),
@@ -1352,9 +1864,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           style: AppThemes.safeGeist(
                             fontSize: 12,
                             color: filterParams.tvNetworkId == null
-                                ? (isDark
-                                    ? const Color(0xFF1A140C)
-                                    : Colors.white)
+                                ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                                 : inkColor,
                           ),
                         ),
@@ -1391,9 +1901,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                                   ? FontWeight.w600
                                   : FontWeight.w400,
                               color: isSelected
-                                  ? (isDark
-                                      ? const Color(0xFF1A140C)
-                                      : Colors.white)
+                                  ? (isDark ? const Color(0xFF1A140C) : Colors.white)
                                   : inkColor,
                             ),
                           ),
@@ -1452,139 +1960,6 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         expandedCrossAxisAlignment: CrossAxisAlignment.start,
         children: children,
-      ),
-    );
-  }
-
-  Widget _buildGrid(bool isDark, bool isMovies) {
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-
-    final discoverAsync = ref.watch(discoverMediaProvider(isMovies));
-
-    return discoverAsync.when(
-      data: (items) {
-        if (items.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.movie_filter_outlined,
-                  size: 48,
-                  color: subColor,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'No media found matching your filters.',
-                  style: AppThemes.safeGeist(
-                    fontSize: 14,
-                    color: subColor,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                PressableScale(
-                  onTap: _resetAllFilters,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: AppColors.primaryButtonDecoration(
-                      isDark: isDark,
-                      borderRadius: 999,
-                    ),
-                    child: Text(
-                      'Reset All Filters',
-                      style: AppThemes.safeGeist(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF1A140C) : Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return GridView.builder(
-          padding: const EdgeInsets.all(18),
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 140,
-            childAspectRatio: 2 / 3,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-          ),
-          itemCount: items.length,
-          itemBuilder: (context, index) {
-            final item = items[index];
-            return PressableScale(
-              child: OpenContainer(
-                transitionDuration: AppPhysics.houseSpringDuration,
-                closedElevation: 0,
-                openElevation: 0,
-                closedColor: Colors.transparent,
-                openColor: isDark ? AppColors.srBase : AppColors.rrBase,
-                middleColor: Colors.transparent,
-                closedShape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                closedBuilder: (context, openContainer) {
-                  return GestureDetector(
-                    onTap: openContainer,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: phColor,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: lineRgba),
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: MediaImage(
-                        item: item,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  );
-                },
-                openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-              ),
-            ).animate().fade(duration: 250.ms).slideY(
-                  begin: 0.1,
-                  end: 0,
-                  delay: (index.clamp(0, 5) * 40).ms,
-                );
-          },
-        );
-      },
-      loading: () => const Center(
-        child: CircularProgressIndicator(),
-      ),
-      error: (err, stack) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: 40, color: Colors.redAccent),
-            const SizedBox(height: 12),
-            Text(
-              'Error loading discovered media.',
-              style: AppThemes.safeGeist(color: subColor),
-            ),
-            const SizedBox(height: 12),
-            PressableScale(
-              onTap: () => ref.refresh(discoverMediaProvider(isMovies)),
-              child: Text(
-                'Retry',
-                style: AppThemes.safeGeist(
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.srAcc : AppColors.rrAcc,
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

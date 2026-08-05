@@ -26,13 +26,12 @@ void main() {
     test('addToWatchedList adds to watchedList and removes from watchlist and maybeList', () {
       final notifier = container.read(mediaProvider.notifier);
 
-      // Pre-add item to watchlist and maybeList
+      // Pre-add item to watchlist
       notifier.addToWatchlist(testItem);
-      notifier.addToMaybeList(testItem);
 
       var state = container.read(mediaProvider);
       expect(state.watchlist.containsKey(testItem.id), isTrue);
-      expect(state.maybeList.containsKey(testItem.id), isTrue);
+      expect(state.maybeList.containsKey(testItem.id), isFalse);
       expect(state.watchedList.containsKey(testItem.id), isFalse);
 
       // Add to watchedList
@@ -48,11 +47,9 @@ void main() {
       final notifier = container.read(mediaProvider.notifier);
 
       notifier.addToWatchlist(testItem);
-      notifier.addToMaybeList(testItem);
 
       var state = container.read(mediaProvider);
       expect(state.watchlist.containsKey(testItem.id), isTrue);
-      expect(state.maybeList.containsKey(testItem.id), isTrue);
 
       // Toggle watched on
       notifier.toggleWatched(testItem);
@@ -67,7 +64,6 @@ void main() {
       final notifier = container.read(mediaProvider.notifier);
 
       notifier.addToWatchlist(testItem);
-      notifier.addToMaybeList(testItem);
 
       // Mark as watched
       notifier.addToWatchedList(testItem);
@@ -243,6 +239,86 @@ void main() {
       notifier.removeFromAllLists(tvShowItem.id);
       state = container.read(mediaProvider);
       expect(state.watchedEpisodes.containsKey(tvShowItem.id), isFalse);
+    });
+
+    test('watchingList manual toggle adds/removes item and removes from other lists', () {
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToWatchlist(testItem);
+
+      var state = container.read(mediaProvider);
+      expect(state.watchlist.containsKey(testItem.id), isTrue);
+      expect(state.watchingList.containsKey(testItem.id), isFalse);
+
+      // Toggle watching on
+      notifier.toggleWatching(testItem);
+      state = container.read(mediaProvider);
+
+      expect(state.watchingList.containsKey(testItem.id), isTrue);
+      expect(state.watchlist.containsKey(testItem.id), isFalse);
+      expect(state.maybeList.containsKey(testItem.id), isFalse);
+      expect(state.watchedList.containsKey(testItem.id), isFalse);
+
+      // Toggle watching off
+      notifier.toggleWatching(testItem);
+      state = container.read(mediaProvider);
+      expect(state.watchingList.containsKey(testItem.id), isFalse);
+    });
+
+    test('toggleEpisodeWatched automatically manages watchingList and watchedList based on total episode count', () {
+      final notifier = container.read(mediaProvider.notifier);
+
+      // Partial watch -> show moves to watchingList
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        showItem: tvShowItem,
+        totalEpisodeCount: 2,
+      );
+
+      var state = container.read(mediaProvider);
+      expect(state.watchingList.containsKey(tvShowItem.id), isTrue);
+      expect(state.watchedList.containsKey(tvShowItem.id), isFalse);
+
+      // All episodes watched -> show moves to watchedList and removes from watchingList
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 2,
+        showItem: tvShowItem,
+        totalEpisodeCount: 2,
+      );
+
+      state = container.read(mediaProvider);
+      expect(state.watchingList.containsKey(tvShowItem.id), isFalse);
+      expect(state.watchedList.containsKey(tvShowItem.id), isTrue);
+
+      // Unwatch an episode -> show returns to watchingList from watchedList
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 2,
+        showItem: tvShowItem,
+        totalEpisodeCount: 2,
+      );
+
+      state = container.read(mediaProvider);
+      expect(state.watchingList.containsKey(tvShowItem.id), isTrue);
+      expect(state.watchedList.containsKey(tvShowItem.id), isFalse);
+
+      // Unwatch remaining episode -> show is removed from watchingList and watchedList
+      notifier.toggleEpisodeWatched(
+        showId: tvShowItem.id,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        showItem: tvShowItem,
+        totalEpisodeCount: 2,
+      );
+
+      state = container.read(mediaProvider);
+      expect(state.watchingList.containsKey(tvShowItem.id), isFalse);
+      expect(state.watchedList.containsKey(tvShowItem.id), isFalse);
     });
   });
 }

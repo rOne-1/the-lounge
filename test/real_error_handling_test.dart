@@ -9,6 +9,7 @@ import 'package:http/testing.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/repositories/movie_repository.dart';
+import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/tmdb_movie_repository.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
@@ -28,31 +29,31 @@ class FailingMovieRepository implements MovieRepository {
   });
 
   @override
-  Future<List<MediaItem>> getTrendingMovies() async => throw errorToThrow;
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getPopularMovies() async => throw errorToThrow;
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows() async => throw errorToThrow;
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies() async => throw errorToThrow;
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows() async => throw errorToThrow;
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies() async => throw errorToThrow;
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows() async => throw errorToThrow;
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies() async => throw errorToThrow;
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows() async => throw errorToThrow;
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => throw errorToThrow;
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async => throw errorToThrow;
@@ -74,7 +75,8 @@ class FailingMovieRepository implements MovieRepository {
   @override
   Future<List<MediaItem>> discoverMedia({
     required bool isMovies,
-    required dynamic params,
+    required DiscoverFilterParams params,
+    int page = 1,
   }) async =>
       throw errorToThrow;
 
@@ -85,31 +87,31 @@ class FailingMovieRepository implements MovieRepository {
 
 class EmptyMovieRepository implements MovieRepository {
   @override
-  Future<List<MediaItem>> getTrendingMovies() async => [];
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getPopularMovies() async => [];
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows() async => [];
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies() async => [];
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows() async => [];
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies() async => [];
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows() async => [];
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies() async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows() async => [];
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => [];
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async => null;
@@ -126,7 +128,8 @@ class EmptyMovieRepository implements MovieRepository {
   @override
   Future<List<MediaItem>> discoverMedia({
     required bool isMovies,
-    required dynamic params,
+    required DiscoverFilterParams params,
+    int page = 1,
   }) async =>
       [];
 

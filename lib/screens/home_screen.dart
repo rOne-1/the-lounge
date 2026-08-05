@@ -65,7 +65,6 @@ class HomeScreen extends ConsumerWidget {
     final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
 
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
@@ -88,52 +87,45 @@ class HomeScreen extends ConsumerWidget {
 
     final isLarge = MediaQuery.of(context).size.width >= 600;
 
-    // Collect Rail 1 items based on active media type
+    // Collect Rail 1 items strictly from watchingList based on active media type
     List<MediaItem> getRail1Items() {
-      if (isMovies) {
-        final watchlistMovies = mediaState.watchlist.values
-            .where((m) => m.type == MediaType.movie)
-            .toList();
-        if (watchlistMovies.isNotEmpty) {
-          return watchlistMovies;
-        }
-        // Fallback to popular movies if watchlist is empty
-        return popularAsync.maybeWhen(
-          data: (items) => items.where((m) => m.type == MediaType.movie).toList(),
-          orElse: () => const [],
-        );
-      } else {
-        // TV mode: collect TV shows from watchedEpisodes keys or watchedList/watchlist
-        final watchedTvIds = mediaState.watchedEpisodes.keys.toSet();
-        final tvItems = <MediaItem>[];
-
-        for (final id in watchedTvIds) {
-          final item = mediaState.watchedList[id] ?? mediaState.watchlist[id];
-          if (item != null && item.type == MediaType.tv) {
-            tvItems.add(item);
-          }
-        }
-
-        // Add any other TV shows in watchedList/watchlist not yet added
-        for (final item in [...mediaState.watchedList.values, ...mediaState.watchlist.values]) {
-          if (item.type == MediaType.tv && !tvItems.any((i) => i.id == item.id)) {
-            tvItems.add(item);
-          }
-        }
-
-        if (tvItems.isNotEmpty) {
-          return tvItems;
-        }
-
-        // Fallback to trending TV shows if no watched TV shows in state
-        return trendingAsync.maybeWhen(
-          data: (items) => items.where((m) => m.type == MediaType.tv).toList(),
-          orElse: () => const [],
-        );
-      }
+      final activeType = isMovies ? MediaType.movie : MediaType.tv;
+      return mediaState.watchingList.values
+          .where((m) => m.type == activeType)
+          .toList();
     }
 
     final rail1Items = getRail1Items();
+    final activeTvShow = !isMovies
+        ? (rail1Items.isNotEmpty ? rail1Items.first : null)
+        : null;
+
+    final priorSeenIds = <String>{};
+    for (final item in rail1Items) {
+      priorSeenIds.add(item.id);
+      priorSeenIds.add(item.prefixedId);
+      priorSeenIds.add(item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), ''));
+    }
+    final trendingItems = trendingAsync.asData?.value ?? [];
+    for (final item in trendingItems) {
+      priorSeenIds.add(item.id);
+      priorSeenIds.add(item.prefixedId);
+      priorSeenIds.add(item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), ''));
+    }
+
+    List<MediaItem> deduplicateRailList(List<MediaItem> list) {
+      final fresh = list.where((item) {
+        final cleanId = item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+        return !priorSeenIds.contains(item.id) &&
+            !priorSeenIds.contains(item.prefixedId) &&
+            !priorSeenIds.contains(cleanId);
+      }).toList();
+      return fresh.isNotEmpty ? fresh : list;
+    }
+
+    final topRatedDeduplicated = topRatedAsync.whenData(deduplicateRailList);
+    final rail4Deduplicated = rail4Async.whenData(deduplicateRailList);
+    final rail5Deduplicated = rail5Async.whenData(deduplicateRailList);
 
     return SingleChildScrollView(
       child: Padding(
@@ -202,7 +194,7 @@ class HomeScreen extends ConsumerWidget {
             ] else
               const SizedBox(height: 16),
 
-            // RAIL 1: Continue Watching / Up Next From Your Watchlist
+            // RAIL 1: Continue Watching
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.baseline,
@@ -210,7 +202,7 @@ class HomeScreen extends ConsumerWidget {
               children: [
                 Expanded(
                   child: Text(
-                    isMovies ? 'Up Next From Your Watchlist' : 'Continue watching',
+                    'Continue watching',
                     style: AppThemes.safeGeist(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -265,7 +257,7 @@ class HomeScreen extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           isMovies
-                              ? 'Your watchlist is empty. Save movies to see them here!'
+                              ? 'No movies in progress. Mark a movie as watching to see it here!'
                               : 'No shows in progress. Explore and start watching!',
                           style: AppThemes.safeGeist(
                             fontSize: 12.5,
@@ -286,115 +278,22 @@ class HomeScreen extends ConsumerWidget {
                 firstCurve: Curves.easeInOutCubic,
                 secondCurve: Curves.easeInOutCubic,
                 sizeCurve: AppPhysics.houseSpringCurve,
-                crossFadeState: !isMovies
+                crossFadeState: (!isMovies && activeTvShow != null)
                     ? CrossFadeState.showFirst
                     : CrossFadeState.showSecond,
-                firstChild: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 22),
-                    PressableScale(
-                      onTap: () => ref
-                          .read(navigationProvider.notifier)
-                          .setTab(AppTab.calendar),
-                      child: AmbientGlowWidget(
-                        enableAnimation: enableAnimation,
-                        padding: const EdgeInsets.all(14),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isDark
-                              ? const Color.fromRGBO(214, 151, 132, 0.42)
-                              : const Color.fromRGBO(167, 106, 80, 0.42),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: isDark
-                                ? const Color.fromRGBO(255, 255, 255, 0.08)
-                                : const Color.fromRGBO(255, 255, 255, 0.5),
-                            offset: const Offset(0, 1),
-                            blurStyle: BlurStyle.inner,
-                          )
+                firstChild: activeTvShow != null
+                    ? Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const SizedBox(height: 22),
+                          NextEpisodeBannerCard(
+                            show: activeTvShow,
+                            isDark: isDark,
+                            enableAnimation: enableAnimation,
+                          ),
                         ],
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 84,
-                              decoration: BoxDecoration(
-                                color: phColor,
-                                borderRadius: BorderRadius.circular(9),
-                                border: Border.all(
-                                  color: isDark
-                                      ? const Color.fromRGBO(214, 151, 132, 0.32)
-                                      : const Color.fromRGBO(167, 106, 80, 0.34),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 13),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'NEXT EPISODE',
-                                    style: AppThemes.safeGeist(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 1.1,
-                                      color: isDark
-                                          ? const Color(0xFFE0A894)
-                                          : const Color(0xFFA76A50),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    'Severance · S2 E6',
-                                    style: AppThemes.safeGeist(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w600,
-                                      color: inkColor,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Airs in 2 days · Fri, Aug 2',
-                                    style: AppThemes.safeGeist(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w400,
-                                      color: subColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Column(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today_outlined,
-                                  color: isDark
-                                      ? const Color(0xFFE0A894)
-                                      : const Color(0xFFA76A50),
-                                  size: 22,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Calendar',
-                                  style: AppThemes.safeGeist(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w600,
-                                    color: isDark
-                                        ? const Color(0xFFE0A894)
-                                        : const Color(0xFFA76A50),
-                                  ),
-                                ),
-                              ],
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                      )
+                    : const SizedBox(width: double.infinity, height: 0),
                 secondChild: const SizedBox(width: double.infinity, height: 0),
               ),
             ),
@@ -422,7 +321,7 @@ class HomeScreen extends ConsumerWidget {
             // RAIL 3: Top Rated
             MediaRail(
               title: 'Top Rated',
-              itemsAsync: topRatedAsync,
+              itemsAsync: topRatedDeduplicated,
               isDark: isDark,
               onSeeAll: () {
                 Navigator.push(
@@ -442,7 +341,7 @@ class HomeScreen extends ConsumerWidget {
             // RAIL 4: Now Playing (Movies) / Airing Today (TV)
             MediaRail(
               title: isMovies ? 'Now Playing' : 'Airing Today',
-              itemsAsync: rail4Async,
+              itemsAsync: rail4Deduplicated,
               isDark: isDark,
               onSeeAll: () {
                 Navigator.push(
@@ -462,7 +361,7 @@ class HomeScreen extends ConsumerWidget {
             // RAIL 5: Upcoming (Movies) / On The Air (TV)
             MediaRail(
               title: isMovies ? 'Upcoming' : 'On The Air',
-              itemsAsync: rail5Async,
+              itemsAsync: rail5Deduplicated,
               isDark: isDark,
               onSeeAll: () {
                 Navigator.push(
@@ -953,5 +852,178 @@ class MediaRail extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+class NextEpisodeBannerCard extends ConsumerWidget {
+  final MediaItem show;
+  final bool isDark;
+  final bool? enableAnimation;
+
+  const NextEpisodeBannerCard({
+    super.key,
+    required this.show,
+    required this.isDark,
+    this.enableAnimation,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+
+    final seasonsAsync = ref.watch(tvShowSeasonsProvider(show));
+
+    return seasonsAsync.when(
+      data: (seasons) {
+        final nextEp = ref.read(mediaProvider.notifier).getNextUnwatchedEpisode(
+              showId: show.id,
+              seasons: seasons,
+            );
+
+        if (nextEp == null) {
+          return const SizedBox(width: double.infinity, height: 0);
+        }
+
+        final episodeCode = 'S${nextEp.seasonNumber} E${nextEp.episodeNumber}';
+        final String airDateStr;
+        if (nextEp.airDate != null) {
+          final formatted = _formatEpisodeDate(nextEp.airDate!);
+          airDateStr = nextEp.airDate!.isAfter(DateTime.now())
+              ? 'Airs $formatted · ${nextEp.name}'
+              : 'Aired $formatted · ${nextEp.name}';
+        } else {
+          airDateStr = nextEp.name;
+        }
+
+        return PressableScale(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => DetailScreen(id: show.prefixedId)),
+          ),
+          child: AmbientGlowWidget(
+            enableAnimation: enableAnimation,
+            padding: const EdgeInsets.all(14),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark
+                  ? const Color.fromRGBO(214, 151, 132, 0.42)
+                  : const Color.fromRGBO(167, 106, 80, 0.42),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? const Color.fromRGBO(255, 255, 255, 0.08)
+                    : const Color.fromRGBO(255, 255, 255, 0.5),
+                offset: const Offset(0, 1),
+                blurStyle: BlurStyle.inner,
+              )
+            ],
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    color: phColor,
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(
+                      color: isDark
+                          ? const Color.fromRGBO(214, 151, 132, 0.32)
+                          : const Color.fromRGBO(167, 106, 80, 0.34),
+                    ),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: MediaImage(
+                    item: show,
+                    imageUrl: nextEp.stillUrl ?? show.posterUrl ?? show.backdropUrl,
+                    fit: BoxFit.cover,
+                    showFallbackTitle: false,
+                  ),
+                ),
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'NEXT EPISODE',
+                        style: AppThemes.safeGeist(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 1.1,
+                          color: isDark
+                              ? const Color(0xFFE0A894)
+                              : const Color(0xFFA76A50),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${show.title} · $episodeCode',
+                        style: AppThemes.safeGeist(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: inkColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        airDateStr,
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w400,
+                          color: subColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                PressableScale(
+                  onTap: () => ref
+                      .read(navigationProvider.notifier)
+                      .setTab(AppTab.calendar),
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.calendar_today_outlined,
+                        color: isDark
+                            ? const Color(0xFFE0A894)
+                            : const Color(0xFFA76A50),
+                        size: 22,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Calendar',
+                        style: AppThemes.safeGeist(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w600,
+                          color: isDark
+                              ? const Color(0xFFE0A894)
+                              : const Color(0xFFA76A50),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const SizedBox(width: double.infinity, height: 0),
+      error: (_, __) => const SizedBox(width: double.infinity, height: 0),
+    );
+  }
+
+  String _formatEpisodeDate(DateTime dt) {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    final w = weekdays[dt.weekday - 1];
+    final m = months[dt.month - 1];
+    return '$w, $m ${dt.day}';
   }
 }
