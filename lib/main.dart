@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 import 'providers/ambiance_provider.dart';
 import 'screens/shell_screen.dart';
+import 'services/crash_reporting_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,6 +16,7 @@ void main() async {
     developer.log('Dotenv notice: .env file not found or not loaded: $e',
         name: 'main');
   }
+  await CrashReportingService.init();
   final sharedPreferences = await SharedPreferences.getInstance();
 
   runApp(
@@ -38,6 +40,7 @@ class MyApp extends ConsumerWidget {
 
     return MaterialApp(
       title: 'The Lounge',
+      debugShowCheckedModeBanner: false,
       theme: ambiance == AmbianceType.screeningRoom
           ? AppThemes.screeningRoomTheme
           : AppThemes.readingRoomTheme,

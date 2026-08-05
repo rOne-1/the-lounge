@@ -16,6 +16,26 @@ subprojects {
     project.layout.buildDirectory.value(newSubprojectBuildDir)
 }
 subprojects {
+    afterEvaluate {
+        if (plugins.hasPlugin("com.android.library")) {
+            extensions.configure<com.android.build.api.dsl.LibraryExtension> {
+                compileSdk = 36
+            }
+        }
+        if (plugins.hasPlugin("com.android.application")) {
+            extensions.configure<com.android.build.api.dsl.ApplicationExtension> {
+                compileSdk = 36
+            }
+        }
+    }
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+        compilerOptions {
+            languageVersion.set(org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0)
+        }
+    }
+}
+
+subprojects {
     project.evaluationDependsOn(":app")
 }
 

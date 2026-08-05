@@ -1,6 +1,7 @@
 import 'dart:developer' as developer;
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
+import '../services/crash_reporting_service.dart';
 import '../services/tmdb_api_service.dart';
 import '../services/tmdb_cache_service.dart';
 import '../utils/tmdb_image_helper.dart';
@@ -60,12 +61,13 @@ class TmdbMovieRepository implements MovieRepository {
 
   void _logError(String message, [Object? error, StackTrace? stackTrace]) {
     developer.log(
-      message,
+      CrashReportingService.sanitizeString(message),
       name: 'TmdbMovieRepository',
       error: error,
       stackTrace: stackTrace,
       level: 1000,
     );
+    CrashReportingService.captureException(error ?? message, stackTrace);
   }
 
   Future<void> _ensureGenresLoaded() async {
