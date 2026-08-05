@@ -10,11 +10,20 @@ import '../constants.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
 
-class YourSpaceScreen extends ConsumerWidget {
+enum InProgressSubFilter { watching, onHold, dropped }
+
+class YourSpaceScreen extends ConsumerStatefulWidget {
   const YourSpaceScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<YourSpaceScreen> createState() => _YourSpaceScreenState();
+}
+
+class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
+  InProgressSubFilter _inProgressFilter = InProgressSubFilter.watching;
+
+  @override
+  Widget build(BuildContext context) {
     final mediaState = ref.watch(mediaProvider);
     final navState = ref.watch(navigationProvider);
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
@@ -22,7 +31,8 @@ class YourSpaceScreen extends ConsumerWidget {
 
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    
+
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
 
@@ -30,6 +40,17 @@ class YourSpaceScreen extends ConsumerWidget {
       return itemsMap.values
           .where((item) => item.type == activeType)
           .toList();
+    }
+
+    List<MediaItem> getInProgressItems() {
+      switch (_inProgressFilter) {
+        case InProgressSubFilter.watching:
+          return filterList(mediaState.watchingList);
+        case InProgressSubFilter.onHold:
+          return filterList(mediaState.onHoldList);
+        case InProgressSubFilter.dropped:
+          return filterList(mediaState.droppedList);
+      }
     }
 
     return DefaultTabController(
@@ -44,18 +65,51 @@ class YourSpaceScreen extends ConsumerWidget {
             unselectedLabelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w500),
             tabs: const [
               Tab(text: 'Watchlist'),
-              Tab(text: 'Maybe'),
-              Tab(text: 'Watching'),
+              Tab(text: 'Saved'),
+              Tab(text: 'In Progress'),
               Tab(text: 'Watched'),
             ],
           ),
           Expanded(
             child: TabBarView(
               children: [
-                _buildGrid(context, filterList(mediaState.watchlist), isDark, subColor),
-                _buildGrid(context, filterList(mediaState.maybeList), isDark, subColor),
-                _buildGrid(context, filterList(mediaState.watchingList), isDark, subColor),
-                _buildGrid(context, filterList(mediaState.watchedList), isDark, subColor),
+                _buildTabContent(
+                  context: context,
+                  title: 'Watchlist',
+                  subtitle: 'Committed watchlist of titles you plan to watch soon.',
+                  items: filterList(mediaState.watchlist),
+                  isDark: isDark,
+                  subColor: subColor,
+                  inkColor: inkColor,
+                ),
+                _buildTabContent(
+                  context: context,
+                  title: 'Saved',
+                  subtitle: 'Soft, non-committal bookmarks for titles you might want to check out later.',
+                  items: filterList(mediaState.maybeList),
+                  isDark: isDark,
+                  subColor: subColor,
+                  inkColor: inkColor,
+                ),
+                _buildInProgressTabContent(
+                  context: context,
+                  title: 'In Progress',
+                  subtitle: 'Track active, paused, or stopped viewing progress.',
+                  items: getInProgressItems(),
+                  isDark: isDark,
+                  subColor: subColor,
+                  inkColor: inkColor,
+                  accColor: accColor,
+                ),
+                _buildTabContent(
+                  context: context,
+                  title: 'Watched',
+                  subtitle: null,
+                  items: filterList(mediaState.watchedList),
+                  isDark: isDark,
+                  subColor: subColor,
+                  inkColor: inkColor,
+                ),
               ],
             ),
           ),
@@ -64,11 +118,159 @@ class YourSpaceScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildTabContent({
+    required BuildContext context,
+    required String title,
+    required String? subtitle,
+    required List<MediaItem> items,
+    required bool isDark,
+    required Color subColor,
+    required Color inkColor,
+  }) {
+    final isLarge = MediaQuery.of(context).size.width >= 600;
+    final paddingHorizontal = isLarge ? 24.0 : 18.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(paddingHorizontal, 16.0, paddingHorizontal, 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppThemes.safeGeist(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: subColor,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        Expanded(
+          child: _buildGrid(context, items, isDark, subColor),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInProgressTabContent({
+    required BuildContext context,
+    required String title,
+    required String? subtitle,
+    required List<MediaItem> items,
+    required bool isDark,
+    required Color subColor,
+    required Color inkColor,
+    required Color accColor,
+  }) {
+    final isLarge = MediaQuery.of(context).size.width >= 600;
+    final paddingHorizontal = isLarge ? 24.0 : 18.0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: EdgeInsets.fromLTRB(paddingHorizontal, 16.0, paddingHorizontal, 8.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: AppThemes.safeGeist(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w400,
+                    color: subColor,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 10),
+              _buildSubSegmentedPills(isDark: isDark, accColor: accColor, subColor: subColor),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _buildGrid(context, items, isDark, subColor),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSubSegmentedPills({
+    required bool isDark,
+    required Color accColor,
+    required Color subColor,
+  }) {
+    final pillBg = isDark ? AppColors.srPill : AppColors.rrPill;
+    final activeTextColor = isDark ? const Color(0xFF1A140C) : Colors.white;
+
+    Widget buildPill(String label, InProgressSubFilter filter) {
+      final isSelected = _inProgressFilter == filter;
+      return PressableScale(
+        onTap: () {
+          setState(() {
+            _inProgressFilter = filter;
+          });
+        },
+        child: AnimatedContainer(
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected ? accColor : pillBg,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            label,
+            style: AppThemes.safeGeist(
+              fontSize: 12,
+              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+              color: isSelected ? activeTextColor : subColor,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: [
+        buildPill('Watching', InProgressSubFilter.watching),
+        const SizedBox(width: 8),
+        buildPill('On-Hold', InProgressSubFilter.onHold),
+        const SizedBox(width: 8),
+        buildPill('Dropped', InProgressSubFilter.dropped),
+      ],
+    );
+  }
+
   Widget _buildGrid(BuildContext context, List<MediaItem> items, bool isDark, Color subColor) {
     if (items.isEmpty) {
       return Center(child: Text('Nothing here yet.', style: AppThemes.safeGeist(fontSize: 14, color: subColor)));
     }
-    
+
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final isLarge = MediaQuery.of(context).size.width >= 600;

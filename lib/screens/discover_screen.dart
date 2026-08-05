@@ -45,11 +45,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       final repo = ref.read(movieRepositoryProvider);
       final mediaState = ref.read(mediaProvider);
 
+      final skippedIds = ref.read(skippedMediaIdsProvider);
+
       final excludedIds = <String>{
         ...mediaState.watchlist.keys,
         ...mediaState.maybeList.keys,
         ...mediaState.watchedList.keys,
         ...mediaState.watchingList.keys,
+        ...mediaState.droppedList.keys,
+        ...mediaState.onHoldList.keys,
+        ...skippedIds,
       };
 
       bool isExcluded(MediaItem item) {
@@ -109,7 +114,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   void _onSwipe(MediaItem item, String direction) {
     final notifier = ref.read(mediaProvider.notifier);
     if (direction == 'Left') {
-      // Skip
+      ref.read(skippedMediaIdsProvider.notifier).add(item.id);
+      ref.read(skippedMediaIdsProvider.notifier).add(item.prefixedId);
     } else if (direction == 'Right') {
       notifier.addToMaybeList(item);
     } else if (direction == 'Down') {
@@ -867,6 +873,60 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
     final phColor = widget.isDark ? const Color.fromRGBO(239, 230, 216, 0.09) : const Color.fromRGBO(44, 32, 22, 0.09);
     final borderColor = widget.isDark ? const Color.fromRGBO(201, 168, 106, 0.22) : const Color.fromRGBO(160, 74, 42, 0.24);
 
+    const double commitThreshold = 100.0;
+    final bool isHorizontalDominant = _dragOffset.dx.abs() > _dragOffset.dy.abs();
+    final double dragDistance = isHorizontalDominant ? _dragOffset.dx.abs() : _dragOffset.dy.abs();
+    double hintOpacity = (dragDistance / commitThreshold).clamp(0.0, 1.0);
+
+    String? activeDirection;
+    Color? activeColor;
+    Alignment activeAlignment = Alignment.center;
+
+    if (_isFlyingOff && _flyOffDirection != null) {
+      activeDirection = _flyOffDirection;
+      hintOpacity = 1.0;
+      switch (activeDirection) {
+        case 'Left':
+          activeColor = const Color(0xFFF43F5E);
+          activeAlignment = Alignment.centerLeft;
+          break;
+        case 'Right':
+          activeColor = const Color(0xFFA855F7);
+          activeAlignment = Alignment.centerRight;
+          break;
+        case 'Up':
+          activeColor = const Color(0xFF4CAF50);
+          activeAlignment = Alignment.topCenter;
+          break;
+        case 'Down':
+          activeColor = const Color(0xFFFFB300);
+          activeAlignment = Alignment.bottomCenter;
+          break;
+      }
+    } else if (hintOpacity > 0) {
+      if (isHorizontalDominant) {
+        if (_dragOffset.dx < 0) {
+          activeDirection = 'Left';
+          activeColor = const Color(0xFFF43F5E); // Rose = Skip
+          activeAlignment = Alignment.centerLeft;
+        } else if (_dragOffset.dx > 0) {
+          activeDirection = 'Right';
+          activeColor = const Color(0xFFA855F7); // Purple = Saved / Maybe
+          activeAlignment = Alignment.centerRight;
+        }
+      } else {
+        if (_dragOffset.dy < 0) {
+          activeDirection = 'Up';
+          activeColor = const Color(0xFF4CAF50); // Green = Watched
+          activeAlignment = Alignment.topCenter;
+        } else if (_dragOffset.dy > 0) {
+          activeDirection = 'Down';
+          activeColor = const Color(0xFFFFB300); // Amber = Watchlist
+          activeAlignment = Alignment.bottomCenter;
+        }
+      }
+    }
+
     Widget card = Container(
       margin: const EdgeInsets.only(top: 6),
       decoration: BoxDecoration(
@@ -908,15 +968,97 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
             showFallbackTitle: false,
           ),
           
-          // Edge hints
-          if (_dragOffset.dy < -20)
-            Positioned(top: 12, left: 0, right: 0, child: Column(children: [Icon(Icons.check, color: widget.isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86)), Text('Watched', style: AppThemes.safeGeist(fontSize: 9, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86), backgroundColor: Colors.black54))])),
-          if (_dragOffset.dy > 20)
-            Positioned(bottom: 80, left: 0, right: 0, child: Column(children: [Text('Watchlist', style: AppThemes.safeGeist(fontSize: 9, fontWeight: FontWeight.w600, color: widget.accColor, backgroundColor: Colors.black54)), Icon(Icons.bookmark, color: widget.accColor)])),
-          if (_dragOffset.dx < -20)
-            Positioned(top: 250, left: 10, child: Row(children: [Icon(Icons.close, color: widget.isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072)), Text('Skip', style: AppThemes.safeGeist(fontSize: 9, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072), backgroundColor: Colors.black54))])),
-          if (_dragOffset.dx > 20)
-            Positioned(top: 250, right: 10, child: Row(children: [Text('Maybe', style: AppThemes.safeGeist(fontSize: 9, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50), backgroundColor: Colors.black54)), Icon(Icons.star, color: widget.isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50))])),
+          // Soft Edge Glow / Tint overlay
+          if (hintOpacity > 0 && activeColor != null)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: activeColor.withValues(alpha: 0.6 * hintOpacity),
+                      width: 2.5,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: activeColor.withValues(alpha: 0.35 * hintOpacity),
+                        blurRadius: 24,
+                        spreadRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(22),
+                      gradient: RadialGradient(
+                        center: activeAlignment,
+                        radius: 1.2,
+                        colors: [
+                          activeColor.withValues(alpha: 0.3 * hintOpacity),
+                          activeColor.withValues(alpha: 0.0),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          // Proportional Edge hints (Icon + Label)
+          if (hintOpacity > 0 && activeDirection == 'Up' && activeColor != null)
+            Positioned(
+              top: 14, left: 0, right: 0,
+              child: Opacity(
+                opacity: hintOpacity,
+                child: Column(
+                  children: [
+                    Icon(Icons.check, color: activeColor),
+                    Text('Watched', style: AppThemes.safeGeist(fontSize: 10, fontWeight: FontWeight.w600, color: activeColor, backgroundColor: Colors.black54)),
+                  ],
+                ),
+              ),
+            ),
+          if (hintOpacity > 0 && activeDirection == 'Down' && activeColor != null)
+            Positioned(
+              bottom: 82, left: 0, right: 0,
+              child: Opacity(
+                opacity: hintOpacity,
+                child: Column(
+                  children: [
+                    Text('Watchlist', style: AppThemes.safeGeist(fontSize: 10, fontWeight: FontWeight.w600, color: activeColor, backgroundColor: Colors.black54)),
+                    Icon(Icons.bookmark, color: activeColor),
+                  ],
+                ),
+              ),
+            ),
+          if (hintOpacity > 0 && activeDirection == 'Left' && activeColor != null)
+            Positioned(
+              top: 250, left: 12,
+              child: Opacity(
+                opacity: hintOpacity,
+                child: Row(
+                  children: [
+                    Icon(Icons.close, color: activeColor),
+                    const SizedBox(width: 4),
+                    Text('Skip', style: AppThemes.safeGeist(fontSize: 10, fontWeight: FontWeight.w600, color: activeColor, backgroundColor: Colors.black54)),
+                  ],
+                ),
+              ),
+            ),
+          if (hintOpacity > 0 && activeDirection == 'Right' && activeColor != null)
+            Positioned(
+              top: 250, right: 12,
+              child: Opacity(
+                opacity: hintOpacity,
+                child: Row(
+                  children: [
+                    Text('Saved', style: AppThemes.safeGeist(fontSize: 10, fontWeight: FontWeight.w600, color: activeColor, backgroundColor: Colors.black54)),
+                    const SizedBox(width: 4),
+                    Icon(Icons.star, color: activeColor),
+                  ],
+                ),
+              ),
+            ),
 
           // Title Block
           Align(
@@ -989,16 +1131,24 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
             onPanEnd: (details) {
               if (_isFlyingOff) return;
               final velocity = details.velocity.pixelsPerSecond;
-              if (_dragOffset.dx > 100 || velocity.dx > 500) {
-                flyOff('Right', () => widget.onSwipe('Right'), velocity: velocity);
-              } else if (_dragOffset.dx < -100 || velocity.dx < -500) {
-                flyOff('Left', () => widget.onSwipe('Left'), velocity: velocity);
-              } else if (_dragOffset.dy > 100 || velocity.dy > 500) {
-                flyOff('Down', () => widget.onSwipe('Down'), velocity: velocity);
-              } else if (_dragOffset.dy < -100 || velocity.dy < -500) {
-                flyOff('Up', () => widget.onSwipe('Up'), velocity: velocity);
+              final isHorizontalDominant = _dragOffset.dx.abs() > _dragOffset.dy.abs();
+
+              if (isHorizontalDominant) {
+                if (_dragOffset.dx > 100 || velocity.dx > 500) {
+                  flyOff('Right', () => widget.onSwipe('Right'), velocity: velocity);
+                } else if (_dragOffset.dx < -100 || velocity.dx < -500) {
+                  flyOff('Left', () => widget.onSwipe('Left'), velocity: velocity);
+                } else {
+                  _settleSpring(velocity: velocity);
+                }
               } else {
-                _settleSpring(velocity: velocity);
+                if (_dragOffset.dy > 100 || velocity.dy > 500) {
+                  flyOff('Down', () => widget.onSwipe('Down'), velocity: velocity);
+                } else if (_dragOffset.dy < -100 || velocity.dy < -500) {
+                  flyOff('Up', () => widget.onSwipe('Up'), velocity: velocity);
+                } else {
+                  _settleSpring(velocity: velocity);
+                }
               }
             },
             child: Transform.translate(

@@ -7,9 +7,9 @@ import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
-import 'package:the_lounge/repositories/movie_repository.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
 
-class MockCalendarRepository implements MovieRepository {
+class MockCalendarRepository extends MockMovieRepository {
   final List<MediaItem> movies;
   final List<MediaItem> tvShows;
 
@@ -31,7 +31,7 @@ class MockCalendarRepository implements MovieRepository {
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => tvShows;
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => movies;
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => movies;
 
   @override
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => tvShows;

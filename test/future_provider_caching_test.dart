@@ -10,9 +10,9 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
-import 'package:the_lounge/repositories/movie_repository.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
 
-class CachingTestRepository implements MovieRepository {
+class CachingTestRepository extends MockMovieRepository {
   int getTrendingMoviesCalls = 0;
   int getTrendingTvShowsCalls = 0;
   int getPopularMoviesCalls = 0;
@@ -48,7 +48,7 @@ class CachingTestRepository implements MovieRepository {
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => tvShows;
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => movies;
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => movies;
 
   @override
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => tvShows;

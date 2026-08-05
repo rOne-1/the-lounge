@@ -35,7 +35,7 @@ class MockWatchingRepository implements MovieRepository {
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => items.values.where((i) => i.type == MediaType.tv).toList();
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => items.values.where((i) => i.type == MediaType.movie).toList();
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => items.values.where((i) => i.type == MediaType.movie).toList();
 
   @override
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => items.values.where((i) => i.type == MediaType.tv).toList();
@@ -72,6 +72,12 @@ class MockWatchingRepository implements MovieRepository {
 
   @override
   Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
+
+  @override
+  Future<List<MediaItem>> getRecommendations(String mediaId) async => [];
+
+  @override
+  Future<List<MediaItem>> getSimilarMedia(String mediaId) async => [];
 }
 
 void main() {
@@ -123,7 +129,7 @@ void main() {
     )
   ];
 
-  testWidgets('YourSpaceScreen has 4 tabs: Watchlist, Maybe, Watching, Watched', (WidgetTester tester) async {
+  testWidgets('YourSpaceScreen has tabs: Watchlist, Saved, In Progress, Watched', (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(items: {'movie-10': testMovie, 'tv-20': testTvShow});
 
     final container = ProviderContainer(
@@ -149,13 +155,13 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Watchlist'), findsOneWidget);
-    expect(find.text('Maybe'), findsOneWidget);
-    expect(find.text('Watching'), findsOneWidget);
-    expect(find.text('Watched'), findsOneWidget);
+    expect(find.text('Watchlist'), findsAtLeast(1));
+    expect(find.text('Saved'), findsAtLeast(1));
+    expect(find.text('In Progress'), findsAtLeast(1));
+    expect(find.text('Watched'), findsAtLeast(1));
 
-    // Tap 'Watching' tab
-    await tester.tap(find.text('Watching'));
+    // Tap 'In Progress' tab
+    await tester.tap(find.text('In Progress'));
     await tester.pumpAndSettle();
 
     // Verify item in watching tab

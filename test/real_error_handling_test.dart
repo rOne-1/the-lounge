@@ -8,7 +8,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
-import 'package:the_lounge/repositories/movie_repository.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/tmdb_movie_repository.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
@@ -19,7 +18,9 @@ import 'package:the_lounge/services/tmdb_api_service.dart';
 import 'package:the_lounge/widgets/fallback_widgets.dart';
 import 'package:the_lounge/widgets/trailer_player.dart';
 
-class FailingMovieRepository implements MovieRepository {
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
+
+class FailingMovieRepository extends MockMovieRepository {
   final Exception errorToThrow;
   final List<MediaItem> searchResultsToReturn;
 
@@ -44,7 +45,7 @@ class FailingMovieRepository implements MovieRepository {
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => throw errorToThrow;
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => throw errorToThrow;
 
   @override
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => throw errorToThrow;
@@ -85,7 +86,7 @@ class FailingMovieRepository implements MovieRepository {
       throw errorToThrow;
 }
 
-class EmptyMovieRepository implements MovieRepository {
+class EmptyMovieRepository extends MockMovieRepository {
   @override
   Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
 
@@ -102,7 +103,7 @@ class EmptyMovieRepository implements MovieRepository {
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => [];
 
   @override
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => [];

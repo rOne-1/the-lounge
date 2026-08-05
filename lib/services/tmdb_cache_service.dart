@@ -17,6 +17,9 @@ class TmdbLocalCacheService {
   /// TTL for Trending, Popular, Discover lists and Genres: 6 hours
   static const Duration trendingPopularTtl = Duration(hours: 6);
 
+  /// TTL for Now Playing, Airing Today, On The Air, and Upcoming: 6 hours
+  static const Duration nowPlayingTtl = Duration(hours: 6);
+
   /// TTL for Details, Credits, Videos, and Season Details: 7 days
   static const Duration detailsTtl = Duration(days: 7);
 
@@ -58,6 +61,12 @@ class TmdbLocalCacheService {
   Duration getTtlForEndpoint(String endpoint) {
     if (endpoint.contains('/watch/providers')) {
       return watchProvidersTtl;
+    }
+    if (endpoint.contains('/now_playing') ||
+        endpoint.contains('/airing_today') ||
+        endpoint.contains('/on_the_air') ||
+        endpoint.contains('/upcoming')) {
+      return nowPlayingTtl;
     }
     if (endpoint.contains('/trending/') ||
         endpoint.contains('/popular') ||

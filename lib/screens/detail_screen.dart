@@ -924,9 +924,11 @@ class DetailScreen extends ConsumerWidget {
     final notifier = ref.read(mediaProvider.notifier);
 
     final inWatchlist = mediaState.watchlist.containsKey(item.id);
-    final inMaybe = mediaState.maybeList.containsKey(item.id);
+    final inSaved = mediaState.maybeList.containsKey(item.id);
     final inWatching = mediaState.watchingList.containsKey(item.id);
     final inWatched = mediaState.watchedList.containsKey(item.id);
+    final inOnHold = mediaState.onHoldList.containsKey(item.id);
+    final inDropped = mediaState.droppedList.containsKey(item.id);
 
     final saveColor =
         isDark ? AppColors.srStatusSave : AppColors.rrStatusSave;
@@ -936,6 +938,10 @@ class DetailScreen extends ConsumerWidget {
         isDark ? AppColors.srStatusWatching : AppColors.rrStatusWatching;
     final watchedColor =
         isDark ? AppColors.srStatusWatched : AppColors.rrStatusWatched;
+    final onHoldColor =
+        isDark ? const Color(0xFFD6A24D) : const Color(0xFFB87820);
+    final droppedColor =
+        isDark ? const Color(0xFFC76464) : const Color(0xFFA83A3A);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -944,8 +950,8 @@ class DetailScreen extends ConsumerWidget {
           children: [
             Expanded(
               child: _buildStatusToggle(
-                'Save',
-                inMaybe,
+                'Saved',
+                inSaved,
                 saveColor,
                 () => notifier.toggleMaybe(item),
                 isDark,
@@ -982,6 +988,31 @@ class DetailScreen extends ConsumerWidget {
                 inWatched,
                 watchedColor,
                 () => notifier.toggleWatched(item),
+                isDark,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        // Secondary status bar (On-Hold & Dropped options)
+        Row(
+          children: [
+            Expanded(
+              child: _buildStatusToggle(
+                'On-Hold',
+                inOnHold,
+                onHoldColor,
+                () => notifier.toggleOnHold(item),
+                isDark,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildStatusToggle(
+                'Dropped',
+                inDropped,
+                droppedColor,
+                () => notifier.toggleDropped(item),
                 isDark,
               ),
             ),
@@ -1072,10 +1103,16 @@ class DetailScreen extends ConsumerWidget {
     final IconData iconData;
     if (label == 'Watchlist') {
       iconData = isSelected ? Icons.bookmark : Icons.bookmark_outline;
-    } else if (label == 'Save') {
+    } else if (label == 'Saved' || label == 'Save') {
       iconData = isSelected ? Icons.star : Icons.star_border;
     } else if (label == 'Watching') {
       iconData = isSelected ? Icons.play_circle : Icons.play_circle_outline;
+    } else if (label == 'Watched') {
+      iconData = isSelected ? Icons.check_circle : Icons.check_circle_outline;
+    } else if (label == 'On-Hold') {
+      iconData = isSelected ? Icons.pause_circle : Icons.pause_circle_outline;
+    } else if (label == 'Dropped') {
+      iconData = isSelected ? Icons.remove_circle : Icons.remove_circle_outline;
     } else {
       iconData = isSelected ? Icons.check_circle : Icons.check_circle_outline;
     }

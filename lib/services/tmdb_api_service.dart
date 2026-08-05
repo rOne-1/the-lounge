@@ -128,10 +128,14 @@ class TmdbApiService {
   }
 
   /// GET /3/movie/now_playing
-  Future<Map<String, dynamic>> getNowPlayingMovies({int page = 1}) async {
+  Future<Map<String, dynamic>> getNowPlayingMovies({
+    int page = 1,
+    String region = 'US',
+  }) async {
     return _get('/movie/now_playing', {
       'page': page,
       'include_adult': false,
+      'region': region,
     });
   }
 
@@ -433,5 +437,21 @@ class TmdbApiService {
   /// GET /3/watch/providers/regions
   Future<Map<String, dynamic>> getWatchProviderRegions() async {
     return _get('/watch/providers/regions');
+  }
+
+  Future<Map<String, dynamic>> getMovieRecommendations(String id, {int page = 1}) async {
+    return _get('/movie/$id/recommendations', {'page': page, 'include_adult': false});
+  }
+
+  Future<Map<String, dynamic>> getTvRecommendations(String id, {int page = 1}) async {
+    return _get('/tv/$id/recommendations', {'page': page, 'include_adult': false});
+  }
+
+  Future<Map<String, dynamic>> getSimilarMovies(String id, {int page = 1}) async {
+    return _get('/movie/$id/similar', {'page': page, 'include_adult': false});
+  }
+
+  Future<Map<String, dynamic>> getSimilarTvShows(String id, {int page = 1}) async {
+    return _get('/tv/$id/similar', {'page': page, 'include_adult': false});
   }
 }

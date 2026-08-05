@@ -3,6 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
+import 'media_provider.dart';
 import '../repositories/mock_movie_repository.dart';
 import '../repositories/movie_repository.dart';
 import '../repositories/tmdb_movie_repository.dart';
@@ -85,7 +86,8 @@ final topRatedTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
 
 final nowPlayingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getNowPlayingMovies();
+  final country = ref.watch(mediaProvider.select((s) => s.watchProvidersCountry));
+  return repo.getNowPlayingMovies(region: country);
 });
 
 final airingTodayTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
@@ -228,6 +230,56 @@ final searchPersonsProvider =
   if (query.trim().isEmpty) return [];
   final repo = ref.watch(movieRepositoryProvider);
   return repo.searchPersons(query);
+});
+
+final mediaRecommendationsProvider =
+    FutureProvider.family<List<MediaItem>, String>((ref, id) async {
+  final repo = ref.watch(movieRepositoryProvider);
+  final mediaState = ref.watch(mediaProvider);
+
+  final excludedIds = <String>{
+    ...mediaState.watchlist.keys,
+    ...mediaState.maybeList.keys,
+    ...mediaState.watchingList.keys,
+    ...mediaState.watchedList.keys,
+    ...mediaState.droppedList.keys,
+    ...mediaState.onHoldList.keys,
+  };
+
+  bool isExcluded(MediaItem item) {
+    final cleanId = item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+    return excludedIds.contains(item.id) ||
+        excludedIds.contains(item.prefixedId) ||
+        excludedIds.contains(cleanId);
+  }
+
+  final rawList = await repo.getRecommendations(id);
+  return rawList.where((item) => !isExcluded(item)).toList();
+});
+
+final similarMediaProvider =
+    FutureProvider.family<List<MediaItem>, String>((ref, id) async {
+  final repo = ref.watch(movieRepositoryProvider);
+  final mediaState = ref.watch(mediaProvider);
+
+  final excludedIds = <String>{
+    ...mediaState.watchlist.keys,
+    ...mediaState.maybeList.keys,
+    ...mediaState.watchingList.keys,
+    ...mediaState.watchedList.keys,
+    ...mediaState.droppedList.keys,
+    ...mediaState.onHoldList.keys,
+  };
+
+  bool isExcluded(MediaItem item) {
+    final cleanId = item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+    return excludedIds.contains(item.id) ||
+        excludedIds.contains(item.prefixedId) ||
+        excludedIds.contains(cleanId);
+  }
+
+  final rawList = await repo.getSimilarMedia(id);
+  return rawList.where((item) => !isExcluded(item)).toList();
 });
 
 

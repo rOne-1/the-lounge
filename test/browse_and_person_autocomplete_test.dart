@@ -4,12 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
-import 'package:the_lounge/repositories/movie_repository.dart';
 import 'package:the_lounge/screens/browse_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/widgets/person_search_autocomplete.dart';
 
-class _TestRepository implements MovieRepository {
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
+
+class _TestRepository extends MockMovieRepository {
   final Map<String, MediaItem> items;
 
   _TestRepository(this.items);
@@ -30,7 +31,7 @@ class _TestRepository implements MovieRepository {
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => items.values.toList();
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => items.values.toList();
 
   @override
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => items.values.toList();

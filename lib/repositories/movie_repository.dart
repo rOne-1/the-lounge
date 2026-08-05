@@ -7,7 +7,7 @@ abstract class MovieRepository {
   Future<List<MediaItem>> getTrendingTvShows({int page = 1});
   Future<List<MediaItem>> getTopRatedMovies({int page = 1});
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1});
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1});
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region});
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1});
   Future<List<MediaItem>> getUpcomingMovies({int page = 1});
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1});
@@ -21,4 +21,6 @@ abstract class MovieRepository {
     int page = 1,
   });
   Future<List<Map<String, dynamic>>> searchPersons(String query);
+  Future<List<MediaItem>> getRecommendations(String mediaId) async => [];
+  Future<List<MediaItem>> getSimilarMedia(String mediaId) async => [];
 }

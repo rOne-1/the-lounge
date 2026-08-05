@@ -289,21 +289,25 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async {
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getNowPlayingMovies(page: page);
+        return fallbackRepository!.getNowPlayingMovies(page: page, region: region);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
     try {
       await _ensureGenresLoaded();
-      final key = cacheService
-          .generateKey('/movie/now_playing', {'page': page, 'include_adult': false});
+      final activeRegion = (region != null && region.isNotEmpty) ? region : 'US';
+      final key = cacheService.generateKey('/movie/now_playing', {
+        'page': page,
+        'include_adult': false,
+        'region': activeRegion,
+      });
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
-        res = await apiService.getNowPlayingMovies(page: page);
+        res = await apiService.getNowPlayingMovies(page: page, region: activeRegion);
         await cacheService.put(key, res);
       }
       final results =
@@ -314,7 +318,7 @@ class TmdbMovieRepository implements MovieRepository {
     } catch (e, stack) {
       _logError('Failed to fetch now playing movies from TMDB API.', e, stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getNowPlayingMovies(page: page);
+        return fallbackRepository!.getNowPlayingMovies(page: page, region: region);
       }
       rethrow;
     }
@@ -1255,6 +1259,88 @@ class TmdbMovieRepository implements MovieRepository {
       airDate: airDate,
       episodes: episodes,
     );
+  }
+
+  @override
+  Future<List<MediaItem>> getRecommendations(String mediaId) async {
+    if (!isConfigured) {
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getRecommendations(mediaId);
+      }
+      return [];
+    }
+    try {
+      await _ensureGenresLoaded();
+      String cleanId = mediaId;
+      bool isMovie = true;
+      if (mediaId.startsWith('tv_') || mediaId.startsWith('tv:')) {
+        cleanId = mediaId.substring(3);
+        isMovie = false;
+      } else if (mediaId.startsWith('movie_') || mediaId.startsWith('movie:')) {
+        cleanId = mediaId.substring(6);
+        isMovie = true;
+      }
+      final endpoint = isMovie ? '/movie/$cleanId/recommendations' : '/tv/$cleanId/recommendations';
+      final key = cacheService.generateKey(endpoint, {'page': 1, 'include_adult': false});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = isMovie
+            ? await apiService.getMovieRecommendations(cleanId)
+            : await apiService.getTvRecommendations(cleanId);
+        await cacheService.put(key, res);
+      }
+      final results = (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(item, overrideType: isMovie ? MediaType.movie : MediaType.tv))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to fetch recommendations for $mediaId', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getRecommendations(mediaId);
+      }
+      return [];
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> getSimilarMedia(String mediaId) async {
+    if (!isConfigured) {
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getSimilarMedia(mediaId);
+      }
+      return [];
+    }
+    try {
+      await _ensureGenresLoaded();
+      String cleanId = mediaId;
+      bool isMovie = true;
+      if (mediaId.startsWith('tv_') || mediaId.startsWith('tv:')) {
+        cleanId = mediaId.substring(3);
+        isMovie = false;
+      } else if (mediaId.startsWith('movie_') || mediaId.startsWith('movie:')) {
+        cleanId = mediaId.substring(6);
+        isMovie = true;
+      }
+      final endpoint = isMovie ? '/movie/$cleanId/similar' : '/tv/$cleanId/similar';
+      final key = cacheService.generateKey(endpoint, {'page': 1, 'include_adult': false});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = isMovie
+            ? await apiService.getSimilarMovies(cleanId)
+            : await apiService.getSimilarTvShows(cleanId);
+        await cacheService.put(key, res);
+      }
+      final results = (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      return results
+          .map((item) => _mapJsonToMediaItem(item, overrideType: isMovie ? MediaType.movie : MediaType.tv))
+          .toList();
+    } catch (e, stack) {
+      _logError('Failed to fetch similar media for $mediaId', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getSimilarMedia(mediaId);
+      }
+      return [];
+    }
   }
 }
 

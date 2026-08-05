@@ -9,10 +9,10 @@ import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
-import 'package:the_lounge/repositories/movie_repository.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/widgets/pressable_scale.dart';
 
-class MockDetailRepository implements MovieRepository {
+class MockDetailRepository extends MockMovieRepository {
   final Map<String, MediaItem> items;
 
   MockDetailRepository(this.items);
@@ -33,7 +33,7 @@ class MockDetailRepository implements MovieRepository {
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => items.values.toList();
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1}) async => items.values.toList();
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => items.values.toList();
 
   @override
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => items.values.toList();
@@ -476,8 +476,8 @@ void main() {
       final watchlistFinder = find.text('Watchlist');
       expect(watchlistFinder, findsOneWidget);
 
-      // Verify StatusPulseRing widgets exist wrapping the 4 status buttons
-      expect(find.byType(StatusPulseRing), findsNWidgets(4));
+      // Verify StatusPulseRing widgets exist wrapping the status buttons (4 primary + 2 secondary)
+      expect(find.byType(StatusPulseRing), findsNWidgets(6));
 
       // Tap Watchlist button to activate it
       await tester.tap(watchlistFinder);
@@ -488,8 +488,8 @@ void main() {
       // Settle animation
       await tester.pumpAndSettle();
 
-      // Tap Save button to activate it
-      final saveFinder = find.text('Save');
+      // Tap Saved button to activate it
+      final saveFinder = find.text('Saved');
       await tester.tap(saveFinder);
       await tester.pump();
       await tester.pumpAndSettle();

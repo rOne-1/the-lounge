@@ -7,9 +7,11 @@ export 'repository_provider.dart';
 
 class MediaState {
   final Map<String, MediaItem> watchlist;
-  final Map<String, MediaItem> maybeList; // 'Save for later' / Maybe
+  final Map<String, MediaItem> maybeList; // 'Save for later' / Saved / Maybe
   final Map<String, MediaItem> watchingList; // Explicit 4th State: Watching
   final Map<String, MediaItem> watchedList;
+  final Map<String, MediaItem> droppedList;
+  final Map<String, MediaItem> onHoldList;
   final Map<String, Set<String>> watchedEpisodes; // showId -> set of "S1E1" episode keys
   final List<MediaItem> discoverPool;
   final String watchProvidersCountry;
@@ -19,6 +21,8 @@ class MediaState {
     this.maybeList = const {},
     this.watchingList = const {},
     this.watchedList = const {},
+    this.droppedList = const {},
+    this.onHoldList = const {},
     this.watchedEpisodes = const {},
     this.discoverPool = const [],
     this.watchProvidersCountry = 'US',
@@ -29,6 +33,8 @@ class MediaState {
     Map<String, MediaItem>? maybeList,
     Map<String, MediaItem>? watchingList,
     Map<String, MediaItem>? watchedList,
+    Map<String, MediaItem>? droppedList,
+    Map<String, MediaItem>? onHoldList,
     Map<String, Set<String>>? watchedEpisodes,
     List<MediaItem>? discoverPool,
     String? watchProvidersCountry,
@@ -38,6 +44,8 @@ class MediaState {
       maybeList: maybeList ?? this.maybeList,
       watchingList: watchingList ?? this.watchingList,
       watchedList: watchedList ?? this.watchedList,
+      droppedList: droppedList ?? this.droppedList,
+      onHoldList: onHoldList ?? this.onHoldList,
       watchedEpisodes: watchedEpisodes ?? this.watchedEpisodes,
       discoverPool: discoverPool ?? this.discoverPool,
       watchProvidersCountry:
@@ -52,6 +60,8 @@ class MediaNotifier extends Notifier<MediaState> {
   static const _maybeListKey = 'the_lounge_maybe_list';
   static const _watchingListKey = 'the_lounge_watching_list';
   static const _watchedListKey = 'the_lounge_watched_list';
+  static const _droppedListKey = 'the_lounge_dropped_list';
+  static const _onHoldListKey = 'the_lounge_on_hold_list';
   static const _watchedEpisodesKey = 'the_lounge_watched_episodes';
 
   @override
@@ -61,6 +71,8 @@ class MediaNotifier extends Notifier<MediaState> {
     Map<String, MediaItem> maybeList = const {};
     Map<String, MediaItem> watchingList = const {};
     Map<String, MediaItem> watchedList = const {};
+    Map<String, MediaItem> droppedList = const {};
+    Map<String, MediaItem> onHoldList = const {};
     Map<String, Set<String>> watchedEpisodes = const {};
 
     try {
@@ -73,6 +85,8 @@ class MediaNotifier extends Notifier<MediaState> {
       maybeList = _parseMediaMap(prefs, _maybeListKey);
       watchingList = _parseMediaMap(prefs, _watchingListKey);
       watchedList = _parseMediaMap(prefs, _watchedListKey);
+      droppedList = _parseMediaMap(prefs, _droppedListKey);
+      onHoldList = _parseMediaMap(prefs, _onHoldListKey);
       watchedEpisodes = _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
@@ -84,6 +98,8 @@ class MediaNotifier extends Notifier<MediaState> {
       maybeList: maybeList,
       watchingList: watchingList,
       watchedList: watchedList,
+      droppedList: droppedList,
+      onHoldList: onHoldList,
       watchedEpisodes: watchedEpisodes,
     );
   }
@@ -95,6 +111,8 @@ class MediaNotifier extends Notifier<MediaState> {
       final maybeList = _parseMediaMap(prefs, _maybeListKey);
       final watchingList = _parseMediaMap(prefs, _watchingListKey);
       final watchedList = _parseMediaMap(prefs, _watchedListKey);
+      final droppedList = _parseMediaMap(prefs, _droppedListKey);
+      final onHoldList = _parseMediaMap(prefs, _onHoldListKey);
       final watchedEpisodes =
           _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
 
@@ -103,6 +121,8 @@ class MediaNotifier extends Notifier<MediaState> {
         maybeList: maybeList,
         watchingList: watchingList,
         watchedList: watchedList,
+        droppedList: droppedList,
+        onHoldList: onHoldList,
         watchedEpisodes: watchedEpisodes,
       );
     } catch (_) {
@@ -135,6 +155,16 @@ class MediaNotifier extends Notifier<MediaState> {
           _watchedListKey,
           jsonEncode(
               state.watchedList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
+        ),
+        prefs.setString(
+          _droppedListKey,
+          jsonEncode(
+              state.droppedList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
+        ),
+        prefs.setString(
+          _onHoldListKey,
+          jsonEncode(
+              state.onHoldList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
         ),
         prefs.setString(
           _watchedEpisodesKey,
@@ -215,7 +245,9 @@ class MediaNotifier extends Notifier<MediaState> {
     if (state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
         !state.watchingList.containsKey(item.id) &&
-        !state.watchedList.containsKey(item.id)) {
+        !state.watchedList.containsKey(item.id) &&
+        !state.droppedList.containsKey(item.id) &&
+        !state.onHoldList.containsKey(item.id)) {
       return;
     }
 
@@ -227,12 +259,18 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(item.id);
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
       ..remove(item.id);
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..remove(item.id);
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..remove(item.id);
 
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
       watchingList: newWatchingList,
       watchedList: newWatchedList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
     );
     _saveToPrefs();
   }
@@ -259,7 +297,9 @@ class MediaNotifier extends Notifier<MediaState> {
     if (state.maybeList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
         !state.watchingList.containsKey(item.id) &&
-        !state.watchedList.containsKey(item.id)) {
+        !state.watchedList.containsKey(item.id) &&
+        !state.droppedList.containsKey(item.id) &&
+        !state.onHoldList.containsKey(item.id)) {
       return;
     }
 
@@ -271,12 +311,18 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(item.id);
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
       ..remove(item.id);
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..remove(item.id);
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..remove(item.id);
 
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
       watchingList: newWatchingList,
       watchedList: newWatchedList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
     );
     _saveToPrefs();
   }
@@ -305,7 +351,9 @@ class MediaNotifier extends Notifier<MediaState> {
     if (state.watchingList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
-        !state.watchedList.containsKey(item.id)) {
+        !state.watchedList.containsKey(item.id) &&
+        !state.droppedList.containsKey(item.id) &&
+        !state.onHoldList.containsKey(item.id)) {
       return;
     }
 
@@ -317,12 +365,18 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(item.id);
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
       ..remove(item.id);
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..remove(item.id);
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..remove(item.id);
 
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
       watchingList: newWatchingList,
       watchedList: newWatchedList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
     );
     _saveToPrefs();
   }
@@ -347,11 +401,13 @@ class MediaNotifier extends Notifier<MediaState> {
 
   void toggleWatchingList(MediaItem item) => toggleWatching(item);
 
-  void addToWatchedList(MediaItem item) {
+  void addToWatchedList(MediaItem item, {List<TvSeason>? seasons}) {
     if (state.watchedList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
-        !state.watchingList.containsKey(item.id)) {
+        !state.watchingList.containsKey(item.id) &&
+        !state.droppedList.containsKey(item.id) &&
+        !state.onHoldList.containsKey(item.id)) {
       return;
     }
 
@@ -363,12 +419,57 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(item.id);
     final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
       ..remove(item.id);
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..remove(item.id);
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..remove(item.id);
+
+    final newWatchedEpisodes = Map<String, Set<String>>.from(
+      state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
+    );
+
+    if (item.type == MediaType.tv) {
+      final epSet = <String>{};
+      if (seasons != null && seasons.isNotEmpty) {
+        for (final season in seasons) {
+          for (final ep in season.episodes) {
+            epSet.add('S${season.seasonNumber}E${ep.episodeNumber}');
+          }
+        }
+      } else {
+        final totalSeasons = item.seasonsCount ?? 1;
+        if (item.episodesList != null && item.episodesList!.isNotEmpty) {
+          for (int s = 1; s <= totalSeasons; s++) {
+            for (int e = 1; e <= item.episodesList!.length; e++) {
+              epSet.add('S${s}E$e');
+            }
+          }
+        } else if (item.episodesCount != null && item.episodesCount! > 0) {
+          final epsPerSeason = (item.episodesCount! / totalSeasons).ceil();
+          for (int s = 1; s <= totalSeasons; s++) {
+            for (int e = 1; e <= epsPerSeason; e++) {
+              epSet.add('S${s}E$e');
+            }
+          }
+        } else {
+          for (int s = 1; s <= totalSeasons; s++) {
+            for (int e = 1; e <= 10; e++) {
+              epSet.add('S${s}E$e');
+            }
+          }
+        }
+      }
+      newWatchedEpisodes[item.id] = epSet;
+    }
 
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
       watchingList: newWatchingList,
       watchedList: newWatchedList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
+      watchedEpisodes: newWatchedEpisodes,
     );
     _saveToPrefs();
   }
@@ -392,15 +493,124 @@ class MediaNotifier extends Notifier<MediaState> {
     _saveToPrefs();
   }
 
-  void toggleWatched(MediaItem item) {
+  void toggleWatched(MediaItem item, {List<TvSeason>? seasons}) {
     if (state.watchedList.containsKey(item.id)) {
       removeFromWatchedList(item.id);
     } else {
-      addToWatchedList(item);
+      addToWatchedList(item, seasons: seasons);
     }
   }
 
-  void toggleWatchedList(MediaItem item) => toggleWatched(item);
+  void toggleWatchedList(MediaItem item, {List<TvSeason>? seasons}) =>
+      toggleWatched(item, seasons: seasons);
+
+  void addToDroppedList(MediaItem item) {
+    if (state.droppedList.containsKey(item.id) &&
+        !state.watchlist.containsKey(item.id) &&
+        !state.maybeList.containsKey(item.id) &&
+        !state.watchingList.containsKey(item.id) &&
+        !state.watchedList.containsKey(item.id) &&
+        !state.onHoldList.containsKey(item.id)) {
+      return;
+    }
+
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..[item.id] = item;
+    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
+      ..remove(item.id);
+    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
+      ..remove(item.id);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..remove(item.id);
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+      ..remove(item.id);
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..remove(item.id);
+
+    state = state.copyWith(
+      watchlist: newWatchlist,
+      maybeList: newMaybeList,
+      watchingList: newWatchingList,
+      watchedList: newWatchedList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
+    );
+    _saveToPrefs();
+  }
+
+  void removeFromDroppedList(String id) {
+    if (!state.droppedList.containsKey(id)) return;
+
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..remove(id);
+
+    state = state.copyWith(droppedList: newDroppedList);
+    _saveToPrefs();
+  }
+
+  void toggleDropped(MediaItem item) {
+    if (state.droppedList.containsKey(item.id)) {
+      removeFromDroppedList(item.id);
+    } else {
+      addToDroppedList(item);
+    }
+  }
+
+  void toggleDroppedList(MediaItem item) => toggleDropped(item);
+
+  void addToOnHoldList(MediaItem item) {
+    if (state.onHoldList.containsKey(item.id) &&
+        !state.watchlist.containsKey(item.id) &&
+        !state.maybeList.containsKey(item.id) &&
+        !state.watchingList.containsKey(item.id) &&
+        !state.watchedList.containsKey(item.id) &&
+        !state.droppedList.containsKey(item.id)) {
+      return;
+    }
+
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..[item.id] = item;
+    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
+      ..remove(item.id);
+    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
+      ..remove(item.id);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..remove(item.id);
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+      ..remove(item.id);
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..remove(item.id);
+
+    state = state.copyWith(
+      watchlist: newWatchlist,
+      maybeList: newMaybeList,
+      watchingList: newWatchingList,
+      watchedList: newWatchedList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
+    );
+    _saveToPrefs();
+  }
+
+  void removeFromOnHoldList(String id) {
+    if (!state.onHoldList.containsKey(id)) return;
+
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..remove(id);
+
+    state = state.copyWith(onHoldList: newOnHoldList);
+    _saveToPrefs();
+  }
+
+  void toggleOnHold(MediaItem item) {
+    if (state.onHoldList.containsKey(item.id)) {
+      removeFromOnHoldList(item.id);
+    } else {
+      addToOnHoldList(item);
+    }
+  }
+
+  void toggleOnHoldList(MediaItem item) => toggleOnHold(item);
 
   void toggleEpisodeWatched({
     required String showId,
@@ -443,17 +653,23 @@ class MediaNotifier extends Notifier<MediaState> {
     final newWatchingList = Map<String, MediaItem>.from(state.watchingList);
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist);
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList);
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList);
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList);
 
     if (showEpisodes.isNotEmpty && (totalCount == 0 || showEpisodes.length < totalCount)) {
       newWatchingList[showItem.id] = showItem;
       newWatchedList.remove(showItem.id);
       newWatchlist.remove(showItem.id);
       newMaybeList.remove(showItem.id);
+      newDroppedList.remove(showItem.id);
+      newOnHoldList.remove(showItem.id);
     } else if (totalCount > 0 && showEpisodes.length == totalCount) {
       newWatchedList[showItem.id] = showItem;
       newWatchingList.remove(showItem.id);
       newWatchlist.remove(showItem.id);
       newMaybeList.remove(showItem.id);
+      newDroppedList.remove(showItem.id);
+      newOnHoldList.remove(showItem.id);
     } else {
       newWatchingList.remove(showItem.id);
       newWatchedList.remove(showItem.id);
@@ -465,11 +681,16 @@ class MediaNotifier extends Notifier<MediaState> {
       watchingList: newWatchingList,
       watchlist: newWatchlist,
       maybeList: newMaybeList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
     );
     _saveToPrefs();
   }
 
   bool isEpisodeWatched(String showId, int seasonNumber, int episodeNumber) {
+    if (state.watchedList.containsKey(showId)) {
+      return true;
+    }
     final key = 'S${seasonNumber}E$episodeNumber';
     final episodes = state.watchedEpisodes[showId];
     return episodes?.contains(key) ?? false;
@@ -508,6 +729,10 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(id);
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
       ..remove(id);
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..remove(id);
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..remove(id);
     final newWatchedEpisodes = Map<String, Set<String>>.from(
       state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
     )..remove(id);
@@ -517,6 +742,8 @@ class MediaNotifier extends Notifier<MediaState> {
       maybeList: newMaybeList,
       watchingList: newWatchingList,
       watchedList: newWatchedList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
       watchedEpisodes: newWatchedEpisodes,
     );
     _saveToPrefs();
@@ -547,3 +774,32 @@ class MediaNotifier extends Notifier<MediaState> {
 final mediaProvider = NotifierProvider<MediaNotifier, MediaState>(() {
   return MediaNotifier();
 });
+
+class SkippedMediaIdsNotifier extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => {};
+
+  void add(String id) {
+    state = {...state, id};
+  }
+
+  void addAll(Iterable<String> ids) {
+    state = {...state, ...ids};
+  }
+
+  void remove(String id) {
+    final next = Set<String>.from(state);
+    next.remove(id);
+    state = next;
+  }
+
+  void clear() {
+    state = {};
+  }
+}
+
+final skippedMediaIdsProvider =
+    NotifierProvider<SkippedMediaIdsNotifier, Set<String>>(() {
+  return SkippedMediaIdsNotifier();
+});
+
