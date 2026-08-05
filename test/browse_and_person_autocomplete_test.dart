@@ -306,5 +306,47 @@ void main() {
       // Returns to Discover Mode
       expect(find.textContaining('⚡ Search Mode'), findsNothing);
     });
+
+    testWidgets('Filter accordion expansion sections are wrapped in Material widget for ink splashes',
+        (WidgetTester tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(
+            _TestRepository({}),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: BrowseScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final filterButton = find.text('Filters').first;
+      await tester.tap(filterButton);
+      await tester.pumpAndSettle();
+
+      final expansionTileFinder = find.byType(ExpansionTile);
+      expect(expansionTileFinder, findsAtLeastNWidgets(1));
+
+      for (final tileElement in expansionTileFinder.evaluate()) {
+        final materialAncestor = tester.widget<Material>(
+          find.ancestor(
+            of: find.byElementPredicate((e) => e == tileElement),
+            matching: find.byType(Material),
+          ).first,
+        );
+
+        expect(materialAncestor.clipBehavior, equals(Clip.antiAlias));
+        expect(materialAncestor.borderRadius, equals(BorderRadius.circular(14)));
+        expect(materialAncestor.color, isNotNull);
+      }
+    });
   });
 }

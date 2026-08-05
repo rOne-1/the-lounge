@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
 import 'ambiance_provider.dart';
 export 'repository_provider.dart';
@@ -46,20 +48,167 @@ class MediaState {
 
 class MediaNotifier extends Notifier<MediaState> {
   static const _watchProvidersCountryKey = 'watch_providers_country';
+  static const _watchlistKey = 'the_lounge_watchlist';
+  static const _maybeListKey = 'the_lounge_maybe_list';
+  static const _watchingListKey = 'the_lounge_watching_list';
+  static const _watchedListKey = 'the_lounge_watched_list';
+  static const _watchedEpisodesKey = 'the_lounge_watched_episodes';
 
   @override
   MediaState build() {
     String initialCountry = 'US';
+    Map<String, MediaItem> watchlist = const {};
+    Map<String, MediaItem> maybeList = const {};
+    Map<String, MediaItem> watchingList = const {};
+    Map<String, MediaItem> watchedList = const {};
+    Map<String, Set<String>> watchedEpisodes = const {};
+
     try {
       final prefs = ref.watch(sharedPreferencesProvider);
       final stored = prefs.getString(_watchProvidersCountryKey);
       if (stored != null && stored.isNotEmpty) {
         initialCountry = stored;
       }
+      watchlist = _parseMediaMap(prefs, _watchlistKey);
+      maybeList = _parseMediaMap(prefs, _maybeListKey);
+      watchingList = _parseMediaMap(prefs, _watchingListKey);
+      watchedList = _parseMediaMap(prefs, _watchedListKey);
+      watchedEpisodes = _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
     }
-    return MediaState(watchProvidersCountry: initialCountry);
+
+    return MediaState(
+      watchProvidersCountry: initialCountry,
+      watchlist: watchlist,
+      maybeList: maybeList,
+      watchingList: watchingList,
+      watchedList: watchedList,
+      watchedEpisodes: watchedEpisodes,
+    );
+  }
+
+  Future<void> _loadFromPrefs() async {
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      final watchlist = _parseMediaMap(prefs, _watchlistKey);
+      final maybeList = _parseMediaMap(prefs, _maybeListKey);
+      final watchingList = _parseMediaMap(prefs, _watchingListKey);
+      final watchedList = _parseMediaMap(prefs, _watchedListKey);
+      final watchedEpisodes =
+          _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
+
+      state = state.copyWith(
+        watchlist: watchlist,
+        maybeList: maybeList,
+        watchingList: watchingList,
+        watchedList: watchedList,
+        watchedEpisodes: watchedEpisodes,
+      );
+    } catch (_) {
+      // Defensively catch missing SharedPreferences override in unit tests
+    }
+  }
+
+  Future<void> loadFromPrefs() => _loadFromPrefs();
+
+  Future<void> _saveToPrefs() async {
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      await Future.wait([
+        prefs.setString(
+          _watchlistKey,
+          jsonEncode(
+              state.watchlist.map((k, v) => MapEntry(k, v.toMinimalJson()))),
+        ),
+        prefs.setString(
+          _maybeListKey,
+          jsonEncode(
+              state.maybeList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
+        ),
+        prefs.setString(
+          _watchingListKey,
+          jsonEncode(
+              state.watchingList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
+        ),
+        prefs.setString(
+          _watchedListKey,
+          jsonEncode(
+              state.watchedList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
+        ),
+        prefs.setString(
+          _watchedEpisodesKey,
+          jsonEncode(
+            state.watchedEpisodes.map((k, v) => MapEntry(k, v.toList())),
+          ),
+        ),
+      ]);
+    } catch (_) {
+      // Defensively catch missing SharedPreferences override or save errors in unit tests
+    }
+  }
+
+  Future<void> saveToPrefs() => _saveToPrefs();
+
+  Map<String, MediaItem> _parseMediaMap(SharedPreferences prefs, String key) {
+    try {
+      final rawJson = prefs.getString(key);
+      if (rawJson == null || rawJson.trim().isEmpty) {
+        return {};
+      }
+      final decoded = jsonDecode(rawJson);
+      final Map<String, MediaItem> result = {};
+      if (decoded is Map<String, dynamic>) {
+        decoded.forEach((k, v) {
+          try {
+            if (v is Map<String, dynamic>) {
+              result[k] = MediaItem.fromMinimalJson(v);
+            }
+          } catch (_) {}
+        });
+      } else if (decoded is List) {
+        for (final itemJson in decoded) {
+          try {
+            if (itemJson is Map<String, dynamic>) {
+              final item = MediaItem.fromMinimalJson(itemJson);
+              if (item.id.isNotEmpty) {
+                result[item.id] = item;
+              }
+            }
+          } catch (_) {}
+        }
+      }
+      return result;
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Map<String, Set<String>> _parseWatchedEpisodes(
+      SharedPreferences prefs, String key) {
+    try {
+      final rawJson = prefs.getString(key);
+      if (rawJson == null || rawJson.trim().isEmpty) {
+        return {};
+      }
+      final decoded = jsonDecode(rawJson);
+      final Map<String, Set<String>> result = {};
+      if (decoded is Map<String, dynamic>) {
+        decoded.forEach((showId, epList) {
+          try {
+            if (epList is List) {
+              final epSet = epList.map((e) => e.toString()).toSet();
+              if (epSet.isNotEmpty) {
+                result[showId] = epSet;
+              }
+            }
+          } catch (_) {}
+        });
+      }
+      return result;
+    } catch (_) {
+      return {};
+    }
   }
 
   void addToWatchlist(MediaItem item) {
@@ -85,6 +234,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchingList: newWatchingList,
       watchedList: newWatchedList,
     );
+    _saveToPrefs();
   }
 
   void removeFromWatchlist(String id) {
@@ -94,6 +244,7 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(id);
 
     state = state.copyWith(watchlist: newWatchlist);
+    _saveToPrefs();
   }
 
   void toggleWatchlist(MediaItem item) {
@@ -127,6 +278,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchingList: newWatchingList,
       watchedList: newWatchedList,
     );
+    _saveToPrefs();
   }
 
   void removeFromMaybeList(String id) {
@@ -136,6 +288,7 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(id);
 
     state = state.copyWith(maybeList: newMaybeList);
+    _saveToPrefs();
   }
 
   void toggleMaybe(MediaItem item) {
@@ -171,6 +324,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchingList: newWatchingList,
       watchedList: newWatchedList,
     );
+    _saveToPrefs();
   }
 
   void removeFromWatchingList(String id) {
@@ -180,6 +334,7 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(id);
 
     state = state.copyWith(watchingList: newWatchingList);
+    _saveToPrefs();
   }
 
   void toggleWatching(MediaItem item) {
@@ -215,6 +370,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchingList: newWatchingList,
       watchedList: newWatchedList,
     );
+    _saveToPrefs();
   }
 
   void removeFromWatchedList(String id) {
@@ -233,6 +389,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchedList: newWatchedList,
       watchedEpisodes: newWatchedEpisodes,
     );
+    _saveToPrefs();
   }
 
   void toggleWatched(MediaItem item) {
@@ -309,6 +466,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchlist: newWatchlist,
       maybeList: newMaybeList,
     );
+    _saveToPrefs();
   }
 
   bool isEpisodeWatched(String showId, int seasonNumber, int episodeNumber) {
@@ -361,6 +519,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchedList: newWatchedList,
       watchedEpisodes: newWatchedEpisodes,
     );
+    _saveToPrefs();
   }
 
   void setDiscoverPool(List<MediaItem> items) {

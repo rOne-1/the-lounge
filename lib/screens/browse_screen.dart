@@ -1926,40 +1926,44 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }) {
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final cardColor = isDark ? AppColors.srCard : AppColors.rrCard;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.srCard : AppColors.rrCard,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: lineRgba),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        initiallyExpanded: initiallyExpanded,
-        iconColor: inkColor,
-        collapsedIconColor: isDark ? AppColors.srSub : AppColors.rrSub,
-        title: Row(
-          children: [
-            Icon(
-              icon,
-              size: 18,
-              color: isDark ? AppColors.srAcc : AppColors.rrAcc,
-            ),
-            const SizedBox(width: 10),
-            Text(
-              title,
-              style: AppThemes.safeGeist(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: inkColor,
+      child: Material(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(14),
+        clipBehavior: Clip.antiAlias,
+        child: ExpansionTile(
+          initiallyExpanded: initiallyExpanded,
+          iconColor: inkColor,
+          collapsedIconColor: isDark ? AppColors.srSub : AppColors.rrSub,
+          title: Row(
+            children: [
+              Icon(
+                icon,
+                size: 18,
+                color: isDark ? AppColors.srAcc : AppColors.rrAcc,
               ),
-            ),
-          ],
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: AppThemes.safeGeist(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+            ],
+          ),
+          childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
         ),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        children: children,
       ),
     );
   }

@@ -429,4 +429,38 @@ class MediaItem {
       productionCompanies: productionCompanies ?? this.productionCompanies,
     );
   }
+
+  /// Serializes lightweight snapshot of [MediaItem] for local persistence.
+  Map<String, dynamic> toMinimalJson() {
+    return {
+      'id': id,
+      'title': title,
+      'type': type.name,
+      'posterUrl': posterUrl,
+      'rating': rating,
+    };
+  }
+
+  /// Restores a thin [MediaItem] snapshot from lightweight local persistence JSON.
+  factory MediaItem.fromMinimalJson(Map<String, dynamic> json) {
+    final typeStr = json['type'] as String?;
+    final mediaType = typeStr == 'tv' ? MediaType.tv : MediaType.movie;
+    double ratingVal = 0.0;
+    final r = json['rating'];
+    if (r is num) {
+      ratingVal = r.toDouble();
+    } else if (r is String) {
+      ratingVal = double.tryParse(r) ?? 0.0;
+    }
+
+    return MediaItem(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      type: mediaType,
+      rating: ratingVal,
+      posterUrl: json['posterUrl'] as String?,
+      overview: '',
+      genres: const [],
+    );
+  }
 }
