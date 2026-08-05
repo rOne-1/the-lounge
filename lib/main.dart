@@ -9,15 +9,35 @@ import 'screens/shell_screen.dart';
 import 'services/crash_reporting_service.dart';
 
 void main() async {
+  final stopwatch = Stopwatch()..start();
   WidgetsFlutterBinding.ensureInitialized();
-  try {
-    await dotenv.load(fileName: ".env");
-  } catch (e) {
-    developer.log('Dotenv notice: .env file not found or not loaded: $e',
-        name: 'main');
-  }
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    if (stopwatch.isRunning) {
+      stopwatch.stop();
+      developer.log(
+        'First Meaningful Paint rendered in: ${stopwatch.elapsedMilliseconds}ms',
+        name: 'main',
+      );
+      debugPrint(
+        '[ColdStart] First Meaningful Paint rendered in ${stopwatch.elapsedMilliseconds}ms',
+      );
+    }
+  });
+
+  final results = await Future.wait([
+    dotenv.load(fileName: ".env").catchError((e) {
+      developer.log('Dotenv notice: .env file not found or not loaded: $e',
+          name: 'main');
+    }),
+    SharedPreferences.getInstance(),
+  ]);
+
+  developer.log('Startup initialization took: ${stopwatch.elapsedMilliseconds}ms',
+      name: 'main');
+
   await CrashReportingService.init();
-  final sharedPreferences = await SharedPreferences.getInstance();
+  final sharedPreferences = results[1] as SharedPreferences;
 
   runApp(
     ProviderScope(

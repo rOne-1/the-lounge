@@ -54,7 +54,19 @@ class CrashReportingService {
   }) async {
     if (_isInitialized) return;
 
-    final targetDsn = dsn ?? dotenv.env['SENTRY_DSN'];
+    String? envDsn;
+    try {
+      if (dotenv.isInitialized) {
+        envDsn = dotenv.env['SENTRY_DSN'];
+      }
+    } catch (_) {}
+
+    final rawDsn = dsn ?? envDsn;
+    final targetDsn = (rawDsn != null &&
+            rawDsn.trim().isNotEmpty &&
+            rawDsn != 'your_sentry_dsn_here')
+        ? rawDsn.trim()
+        : null;
 
     // 1. Configure Flutter framework error handling
     final originalOnError = FlutterError.onError;

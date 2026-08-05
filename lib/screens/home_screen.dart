@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
@@ -13,6 +14,103 @@ import '../widgets/fallback_widgets.dart';
 import '../widgets/segmented_toggle.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/ambient_glow.dart';
+
+class DeduplicatedHomeRails {
+  final bool isMovies;
+  final List<MediaItem> rail1Items;
+  final AsyncValue<List<MediaItem>> trendingAsync;
+  final AsyncValue<List<MediaItem>> topRatedDeduplicated;
+  final AsyncValue<List<MediaItem>> rail4Deduplicated;
+  final AsyncValue<List<MediaItem>> rail5Deduplicated;
+
+  const DeduplicatedHomeRails({
+    required this.isMovies,
+    required this.rail1Items,
+    required this.trendingAsync,
+    required this.topRatedDeduplicated,
+    required this.rail4Deduplicated,
+    required this.rail5Deduplicated,
+  });
+}
+
+class HomeRailsInput {
+  final bool isMovies;
+  final List<MediaItem> rail1Items;
+  final AsyncValue<List<MediaItem>> trendingAsync;
+  final AsyncValue<List<MediaItem>> topRatedAsync;
+  final AsyncValue<List<MediaItem>> rail4Async;
+  final AsyncValue<List<MediaItem>> rail5Async;
+
+  const HomeRailsInput({
+    required this.isMovies,
+    required this.rail1Items,
+    required this.trendingAsync,
+    required this.topRatedAsync,
+    required this.rail4Async,
+    required this.rail5Async,
+  });
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is HomeRailsInput &&
+          runtimeType == other.runtimeType &&
+          isMovies == other.isMovies &&
+          listEquals(rail1Items, other.rail1Items) &&
+          trendingAsync == other.trendingAsync &&
+          topRatedAsync == other.topRatedAsync &&
+          rail4Async == other.rail4Async &&
+          rail5Async == other.rail5Async;
+
+  @override
+  int get hashCode => Object.hash(
+        isMovies,
+        Object.hashAll(rail1Items),
+        trendingAsync,
+        topRatedAsync,
+        rail4Async,
+        rail5Async,
+      );
+}
+
+final deduplicatedHomeRailsProvider = Provider.autoDispose
+    .family<DeduplicatedHomeRails, HomeRailsInput>((ref, input) {
+  final priorSeenIds = <String>{};
+  for (final item in input.rail1Items) {
+    priorSeenIds.add(item.id);
+    priorSeenIds.add(item.prefixedId);
+    priorSeenIds.add(item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), ''));
+  }
+  final trendingItems = input.trendingAsync.asData?.value ?? [];
+  for (final item in trendingItems) {
+    priorSeenIds.add(item.id);
+    priorSeenIds.add(item.prefixedId);
+    priorSeenIds.add(item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), ''));
+  }
+
+  List<MediaItem> deduplicateRailList(List<MediaItem> list) {
+    final fresh = list.where((item) {
+      final cleanId = item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+      return !priorSeenIds.contains(item.id) &&
+          !priorSeenIds.contains(item.prefixedId) &&
+          !priorSeenIds.contains(cleanId);
+    }).toList();
+    return fresh.isNotEmpty ? fresh : list;
+  }
+
+  final topRatedDeduplicated = input.topRatedAsync.whenData(deduplicateRailList);
+  final rail4Deduplicated = input.rail4Async.whenData(deduplicateRailList);
+  final rail5Deduplicated = input.rail5Async.whenData(deduplicateRailList);
+
+  return DeduplicatedHomeRails(
+    isMovies: input.isMovies,
+    rail1Items: input.rail1Items,
+    trendingAsync: input.trendingAsync,
+    topRatedDeduplicated: topRatedDeduplicated,
+    rail4Deduplicated: rail4Deduplicated,
+    rail5Deduplicated: rail5Deduplicated,
+  );
+});
 
 class HomeScreen extends ConsumerWidget {
   final bool? enableAnimation;
@@ -39,6 +137,26 @@ class HomeScreen extends ConsumerWidget {
 
     final popularAsync = ref.watch(popularMoviesProvider);
     final mediaState = ref.watch(mediaProvider);
+
+    final activeType = isMovies ? MediaType.movie : MediaType.tv;
+    final rail1Items = mediaState.watchingList.values
+        .where((m) => m.type == activeType)
+        .toList();
+
+    final railsInput = HomeRailsInput(
+      isMovies: isMovies,
+      rail1Items: rail1Items,
+      trendingAsync: trendingAsync,
+      topRatedAsync: topRatedAsync,
+      rail4Async: rail4Async,
+      rail5Async: rail5Async,
+    );
+
+    final homeRails = ref.watch(deduplicatedHomeRailsProvider(railsInput));
+    final topRatedDeduplicated = homeRails.topRatedDeduplicated;
+    final rail4Deduplicated = homeRails.rail4Deduplicated;
+    final rail5Deduplicated = homeRails.rail5Deduplicated;
+
 
     String greeting() {
       final now = DateTime.now();
@@ -87,45 +205,10 @@ class HomeScreen extends ConsumerWidget {
 
     final isLarge = MediaQuery.of(context).size.width >= 600;
 
-    // Collect Rail 1 items strictly from watchingList based on active media type
-    List<MediaItem> getRail1Items() {
-      final activeType = isMovies ? MediaType.movie : MediaType.tv;
-      return mediaState.watchingList.values
-          .where((m) => m.type == activeType)
-          .toList();
-    }
-
-    final rail1Items = getRail1Items();
     final activeTvShow = !isMovies
         ? (rail1Items.isNotEmpty ? rail1Items.first : null)
         : null;
 
-    final priorSeenIds = <String>{};
-    for (final item in rail1Items) {
-      priorSeenIds.add(item.id);
-      priorSeenIds.add(item.prefixedId);
-      priorSeenIds.add(item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), ''));
-    }
-    final trendingItems = trendingAsync.asData?.value ?? [];
-    for (final item in trendingItems) {
-      priorSeenIds.add(item.id);
-      priorSeenIds.add(item.prefixedId);
-      priorSeenIds.add(item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), ''));
-    }
-
-    List<MediaItem> deduplicateRailList(List<MediaItem> list) {
-      final fresh = list.where((item) {
-        final cleanId = item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
-        return !priorSeenIds.contains(item.id) &&
-            !priorSeenIds.contains(item.prefixedId) &&
-            !priorSeenIds.contains(cleanId);
-      }).toList();
-      return fresh.isNotEmpty ? fresh : list;
-    }
-
-    final topRatedDeduplicated = topRatedAsync.whenData(deduplicateRailList);
-    final rail4Deduplicated = rail4Async.whenData(deduplicateRailList);
-    final rail5Deduplicated = rail5Async.whenData(deduplicateRailList);
 
     return SingleChildScrollView(
       child: Padding(

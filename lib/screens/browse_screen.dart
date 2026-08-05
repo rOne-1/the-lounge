@@ -135,8 +135,17 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     }
   }
 
+  static const int _maxAccumulatedItems = 200;
+  static const int _maxPages = 10;
+
   Future<void> _loadMorePage(bool isMovies) async {
     if (_isLoadingMore || !_hasMore) return;
+    if (_currentPage >= _maxPages || _accumulatedItems.length >= _maxAccumulatedItems) {
+      setState(() {
+        _hasMore = false;
+      });
+      return;
+    }
     setState(() {
       _isLoadingMore = true;
     });
@@ -158,6 +167,9 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           } else {
             _currentPage = nextPage;
             _accumulatedItems.addAll(fresh);
+            if (_accumulatedItems.length >= _maxAccumulatedItems || _currentPage >= _maxPages) {
+              _hasMore = false;
+            }
           }
           _isLoadingMore = false;
         });

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
+
 
 /// Fallback widget displayed when poster image fails to load or path is empty.
 class MediaPosterFallback extends StatelessWidget {
@@ -141,12 +143,17 @@ class MediaImage extends StatelessWidget {
     if (effectiveUrl == null || effectiveUrl.isEmpty || willFail) {
       imageContent = fallbackWidget;
     } else {
-      imageContent = Image.network(
-        effectiveUrl,
+      imageContent = CachedNetworkImage(
+        imageUrl: effectiveUrl,
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (context, error, stackTrace) => fallbackWidget,
+        placeholder: (context, url) => Container(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.srPh
+              : AppColors.rrPh,
+        ),
+        errorWidget: (context, url, error) => fallbackWidget,
       );
     }
 

@@ -217,6 +217,7 @@ void main() {
           overrides: [
             trendingMoviesProvider.overrideWith((ref) => Future.error(Exception('HTTP 429 Rate Limit'))),
             popularMoviesProvider.overrideWith((ref) => Future.value([dummyItem])),
+            topRatedMoviesProvider.overrideWith((ref) => Future.value([dummyItem])),
           ],
           child: const MaterialApp(
             home: HomeScreen(enableAnimation: false),

@@ -20,6 +20,8 @@ dependencies:
   flutter_dotenv: ^6.0.1
   url_launcher: ^6.3.0
   sentry_flutter: ^8.13.0
+  cached_network_image: ^3.4.1
+
 
 
 dev_dependencies:
