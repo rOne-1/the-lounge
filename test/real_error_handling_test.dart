@@ -365,7 +365,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(FullScreenErrorWidget), findsOneWidget);
-      expect(find.text('Try again'), findsOneWidget);
+      expect(find.text('Retry Connection'), findsOneWidget);
     });
 
     testWidgets('DiscoverScreen empty deck renders no titles state with Reload deck action',

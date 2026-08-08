@@ -901,7 +901,12 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
 
   Widget _buildLoadMoreFooter(bool isDark, bool isMovies) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      padding: EdgeInsets.fromLTRB(
+        16,
+        12.0,
+        16,
+        90.0 + MediaQuery.of(context).padding.bottom,
+      ),
       child: _isLoadingMore
           ? const SizedBox(
               height: 24,
@@ -1226,6 +1231,32 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
+  BoxDecoration _buildFilterChipDecoration({
+    required bool isSelected,
+    required bool isDark,
+    required Color pillColor,
+    required Color lineRgba,
+  }) {
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    if (isSelected) {
+      return AppColors.primaryButtonDecoration(isDark: isDark, borderRadius: 999).copyWith(
+        border: Border.all(color: accColor, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: accColor.withAlpha(80),
+            blurRadius: 6,
+            spreadRadius: 1,
+          ),
+        ],
+      );
+    }
+    return BoxDecoration(
+      color: pillColor,
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(color: lineRgba),
+    );
+  }
+
   Widget _buildAccordionFilterPanel(bool isDark, bool isMovies) {
     final filterParams = ref.watch(discoverFilterProvider);
     final filterNotifier = ref.read(discoverFilterProvider.notifier);
@@ -1275,19 +1306,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         ref.read(browseGenreProvider.notifier).setGenre(genre);
                       }
                     },
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
-                      decoration: isSelected
-                          ? AppColors.primaryButtonDecoration(
-                              isDark: isDark, borderRadius: 999)
-                          : BoxDecoration(
-                              color: pillColor,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: lineRgba),
-                            ),
+                      decoration: _buildFilterChipDecoration(
+                        isSelected: isSelected,
+                        isDark: isDark,
+                        pillColor: pillColor,
+                        lineRgba: lineRgba,
+                      ),
                       child: Text(
                         genre,
                         style: AppThemes.safeGeist(
@@ -1355,51 +1385,60 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: filterParams.watchRegion,
-                dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
-                style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  filled: true,
-                  fillColor: pillColor,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: lineRgba),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+              Builder(
+                builder: (context) {
+                  final isRegionActive = filterParams.watchRegion != null && filterParams.watchRegion!.isNotEmpty;
+                  final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+                  return DropdownButtonFormField<String>(
+                    initialValue: filterParams.watchRegion,
+                    dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
+                    style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      filled: true,
+                      fillColor: isRegionActive ? accColor.withAlpha(35) : pillColor,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color: isRegionActive ? accColor : lineRgba,
+                          width: isRegionActive ? 1.5 : 1.0,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color: accColor,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                hint: Text(
-                  'Select Region (Default: US)',
-                  style: AppThemes.safeGeist(fontSize: 13, color: subColor),
-                ),
-                items: [
-                  DropdownMenuItem<String>(
-                    value: null,
-                    child: Text('Any Region',
-                        style: AppThemes.safeGeist(color: subColor)),
-                  ),
-                  ..._regions.map(
-                    (r) => DropdownMenuItem<String>(
-                      value: r['code'],
-                      child: Text('${r['name']} (${r['code']})',
-                          style: AppThemes.safeGeist(color: inkColor)),
+                    hint: Text(
+                      'Select Region (Default: US)',
+                      style: AppThemes.safeGeist(fontSize: 13, color: subColor),
                     ),
-                  ),
-                ],
-                onChanged: (val) {
-                  filterNotifier.setProvider(
-                    providerId: filterParams.providerId,
-                    providerName: filterParams.providerName,
-                    watchRegion: val,
+                    items: [
+                      DropdownMenuItem<String>(
+                        value: null,
+                        child: Text('Any Region',
+                            style: AppThemes.safeGeist(color: subColor)),
+                      ),
+                      ..._regions.map(
+                        (r) => DropdownMenuItem<String>(
+                          value: r['code'],
+                          child: Text('${r['name']} (${r['code']})',
+                              style: AppThemes.safeGeist(color: inkColor)),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      filterNotifier.setProvider(
+                        providerId: filterParams.providerId,
+                        providerName: filterParams.providerName,
+                        watchRegion: val,
+                      );
+                    },
                   );
                 },
               ),
@@ -1425,19 +1464,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         watchRegion: filterParams.watchRegion,
                       );
                     },
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
-                      decoration: filterParams.providerId == null
-                          ? AppColors.primaryButtonDecoration(
-                              isDark: isDark, borderRadius: 999)
-                          : BoxDecoration(
-                              color: pillColor,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: lineRgba),
-                            ),
+                      decoration: _buildFilterChipDecoration(
+                        isSelected: filterParams.providerId == null,
+                        isDark: isDark,
+                        pillColor: pillColor,
+                        lineRgba: lineRgba,
+                      ),
                       child: Text(
                         'Any Provider',
                         style: AppThemes.safeGeist(
@@ -1459,19 +1497,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           watchRegion: filterParams.watchRegion,
                         );
                       },
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
                         ),
-                        decoration: isSelected
-                            ? AppColors.primaryButtonDecoration(
-                                isDark: isDark, borderRadius: 999)
-                            : BoxDecoration(
-                                color: pillColor,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: lineRgba),
-                              ),
+                        decoration: _buildFilterChipDecoration(
+                          isSelected: isSelected,
+                          isDark: isDark,
+                          pillColor: pillColor,
+                          lineRgba: lineRgba,
+                        ),
                         child: Text(
                           p['name'] as String,
                           style: AppThemes.safeGeist(
@@ -1559,19 +1596,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   final label = vc == null ? 'Any' : '$vc+';
                   return PressableScale(
                     onTap: () => filterNotifier.setMinVoteCount(vc),
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
-                      decoration: isSelected
-                          ? AppColors.primaryButtonDecoration(
-                              isDark: isDark, borderRadius: 999)
-                          : BoxDecoration(
-                              color: pillColor,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: lineRgba),
-                            ),
+                      decoration: _buildFilterChipDecoration(
+                        isSelected: isSelected,
+                        isDark: isDark,
+                        pillColor: pillColor,
+                        lineRgba: lineRgba,
+                      ),
                       child: Text(
                         label,
                         style: AppThemes.safeGeist(
@@ -1597,56 +1633,65 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: filterParams.sortBy,
-                dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
-                style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
-                decoration: InputDecoration(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  filled: true,
-                  fillColor: pillColor,
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(color: lineRgba),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide(
-                      color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+              Builder(
+                builder: (context) {
+                  final isSortActive = filterParams.sortBy != 'popularity.desc';
+                  final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+                  return DropdownButtonFormField<String>(
+                    initialValue: filterParams.sortBy,
+                    dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
+                    style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      filled: true,
+                      fillColor: isSortActive ? accColor.withAlpha(35) : pillColor,
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color: isSortActive ? accColor : lineRgba,
+                          width: isSortActive ? 1.5 : 1.0,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(
+                          color: accColor,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                items: [
-                  DropdownMenuItem(
-                    value: 'popularity.desc',
-                    child: Text('Most Popular',
-                        style: AppThemes.safeGeist(color: inkColor)),
-                  ),
-                  DropdownMenuItem(
-                    value: 'vote_average.desc',
-                    child: Text('Highest Rated',
-                        style: AppThemes.safeGeist(color: inkColor)),
-                  ),
-                  DropdownMenuItem(
-                    value: isMovies
-                        ? 'primary_release_date.desc'
-                        : 'first_air_date.desc',
-                    child: Text('Release Date (Newest)',
-                        style: AppThemes.safeGeist(color: inkColor)),
-                  ),
-                  DropdownMenuItem(
-                    value: 'revenue.desc',
-                    child: Text('Highest Revenue',
-                        style: AppThemes.safeGeist(color: inkColor)),
-                  ),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    filterNotifier.setSortBy(val);
-                  }
+                    items: [
+                      DropdownMenuItem(
+                        value: 'popularity.desc',
+                        child: Text('Most Popular',
+                            style: AppThemes.safeGeist(color: inkColor)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'vote_average.desc',
+                        child: Text('Highest Rated',
+                            style: AppThemes.safeGeist(color: inkColor)),
+                      ),
+                      DropdownMenuItem(
+                        value: isMovies
+                            ? 'primary_release_date.desc'
+                            : 'first_air_date.desc',
+                        child: Text('Release Date (Newest)',
+                            style: AppThemes.safeGeist(color: inkColor)),
+                      ),
+                      DropdownMenuItem(
+                        value: 'revenue.desc',
+                        child: Text('Highest Revenue',
+                            style: AppThemes.safeGeist(color: inkColor)),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        filterNotifier.setSortBy(val);
+                      }
+                    },
+                  );
                 },
               ),
             ],
@@ -1717,19 +1762,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 children: [
                   PressableScale(
                     onTap: () => filterNotifier.setOriginalLanguage(null),
-                    child: Container(
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
                       ),
-                      decoration: filterParams.originalLanguage == null
-                          ? AppColors.primaryButtonDecoration(
-                              isDark: isDark, borderRadius: 999)
-                          : BoxDecoration(
-                              color: pillColor,
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(color: lineRgba),
-                            ),
+                      decoration: _buildFilterChipDecoration(
+                        isSelected: filterParams.originalLanguage == null,
+                        isDark: isDark,
+                        pillColor: pillColor,
+                        lineRgba: lineRgba,
+                      ),
                       child: Text(
                         'Any Language',
                         style: AppThemes.safeGeist(
@@ -1747,19 +1791,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                     return PressableScale(
                       onTap: () =>
                           filterNotifier.setOriginalLanguage(lang['code']),
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
                         ),
-                        decoration: isSelected
-                            ? AppColors.primaryButtonDecoration(
-                                isDark: isDark, borderRadius: 999)
-                            : BoxDecoration(
-                                color: pillColor,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: lineRgba),
-                              ),
+                        decoration: _buildFilterChipDecoration(
+                          isSelected: isSelected,
+                          isDark: isDark,
+                          pillColor: pillColor,
+                          lineRgba: lineRgba,
+                        ),
                         child: Text(
                           lang['name']!,
                           style: AppThemes.safeGeist(
@@ -1809,19 +1852,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                     final label = status ?? 'Any Status';
                     return PressableScale(
                       onTap: () => filterNotifier.setTvStatus(status),
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
                         ),
-                        decoration: isSelected
-                            ? AppColors.primaryButtonDecoration(
-                                isDark: isDark, borderRadius: 999)
-                            : BoxDecoration(
-                                color: pillColor,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: lineRgba),
-                              ),
+                        decoration: _buildFilterChipDecoration(
+                          isSelected: isSelected,
+                          isDark: isDark,
+                          pillColor: pillColor,
+                          lineRgba: lineRgba,
+                        ),
                         child: Text(
                           label,
                           style: AppThemes.safeGeist(
@@ -1858,19 +1900,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           tvNetworkName: null,
                         );
                       },
-                      child: Container(
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 150),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
                         ),
-                        decoration: filterParams.tvNetworkId == null
-                            ? AppColors.primaryButtonDecoration(
-                                isDark: isDark, borderRadius: 999)
-                            : BoxDecoration(
-                                color: pillColor,
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: lineRgba),
-                              ),
+                        decoration: _buildFilterChipDecoration(
+                          isSelected: filterParams.tvNetworkId == null,
+                          isDark: isDark,
+                          pillColor: pillColor,
+                          lineRgba: lineRgba,
+                        ),
                         child: Text(
                           'Any Network',
                           style: AppThemes.safeGeist(
@@ -1892,19 +1933,18 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                             tvNetworkName: net['name'] as String,
                           );
                         },
-                        child: Container(
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 150),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,
                           ),
-                          decoration: isSelected
-                              ? AppColors.primaryButtonDecoration(
-                                  isDark: isDark, borderRadius: 999)
-                              : BoxDecoration(
-                                  color: pillColor,
-                                  borderRadius: BorderRadius.circular(999),
-                                  border: Border.all(color: lineRgba),
-                                ),
+                          decoration: _buildFilterChipDecoration(
+                            isSelected: isSelected,
+                            isDark: isDark,
+                            pillColor: pillColor,
+                            lineRgba: lineRgba,
+                          ),
                           child: Text(
                             net['name'] as String,
                             style: AppThemes.safeGeist(

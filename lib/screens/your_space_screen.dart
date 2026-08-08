@@ -57,17 +57,30 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
       length: 4,
       child: Column(
         children: [
-          TabBar(
-            labelColor: accColor,
-            unselectedLabelColor: subColor,
-            indicatorColor: accColor,
-            labelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600),
-            unselectedLabelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w500),
-            tabs: const [
-              Tab(text: 'Watchlist'),
-              Tab(text: 'Saved'),
-              Tab(text: 'In Progress'),
-              Tab(text: 'Watched'),
+          Row(
+            children: [
+              Expanded(
+                child: TabBar(
+                  labelColor: accColor,
+                  unselectedLabelColor: subColor,
+                  indicatorColor: accColor,
+                  labelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600),
+                  unselectedLabelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w500),
+                  tabs: const [
+                    Tab(text: 'Watchlist'),
+                    Tab(text: 'Saved'),
+                    Tab(text: 'In Progress'),
+                    Tab(text: 'Watched'),
+                  ],
+                ),
+              ),
+              IconButton(
+                key: const ValueKey('app_info_button'),
+                icon: Icon(Icons.info_outline, color: subColor, size: 20),
+                tooltip: 'App Info & Privacy',
+                onPressed: () => _showAppInfoDialog(context, isDark),
+              ),
+              const SizedBox(width: 8),
             ],
           ),
           Expanded(
@@ -111,6 +124,82 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                   inkColor: inkColor,
                 ),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAppInfoDialog(BuildContext context, bool isDark) {
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final dialogBg = isDark ? AppColors.srBase : AppColors.rrBase;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: dialogBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text(
+          'App Info & Privacy',
+          style: AppThemes.safeGeist(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'TMDB Attribution',
+                style: AppThemes.safeGeist(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'This product uses the TMDB API but is not endorsed or certified by TMDB.',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  color: subColor,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Tester Privacy Note',
+                style: AppThemes.safeGeist(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'The Lounge collects local storage state to persist your watchlist, bookmarks, and preferences, as well as anonymous Sentry error and device logs to identify bugs and ensure stability.',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  color: subColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(
+              'Close',
+              style: AppThemes.safeGeist(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+              ),
             ),
           ),
         ],

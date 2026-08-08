@@ -454,4 +454,9 @@ class TmdbApiService {
   Future<Map<String, dynamic>> getSimilarTvShows(String id, {int page = 1}) async {
     return _get('/tv/$id/similar', {'page': page, 'include_adult': false});
   }
+
+  /// GET /3/collection/{collection_id}
+  Future<Map<String, dynamic>> getCollectionDetails(int collectionId) async {
+    return _get('/collection/$collectionId');
+  }
 }

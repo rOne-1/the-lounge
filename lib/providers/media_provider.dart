@@ -720,6 +720,40 @@ class MediaNotifier extends Notifier<MediaState> {
     return null;
   }
 
+  void reevaluateShowCompletion({
+    required String showId,
+    required List<TvSeason> seasons,
+  }) {
+    final now = DateTime.now();
+    int totalReleasedEpisodes = 0;
+    for (final season in seasons) {
+      for (final ep in season.episodes) {
+        if (ep.airDate == null || !ep.airDate!.isAfter(now)) {
+          totalReleasedEpisodes++;
+        }
+      }
+    }
+
+    if (totalReleasedEpisodes == 0) return;
+
+    final watchedSet = state.watchedEpisodes[showId] ?? <String>{};
+
+    if (state.watchedList.containsKey(showId) &&
+        watchedSet.length < totalReleasedEpisodes) {
+      final showItem = state.watchedList[showId]!;
+      final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+        ..remove(showId);
+      final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+        ..[showId] = showItem;
+
+      state = state.copyWith(
+        watchedList: newWatchedList,
+        watchingList: newWatchingList,
+      );
+      _saveToPrefs();
+    }
+  }
+
   void removeFromAllLists(String id) {
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
       ..remove(id);

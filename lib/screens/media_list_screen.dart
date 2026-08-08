@@ -287,7 +287,7 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                   ),
                   if (_hasMore)
                     Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + bottomPadding),
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 90.0 + bottomPadding),
                       child: PressableScale(
                         onTap: _isLoadingMore ? null : _loadMore,
                         child: Container(

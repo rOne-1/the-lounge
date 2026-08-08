@@ -353,6 +353,9 @@ class MediaItem {
   final List<MediaKeyword>? keywords;
   final String? imdbId;
   final List<ProductionCompany>? productionCompanies;
+  final String? originalLanguage;
+  final List<String>? spokenLanguages;
+  final String? status;
 
   const MediaItem({
     required this.id,
@@ -389,7 +392,48 @@ class MediaItem {
     this.keywords,
     this.imdbId,
     this.productionCompanies,
+    this.originalLanguage,
+    this.spokenLanguages,
+    this.status,
   });
+
+  /// Helper getter returning user-facing display string for original language.
+  String? get originalLanguageDisplay {
+    if (spokenLanguages != null && spokenLanguages!.isNotEmpty) {
+      final first = spokenLanguages!.first.trim();
+      if (first.isNotEmpty) return first;
+    }
+    if (originalLanguage == null || originalLanguage!.trim().isEmpty) {
+      return null;
+    }
+    final raw = originalLanguage!.trim();
+    const map = {
+      'en': 'English',
+      'ja': 'Japanese',
+      'fr': 'French',
+      'es': 'Spanish',
+      'de': 'German',
+      'ko': 'Korean',
+      'it': 'Italian',
+      'zh': 'Chinese',
+      'ru': 'Russian',
+      'pt': 'Portuguese',
+      'hi': 'Hindi',
+      'sv': 'Swedish',
+      'da': 'Danish',
+      'no': 'Norwegian',
+      'nl': 'Dutch',
+      'pl': 'Polish',
+      'tr': 'Turkish',
+      'ar': 'Arabic',
+      'fi': 'Finnish',
+    };
+    final lower = raw.toLowerCase();
+    if (map.containsKey(lower)) {
+      return map[lower];
+    }
+    return raw.length <= 3 ? raw.toUpperCase() : raw;
+  }
 
   /// Returns watch providers for specified country, falling back to legacy US watchProviders list.
   List<WatchProviderInfo> getWatchProvidersForCountry(String countryCode) {
@@ -451,6 +495,9 @@ class MediaItem {
     List<MediaKeyword>? keywords,
     String? imdbId,
     List<ProductionCompany>? productionCompanies,
+    String? originalLanguage,
+    List<String>? spokenLanguages,
+    String? status,
   }) {
     return MediaItem(
       id: id ?? this.id,
@@ -488,6 +535,9 @@ class MediaItem {
       keywords: keywords ?? this.keywords,
       imdbId: imdbId ?? this.imdbId,
       productionCompanies: productionCompanies ?? this.productionCompanies,
+      originalLanguage: originalLanguage ?? this.originalLanguage,
+      spokenLanguages: spokenLanguages ?? this.spokenLanguages,
+      status: status ?? this.status,
     );
   }
 

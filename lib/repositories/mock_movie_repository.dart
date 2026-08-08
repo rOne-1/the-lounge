@@ -1,6 +1,7 @@
 import 'dart:async';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
+import '../models/media_collection_detail.dart';
 import 'movie_repository.dart';
 
 class MockMovieRepository implements MovieRepository {
@@ -736,5 +737,17 @@ class MockMovieRepository implements MovieRepository {
   @override
   Future<List<MediaItem>> getSimilarMedia(String mediaId) async {
     return _mockData.where((item) => item.id != mediaId && item.prefixedId != mediaId).toList();
+  }
+
+  @override
+  Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) async {
+    return MediaCollectionDetail(
+      id: collectionId,
+      name: 'Mock Franchise Collection',
+      overview: 'Overview for mock franchise collection.',
+      posterUrl: 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
+      backdropUrl: 'https://image.tmdb.org/t/p/original/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
+      parts: _mockData,
+    );
   }
 }

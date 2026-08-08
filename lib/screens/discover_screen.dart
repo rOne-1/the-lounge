@@ -36,12 +36,20 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     _loadPool();
   }
 
-  Future<void> _loadPool() async {
+  int _currentPoolPage = 1;
+
+  Future<void> _loadPool({bool isReload = false}) async {
     setState(() {
       _loading = true;
       _error = null;
     });
     try {
+      if (isReload) {
+        _currentPoolPage += 2;
+      } else {
+        _currentPoolPage = 1;
+      }
+
       final repo = ref.read(movieRepositoryProvider);
       final mediaState = ref.read(mediaProvider);
 
@@ -55,6 +63,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         ...mediaState.droppedList.keys,
         ...mediaState.onHoldList.keys,
         ...skippedIds,
+        ..._pool.map((e) => e.id),
       };
 
       bool isExcluded(MediaItem item) {
@@ -68,28 +77,34 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
 
       final List<MediaItem> rawList = [];
+      final page1 = _currentPoolPage;
+      final page2 = _currentPoolPage + 1;
 
       if (isMovies) {
-        final t1 = await repo.getTrendingMovies(page: 1);
+        final t1 = await repo.getTrendingMovies(page: page1);
         rawList.addAll(t1);
-        try { final t2 = await repo.getTrendingMovies(page: 2); rawList.addAll(t2); } catch (_) {}
-        try { final p1 = await repo.getPopularMovies(page: 1); rawList.addAll(p1); } catch (_) {}
-        try { final p2 = await repo.getPopularMovies(page: 2); rawList.addAll(p2); } catch (_) {}
+        try { final t2 = await repo.getTrendingMovies(page: page2); rawList.addAll(t2); } catch (_) {}
+        try { final p1 = await repo.getPopularMovies(page: page1); rawList.addAll(p1); } catch (_) {}
+        try { final p2 = await repo.getPopularMovies(page: page2); rawList.addAll(p2); } catch (_) {}
       } else {
-        final t1 = await repo.getTrendingTvShows(page: 1);
+        final t1 = await repo.getTrendingTvShows(page: page1);
         rawList.addAll(t1);
-        try { final t2 = await repo.getTrendingTvShows(page: 2); rawList.addAll(t2); } catch (_) {}
-        try { final top1 = await repo.getTopRatedTvShows(page: 1); rawList.addAll(top1); } catch (_) {}
-        try { final top2 = await repo.getTopRatedTvShows(page: 2); rawList.addAll(top2); } catch (_) {}
+        try { final t2 = await repo.getTrendingTvShows(page: page2); rawList.addAll(t2); } catch (_) {}
+        try { final top1 = await repo.getTopRatedTvShows(page: page1); rawList.addAll(top1); } catch (_) {}
+        try { final top2 = await repo.getTopRatedTvShows(page: page2); rawList.addAll(top2); } catch (_) {}
       }
 
       if (mounted) {
         setState(() {
-          final seen = <String>{};
-          final merged = rawList
+          final seen = <String>{..._pool.map((item) => item.id)};
+          final newItems = rawList
               .where((item) => !isExcluded(item) && seen.add(item.id))
               .toList();
-          _pool = merged;
+          if (isReload) {
+            _pool = [..._pool, ...newItems];
+          } else {
+            _pool = newItems;
+          }
           _loading = false;
         });
       }
@@ -132,6 +147,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           _cardKeys.remove(removed.id);
         }
       });
+      if (_pool.isEmpty) {
+        _loadPool(isReload: true);
+      }
     }
   }
 
@@ -161,6 +179,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<NavigationState>(navigationProvider, (previous, next) {
+      if (previous?.activeMediaType != next.activeMediaType) {
+        _loadPool(isReload: false);
+      }
+    });
+
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     
@@ -294,7 +318,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               ),
                               const SizedBox(height: 20),
                               FilledButton.icon(
-                                onPressed: _loadPool,
+                                onPressed: () => _loadPool(isReload: true),
                                 icon: const Icon(Icons.refresh),
                                 label: const Text('Reload deck'),
                               ),

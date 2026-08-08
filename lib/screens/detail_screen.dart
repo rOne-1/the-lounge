@@ -11,15 +11,35 @@ import '../widgets/pressable_scale.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'browse_screen.dart';
+import 'collection_screen.dart';
 
-class DetailScreen extends ConsumerWidget {
+class DetailScreen extends ConsumerStatefulWidget {
   final String id;
 
   const DetailScreen({super.key, required this.id});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final detailAsync = ref.watch(mediaDetailsProvider(id));
+  ConsumerState<DetailScreen> createState() => _DetailScreenState();
+}
+
+class _DetailScreenState extends ConsumerState<DetailScreen> {
+  bool _isTransitionComplete = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          _isTransitionComplete = true;
+        });
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final detailAsync = ref.watch(mediaDetailsProvider(widget.id));
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
@@ -52,7 +72,7 @@ class DetailScreen extends ConsumerWidget {
               if (item == null) {
                 return FullScreenErrorWidget(
                   message: 'Failed to load media details.',
-                  onRetry: () => ref.invalidate(mediaDetailsProvider(id)),
+                  onRetry: () => ref.invalidate(mediaDetailsProvider(widget.id)),
                 );
               }
               final isLarge = MediaQuery.of(context).size.width > 800;
@@ -69,7 +89,7 @@ class DetailScreen extends ConsumerWidget {
                 message: message.isNotEmpty
                     ? message
                     : 'Failed to load media details.',
-                onRetry: () => ref.invalidate(mediaDetailsProvider(id)),
+                onRetry: () => ref.invalidate(mediaDetailsProvider(widget.id)),
               );
             },
           ),
@@ -130,7 +150,7 @@ class DetailScreen extends ConsumerWidget {
                       _buildGenreChips(context, ref, item, isDark),
                     ],
                     if (item.belongsToCollection != null)
-                      _buildCollectionBanner(item, isDark),
+                      _buildCollectionBanner(context, item, isDark),
                     const SizedBox(height: 18),
                     _buildActionButtons(context, ref, item, isDark),
                     const SizedBox(height: 22),
@@ -154,26 +174,27 @@ class DetailScreen extends ConsumerWidget {
                       curve: AppPhysics.houseSpringCurve,
                     ),
                 const SizedBox(height: 22),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildDirectorOrCreatorCredit(item, isDark),
-                    _buildCastStrip(item, isDark),
-                    _buildTrailersSection(context, item, isDark),
-                    const SizedBox(height: 22),
-                    _buildKeywordChips(context, ref, item, isDark),
-                    _buildNetworksSection(item, isDark),
-                    _buildProductionCompaniesSection(item, isDark),
-                    _buildWatchProvidersSection(context, ref, item, isDark),
-                  ],
-                )
-                    .animate(delay: 220.ms)
-                    .fade(duration: 250.ms)
-                    .slideY(
-                      begin: 0.08,
-                      end: 0,
-                      curve: AppPhysics.houseSpringCurve,
-                    ),
+                if (_isTransitionComplete)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDirectorOrCreatorCredit(item, isDark),
+                      _buildCastStrip(context, ref, item, isDark),
+                      _buildTrailersSection(context, item, isDark),
+                      const SizedBox(height: 22),
+                      _buildKeywordChips(context, ref, item, isDark),
+                      _buildNetworksSection(item, isDark),
+                      _buildProductionCompaniesSection(item, isDark),
+                      _buildWatchProvidersSection(context, ref, item, isDark),
+                    ],
+                  )
+                      .animate(delay: 220.ms)
+                      .fade(duration: 250.ms)
+                      .slideY(
+                        begin: 0.08,
+                        end: 0,
+                        curve: AppPhysics.houseSpringCurve,
+                      ),
                 const SizedBox(height: 24),
               ],
             ),
@@ -241,7 +262,7 @@ class DetailScreen extends ConsumerWidget {
                       _buildGenreChips(context, ref, item, isDark),
                     ],
                     if (item.belongsToCollection != null)
-                      _buildCollectionBanner(item, isDark),
+                      _buildCollectionBanner(context, item, isDark),
                     const SizedBox(height: 24),
                     _buildActionButtons(context, ref, item, isDark),
                     const SizedBox(height: 24),
@@ -265,26 +286,27 @@ class DetailScreen extends ConsumerWidget {
                       curve: AppPhysics.houseSpringCurve,
                     ),
                 const SizedBox(height: 24),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildDirectorOrCreatorCredit(item, isDark),
-                    _buildCastStrip(item, isDark),
-                    _buildTrailersSection(context, item, isDark),
-                    const SizedBox(height: 24),
-                    _buildKeywordChips(context, ref, item, isDark),
-                    _buildNetworksSection(item, isDark),
-                    _buildProductionCompaniesSection(item, isDark),
-                    _buildWatchProvidersSection(context, ref, item, isDark),
-                  ],
-                )
-                    .animate(delay: 220.ms)
-                    .fade(duration: 250.ms)
-                    .slideY(
-                      begin: 0.08,
-                      end: 0,
-                      curve: AppPhysics.houseSpringCurve,
-                    ),
+                if (_isTransitionComplete)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildDirectorOrCreatorCredit(item, isDark),
+                      _buildCastStrip(context, ref, item, isDark),
+                      _buildTrailersSection(context, item, isDark),
+                      const SizedBox(height: 24),
+                      _buildKeywordChips(context, ref, item, isDark),
+                      _buildNetworksSection(item, isDark),
+                      _buildProductionCompaniesSection(item, isDark),
+                      _buildWatchProvidersSection(context, ref, item, isDark),
+                    ],
+                  )
+                      .animate(delay: 220.ms)
+                      .fade(duration: 250.ms)
+                      .slideY(
+                        begin: 0.08,
+                        end: 0,
+                        curve: AppPhysics.houseSpringCurve,
+                      ),
                 const SizedBox(height: 24),
               ],
             ),
@@ -305,6 +327,8 @@ class DetailScreen extends ConsumerWidget {
           imageUrl: item.backdropUrl ?? item.posterUrl,
           fit: BoxFit.cover,
           showFallbackTitle: false,
+          memCacheWidth: 800,
+          memCacheHeight: 450,
         ),
       ),
     );
@@ -360,6 +384,20 @@ class DetailScreen extends ConsumerWidget {
     // Rating badge
     metaPills.add(_buildRatingBadge(item, isDark));
 
+    // Original Language badge
+    final langDisplay = item.originalLanguageDisplay;
+    if (langDisplay != null && langDisplay.isNotEmpty) {
+      metaPills.add(
+        _buildMetaPill(
+          Icons.language,
+          langDisplay,
+          phColor,
+          lineRgba,
+          subColor,
+        ),
+      );
+    }
+
     // Certification badge
     if (item.certification != null && item.certification!.isNotEmpty) {
       metaPills.add(
@@ -398,6 +436,17 @@ class DetailScreen extends ConsumerWidget {
       }
     } else {
       // TV show
+      if (item.status != null && item.status!.isNotEmpty) {
+        metaPills.add(
+          _buildMetaPill(
+            Icons.live_tv,
+            item.status!,
+            phColor,
+            lineRgba,
+            subColor,
+          ),
+        );
+      }
       if (item.seasonsCount != null) {
         final seasonLabel = item.seasonsCount == 1
             ? '1 Season'
@@ -602,7 +651,7 @@ class DetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCollectionBanner(MediaItem item, bool isDark) {
+  Widget _buildCollectionBanner(BuildContext context, MediaItem item, bool isDark) {
     final collection = item.belongsToCollection;
     if (collection == null) return const SizedBox.shrink();
 
@@ -612,94 +661,115 @@ class DetailScreen extends ConsumerWidget {
 
     final imageUrl = collection.backdropUrl ?? collection.posterUrl;
 
-    return Container(
-      margin: const EdgeInsets.only(top: 16),
-      decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: lineRgba),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          if (imageUrl != null)
-            Positioned.fill(
-              child: Image.network(
-                imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+    return PressableScale(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => CollectionScreen(collectionId: collection.id),
+          ),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(top: 16),
+        decoration: BoxDecoration(
+          color: cardBg,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: lineRgba),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            if (imageUrl != null)
+              Positioned.fill(
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                ),
               ),
-            ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    isDark
-                        ? const Color(0xD9000000)
-                        : const Color(0xB3000000),
-                    isDark
-                        ? const Color(0x80000000)
-                        : const Color(0x66000000),
-                  ],
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      isDark
+                          ? const Color(0xD9000000)
+                          : const Color(0xB3000000),
+                      isDark
+                          ? const Color(0x80000000)
+                          : const Color(0x66000000),
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Row(
-              children: [
-                if (collection.posterUrl != null) ...[
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      collection.posterUrl!,
-                      width: 48,
-                      height: 72,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  if (collection.posterUrl != null) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        collection.posterUrl!,
                         width: 48,
                         height: 72,
-                        color: phColor,
-                        child: const Icon(Icons.movie, color: Colors.white70),
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 48,
+                          height: 72,
+                          color: phColor,
+                          child: const Icon(Icons.movie, color: Colors.white70),
+                        ),
                       ),
                     ),
+                    const SizedBox(width: 14),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'COLLECTION',
+                          style: AppThemes.safeGeist(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                            color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Part of the ${collection.name}',
+                                style: GoogleFonts.bodoniModa(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  fontStyle: FontStyle.italic,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios,
+                              size: 14,
+                              color: Colors.white70,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 14),
                 ],
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'COLLECTION',
-                        style: AppThemes.safeGeist(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 1.2,
-                          color: isDark ? AppColors.srAcc : AppColors.rrAcc,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Part of the ${collection.name}',
-                        style: GoogleFonts.bodoniModa(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -736,27 +806,31 @@ class DetailScreen extends ConsumerWidget {
         children: [
           Icon(Icons.video_camera_front_outlined, size: 20, color: subColor),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: AppThemes.safeGeist(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: subColor,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppThemes.safeGeist(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: subColor,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                names!,
-                style: AppThemes.safeGeist(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: inkColor,
+                const SizedBox(height: 2),
+                Text(
+                  names!,
+                  style: AppThemes.safeGeist(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: inkColor,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
@@ -966,13 +1040,30 @@ class DetailScreen extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child: _buildStatusToggle(
-                'Watched',
-                inWatched,
-                watchedColor,
-                () => notifier.toggleWatched(item),
-                isDark,
-              ),
+              child: () {
+                final isMovieUnreleased = item.type == MediaType.movie &&
+                    item.releaseOrAirDate != null &&
+                    item.releaseOrAirDate!.isAfter(DateTime.now());
+                return _buildStatusToggle(
+                  'Watched',
+                  inWatched,
+                  watchedColor,
+                  () {
+                    if (isMovieUnreleased) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content:
+                              Text('This title has not been released yet.'),
+                        ),
+                      );
+                      return;
+                    }
+                    notifier.toggleWatched(item);
+                  },
+                  isDark,
+                  isDisabled: isMovieUnreleased,
+                );
+              }(),
             ),
           ],
         ),
@@ -1136,8 +1227,9 @@ class DetailScreen extends ConsumerWidget {
     bool isSelected,
     Color accentColor,
     VoidCallback onTap,
-    bool isDark,
-  ) {
+    bool isDark, {
+    bool isDisabled = false,
+  }) {
     final textColor = isSelected
         ? (isDark ? const Color(0xFF1A140C) : Colors.white)
         : (isDark ? AppColors.srSub : AppColors.rrSub);
@@ -1188,7 +1280,7 @@ class DetailScreen extends ConsumerWidget {
             border: Border.all(color: borderColor),
           );
 
-    return StatusPulseRing(
+    final toggleWidget = StatusPulseRing(
       isSelected: isSelected,
       accentColor: accentColor,
       child: PressableScale(
@@ -1237,9 +1329,21 @@ class DetailScreen extends ConsumerWidget {
         ),
       ),
     );
+
+    if (isDisabled) {
+      return Tooltip(
+        message: 'This title has not been released yet.',
+        child: Opacity(
+          opacity: 0.5,
+          child: toggleWidget,
+        ),
+      );
+    }
+
+    return toggleWidget;
   }
 
-  Widget _buildCastStrip(MediaItem item, bool isDark) {
+  Widget _buildCastStrip(BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
     if (item.cast.isEmpty) return const SizedBox.shrink();
 
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
@@ -1287,35 +1391,49 @@ class DetailScreen extends ConsumerWidget {
                 avatarContent = Icon(Icons.person, color: subColor);
               }
 
-              return Padding(
-                padding: const EdgeInsets.only(right: 14.0),
-                child: Column(
-                  children: [
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        color: phColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: lineRgba),
-                      ),
-                      child: avatarContent,
-                    ),
-                    const SizedBox(height: 8),
-                    SizedBox(
-                      width: 70,
-                      child: Text(
-                        castName,
-                        style: AppThemes.safeGeist(
-                          fontSize: 11,
-                          color: subColor,
+              return PressableScale(
+                onTap: () {
+                  final pId = castMember != null ? int.tryParse(castMember.id) : null;
+                  final pName = castMember?.name ?? castName;
+                  ref.read(discoverFilterProvider.notifier).setPerson(
+                        personId: pId,
+                        personName: pName,
+                      );
+                  ref.read(navigationProvider.notifier).setTab(AppTab.search);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const BrowseScreen()),
+                  );
+                },
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 14.0),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: phColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: lineRgba),
                         ),
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        child: avatarContent,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      SizedBox(
+                        width: 70,
+                        child: Text(
+                          castName,
+                          style: AppThemes.safeGeist(
+                            fontSize: 11,
+                            color: subColor,
+                          ),
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -1884,6 +2002,24 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
   int _selectedSeason = 1;
   bool _isExpanded = false;
 
+  String _formatDate(DateTime dt) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.item.type != MediaType.tv) return const SizedBox.shrink();
@@ -1900,6 +2036,18 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
     final seasonAsync = ref.watch(
       tvSeasonDetailsProvider((tvId: widget.item.id, seasonNumber: _selectedSeason)),
     );
+    final allSeasonsAsync = ref.watch(tvShowSeasonsProvider(widget.item));
+
+    if (allSeasonsAsync.hasValue && allSeasonsAsync.value != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          ref.read(mediaProvider.notifier).reevaluateShowCompletion(
+                showId: widget.item.id,
+                seasons: allSeasonsAsync.value!,
+              );
+        }
+      });
+    }
 
     ref.watch(mediaProvider);
 
@@ -2061,6 +2209,18 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  episode.airDate != null
+                                      ? 'Air date: ${_formatDate(episode.airDate!)}'
+                                      : 'Air date: TBA',
+                                  style: AppThemes.safeGeist(
+                                    fontSize: 11,
+                                    color: subColor,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 if (episode.overview != null &&
                                     episode.overview!.isNotEmpty) ...[
                                   const SizedBox(height: 2),
@@ -2079,43 +2239,77 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                           ),
                           const SizedBox(width: 8),
                           // Interactive watched toggle checkmark icon button
-                          PressableScale(
-                            onTap: () {
-                              final totalEpisodes = widget.item.episodesCount ??
-                                  ((widget.item.seasonsCount ?? 1) * allEpisodes.length);
+                          () {
+                            final isEpisodeUnaired = episode.airDate != null
+                                ? episode.airDate!.isAfter(DateTime.now())
+                                : (widget.item.releaseOrAirDate != null
+                                    ? widget.item.releaseOrAirDate!
+                                        .isAfter(DateTime.now())
+                                    : false);
+                            return Tooltip(
+                              message: isEpisodeUnaired
+                                  ? 'This episode has not aired yet.'
+                                  : (isWatched
+                                      ? 'Mark as unwatched'
+                                      : 'Mark as watched'),
+                              child: Opacity(
+                                opacity: isEpisodeUnaired ? 0.4 : 1.0,
+                                child: PressableScale(
+                                  onTap: isEpisodeUnaired
+                                      ? () {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                              content: Text(
+                                                  'This episode has not aired yet.'),
+                                            ),
+                                          );
+                                        }
+                                      : () {
+                                          final totalEpisodes = widget
+                                                  .item.episodesCount ??
+                                              ((widget.item.seasonsCount ?? 1) *
+                                                  allEpisodes.length);
 
-                              ref
-                                  .read(mediaProvider.notifier)
-                                  .toggleEpisodeWatched(
-                                    showId: widget.item.id,
-                                    seasonNumber: episode.seasonNumber,
-                                    episodeNumber: episode.episodeNumber,
-                                    showItem: widget.item,
-                                    totalEpisodeCount: totalEpisodes,
-                                  );
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: isWatched ? accColor : Colors.transparent,
-                                border: Border.all(
-                                  color: isWatched
-                                      ? accColor
-                                      : subColor.withAlpha(128),
+                                          ref
+                                              .read(mediaProvider.notifier)
+                                              .toggleEpisodeWatched(
+                                                showId: widget.item.id,
+                                                seasonNumber: episode.seasonNumber,
+                                                episodeNumber: episode.episodeNumber,
+                                                showItem: widget.item,
+                                                totalEpisodeCount: totalEpisodes,
+                                              );
+                                        },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isWatched
+                                          ? accColor
+                                          : Colors.transparent,
+                                      border: Border.all(
+                                        color: isWatched
+                                            ? accColor
+                                            : subColor.withAlpha(128),
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      isWatched
+                                          ? Icons.check
+                                          : Icons.check_outlined,
+                                      size: 16,
+                                      color: isWatched
+                                          ? (widget.isDark
+                                              ? const Color(0xFF1A140C)
+                                              : Colors.white)
+                                          : subColor,
+                                    ),
+                                  ),
                                 ),
                               ),
-                              child: Icon(
-                                isWatched ? Icons.check : Icons.check_outlined,
-                                size: 16,
-                                color: isWatched
-                                    ? (widget.isDark
-                                        ? const Color(0xFF1A140C)
-                                        : Colors.white)
-                                    : subColor,
-                              ),
-                            ),
-                          ),
+                            );
+                          }(),
                         ],
                       ),
                     );

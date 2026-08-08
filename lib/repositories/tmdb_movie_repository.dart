@@ -1,12 +1,37 @@
+import 'dart:async';
+import 'dart:io';
 import 'dart:developer' as developer;
+import 'package:http/http.dart' as http;
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
+import '../models/media_collection_detail.dart';
 import '../services/crash_reporting_service.dart';
 import '../services/tmdb_api_service.dart';
 import '../services/tmdb_cache_service.dart';
 import '../utils/tmdb_image_helper.dart';
 import 'mock_movie_repository.dart';
 import 'movie_repository.dart';
+
+/// Helper function to detect socket/network exceptions.
+bool isNetworkException(Object error) {
+  if (error is SocketException ||
+      error is TimeoutException ||
+      error is HandshakeException ||
+      error is http.ClientException) {
+    return true;
+  }
+  final s = error.toString().toLowerCase();
+  return s.contains('socketexception') ||
+      s.contains('clientexception') ||
+      s.contains('failed host lookup') ||
+      s.contains('no internet') ||
+      s.contains('no connection') ||
+      s.contains('network exception') ||
+      s.contains('connection refused') ||
+      s.contains('connection timed out') ||
+      s.contains('network is unreachable') ||
+      s.contains('host lookup failed');
+}
 
 /// Repository implementation backed by TMDB API with graceful fallback to [MockMovieRepository].
 class TmdbMovieRepository implements MovieRepository {
@@ -1159,6 +1184,28 @@ class TmdbMovieRepository implements MovieRepository {
       }
     }
 
+    final originalLanguage = json['original_language'] as String?;
+    List<String>? spokenLanguages;
+    if (json['spoken_languages'] is List) {
+      final spokenList = <String>[];
+      for (final item in json['spoken_languages'] as List) {
+        if (item is Map) {
+          final englishName = item['english_name'] as String?;
+          final name = item['name'] as String?;
+          if (englishName != null && englishName.isNotEmpty) {
+            spokenList.add(englishName);
+          } else if (name != null && name.isNotEmpty) {
+            spokenList.add(name);
+          }
+        }
+      }
+      if (spokenList.isNotEmpty) {
+        spokenLanguages = spokenList;
+      }
+    }
+
+    final status = json['status'] as String?;
+
     return MediaItem(
       id: rawId,
       title: title,
@@ -1190,6 +1237,9 @@ class TmdbMovieRepository implements MovieRepository {
       keywords: keywords,
       imdbId: imdbId,
       productionCompanies: productionCompanies,
+      originalLanguage: originalLanguage,
+      spokenLanguages: spokenLanguages,
+      status: status,
     );
   }
 
@@ -1370,6 +1420,36 @@ class TmdbMovieRepository implements MovieRepository {
         return fallbackRepository!.getSimilarMedia(mediaId);
       }
       return [];
+    }
+  }
+
+  @override
+  Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) async {
+    try {
+      final key = cacheService.generateKey('/collection/$collectionId', {});
+      Map<String, dynamic>? res = await cacheService.get(key);
+      if (res == null) {
+        res = await apiService.getCollectionDetails(collectionId);
+        await cacheService.put(key, res);
+      }
+      final partsJson = res['parts'] as List? ?? [];
+      final parts = partsJson
+          .map((p) => _mapJsonToMediaItem(p as Map<String, dynamic>, overrideType: MediaType.movie))
+          .toList();
+      return MediaCollectionDetail(
+        id: res['id'] as int? ?? collectionId,
+        name: res['name'] as String? ?? 'Collection',
+        overview: res['overview'] as String?,
+        posterUrl: TmdbImageHelper.getPosterThumbnailUrl(res['poster_path'] as String?),
+        backdropUrl: TmdbImageHelper.getBackdropUrl(res['backdrop_path'] as String?),
+        parts: parts,
+      );
+    } catch (e, stack) {
+      _logError('Failed to fetch collection details for $collectionId', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getCollectionDetails(collectionId);
+      }
+      return null;
     }
   }
 }

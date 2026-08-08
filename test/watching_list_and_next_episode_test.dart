@@ -8,9 +8,9 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
-import 'package:the_lounge/repositories/movie_repository.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
 
-class MockWatchingRepository implements MovieRepository {
+class MockWatchingRepository extends MockMovieRepository {
   final Map<String, MediaItem> items;
   final Map<String, List<TvSeason>> seasonsMap;
 

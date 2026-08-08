@@ -110,6 +110,8 @@ class MediaImage extends StatelessWidget {
   final Widget? fallback;
   final bool showFallbackTitle;
   final bool useDetailPoster;
+  final int? memCacheWidth;
+  final int? memCacheHeight;
 
   const MediaImage({
     super.key,
@@ -122,6 +124,8 @@ class MediaImage extends StatelessWidget {
     this.fallback,
     this.showFallbackTitle = true,
     this.useDetailPoster = false,
+    this.memCacheWidth,
+    this.memCacheHeight,
   });
 
   @override
@@ -148,6 +152,9 @@ class MediaImage extends StatelessWidget {
         fit: fit,
         width: double.infinity,
         height: double.infinity,
+        memCacheWidth: memCacheWidth,
+        memCacheHeight: memCacheHeight,
+        fadeInDuration: const Duration(milliseconds: 150),
         placeholder: (context, url) => Container(
           color: Theme.of(context).brightness == Brightness.dark
               ? AppColors.srPh

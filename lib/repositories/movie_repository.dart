@@ -1,5 +1,6 @@
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
+import '../models/media_collection_detail.dart';
 
 abstract class MovieRepository {
   Future<List<MediaItem>> getTrendingMovies({int page = 1});
@@ -23,4 +24,5 @@ abstract class MovieRepository {
   Future<List<Map<String, dynamic>>> searchPersons(String query);
   Future<List<MediaItem>> getRecommendations(String mediaId) async => [];
   Future<List<MediaItem>> getSimilarMedia(String mediaId) async => [];
+  Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) async => null;
 }
