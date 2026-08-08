@@ -90,7 +90,6 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   final List<MediaItem> _accumulatedItems = [];
-  String? _lastParamsKey;
 
   // Search mode state
   final TextEditingController _searchController = TextEditingController();
@@ -298,76 +297,80 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         return DragToDismissSheet(
           isDark: isDark,
           onDismiss: () => Navigator.pop(context),
-          child: Container(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.85,
-            ),
-            padding: EdgeInsets.fromLTRB(
-              20,
-              8,
-              20,
-              24.0 + MediaQuery.of(context).padding.bottom,
-            ),
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border(
-                top: BorderSide(
-                  color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+          child: Consumer(
+            builder: (context, sheetRef, child) {
+              return Container(
+                constraints: BoxConstraints(
+                  maxHeight: MediaQuery.of(context).size.height * 0.85,
                 ),
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  8,
+                  20,
+                  24.0 + MediaQuery.of(context).padding.bottom,
+                ),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  border: Border(
+                    top: BorderSide(
+                      color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                    ),
+                  ),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Filter Catalog',
-                      style: GoogleFonts.bodoniModa(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        color: inkColor,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Filter Catalog',
+                          style: GoogleFonts.bodoniModa(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FontStyle.italic,
+                            color: inkColor,
+                          ),
+                        ),
+                        PressableScale(
+                          onTap: () => Navigator.pop(context),
+                          child: Icon(Icons.close, color: subColor, size: 20),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: _buildAccordionFilterPanel(isDark, isMovies, sheetRef),
                       ),
                     ),
+                    const SizedBox(height: 16),
                     PressableScale(
                       onTap: () => Navigator.pop(context),
-                      child: Icon(Icons.close, color: subColor, size: 20),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: AppColors.primaryButtonDecoration(
+                          isDark: isDark,
+                          borderRadius: 12,
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Apply Filters',
+                          style: AppThemes.safeGeist(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: _buildAccordionFilterPanel(isDark, isMovies),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                PressableScale(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: AppColors.primaryButtonDecoration(
-                      isDark: isDark,
-                      borderRadius: 12,
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      'Apply Filters',
-                      style: AppThemes.safeGeist(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF1A140C) : Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
@@ -458,6 +461,26 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(discoverFilterProvider, (previous, next) {
+      if (previous != next && mounted) {
+        setState(() {
+          _currentPage = 1;
+          _hasMore = true;
+          _accumulatedItems.clear();
+        });
+      }
+    });
+
+    ref.listen(navigationProvider.select((s) => s.activeMediaType), (previous, next) {
+      if (previous != next && mounted) {
+        setState(() {
+          _currentPage = 1;
+          _hasMore = true;
+          _accumulatedItems.clear();
+        });
+      }
+    });
+
     ref.listen(browseGenreProvider, (previous, next) {
       if (next != 'All') {
         final genreId = getGenreIdForName(next);
@@ -805,15 +828,6 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   Widget _buildDiscoverModeBody(bool isDark, bool isMovies) {
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
 
-    final filterParams = ref.watch(discoverFilterProvider);
-    final currentParamKey = '${isMovies}_${filterParams.toString()}';
-    if (_lastParamsKey != currentParamKey) {
-      _lastParamsKey = currentParamKey;
-      _currentPage = 1;
-      _hasMore = true;
-      _accumulatedItems.clear();
-    }
-
     final discoverAsync = ref.watch(discoverMediaProvider(isMovies));
 
     return discoverAsync.when(
@@ -906,7 +920,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         16,
         12.0,
         16,
-        90.0 + MediaQuery.of(context).padding.bottom,
+        20.0 + MediaQuery.of(context).padding.bottom,
       ),
       child: _isLoadingMore
           ? const SizedBox(
@@ -1259,13 +1273,35 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     );
   }
 
-  Widget _buildAccordionFilterPanel(bool isDark, bool isMovies) {
-    final filterParams = ref.watch(discoverFilterProvider);
-    final filterNotifier = ref.read(discoverFilterProvider.notifier);
+  Widget _buildAccordionFilterPanel(bool isDark, bool isMovies, [WidgetRef? externalRef]) {
+    final activeRef = externalRef ?? ref;
+    final filterParams = activeRef.watch(discoverFilterProvider);
+    final filterNotifier = activeRef.read(discoverFilterProvider.notifier);
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
+
+    final hasGenresOrKeywordsActive = (filterParams.genreName != null &&
+            filterParams.genreName != 'All') ||
+        (filterParams.keywordName != null &&
+            filterParams.keywordName!.isNotEmpty);
+    final hasCastCrewActive =
+        filterParams.personName != null && filterParams.personName!.isNotEmpty;
+    final hasWhereToWatchActive = filterParams.providerId != null ||
+        (filterParams.watchRegion != null &&
+            filterParams.watchRegion!.isNotEmpty);
+
+    final hasRatingPopularityActive = filterParams.minRating != null ||
+        filterParams.minVoteCount != null ||
+        filterParams.sortBy != 'popularity.desc';
+    final hasRuntimeLanguageActive = filterParams.minRuntime != null ||
+        filterParams.maxRuntime != null ||
+        (filterParams.originalLanguage != null &&
+            filterParams.originalLanguage!.isNotEmpty);
+    final hasTvSpecificsActive = (filterParams.tvStatus != null &&
+            filterParams.tvStatus!.isNotEmpty) ||
+        filterParams.tvNetworkId != null;
 
     return Theme(
       data: Theme.of(context).copyWith(
@@ -1279,6 +1315,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             icon: Icons.category_outlined,
             isDark: isDark,
             initiallyExpanded: true,
+            hasActiveFilter: hasGenresOrKeywordsActive,
             children: [
               Text(
                 'Genre',
@@ -1365,6 +1402,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             icon: Icons.person_search_outlined,
             isDark: isDark,
             initiallyExpanded: filterParams.personName != null,
+            hasActiveFilter: hasCastCrewActive,
             children: [
               PersonSearchAutocomplete(isDark: isDark),
             ],
@@ -1377,6 +1415,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             isDark: isDark,
             initiallyExpanded: filterParams.providerId != null ||
                 filterParams.watchRegion != null,
+            hasActiveFilter: hasWhereToWatchActive,
             children: [
               Text(
                 'Watch Region',
@@ -1538,6 +1577,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             initiallyExpanded: filterParams.minRating != null ||
                 filterParams.minVoteCount != null ||
                 filterParams.sortBy != 'popularity.desc',
+            hasActiveFilter: hasRatingPopularityActive,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1707,6 +1747,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             initiallyExpanded: filterParams.minRuntime != null ||
                 filterParams.maxRuntime != null ||
                 filterParams.originalLanguage != null,
+            hasActiveFilter: hasRuntimeLanguageActive,
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1832,6 +1873,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
               isDark: isDark,
               initiallyExpanded: filterParams.tvStatus != null ||
                   filterParams.tvNetworkId != null,
+              hasActiveFilter: hasTvSpecificsActive,
               children: [
                 Text(
                   'Show Status',
@@ -1977,8 +2019,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     required bool isDark,
     required List<Widget> children,
     bool initiallyExpanded = false,
+    bool hasActiveFilter = false,
   }) {
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
     final cardColor = isDark ? AppColors.srCard : AppColors.rrCard;
 
@@ -1986,7 +2030,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: lineRgba),
+        border: Border.all(
+          color: hasActiveFilter ? accColor : lineRgba,
+          width: hasActiveFilter ? 1.5 : 1.0,
+        ),
       ),
       child: Material(
         color: cardColor,
@@ -1994,24 +2041,36 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         clipBehavior: Clip.antiAlias,
         child: ExpansionTile(
           initiallyExpanded: initiallyExpanded,
-          iconColor: inkColor,
-          collapsedIconColor: isDark ? AppColors.srSub : AppColors.rrSub,
+          iconColor: hasActiveFilter ? accColor : inkColor,
+          collapsedIconColor: hasActiveFilter ? accColor : (isDark ? AppColors.srSub : AppColors.rrSub),
           title: Row(
             children: [
               Icon(
                 icon,
                 size: 18,
-                color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                color: hasActiveFilter ? accColor : (isDark ? AppColors.srAcc : AppColors.rrAcc),
               ),
               const SizedBox(width: 10),
-              Text(
-                title,
-                style: AppThemes.safeGeist(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: inkColor,
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppThemes.safeGeist(
+                    fontSize: 14,
+                    fontWeight: hasActiveFilter ? FontWeight.w700 : FontWeight.w600,
+                    color: hasActiveFilter ? accColor : inkColor,
+                  ),
                 ),
               ),
+              if (hasActiveFilter)
+                Container(
+                  margin: const EdgeInsets.only(left: 6),
+                  width: 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: accColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
             ],
           ),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),

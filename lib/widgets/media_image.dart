@@ -143,6 +143,8 @@ class MediaImage extends StatelessWidget {
           showTitle: showFallbackTitle,
         );
 
+    final effectiveMemCacheWidth = memCacheWidth ?? (useDetailPoster ? 700 : 350);
+
     Widget imageContent;
     if (effectiveUrl == null || effectiveUrl.isEmpty || willFail) {
       imageContent = fallbackWidget;
@@ -152,7 +154,7 @@ class MediaImage extends StatelessWidget {
         fit: fit,
         width: double.infinity,
         height: double.infinity,
-        memCacheWidth: memCacheWidth,
+        memCacheWidth: effectiveMemCacheWidth,
         memCacheHeight: memCacheHeight,
         fadeInDuration: const Duration(milliseconds: 150),
         placeholder: (context, url) => Container(

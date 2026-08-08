@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -704,6 +705,7 @@ void main() {
 
     testWidgets('tapping Watch trailer button opens TrailerPlayer',
         (WidgetTester tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final mockRepo = MockDetailRepository({'movie-overhaul': detailedMovie});
@@ -729,6 +731,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TrailerPlayer), findsOneWidget);
+      debugDefaultTargetPlatformOverride = null;
     });
   });
 
@@ -763,6 +766,7 @@ void main() {
     testWidgets(
         'renders horizontal rail of trailer cards when trailers list is non-empty and tapping card opens TrailerPlayer',
         (WidgetTester tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final mockRepo = MockDetailRepository({'movie-trailers-1': movieWithTrailers});
@@ -801,6 +805,7 @@ void main() {
       final player = tester.widget<TrailerPlayer>(playerFinder);
       expect(player.videoId, equals('key101'));
       expect(player.videoTitle, equals('Official Main Trailer'));
+      debugDefaultTargetPlatformOverride = null;
     });
   });
 }

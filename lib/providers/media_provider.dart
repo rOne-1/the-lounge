@@ -430,31 +430,38 @@ class MediaNotifier extends Notifier<MediaState> {
 
     if (item.type == MediaType.tv) {
       final epSet = <String>{};
+      final now = DateTime.now();
       if (seasons != null && seasons.isNotEmpty) {
         for (final season in seasons) {
           for (final ep in season.episodes) {
-            epSet.add('S${season.seasonNumber}E${ep.episodeNumber}');
+            if (ep.airDate == null || !ep.airDate!.isAfter(now)) {
+              epSet.add('S${season.seasonNumber}E${ep.episodeNumber}');
+            }
           }
         }
       } else {
-        final totalSeasons = item.seasonsCount ?? 1;
-        if (item.episodesList != null && item.episodesList!.isNotEmpty) {
-          for (int s = 1; s <= totalSeasons; s++) {
-            for (int e = 1; e <= item.episodesList!.length; e++) {
-              epSet.add('S${s}E$e');
+        final isShowUnreleased = item.releaseOrAirDate != null &&
+            item.releaseOrAirDate!.isAfter(now);
+        if (!isShowUnreleased) {
+          final totalSeasons = item.seasonsCount ?? 1;
+          if (item.episodesList != null && item.episodesList!.isNotEmpty) {
+            for (int s = 1; s <= totalSeasons; s++) {
+              for (int e = 1; e <= item.episodesList!.length; e++) {
+                epSet.add('S${s}E$e');
+              }
             }
-          }
-        } else if (item.episodesCount != null && item.episodesCount! > 0) {
-          final epsPerSeason = (item.episodesCount! / totalSeasons).ceil();
-          for (int s = 1; s <= totalSeasons; s++) {
-            for (int e = 1; e <= epsPerSeason; e++) {
-              epSet.add('S${s}E$e');
+          } else if (item.episodesCount != null && item.episodesCount! > 0) {
+            final epsPerSeason = (item.episodesCount! / totalSeasons).ceil();
+            for (int s = 1; s <= totalSeasons; s++) {
+              for (int e = 1; e <= epsPerSeason; e++) {
+                epSet.add('S${s}E$e');
+              }
             }
-          }
-        } else {
-          for (int s = 1; s <= totalSeasons; s++) {
-            for (int e = 1; e <= 10; e++) {
-              epSet.add('S${s}E$e');
+          } else {
+            for (int s = 1; s <= totalSeasons; s++) {
+              for (int e = 1; e <= 10; e++) {
+                epSet.add('S${s}E$e');
+              }
             }
           }
         }
@@ -626,9 +633,26 @@ class MediaNotifier extends Notifier<MediaState> {
     );
 
     final showEpisodes = Set<String>.from(currentMap[showId] ?? {});
+    final now = DateTime.now();
     if (showEpisodes.contains(key)) {
       showEpisodes.remove(key);
     } else {
+      if (seasons != null && seasons.isNotEmpty) {
+        for (final season in seasons) {
+          if (season.seasonNumber == seasonNumber) {
+            for (final ep in season.episodes) {
+              if (ep.episodeNumber == episodeNumber &&
+                  ep.airDate != null &&
+                  ep.airDate!.isAfter(now)) {
+                return;
+              }
+            }
+          }
+        }
+      } else if (showItem.releaseOrAirDate != null &&
+          showItem.releaseOrAirDate!.isAfter(now)) {
+        return;
+      }
       showEpisodes.add(key);
     }
 

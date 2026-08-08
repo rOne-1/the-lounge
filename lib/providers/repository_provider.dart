@@ -235,7 +235,7 @@ final searchPersonsProvider =
 final mediaRecommendationsProvider =
     FutureProvider.family<List<MediaItem>, String>((ref, id) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final mediaState = ref.watch(mediaProvider);
+  final mediaState = ref.read(mediaProvider);
 
   final excludedIds = <String>{
     ...mediaState.watchlist.keys,
@@ -260,7 +260,7 @@ final mediaRecommendationsProvider =
 final similarMediaProvider =
     FutureProvider.family<List<MediaItem>, String>((ref, id) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final mediaState = ref.watch(mediaProvider);
+  final mediaState = ref.read(mediaProvider);
 
   final excludedIds = <String>{
     ...mediaState.watchlist.keys,

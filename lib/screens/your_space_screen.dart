@@ -58,30 +58,17 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
       length: 4,
       child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TabBar(
-                  labelColor: accColor,
-                  unselectedLabelColor: subColor,
-                  indicatorColor: accColor,
-                  labelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600),
-                  unselectedLabelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w500),
-                  tabs: const [
-                    Tab(text: 'Watchlist'),
-                    Tab(text: 'Saved'),
-                    Tab(text: 'In Progress'),
-                    Tab(text: 'Watched'),
-                  ],
-                ),
-              ),
-              IconButton(
-                key: const ValueKey('app_info_button'),
-                icon: Icon(Icons.info_outline, color: subColor, size: 20),
-                tooltip: 'App Info & Privacy',
-                onPressed: () => _showAppInfoDialog(context, isDark),
-              ),
-              const SizedBox(width: 8),
+          TabBar(
+            labelColor: accColor,
+            unselectedLabelColor: subColor,
+            indicatorColor: accColor,
+            labelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600),
+            unselectedLabelStyle: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w500),
+            tabs: const [
+              Tab(text: 'Watchlist'),
+              Tab(text: 'Saved'),
+              Tab(text: 'In Progress'),
+              Tab(text: 'Watched'),
             ],
           ),
           Expanded(
@@ -123,6 +110,20 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                   isDark: isDark,
                   subColor: subColor,
                   inkColor: inkColor,
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 6.0, top: 4.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  key: const ValueKey('app_info_button'),
+                  icon: Icon(Icons.info_outline, color: subColor, size: 16),
+                  tooltip: 'App Info & Privacy',
+                  onPressed: () => _showAppInfoDialog(context, isDark),
                 ),
               ],
             ),

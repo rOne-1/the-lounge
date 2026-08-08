@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -35,6 +36,39 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         });
       }
     });
+  }
+
+  Future<void> _playTrailer(
+    BuildContext context,
+    MediaItem item, {
+    String? videoId,
+    String? videoTitle,
+  }) async {
+    final vId = videoId ??
+        item.trailerVideoId ??
+        (item.trailers != null && item.trailers!.isNotEmpty
+            ? item.trailers!.first.key
+            : null);
+    if (!kIsWeb &&
+        defaultTargetPlatform == TargetPlatform.android &&
+        vId != null &&
+        vId.isNotEmpty) {
+      final url = Uri.parse('https://www.youtube.com/watch?v=$vId');
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+        return;
+      }
+    }
+    if (!context.mounted) return;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TrailerPlayer(
+          item: item,
+          videoId: videoId,
+          videoTitle: videoTitle,
+        ),
+      ),
+    );
   }
 
   @override
@@ -1120,11 +1154,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         : accentColor.withAlpha(50);
 
     return PressableScale(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => TrailerPlayer(item: item)),
-        );
-      },
+      onTap: () => _playTrailer(context, item),
       child: AnimatedContainer(
         duration: AppPhysics.houseSpringDuration,
         curve: AppPhysics.houseSpringCurve,
@@ -1479,17 +1509,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               return Padding(
                 padding: const EdgeInsets.only(right: 14.0),
                 child: PressableScale(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => TrailerPlayer(
-                          item: item,
-                          videoId: video.key,
-                          videoTitle: video.name,
-                        ),
-                      ),
-                    );
-                  },
+                  onTap: () => _playTrailer(
+                    context,
+                    item,
+                    videoId: video.key,
+                    videoTitle: video.name,
+                  ),
                   child: SizedBox(
                     width: 220,
                     child: Column(

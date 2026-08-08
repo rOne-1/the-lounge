@@ -41,43 +41,43 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
     super.initState();
     final videoId = _effectiveVideoId;
     final hasTrailer = widget.item.hasTrailer || widget.videoId != null;
-    if (hasTrailer &&
-        videoId != null &&
-        videoId.isNotEmpty &&
-        (kIsWeb || defaultTargetPlatform == TargetPlatform.android)) {
+
+    if (hasTrailer && videoId != null && videoId.isNotEmpty) {
       _startPlaybackTimeoutTimer();
-      try {
-        _controller = YoutubePlayerController.fromVideoId(
-          videoId: videoId,
-          autoPlay: true,
-          params: const YoutubePlayerParams(
-            showControls: true,
-            showFullscreenButton: true,
-            playsInline: true,
-            enableJavaScript: true,
-            enableCaption: false,
-            loop: false,
-            strictRelatedVideos: true,
-          ),
-        );
-        _playerSubscription = _controller!.listen((value) {
-          if (value.hasError) {
-            _playbackTimeoutTimer?.cancel();
-            if (mounted && !_hasError) {
-              setState(() {
-                _hasError = true;
-              });
+      if (kIsWeb) {
+        try {
+          _controller = YoutubePlayerController.fromVideoId(
+            videoId: videoId,
+            autoPlay: true,
+            params: const YoutubePlayerParams(
+              showControls: true,
+              showFullscreenButton: true,
+              playsInline: true,
+              enableJavaScript: true,
+              enableCaption: false,
+              loop: false,
+              strictRelatedVideos: true,
+            ),
+          );
+          _playerSubscription = _controller!.listen((value) {
+            if (value.hasError) {
+              _playbackTimeoutTimer?.cancel();
+              if (mounted && !_hasError) {
+                setState(() {
+                  _hasError = true;
+                });
+              }
+            } else if (value.playerState == PlayerState.playing) {
+              _playbackTimeoutTimer?.cancel();
             }
-          } else if (value.playerState == PlayerState.playing) {
-            _playbackTimeoutTimer?.cancel();
-          }
-        });
-      } catch (_) {
-        _playbackTimeoutTimer?.cancel();
-        if (mounted && !_hasError) {
-          setState(() {
-            _hasError = true;
           });
+        } catch (_) {
+          _playbackTimeoutTimer?.cancel();
+          if (mounted && !_hasError) {
+            setState(() {
+              _hasError = true;
+            });
+          }
         }
       }
     }
@@ -156,8 +156,7 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
       );
     }
 
-    final isYoutubePlatform =
-        kIsWeb || defaultTargetPlatform == TargetPlatform.android;
+    final isYoutubePlatform = kIsWeb;
 
     return Scaffold(
       backgroundColor: Colors.black,

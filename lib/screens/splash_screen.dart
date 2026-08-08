@@ -16,7 +16,7 @@ class SplashScreen extends StatefulWidget {
     super.key,
     this.enableAnimation,
     this.targetScreen,
-    this.duration = const Duration(milliseconds: 1200),
+    this.duration = const Duration(milliseconds: 1600),
   });
 
   @override

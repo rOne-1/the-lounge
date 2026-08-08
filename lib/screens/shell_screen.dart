@@ -323,24 +323,24 @@ class ShellScreen extends ConsumerWidget {
   }
 
 
-  Widget _buildBody(AppTab tab) {
-    Widget child;
+  int _tabIndex(AppTab tab) {
     switch (tab) {
       case AppTab.home:
-        child = HomeScreen(
-          key: const ValueKey(AppTab.home),
-          enableAnimation: enableAnimation,
-        );
+        return 0;
       case AppTab.discover:
-        child = const DiscoverScreen(key: ValueKey(AppTab.discover));
+        return 1;
       case AppTab.search:
       case AppTab.browse:
-        child = const BrowseScreen(key: ValueKey(AppTab.search));
+        return 2;
       case AppTab.yourSpace:
-        child = const YourSpaceScreen(key: ValueKey(AppTab.yourSpace));
+        return 3;
       case AppTab.calendar:
-        child = const CalendarScreen(key: ValueKey(AppTab.calendar));
+        return 4;
     }
+  }
+
+  Widget _buildBody(AppTab tab) {
+    final index = _tabIndex(tab);
 
     return PageTransitionSwitcher(
       duration: const Duration(milliseconds: 180),
@@ -357,7 +357,22 @@ class ShellScreen extends ConsumerWidget {
           child: child,
         );
       },
-      child: child,
+      child: KeyedSubtree(
+        key: ValueKey(tab),
+        child: IndexedStack(
+          index: index,
+          children: [
+            HomeScreen(
+              key: const PageStorageKey(AppTab.home),
+              enableAnimation: enableAnimation,
+            ),
+            const DiscoverScreen(key: PageStorageKey(AppTab.discover)),
+            const BrowseScreen(key: PageStorageKey(AppTab.search)),
+            const YourSpaceScreen(key: PageStorageKey(AppTab.yourSpace)),
+            const CalendarScreen(key: PageStorageKey(AppTab.calendar)),
+          ],
+        ),
+      ),
     );
   }
 }
