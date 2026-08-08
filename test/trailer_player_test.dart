@@ -169,4 +169,33 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
   });
+
+  group('TrailerPlayer Parameterization tests', () {
+    testWidgets(
+        'uses explicitly provided videoId and videoTitle over item defaults',
+        (WidgetTester tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.windows;
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: TrailerPlayer(
+              item: itemWithoutTrailer,
+              videoId: 'custom_vid_123',
+              videoTitle: 'Custom Trailer Title',
+            ),
+          ),
+        ),
+      );
+
+      // Verify custom title is displayed in player app bar instead of item.title
+      expect(find.text('Custom Trailer Title'), findsOneWidget);
+      expect(find.text('No Trailer Movie'), findsNothing);
+
+      // Verify Windows mock controls render because videoId was provided
+      expect(find.byIcon(Icons.play_circle_fill), findsOneWidget);
+
+      debugDefaultTargetPlatformOverride = null;
+    });
+  });
 }

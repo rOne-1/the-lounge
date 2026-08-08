@@ -11,6 +11,7 @@ import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/widgets/pressable_scale.dart';
+import 'package:the_lounge/widgets/trailer_player.dart';
 
 class MockDetailRepository extends MockMovieRepository {
   final Map<String, MediaItem> items;
@@ -699,6 +700,107 @@ void main() {
 
       expect(container.read(browseKeywordProvider), equals('dream'));
       expect(container.read(browseGenreProvider), equals('All'));
+    });
+
+    testWidgets('tapping Watch trailer button opens TrailerPlayer',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = MockDetailRepository({'movie-overhaul': detailedMovie});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            movieRepositoryProvider.overrideWithValue(mockRepo),
+          ],
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-overhaul'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      final watchTrailerFinder = find.text('Watch trailer');
+      expect(watchTrailerFinder, findsOneWidget);
+
+      await tester.tap(watchTrailerFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TrailerPlayer), findsOneWidget);
+    });
+  });
+
+  group('Section 2 Demote Trailer Prominence & Trailers Section Tests', () {
+    final movieWithTrailers = MediaItem(
+      id: 'movie-trailers-1',
+      title: 'Inception Video Test',
+      type: MediaType.movie,
+      rating: 8.8,
+      overview: 'Test movie overview with trailers rail.',
+      genres: const ['Action'],
+      trailers: const [
+        MediaVideo(
+          id: 'v101',
+          key: 'key101',
+          name: 'Official Main Trailer',
+          type: 'Trailer',
+          site: 'YouTube',
+          official: true,
+        ),
+        MediaVideo(
+          id: 'v102',
+          key: 'key102',
+          name: 'Teaser Trailer 1',
+          type: 'Teaser',
+          site: 'YouTube',
+          official: false,
+        ),
+      ],
+    );
+
+    testWidgets(
+        'renders horizontal rail of trailer cards when trailers list is non-empty and tapping card opens TrailerPlayer',
+        (WidgetTester tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = MockDetailRepository({'movie-trailers-1': movieWithTrailers});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            movieRepositoryProvider.overrideWithValue(mockRepo),
+          ],
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-trailers-1'),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      // Verify "Trailers" header section is visible
+      expect(find.text('Trailers'), findsOneWidget);
+
+      // Verify trailer titles and badges
+      expect(find.text('Official Main Trailer'), findsOneWidget);
+      expect(find.text('Teaser Trailer 1'), findsOneWidget);
+      expect(find.text('Trailer'), findsOneWidget);
+      expect(find.text('Teaser'), findsOneWidget);
+      expect(find.text('Official'), findsOneWidget);
+
+      // Tap trailer card
+      await tester.tap(find.text('Official Main Trailer'));
+      await tester.pumpAndSettle();
+
+      // Verify TrailerPlayer is pushed with correct videoId and videoTitle
+      final playerFinder = find.byType(TrailerPlayer);
+      expect(playerFinder, findsOneWidget);
+      final player = tester.widget<TrailerPlayer>(playerFinder);
+      expect(player.videoId, equals('key101'));
+      expect(player.videoTitle, equals('Official Main Trailer'));
     });
   });
 }

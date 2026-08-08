@@ -557,6 +557,12 @@ void main() {
       expect(item, isNotNull);
       expect(item!.hasTrailer, isTrue);
       expect(item.trailerVideoId, equals('trailer_key_official'));
+      expect(item.trailers, isNotNull);
+      expect(item.trailers!.length, equals(3));
+      expect(item.trailers![0].key, equals('teaser_key_official'));
+      expect(item.trailers![0].type, equals('Teaser'));
+      expect(item.trailers![2].key, equals('trailer_key_official'));
+      expect(item.trailers![2].official, isTrue);
     });
 
     test(

@@ -261,6 +261,63 @@ class ProductionCompany {
   }
 }
 
+class MediaVideo {
+  final String id;
+  final String key;
+  final String name;
+  final String type;
+  final String site;
+  final bool official;
+
+  const MediaVideo({
+    required this.id,
+    required this.key,
+    required this.name,
+    required this.type,
+    required this.site,
+    this.official = false,
+  });
+
+  MediaVideo copyWith({
+    String? id,
+    String? key,
+    String? name,
+    String? type,
+    String? site,
+    bool? official,
+  }) {
+    return MediaVideo(
+      id: id ?? this.id,
+      key: key ?? this.key,
+      name: name ?? this.name,
+      type: type ?? this.type,
+      site: site ?? this.site,
+      official: official ?? this.official,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is MediaVideo &&
+          runtimeType == other.runtimeType &&
+          id == other.id &&
+          key == other.key &&
+          name == other.name &&
+          type == other.type &&
+          site == other.site &&
+          official == other.official;
+
+  @override
+  int get hashCode =>
+      id.hashCode ^
+      key.hashCode ^
+      name.hashCode ^
+      type.hashCode ^
+      site.hashCode ^
+      official.hashCode;
+}
+
 class MediaItem {
   final String id;
   final String title;
@@ -280,6 +337,7 @@ class MediaItem {
   final Duration? airCountdown;
   final bool hasTrailer;
   final String? trailerVideoId;
+  final List<MediaVideo>? trailers;
   final bool imageLoadWillFail;
   final List<String> watchProviders;
   final Map<String, List<WatchProviderInfo>> watchProvidersByCountry;
@@ -315,6 +373,7 @@ class MediaItem {
     this.airCountdown,
     this.hasTrailer = false,
     this.trailerVideoId,
+    this.trailers,
     this.imageLoadWillFail = false,
     this.watchProviders = const [],
     this.watchProvidersByCountry = const {},
@@ -376,6 +435,7 @@ class MediaItem {
     Duration? airCountdown,
     bool? hasTrailer,
     String? trailerVideoId,
+    List<MediaVideo>? trailers,
     bool? imageLoadWillFail,
     List<String>? watchProviders,
     Map<String, List<WatchProviderInfo>>? watchProvidersByCountry,
@@ -411,6 +471,7 @@ class MediaItem {
       airCountdown: airCountdown ?? this.airCountdown,
       hasTrailer: hasTrailer ?? this.hasTrailer,
       trailerVideoId: trailerVideoId ?? this.trailerVideoId,
+      trailers: trailers ?? this.trailers,
       imageLoadWillFail: imageLoadWillFail ?? this.imageLoadWillFail,
       watchProviders: watchProviders ?? this.watchProviders,
       watchProvidersByCountry:

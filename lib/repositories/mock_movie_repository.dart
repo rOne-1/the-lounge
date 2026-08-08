@@ -21,6 +21,24 @@ class MockMovieRepository implements MovieRepository {
       runtime: 148,
       hasTrailer: true,
       trailerVideoId: 'dQw4w9WgXcQ',
+      trailers: const [
+        MediaVideo(
+          id: 'v1',
+          key: 'dQw4w9WgXcQ',
+          name: 'Inception Official Trailer #1',
+          type: 'Trailer',
+          site: 'YouTube',
+          official: true,
+        ),
+        MediaVideo(
+          id: 'v2',
+          key: 'YoHD9XEInc0',
+          name: 'Inception Teaser Trailer',
+          type: 'Teaser',
+          site: 'YouTube',
+          official: true,
+        ),
+      ],
       watchProviders: ['Netflix', 'Amazon Prime'],
       cast: [
         'Leonardo DiCaprio',

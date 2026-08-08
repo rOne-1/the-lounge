@@ -882,9 +882,38 @@ class TmdbMovieRepository implements MovieRepository {
     // Trailer parsing from videos append_to_response
     bool hasTrailer = false;
     String? trailerVideoId;
+    List<MediaVideo>? trailers;
     final videosObj = json['videos'] as Map<String, dynamic>?;
     if (videosObj != null && videosObj['results'] is List) {
       final videoList = videosObj['results'] as List;
+
+      final parsedTrailers = <MediaVideo>[];
+      for (final item in videoList) {
+        if (item is! Map) continue;
+        final map = item.cast<String, dynamic>();
+        final id = map['id']?.toString() ?? '';
+        final key = map['key']?.toString() ?? '';
+        final name = map['name']?.toString() ?? '';
+        final typeStr = map['type']?.toString() ?? '';
+        final site = map['site']?.toString() ?? '';
+        final official = map['official'] == true;
+
+        if (site == 'YouTube' &&
+            (typeStr == 'Trailer' || typeStr == 'Teaser') &&
+            key.isNotEmpty) {
+          parsedTrailers.add(MediaVideo(
+            id: id,
+            key: key,
+            name: name,
+            type: typeStr,
+            site: site,
+            official: official,
+          ));
+        }
+      }
+      if (parsedTrailers.isNotEmpty) {
+        trailers = parsedTrailers;
+      }
 
       Map<String, dynamic>? findBestMatch(String targetType) {
         Map<String, dynamic>? candidate;
@@ -1146,6 +1175,7 @@ class TmdbMovieRepository implements MovieRepository {
       episodesCount: episodesCount,
       hasTrailer: hasTrailer,
       trailerVideoId: trailerVideoId,
+      trailers: trailers,
       watchProviders: watchProviders,
       watchProvidersByCountry: watchProvidersByCountry,
       cast: cast,

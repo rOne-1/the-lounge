@@ -12,8 +12,15 @@ import '../providers/media_provider.dart';
 
 class TrailerPlayer extends ConsumerStatefulWidget {
   final MediaItem item;
+  final String? videoId;
+  final String? videoTitle;
 
-  const TrailerPlayer({super.key, required this.item});
+  const TrailerPlayer({
+    super.key,
+    required this.item,
+    this.videoId,
+    this.videoTitle,
+  });
 
   @override
   ConsumerState<TrailerPlayer> createState() => _TrailerPlayerState();
@@ -26,16 +33,22 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
   double _sliderValue = 0.0;
   bool _hasError = false;
 
+  String? get _effectiveVideoId => widget.videoId ?? widget.item.trailerVideoId;
+  String get _effectiveTitle => widget.videoTitle ?? widget.item.title;
+
   @override
   void initState() {
     super.initState();
-    if (widget.item.hasTrailer &&
-        widget.item.trailerVideoId != null &&
+    final videoId = _effectiveVideoId;
+    final hasTrailer = widget.item.hasTrailer || widget.videoId != null;
+    if (hasTrailer &&
+        videoId != null &&
+        videoId.isNotEmpty &&
         (kIsWeb || defaultTargetPlatform == TargetPlatform.android)) {
       _startPlaybackTimeoutTimer();
       try {
         _controller = YoutubePlayerController.fromVideoId(
-          videoId: widget.item.trailerVideoId!,
+          videoId: videoId,
           autoPlay: true,
           params: const YoutubePlayerParams(
             showControls: true,
@@ -98,12 +111,12 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
 
   void _showUnavailableFeedback() {
     if (!mounted) return;
-    final videoId = widget.item.trailerVideoId;
+    final videoId = _effectiveVideoId;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: const Text("Trailer playback isn't available for this title"),
-        action: videoId != null
+        action: videoId != null && videoId.isNotEmpty
             ? SnackBarAction(
                 label: 'WATCH ON YOUTUBE',
                 onPressed: () => _launchYouTubeUrl(videoId),
@@ -123,9 +136,11 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.item.hasTrailer || widget.item.trailerVideoId == null || _hasError) {
+    final videoId = _effectiveVideoId;
+    final hasTrailer = widget.item.hasTrailer || widget.videoId != null;
+    if (!hasTrailer || videoId == null || videoId.isEmpty || _hasError) {
       return PlaybackUnavailableWidget(
-        title: widget.item.title,
+        title: _effectiveTitle,
         message: _hasError
             ? 'Playback unavailable in app'
             : 'This title is not available for playback right now.',
@@ -135,8 +150,8 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
             const SnackBar(content: Text('Added to Watchlist')),
           );
         },
-        onWatchOnYouTube: widget.item.trailerVideoId != null
-            ? () => _launchYouTubeUrl(widget.item.trailerVideoId!)
+        onWatchOnYouTube: videoId != null && videoId.isNotEmpty
+            ? () => _launchYouTubeUrl(videoId)
             : null,
       );
     }
@@ -167,7 +182,7 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        widget.item.title,
+                        _effectiveTitle,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -198,9 +213,10 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
   }
 
   Widget _buildWindowsMockPlayer() {
-    if (widget.item.trailerVideoId == null) {
+    final videoId = _effectiveVideoId;
+    if (videoId == null || videoId.isEmpty) {
       return PlaybackUnavailableWidget(
-        title: widget.item.title,
+        title: _effectiveTitle,
         onAddWatchlist: () {
           ref.read(mediaProvider.notifier).addToWatchlist(widget.item);
           ScaffoldMessenger.of(context).showSnackBar(

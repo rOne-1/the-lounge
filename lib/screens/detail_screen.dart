@@ -132,7 +132,7 @@ class DetailScreen extends ConsumerWidget {
                     if (item.belongsToCollection != null)
                       _buildCollectionBanner(item, isDark),
                     const SizedBox(height: 18),
-                    _buildActionButtons(ref, item, isDark),
+                    _buildActionButtons(context, ref, item, isDark),
                     const SizedBox(height: 22),
                     ExpandableOverviewText(
                       text: item.overview,
@@ -159,6 +159,7 @@ class DetailScreen extends ConsumerWidget {
                   children: [
                     _buildDirectorOrCreatorCredit(item, isDark),
                     _buildCastStrip(item, isDark),
+                    _buildTrailersSection(context, item, isDark),
                     const SizedBox(height: 22),
                     _buildKeywordChips(context, ref, item, isDark),
                     _buildNetworksSection(item, isDark),
@@ -242,7 +243,7 @@ class DetailScreen extends ConsumerWidget {
                     if (item.belongsToCollection != null)
                       _buildCollectionBanner(item, isDark),
                     const SizedBox(height: 24),
-                    _buildActionButtons(ref, item, isDark),
+                    _buildActionButtons(context, ref, item, isDark),
                     const SizedBox(height: 24),
                     ExpandableOverviewText(
                       text: item.overview,
@@ -269,6 +270,7 @@ class DetailScreen extends ConsumerWidget {
                   children: [
                     _buildDirectorOrCreatorCredit(item, isDark),
                     _buildCastStrip(item, isDark),
+                    _buildTrailersSection(context, item, isDark),
                     const SizedBox(height: 24),
                     _buildKeywordChips(context, ref, item, isDark),
                     _buildNetworksSection(item, isDark),
@@ -296,38 +298,14 @@ class DetailScreen extends ConsumerWidget {
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     return AspectRatio(
       aspectRatio: 16 / 9,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Container(
-            color: phColor,
-            child: MediaImage(
-              item: item,
-              imageUrl: item.backdropUrl ?? item.posterUrl,
-              fit: BoxFit.cover,
-              showFallbackTitle: false,
-            ),
-          ),
-          Center(
-            child: PressableScale(
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => TrailerPlayer(item: item)),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.black54,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white24),
-                ),
-                child:
-                    const Icon(Icons.play_arrow, color: Colors.white, size: 32),
-              ),
-            ),
-          ),
-        ],
+      child: Container(
+        color: phColor,
+        child: MediaImage(
+          item: item,
+          imageUrl: item.backdropUrl ?? item.posterUrl,
+          fit: BoxFit.cover,
+          showFallbackTitle: false,
+        ),
       ),
     );
   }
@@ -919,7 +897,12 @@ class DetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildActionButtons(WidgetRef ref, MediaItem item, bool isDark) {
+  Widget _buildActionButtons(
+    BuildContext context,
+    WidgetRef ref,
+    MediaItem item,
+    bool isDark,
+  ) {
     final mediaState = ref.watch(mediaProvider);
     final notifier = ref.read(mediaProvider.notifier);
 
@@ -1018,11 +1001,73 @@ class DetailScreen extends ConsumerWidget {
             ),
           ],
         ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: _buildWatchTrailerButton(context, item, isDark),
+            ),
+          ],
+        ),
         if (item.imdbId != null && item.imdbId!.isNotEmpty) ...[
           const SizedBox(height: 12),
           _buildImdbButton(item, isDark),
         ],
       ],
+    );
+  }
+
+  Widget _buildWatchTrailerButton(
+    BuildContext context,
+    MediaItem item,
+    bool isDark,
+  ) {
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final accentColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final borderColor = isDark
+        ? accentColor.withAlpha(50)
+        : accentColor.withAlpha(50);
+
+    return PressableScale(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => TrailerPlayer(item: item)),
+        );
+      },
+      child: AnimatedContainer(
+        duration: AppPhysics.houseSpringDuration,
+        curve: AppPhysics.houseSpringCurve,
+        height: 44,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF100C0A) : const Color(0xFFE7DDC9),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
+        ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.play_arrow,
+                size: 16,
+                color: inkColor,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                'Watch trailer',
+                style: AppThemes.safeGeist(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1271,6 +1316,165 @@ class DetailScreen extends ConsumerWidget {
                       ),
                     ),
                   ],
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTrailersSection(BuildContext context, MediaItem item, bool isDark) {
+    final trailers = item.trailers;
+    if (trailers == null || trailers.isEmpty) return const SizedBox.shrink();
+
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        Text(
+          'Trailers',
+          style: AppThemes.safeGeist(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 155,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: trailers.length,
+            itemBuilder: (context, index) {
+              final video = trailers[index];
+              final thumbnailUrl =
+                  'https://img.youtube.com/vi/${video.key}/hqdefault.jpg';
+
+              return Padding(
+                padding: const EdgeInsets.only(right: 14.0),
+                child: PressableScale(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => TrailerPlayer(
+                          item: item,
+                          videoId: video.key,
+                          videoTitle: video.name,
+                        ),
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    width: 220,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 220,
+                          height: 105,
+                          decoration: BoxDecoration(
+                            color: phColor,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: lineRgba),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              Image.network(
+                                thumbnailUrl,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, __, ___) => Container(
+                                  color: phColor,
+                                  child: Icon(Icons.movie_outlined, color: subColor),
+                                ),
+                              ),
+                              Center(
+                                child: Container(
+                                  padding: const EdgeInsets.all(6),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.black45,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: const Icon(
+                                    Icons.play_arrow,
+                                    color: Colors.white,
+                                    size: 24,
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                top: 6,
+                                left: 6,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xCC000000),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        video.type,
+                                        style: AppThemes.safeGeist(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                    if (video.official) ...[
+                                      const SizedBox(width: 4),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: accColor.withAlpha(230),
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                        child: Text(
+                                          'Official',
+                                          style: AppThemes.safeGeist(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: isDark
+                                                ? const Color(0xFF1A140C)
+                                                : Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          video.name,
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: inkColor,
+                            height: 1.2,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
