@@ -71,16 +71,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
       if (isMovies) {
         final t1 = await repo.getTrendingMovies(page: 1);
-        final t2 = await repo.getTrendingMovies(page: 2);
-        final p1 = await repo.getPopularMovies(page: 1);
-        final p2 = await repo.getPopularMovies(page: 2);
-        rawList.addAll([...t1, ...t2, ...p1, ...p2]);
+        rawList.addAll(t1);
+        try { final t2 = await repo.getTrendingMovies(page: 2); rawList.addAll(t2); } catch (_) {}
+        try { final p1 = await repo.getPopularMovies(page: 1); rawList.addAll(p1); } catch (_) {}
+        try { final p2 = await repo.getPopularMovies(page: 2); rawList.addAll(p2); } catch (_) {}
       } else {
         final t1 = await repo.getTrendingTvShows(page: 1);
-        final t2 = await repo.getTrendingTvShows(page: 2);
-        final top1 = await repo.getTopRatedTvShows(page: 1);
-        final top2 = await repo.getTopRatedTvShows(page: 2);
-        rawList.addAll([...t1, ...t2, ...top1, ...top2]);
+        rawList.addAll(t1);
+        try { final t2 = await repo.getTrendingTvShows(page: 2); rawList.addAll(t2); } catch (_) {}
+        try { final top1 = await repo.getTopRatedTvShows(page: 1); rawList.addAll(top1); } catch (_) {}
+        try { final top2 = await repo.getTopRatedTvShows(page: 2); rawList.addAll(top2); } catch (_) {}
       }
 
       if (mounted) {

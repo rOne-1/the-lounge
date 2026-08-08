@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/media_item.dart';
 import 'fallback_widgets.dart';
 import 'pressable_scale.dart';
@@ -18,7 +21,9 @@ class TrailerPlayer extends ConsumerStatefulWidget {
 
 class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
   YoutubePlayerController? _controller;
+  StreamSubscription<YoutubePlayerValue>? _playerSubscription;
   double _sliderValue = 0.0;
+  bool _hasError = false;
 
   @override
   void initState() {
@@ -29,24 +34,54 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
       _controller = YoutubePlayerController.fromVideoId(
         videoId: widget.item.trailerVideoId!,
         autoPlay: true,
-        params: const YoutubePlayerParams(showFullscreenButton: true),
+        params: const YoutubePlayerParams(
+          showControls: true,
+          showFullscreenButton: true,
+          playsInline: true,
+          enableJavaScript: true,
+          enableCaption: false,
+          loop: false,
+          strictRelatedVideos: true,
+        ),
       );
+      _playerSubscription = _controller!.listen((value) {
+        if (mounted && value.hasError && !_hasError) {
+          setState(() {
+            _hasError = true;
+          });
+        }
+      });
     }
   }
 
   @override
   void dispose() {
+    _playerSubscription?.cancel();
     _controller?.close();
     super.dispose();
   }
 
+  Future<void> _launchYouTubeUrl(String videoId) async {
+    final url = Uri.parse('https://www.youtube.com/watch?v=$videoId');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
   void _showUnavailableFeedback() {
     if (!mounted) return;
+    final videoId = widget.item.trailerVideoId;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Trailer playback isn't available for this title"),
-        duration: Duration(seconds: 2),
+      SnackBar(
+        content: const Text("Trailer playback isn't available for this title"),
+        action: videoId != null
+            ? SnackBarAction(
+                label: 'WATCH ON YOUTUBE',
+                onPressed: () => _launchYouTubeUrl(videoId),
+              )
+            : null,
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -60,15 +95,21 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.item.hasTrailer || widget.item.trailerVideoId == null) {
+    if (!widget.item.hasTrailer || widget.item.trailerVideoId == null || _hasError) {
       return PlaybackUnavailableWidget(
         title: widget.item.title,
+        message: _hasError
+            ? 'Playback unavailable in app'
+            : 'This title is not available for playback right now.',
         onAddWatchlist: () {
           ref.read(mediaProvider.notifier).addToWatchlist(widget.item);
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Added to Watchlist')),
           );
         },
+        onWatchOnYouTube: widget.item.trailerVideoId != null
+            ? () => _launchYouTubeUrl(widget.item.trailerVideoId!)
+            : null,
       );
     }
 

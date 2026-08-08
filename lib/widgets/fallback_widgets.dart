@@ -117,12 +117,14 @@ class PlaybackUnavailableWidget extends StatelessWidget {
   final String title;
   final String message;
   final VoidCallback onAddWatchlist;
+  final VoidCallback? onWatchOnYouTube;
 
   const PlaybackUnavailableWidget({
     super.key,
     required this.title,
     this.message = 'This title is not available for playback right now.',
     required this.onAddWatchlist,
+    this.onWatchOnYouTube,
   });
 
   @override
@@ -171,6 +173,18 @@ class PlaybackUnavailableWidget extends StatelessWidget {
                   style: Theme.of(context).textTheme.bodyLarge,
                 ),
                 const SizedBox(height: 32),
+                if (onWatchOnYouTube != null) ...[
+                  FilledButton.icon(
+                    onPressed: onWatchOnYouTube,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red.shade700,
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('Watch on YouTube'),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 FilledButton.tonalIcon(
                   onPressed: onAddWatchlist,
                   icon: const Icon(Icons.bookmark_add),
