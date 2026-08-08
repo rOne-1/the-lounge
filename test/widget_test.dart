@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -8,6 +10,8 @@ import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
+import 'package:the_lounge/widgets/fallback_widgets.dart';
+import 'package:the_lounge/widgets/trailer_player.dart';
 
 class TestRepository extends MockMovieRepository {
   @override
@@ -69,5 +73,41 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.text('Movies'), findsWidgets);
+  });
+
+  group('TrailerPlayer timeout fallback tests in widget_test', () {
+    testWidgets(
+        'PlaybackUnavailableWidget renders when player error or timeout duration triggers',
+        (WidgetTester tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+      const testMediaItem = MediaItem(
+        id: 'timeout-item-1',
+        title: 'Timeout Test Movie',
+        type: MediaType.movie,
+        rating: 8.0,
+        overview: 'Overview for timeout test',
+        genres: ['Drama'],
+        hasTrailer: true,
+        trailerVideoId: 'trailer_id_123',
+      );
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: TrailerPlayer(item: testMediaItem),
+          ),
+        ),
+      );
+
+      // Advance clock past the 6-second timeout duration
+      await tester.pump(const Duration(seconds: 6));
+
+      expect(find.byType(PlaybackUnavailableWidget), findsOneWidget);
+      expect(find.text('Playback unavailable in app'), findsOneWidget);
+      expect(find.text('Watch on YouTube'), findsOneWidget);
+
+      debugDefaultTargetPlatformOverride = null;
+    });
   });
 }

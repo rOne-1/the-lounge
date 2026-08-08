@@ -22,6 +22,7 @@ class TrailerPlayer extends ConsumerStatefulWidget {
 class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
   YoutubePlayerController? _controller;
   StreamSubscription<YoutubePlayerValue>? _playerSubscription;
+  Timer? _playbackTimeoutTimer;
   double _sliderValue = 0.0;
   bool _hasError = false;
 
@@ -31,31 +32,58 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
     if (widget.item.hasTrailer &&
         widget.item.trailerVideoId != null &&
         (kIsWeb || defaultTargetPlatform == TargetPlatform.android)) {
-      _controller = YoutubePlayerController.fromVideoId(
-        videoId: widget.item.trailerVideoId!,
-        autoPlay: true,
-        params: const YoutubePlayerParams(
-          showControls: true,
-          showFullscreenButton: true,
-          playsInline: true,
-          enableJavaScript: true,
-          enableCaption: false,
-          loop: false,
-          strictRelatedVideos: true,
-        ),
-      );
-      _playerSubscription = _controller!.listen((value) {
-        if (mounted && value.hasError && !_hasError) {
+      _startPlaybackTimeoutTimer();
+      try {
+        _controller = YoutubePlayerController.fromVideoId(
+          videoId: widget.item.trailerVideoId!,
+          autoPlay: true,
+          params: const YoutubePlayerParams(
+            showControls: true,
+            showFullscreenButton: true,
+            playsInline: true,
+            enableJavaScript: true,
+            enableCaption: false,
+            loop: false,
+            strictRelatedVideos: true,
+          ),
+        );
+        _playerSubscription = _controller!.listen((value) {
+          if (value.hasError) {
+            _playbackTimeoutTimer?.cancel();
+            if (mounted && !_hasError) {
+              setState(() {
+                _hasError = true;
+              });
+            }
+          } else if (value.playerState == PlayerState.playing) {
+            _playbackTimeoutTimer?.cancel();
+          }
+        });
+      } catch (_) {
+        _playbackTimeoutTimer?.cancel();
+        if (mounted && !_hasError) {
           setState(() {
             _hasError = true;
           });
         }
-      });
+      }
     }
+  }
+
+  void _startPlaybackTimeoutTimer() {
+    _playbackTimeoutTimer?.cancel();
+    _playbackTimeoutTimer = Timer(const Duration(seconds: 6), () {
+      if (mounted && !_hasError) {
+        setState(() {
+          _hasError = true;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
+    _playbackTimeoutTimer?.cancel();
     _playerSubscription?.cancel();
     _controller?.close();
     super.dispose();

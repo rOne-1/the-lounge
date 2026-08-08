@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/widgets/fallback_widgets.dart';
 import 'package:the_lounge/widgets/trailer_player.dart';
 
 void main() {
@@ -139,6 +140,31 @@ void main() {
       ScaffoldMessenger.of(tester.element(find.byType(Scaffold)))
           .clearSnackBars();
       await tester.pumpAndSettle();
+
+      debugDefaultTargetPlatformOverride = null;
+    });
+  });
+
+  group('TrailerPlayer Timeout and Fallback tests', () {
+    testWidgets(
+        'PlaybackUnavailableWidget renders with fallback message when player error or timeout occurs',
+        (WidgetTester tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+      await tester.pumpWidget(
+        const ProviderScope(
+          child: MaterialApp(
+            home: TrailerPlayer(item: itemWithTrailer),
+          ),
+        ),
+      );
+
+      // Advance clock past 6-second timeout duration
+      await tester.pump(const Duration(seconds: 6));
+
+      expect(find.byType(PlaybackUnavailableWidget), findsOneWidget);
+      expect(find.text('Playback unavailable in app'), findsOneWidget);
+      expect(find.text('Watch on YouTube'), findsOneWidget);
 
       debugDefaultTargetPlatformOverride = null;
     });
