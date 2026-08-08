@@ -9,6 +9,7 @@ import 'detail_screen.dart';
 import '../constants.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/quick_status_sheet.dart';
 
 enum InProgressSubFilter { watching, onHold, dropped }
 
@@ -390,6 +391,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
             closedBuilder: (context, openContainer) {
               return GestureDetector(
                 onTap: openContainer,
+                onLongPress: () => showQuickStatusSheet(context, ref, item),
                 child: Container(
                   decoration: BoxDecoration(
                     color: phColor,

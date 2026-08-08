@@ -9,6 +9,7 @@ import '../constants.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/quick_status_sheet.dart';
 import 'detail_screen.dart';
 
 typedef RailFullListScreen = MediaListScreen;
@@ -215,6 +216,7 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                             closedBuilder: (context, openContainer) {
                               return GestureDetector(
                                 onTap: openContainer,
+                                onLongPress: () => showQuickStatusSheet(context, ref, item),
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: phColor,

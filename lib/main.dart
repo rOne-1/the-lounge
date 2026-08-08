@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 import 'providers/ambiance_provider.dart';
-import 'screens/shell_screen.dart';
+import 'screens/splash_screen.dart';
 import 'services/crash_reporting_service.dart';
 
 void main() async {
@@ -64,7 +64,7 @@ class MyApp extends ConsumerWidget {
       theme: ambiance == AmbianceType.screeningRoom
           ? AppThemes.screeningRoomTheme
           : AppThemes.readingRoomTheme,
-      home: ShellScreen(enableAnimation: enableAnimation),
+      home: SplashScreen(enableAnimation: enableAnimation),
     );
   }
 }

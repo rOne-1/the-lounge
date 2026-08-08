@@ -14,6 +14,8 @@ import '../widgets/fallback_widgets.dart';
 import '../widgets/segmented_toggle.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/ambient_glow.dart';
+import '../widgets/quick_status_sheet.dart';
+import '../widgets/pick_for_me_card.dart';
 
 class DeduplicatedHomeRails {
   final bool isMovies;
@@ -277,109 +279,108 @@ class HomeScreen extends ConsumerWidget {
             ] else
               const SizedBox(height: 16),
 
-            // RAIL 1: Continue Watching
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Expanded(
-                  child: Text(
-                    'Continue watching',
-                    style: AppThemes.safeGeist(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: inkColor,
+            // RAIL 1: Pick For Me (Movies) or Continue Watching (TV)
+            if (isMovies) ...[
+              PickForMeCard(enableAnimation: enableAnimation),
+            ] else ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Continue watching',
+                      style: AppThemes.safeGeist(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: inkColor,
+                      ),
                     ),
                   ),
-                ),
-                PressableScale(
-                  onTap: () => ref
-                      .read(navigationProvider.notifier)
-                      .setTab(AppTab.yourSpace),
-                  child: Text(
-                    'See all',
-                    style: AppThemes.safeGeist(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: subColor,
+                  PressableScale(
+                    onTap: () => ref
+                        .read(navigationProvider.notifier)
+                        .setTab(AppTab.yourSpace),
+                    child: Text(
+                      'See all',
+                      style: AppThemes.safeGeist(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: subColor,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 250),
-              switchInCurve: Curves.easeInOutCubic,
-              switchOutCurve: Curves.easeInOutCubic,
-              child: SizedBox(
-                key: ValueKey('continue_watching_${isMovies}_${rail1Items.length}'),
-                height: 140,
-                child: rail1Items.isNotEmpty
-                    ? ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: rail1Items.length,
-                        itemBuilder: (context, index) {
-                          final item = rail1Items[index];
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 12.0),
-                            child: PressableScale(
-                              child: isMovies
-                                  ? MovieWatchlistCard(item: item, isDark: isDark)
-                                  : TvContinueWatchingCard(item: item, isDark: isDark),
+                ],
+              ),
+              const SizedBox(height: 12),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                switchInCurve: Curves.easeInOutCubic,
+                switchOutCurve: Curves.easeInOutCubic,
+                child: SizedBox(
+                  key: ValueKey('continue_watching_${isMovies}_${rail1Items.length}'),
+                  height: 140,
+                  child: rail1Items.isNotEmpty
+                      ? ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: rail1Items.length,
+                          itemBuilder: (context, index) {
+                            final item = rail1Items[index];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 12.0),
+                              child: PressableScale(
+                                child: TvContinueWatchingCard(item: item, isDark: isDark),
+                              ),
+                            ).animate().fade(duration: 250.ms).slideY(
+                                begin: 0.1,
+                                end: 0,
+                                delay: (index.clamp(0, 5) * 40).ms);
+                          },
+                        )
+                      : Container(
+                          alignment: Alignment.centerLeft,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            'No shows in progress. Explore and start watching!',
+                            style: AppThemes.safeGeist(
+                              fontSize: 12.5,
+                              fontStyle: FontStyle.italic,
+                              color: subColor,
                             ),
-                          ).animate().fade(duration: 250.ms).slideY(
-                              begin: 0.1,
-                              end: 0,
-                              delay: (index.clamp(0, 5) * 40).ms);
-                        },
-                      )
-                    : Container(
-                        alignment: Alignment.centerLeft,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Text(
-                          isMovies
-                              ? 'No movies in progress. Mark a movie as watching to see it here!'
-                              : 'No shows in progress. Explore and start watching!',
-                          style: AppThemes.safeGeist(
-                            fontSize: 12.5,
-                            fontStyle: FontStyle.italic,
-                            color: subColor,
                           ),
                         ),
-                      ),
+                ),
               ),
-            ),
-
-            // Next episode highlight banner (TV Mode)
-            AnimatedSize(
-              duration: const Duration(milliseconds: 350),
-              curve: AppPhysics.houseSpringCurve,
-              child: AnimatedCrossFade(
+              // Next episode highlight banner (TV Mode)
+              AnimatedSize(
                 duration: const Duration(milliseconds: 350),
-                firstCurve: Curves.easeInOutCubic,
-                secondCurve: Curves.easeInOutCubic,
-                sizeCurve: AppPhysics.houseSpringCurve,
-                crossFadeState: (!isMovies && activeTvShow != null)
-                    ? CrossFadeState.showFirst
-                    : CrossFadeState.showSecond,
-                firstChild: activeTvShow != null
-                    ? Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const SizedBox(height: 22),
-                          NextEpisodeBannerCard(
-                            show: activeTvShow,
-                            isDark: isDark,
-                            enableAnimation: enableAnimation,
-                          ),
-                        ],
-                      )
-                    : const SizedBox(width: double.infinity, height: 0),
-                secondChild: const SizedBox(width: double.infinity, height: 0),
+                curve: AppPhysics.houseSpringCurve,
+                child: AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 350),
+                  firstCurve: Curves.easeInOutCubic,
+                  secondCurve: Curves.easeInOutCubic,
+                  sizeCurve: AppPhysics.houseSpringCurve,
+                  crossFadeState: activeTvShow != null
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
+                  firstChild: activeTvShow != null
+                      ? Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const SizedBox(height: 22),
+                            NextEpisodeBannerCard(
+                              show: activeTvShow,
+                              isDark: isDark,
+                              enableAnimation: enableAnimation,
+                            ),
+                          ],
+                        )
+                      : const SizedBox(width: double.infinity, height: 0),
+                  secondChild: const SizedBox(width: double.infinity, height: 0),
+                ),
               ),
-            ),
+            ],
 
             // RAIL 2: Trending This Week
             MediaRail(
@@ -598,6 +599,7 @@ class TvContinueWatchingCard extends ConsumerWidget {
 
         return GestureDetector(
           onTap: openContainer,
+          onLongPress: () => showQuickStatusSheet(context, ref, item),
           child: SizedBox(
             width: 140,
             child: Column(
@@ -703,7 +705,7 @@ class TvContinueWatchingCard extends ConsumerWidget {
   }
 }
 
-class MovieWatchlistCard extends StatelessWidget {
+class MovieWatchlistCard extends ConsumerWidget {
   final MediaItem item;
   final bool isDark;
 
@@ -714,7 +716,7 @@ class MovieWatchlistCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
@@ -736,6 +738,7 @@ class MovieWatchlistCard extends StatelessWidget {
       closedBuilder: (context, openContainer) {
         return GestureDetector(
           onTap: openContainer,
+          onLongPress: () => showQuickStatusSheet(context, ref, item),
           child: SizedBox(
             width: 132,
             child: Column(
@@ -798,7 +801,7 @@ class MovieWatchlistCard extends StatelessWidget {
   }
 }
 
-class MediaRail extends StatelessWidget {
+class MediaRail extends ConsumerWidget {
   final String title;
   final AsyncValue<List<MediaItem>> itemsAsync;
   final VoidCallback? onSeeAll;
@@ -813,7 +816,7 @@ class MediaRail extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
@@ -884,6 +887,7 @@ class MediaRail extends StatelessWidget {
                           closedBuilder: (context, openContainer) {
                             return GestureDetector(
                               onTap: openContainer,
+                              onLongPress: () => showQuickStatusSheet(context, ref, item),
                               child: Container(
                                 width: 96,
                                 height: 144,
@@ -984,6 +988,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => DetailScreen(id: show.prefixedId)),
           ),
+          onLongPress: () => showQuickStatusSheet(context, ref, show),
           child: AmbientGlowWidget(
             enableAnimation: enableAnimation,
             padding: const EdgeInsets.all(14),

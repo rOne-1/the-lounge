@@ -9,6 +9,7 @@ import '../models/media_collection_detail.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/quick_status_sheet.dart';
 import 'detail_screen.dart';
 
 final collectionDetailsProvider =
@@ -242,6 +243,7 @@ class CollectionScreen extends ConsumerWidget {
                             closedBuilder: (context, openContainer) {
                               return GestureDetector(
                                 onTap: openContainer,
+                                onLongPress: () => showQuickStatusSheet(context, ref, item),
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: phColor,

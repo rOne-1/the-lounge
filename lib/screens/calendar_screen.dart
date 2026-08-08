@@ -9,6 +9,7 @@ import 'detail_screen.dart';
 import '../constants.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/segmented_toggle.dart';
+import '../widgets/quick_status_sheet.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -177,6 +178,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         closedBuilder: (context, openContainer) {
           return GestureDetector(
             onTap: openContainer,
+            onLongPress: () => showQuickStatusSheet(context, ref, item),
             child: Container(
               margin: const EdgeInsets.only(bottom: 8.0),
               padding: const EdgeInsets.all(14.0),

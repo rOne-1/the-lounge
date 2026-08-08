@@ -13,6 +13,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'detail_screen.dart';
 
 import '../widgets/drag_to_dismiss_sheet.dart';
+import '../widgets/quick_status_sheet.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -712,7 +713,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 }
 
-class SwipeCard extends StatefulWidget {
+class SwipeCard extends ConsumerStatefulWidget {
   final MediaItem item;
   final bool isInteractive;
   final Function(String) onSwipe;
@@ -731,10 +732,10 @@ class SwipeCard extends StatefulWidget {
   });
 
   @override
-  State<SwipeCard> createState() => _SwipeCardState();
+  ConsumerState<SwipeCard> createState() => _SwipeCardState();
 }
 
-class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMixin {
+class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProviderStateMixin {
   Offset _dragOffset = Offset.zero;
   double _angle = 0;
   late AnimationController _motionController;
@@ -1142,6 +1143,7 @@ class _SwipeCardState extends State<SwipeCard> with SingleTickerProviderStateMix
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: openContainer,
+            onLongPress: () => showQuickStatusSheet(context, ref, widget.item),
             onPanUpdate: (details) {
               if (_isFlyingOff) return;
               if (_motionController.isAnimating) {

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/home_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
+import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
@@ -96,7 +97,7 @@ void main() {
     );
   }
 
-  testWidgets('HomeScreen displays dynamic greeting, trending carousel, and continue watching list', (WidgetTester tester) async {
+  testWidgets('HomeScreen displays dynamic greeting, trending carousel, and PickForMe card', (WidgetTester tester) async {
     final trending = createMockItems(6, 'Trending', MediaType.movie);
     final popular = createMockItems(4, 'Continue', MediaType.movie);
     final mockRepo = MockTestRepository(
@@ -110,8 +111,7 @@ void main() {
         movieRepositoryProvider.overrideWithValue(mockRepo),
       ],
     );
-    container.read(mediaProvider.notifier).addToWatchingList(popular[0]);
-    container.read(mediaProvider.notifier).addToWatchingList(popular[1]);
+    container.read(mediaProvider.notifier).addToWatchlist(popular[0]);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -139,14 +139,14 @@ void main() {
     final currentDay = dayNames[DateTime.now().weekday - 1];
     expect(find.textContaining(currentDay), findsOneWidget);
 
-    // Verify Continue watching items are rendered without stub box
+    // Verify PickForMe card is rendered in Movies mode
+    expect(find.text('PICK FOR ME'), findsOneWidget);
     expect(find.text('Continue Movie 0'), findsOneWidget);
-    expect(find.text('Continue Movie 1'), findsOneWidget);
 
     // Verify Trending carousel items are rendered
     expect(find.text('Trending This Week'), findsOneWidget);
 
-    // Verify tapping on a Continue Watching item navigates to DetailScreen
+    // Verify tapping on PickForMe item navigates to DetailScreen
     await tester.tap(find.text('Continue Movie 0'));
     await tester.pumpAndSettle();
 
@@ -154,7 +154,7 @@ void main() {
     expect(find.text('Continue Movie 0'), findsOneWidget);
   });
 
-  testWidgets('HomeScreen contains AnimatedSize, AnimatedCrossFade and AnimatedSwitcher transitions for section 7', (WidgetTester tester) async {
+  testWidgets('HomeScreen contains AnimatedSize, AnimatedCrossFade and AnimatedSwitcher transitions for TV mode', (WidgetTester tester) async {
     final trending = createMockItems(6, 'Trending', MediaType.movie);
     final popular = createMockItems(4, 'Continue', MediaType.movie);
     final mockRepo = MockTestRepository(
@@ -163,11 +163,16 @@ void main() {
       trendingTvShows: [],
     );
 
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+      ],
+    );
+    container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
+
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          movieRepositoryProvider.overrideWithValue(mockRepo),
-        ],
+      UncontrolledProviderScope(
+        container: container,
         child: const MaterialApp(
           home: Scaffold(
             body: HomeScreen(enableAnimation: false),

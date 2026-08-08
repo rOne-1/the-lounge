@@ -12,6 +12,7 @@ import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/person_search_autocomplete.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/quick_status_sheet.dart';
 import 'detail_screen.dart';
 
 int? getGenreIdForName(String name) {
@@ -956,6 +957,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         closedBuilder: (context, openContainer) {
           return InkWell(
             onTap: openContainer,
+            onLongPress: () => showQuickStatusSheet(context, ref, item),
             borderRadius: BorderRadius.circular(8),
             child: Container(
               decoration: BoxDecoration(
