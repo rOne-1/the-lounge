@@ -94,13 +94,13 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final infoBtnFinder = find.byKey(const ValueKey('app_info_button'));
-      expect(infoBtnFinder, findsOneWidget);
+      final settingsBtnFinder = find.byKey(const ValueKey('settings_button'));
+      expect(settingsBtnFinder, findsOneWidget);
 
-      await tester.tap(infoBtnFinder);
+      await tester.tap(settingsBtnFinder);
       await tester.pumpAndSettle();
 
-      expect(find.text('App Info & Privacy'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
       expect(find.text('TMDB Attribution'), findsOneWidget);
     });
 

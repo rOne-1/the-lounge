@@ -216,14 +216,14 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      final infoBtn = find.byKey(const ValueKey('app_info_button'));
+      final settingsBtn = find.byKey(const ValueKey('settings_button'));
       final toggle = find.byType(SegmentedMediaTypeToggle);
 
-      expect(infoBtn, findsOneWidget);
+      expect(settingsBtn, findsOneWidget);
       expect(toggle, findsOneWidget);
 
-      final infoRow = find.ancestor(of: infoBtn, matching: find.byType(Row)).first;
-      expect(infoRow, findsOneWidget);
+      final settingsRow = find.ancestor(of: settingsBtn, matching: find.byType(Row)).first;
+      expect(settingsRow, findsOneWidget);
     });
   });
 }

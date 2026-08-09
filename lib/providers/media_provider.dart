@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
 import 'ambiance_provider.dart';
+import '../constants.dart';
 export 'repository_provider.dart';
 
 class MediaState {
@@ -825,6 +826,109 @@ class MediaNotifier extends Notifier<MediaState> {
       await prefs.setString(_watchProvidersCountryKey, countryCode);
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
+    }
+  }
+
+  String exportBackupJson(String selectedAmbiance) {
+    final backup = {
+      'version': 1,
+      'watchlist': state.watchlist.map((k, v) => MapEntry(k, v.toMinimalJson())),
+      'maybeList': state.maybeList.map((k, v) => MapEntry(k, v.toMinimalJson())),
+      'watchingList': state.watchingList.map((k, v) => MapEntry(k, v.toMinimalJson())),
+      'watchedList': state.watchedList.map((k, v) => MapEntry(k, v.toMinimalJson())),
+      'droppedList': state.droppedList.map((k, v) => MapEntry(k, v.toMinimalJson())),
+      'onHoldList': state.onHoldList.map((k, v) => MapEntry(k, v.toMinimalJson())),
+      'watchedEpisodes': state.watchedEpisodes.map((k, v) => MapEntry(k, v.toList())),
+      'watchProvidersCountry': state.watchProvidersCountry,
+      'selectedAmbiance': selectedAmbiance,
+    };
+    return jsonEncode(backup);
+  }
+
+  Future<bool> importBackupJson(String jsonString) async {
+    try {
+      final decoded = jsonDecode(jsonString);
+      if (decoded is! Map<String, dynamic>) {
+        return false;
+      }
+      final version = decoded['version'];
+      if (version != 1) {
+        return false;
+      }
+
+      Map<String, MediaItem> parseMediaMap(dynamic rawMap) {
+        final Map<String, MediaItem> result = {};
+        if (rawMap is Map<String, dynamic>) {
+          rawMap.forEach((k, v) {
+            try {
+              if (v is Map<String, dynamic>) {
+                result[k] = MediaItem.fromMinimalJson(v);
+              }
+            } catch (_) {}
+          });
+        }
+        return result;
+      }
+
+      Map<String, Set<String>> parseWatchedEpisodes(dynamic rawMap) {
+        final Map<String, Set<String>> result = {};
+        if (rawMap is Map<String, dynamic>) {
+          rawMap.forEach((showId, epList) {
+            try {
+              if (epList is List) {
+                final epSet = epList.map((e) => e.toString()).toSet();
+                if (epSet.isNotEmpty) {
+                  result[showId] = epSet;
+                }
+              }
+            } catch (_) {}
+          });
+        }
+        return result;
+      }
+
+      final watchlist = parseMediaMap(decoded['watchlist']);
+      final maybeList = parseMediaMap(decoded['maybeList']);
+      final watchingList = parseMediaMap(decoded['watchingList']);
+      final watchedList = parseMediaMap(decoded['watchedList']);
+      final droppedList = parseMediaMap(decoded['droppedList']);
+      final onHoldList = parseMediaMap(decoded['onHoldList']);
+      final watchedEpisodes = parseWatchedEpisodes(decoded['watchedEpisodes']);
+      
+      String country = 'US';
+      if (decoded['watchProvidersCountry'] is String) {
+        country = decoded['watchProvidersCountry'];
+      }
+
+      state = state.copyWith(
+        watchlist: watchlist,
+        maybeList: maybeList,
+        watchingList: watchingList,
+        watchedList: watchedList,
+        droppedList: droppedList,
+        onHoldList: onHoldList,
+        watchedEpisodes: watchedEpisodes,
+        watchProvidersCountry: country,
+      );
+
+      await _saveToPrefs();
+      try {
+        final prefs = ref.read(sharedPreferencesProvider);
+        await prefs.setString(_watchProvidersCountryKey, country);
+      } catch (_) {}
+
+      final ambianceStr = decoded['selectedAmbiance'];
+      if (ambianceStr is String) {
+        final match = AmbianceType.values.firstWhere(
+          (e) => e.name == ambianceStr,
+          orElse: () => AmbianceType.screeningRoom,
+        );
+        await ref.read(ambianceProvider.notifier).setAmbiance(match);
+      }
+
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 }

@@ -81,13 +81,13 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final infoButton = find.byKey(const ValueKey('app_info_button'));
-      expect(infoButton, findsOneWidget);
+      final settingsButton = find.byKey(const ValueKey('settings_button'));
+      expect(settingsButton, findsOneWidget);
 
-      await tester.tap(infoButton);
+      await tester.tap(settingsButton);
       await tester.pumpAndSettle();
 
-      expect(find.text('App Info & Privacy'), findsOneWidget);
+      expect(find.text('Settings'), findsOneWidget);
       expect(find.text('TMDB Attribution'), findsOneWidget);
       expect(
         find.text('This product uses the TMDB API but is not endorsed or certified by TMDB.'),
