@@ -16,8 +16,9 @@ import 'collection_screen.dart';
 
 class DetailScreen extends ConsumerStatefulWidget {
   final String id;
+  final MediaItem? initialItem;
 
-  const DetailScreen({super.key, required this.id});
+  const DetailScreen({super.key, required this.id, this.initialItem});
 
   @override
   ConsumerState<DetailScreen> createState() => _DetailScreenState();
@@ -102,13 +103,18 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             iconTheme: IconThemeData(color: inkColor),
           ),
           body: detailAsync.when(
-            data: (item) {
-              if (item == null) {
+            data: (fetchedItem) {
+              final rawItem = fetchedItem ?? widget.initialItem;
+              if (rawItem == null) {
                 return FullScreenErrorWidget(
                   message: 'Failed to load media details.',
                   onRetry: () => ref.invalidate(mediaDetailsProvider(widget.id)),
                 );
               }
+              final item = rawItem.copyWith(
+                releaseOrAirDate: rawItem.releaseOrAirDate ?? widget.initialItem?.releaseOrAirDate,
+                status: rawItem.status ?? widget.initialItem?.status,
+              );
               final isLarge = MediaQuery.of(context).size.width > 800;
 
               if (isLarge) {
@@ -212,9 +218,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDirectorOrCreatorCredit(item, isDark),
+                      _buildDirectorOrCreatorCredit(context, ref, item, isDark),
                       _buildCastStrip(context, ref, item, isDark),
                       _buildTrailersSection(context, item, isDark),
+                      _buildSimilarTitlesSection(context, ref, item, isDark),
                       const SizedBox(height: 22),
                       _buildKeywordChips(context, ref, item, isDark),
                       _buildNetworksSection(item, isDark),
@@ -324,9 +331,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildDirectorOrCreatorCredit(item, isDark),
+                      _buildDirectorOrCreatorCredit(context, ref, item, isDark),
                       _buildCastStrip(context, ref, item, isDark),
                       _buildTrailersSection(context, item, isDark),
+                      _buildSimilarTitlesSection(context, ref, item, isDark),
                       const SizedBox(height: 24),
                       _buildKeywordChips(context, ref, item, isDark),
                       _buildNetworksSection(item, isDark),
@@ -809,7 +817,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 
 
-  Widget _buildDirectorOrCreatorCredit(MediaItem item, bool isDark) {
+  Widget _buildDirectorOrCreatorCredit(
+    BuildContext context,
+    WidgetRef ref,
+    MediaItem item,
+    bool isDark,
+  ) {
     final String? label;
     final String? names;
 
@@ -828,46 +841,165 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: phColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: lineRgba),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.video_camera_front_outlined, size: 20, color: subColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppThemes.safeGeist(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: subColor,
+    final pName = names!;
+    final pId = int.tryParse(pName);
+
+    return PressableScale(
+      onTap: () {
+        ref.read(discoverFilterProvider.notifier).setPerson(
+              personId: pId,
+              personName: pName,
+            );
+        ref.read(navigationProvider.notifier).setTab(AppTab.search);
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const BrowseScreen()),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: phColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: lineRgba),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.video_camera_front_outlined, size: 20, color: subColor),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: AppThemes.safeGeist(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: subColor,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  names!,
-                  style: AppThemes.safeGeist(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: inkColor,
+                  const SizedBox(height: 2),
+                  Text(
+                    pName,
+                    style: AppThemes.safeGeist(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: inkColor,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildSimilarTitlesSection(
+    BuildContext context,
+    WidgetRef ref,
+    MediaItem item,
+    bool isDark,
+  ) {
+    final similarAsync = ref.watch(similarMediaProvider(item.prefixedId));
+    final recsAsync = ref.watch(mediaRecommendationsProvider(item.prefixedId));
+
+    final List<MediaItem> items;
+    if (similarAsync.hasValue && similarAsync.value!.isNotEmpty) {
+      items = similarAsync.value!;
+    } else if (recsAsync.hasValue && recsAsync.value!.isNotEmpty) {
+      items = recsAsync.value!;
+    } else {
+      return const SizedBox.shrink();
+    }
+
+    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        Text(
+          'Similar titles',
+          style: AppThemes.safeGeist(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 190,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              final similarItem = items[index];
+              return Padding(
+                padding: const EdgeInsets.only(right: 12.0),
+                child: PressableScale(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => DetailScreen(id: similarItem.prefixedId),
+                      ),
+                    );
+                  },
+                  child: SizedBox(
+                    width: 110,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 110,
+                          height: 155,
+                          decoration: BoxDecoration(
+                            color: phColor,
+                            borderRadius: BorderRadius.circular(11),
+                            border: Border.all(color: lineRgba),
+                            boxShadow: [
+                              BoxShadow(
+                                color: isDark
+                                    ? const Color.fromRGBO(255, 255, 255, 0.05)
+                                    : const Color.fromRGBO(0, 0, 0, 0.08),
+                                blurRadius: 4,
+                                offset: const Offset(0, 2),
+                              )
+                            ],
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: MediaImage(
+                            item: similarItem,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          similarItem.title,
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: inkColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1075,15 +1207,18 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             const SizedBox(width: 8),
             Expanded(
               child: () {
-                final isMovieUnreleased = item.type == MediaType.movie &&
-                    item.releaseOrAirDate != null &&
-                    item.releaseOrAirDate!.isAfter(DateTime.now());
+                final isUnreleased = (item.releaseDate != null &&
+                        item.releaseDate!.isAfter(DateTime.now())) ||
+                    (item.status != null &&
+                        (item.status!.toLowerCase() == 'unreleased' ||
+                            item.status!.toLowerCase() == 'in production' ||
+                            item.status!.toLowerCase() == 'planned'));
                 return _buildStatusToggle(
                   'Watched',
                   inWatched,
                   watchedColor,
                   () {
-                    if (isMovieUnreleased) {
+                    if (isUnreleased) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content:
@@ -1095,7 +1230,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                     notifier.toggleWatched(item);
                   },
                   isDark,
-                  isDisabled: isMovieUnreleased,
+                  isDisabled: isUnreleased,
                 );
               }(),
             ),

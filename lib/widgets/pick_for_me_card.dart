@@ -286,24 +286,16 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                          if (selectedItem.overview.trim().isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            ConstrainedBox(
-                              constraints: const BoxConstraints(maxHeight: 64),
-                              child: SingleChildScrollView(
-                                physics: const BouncingScrollPhysics(),
-                                child: Text(
-                                  selectedItem.overview.trim(),
-                                  style: AppThemes.safeGeist(
-                                    fontSize: 11.5,
-                                    fontWeight: FontWeight.w400,
-                                    height: 1.35,
-                                    color: subColor,
-                                  ),
-                                ),
-                              ),
+                          const SizedBox(height: 6),
+                          Text(
+                            'Decide from your watchlist.',
+                            style: AppThemes.safeGeist(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w400,
+                              height: 1.35,
+                              color: subColor,
                             ),
-                          ],
+                          ),
                           const SizedBox(height: 10),
 
                           // Re-roll Button

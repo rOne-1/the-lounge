@@ -207,10 +207,6 @@ class HomeScreen extends ConsumerWidget {
 
     final isLarge = MediaQuery.of(context).size.width >= 600;
 
-    final activeTvShow = !isMovies
-        ? (rail1Items.isNotEmpty ? rail1Items.first : null)
-        : null;
-
 
     return SingleChildScrollView(
       child: Padding(
@@ -361,20 +357,14 @@ class HomeScreen extends ConsumerWidget {
                   firstCurve: Curves.easeInOutCubic,
                   secondCurve: Curves.easeInOutCubic,
                   sizeCurve: AppPhysics.houseSpringCurve,
-                  crossFadeState: activeTvShow != null
+                  crossFadeState: (!isMovies && rail1Items.isNotEmpty)
                       ? CrossFadeState.showFirst
                       : CrossFadeState.showSecond,
-                  firstChild: activeTvShow != null
-                      ? Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const SizedBox(height: 22),
-                            NextEpisodeBannerCard(
-                              show: activeTvShow,
-                              isDark: isDark,
-                              enableAnimation: enableAnimation,
-                            ),
-                          ],
+                  firstChild: (!isMovies && rail1Items.isNotEmpty)
+                      ? NextEpisodeBannerCarousel(
+                          shows: rail1Items,
+                          isDark: isDark,
+                          enableAnimation: enableAnimation,
                         )
                       : const SizedBox(width: double.infinity, height: 0),
                   secondChild: const SizedBox(width: double.infinity, height: 0),
@@ -936,6 +926,127 @@ class MediaRail extends ConsumerWidget {
               ),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+class NextEpisodeBannerCarousel extends ConsumerStatefulWidget {
+  final List<MediaItem> shows;
+  final bool isDark;
+  final bool? enableAnimation;
+
+  const NextEpisodeBannerCarousel({
+    super.key,
+    required this.shows,
+    required this.isDark,
+    this.enableAnimation,
+  });
+
+  @override
+  ConsumerState<NextEpisodeBannerCarousel> createState() =>
+      _NextEpisodeBannerCarouselState();
+}
+
+class _NextEpisodeBannerCarouselState
+    extends ConsumerState<NextEpisodeBannerCarousel> {
+  late PageController _pageController;
+  int _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final validShows = <MediaItem>[];
+    for (final show in widget.shows) {
+      final seasonsAsync = ref.watch(tvShowSeasonsProvider(show));
+      final seasons = seasonsAsync.value ?? [];
+      if (seasonsAsync.isLoading) {
+        validShows.add(show);
+      } else {
+        final nextEp = ref
+            .read(mediaProvider.notifier)
+            .getNextUnwatchedEpisode(showId: show.id, seasons: seasons);
+        if (nextEp != null) {
+          validShows.add(show);
+        }
+      }
+    }
+
+    if (validShows.isEmpty) {
+      return const SizedBox(width: double.infinity, height: 0);
+    }
+
+    if (validShows.length == 1) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 22),
+          NextEpisodeBannerCard(
+            show: validShows.first,
+            isDark: widget.isDark,
+            enableAnimation: widget.enableAnimation,
+          ),
+        ],
+      );
+    }
+
+    final activeIndex = _currentPage.clamp(0, validShows.length - 1);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const SizedBox(height: 22),
+        SizedBox(
+          height: 116,
+          child: PageView.builder(
+            controller: _pageController,
+            itemCount: validShows.length,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              return NextEpisodeBannerCard(
+                show: validShows[index],
+                isDark: widget.isDark,
+                enableAnimation: widget.enableAnimation,
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(validShows.length, (index) {
+            final isSelected = index == activeIndex;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              margin: const EdgeInsets.symmetric(horizontal: 3),
+              width: isSelected ? 16 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(3),
+                color: isSelected
+                    ? (widget.isDark ? AppColors.srAcc : AppColors.rrAcc)
+                    : (widget.isDark
+                        ? AppColors.srSub.withAlpha(80)
+                        : AppColors.rrSub.withAlpha(80)),
+              ),
+            );
+          }),
         ),
       ],
     );

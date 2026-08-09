@@ -30,14 +30,14 @@ class TestRepository extends MockMovieRepository {
           id: '3',
           title: 'Movie 3',
           type: MediaType.movie,
-          rating: 6.0,
+          rating: 7.5,
           overview: '',
           genres: []),
       const MediaItem(
           id: '4',
           title: 'Movie 4',
           type: MediaType.movie,
-          rating: 5.0,
+          rating: 7.2,
           overview: '',
           genres: []),
     ];

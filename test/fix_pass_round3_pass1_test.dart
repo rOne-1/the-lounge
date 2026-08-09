@@ -104,7 +104,7 @@ void main() {
       expect(find.text('TMDB Attribution'), findsOneWidget);
     });
 
-    testWidgets('Item 7: PickForMeCard overview text is scrollable in SingleChildScrollView', (WidgetTester tester) async {
+    testWidgets('PickForMeCard displays tagline text', (WidgetTester tester) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
 
@@ -134,7 +134,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Long Overview Movie'), findsOneWidget);
-      expect(find.byType(SingleChildScrollView), findsWidgets);
+      expect(find.text('Decide from your watchlist.'), findsOneWidget);
     });
   });
 }

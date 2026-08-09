@@ -1,5 +1,6 @@
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +12,16 @@ import 'services/crash_reporting_service.dart';
 void main() async {
   final stopwatch = Stopwatch()..start();
   WidgetsFlutterBinding.ensureInitialized();
+
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.light,
+      statusBarBrightness: Brightness.dark,
+      systemNavigationBarColor: Color(0xFF161312),
+      systemNavigationBarIconBrightness: Brightness.light,
+    ),
+  );
 
   WidgetsBinding.instance.addPostFrameCallback((_) {
     if (stopwatch.isRunning) {

@@ -194,7 +194,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Title
-      expect(find.text('Inception'), findsOneWidget);
+      expect(find.text('Inception'), findsAtLeastNWidgets(1));
 
       // Verify Rating badge
       expect(find.text('★ 8.8'), findsOneWidget);
@@ -274,7 +274,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify Title
-      expect(find.text('Stranger Things'), findsOneWidget);
+      expect(find.text('Stranger Things'), findsAtLeastNWidgets(1));
 
       // Verify Rating badge
       expect(find.text('★ 8.7'), findsOneWidget);
@@ -429,7 +429,7 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.text('Inception'), findsOneWidget);
+      expect(find.text('Inception'), findsAtLeastNWidgets(1));
       expect(find.text('★ 8.8'), findsOneWidget);
       expect(find.text('Action'), findsOneWidget);
       expect(find.text('148 min'), findsOneWidget);

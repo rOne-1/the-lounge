@@ -452,6 +452,18 @@ class MediaItem {
   /// Convenience getter for poster in detail view.
   String? get effectiveDetailPosterUrl => detailPosterUrl ?? posterUrl;
 
+  /// Convenience getter for release date / air date.
+  DateTime? get releaseDate => releaseOrAirDate;
+
+  /// Returns the name of the collection if present and non-empty.
+  String? get collectionName {
+    final name = belongsToCollection?.name;
+    if (name != null && name.trim().isNotEmpty) {
+      return name.trim();
+    }
+    return null;
+  }
+
   /// Returns the ID strictly type-prefixed (e.g. "movie_123" or "tv_123").
   String get prefixedId {
     if (id.startsWith('movie_') || id.startsWith('tv_')) {
@@ -549,6 +561,10 @@ class MediaItem {
       'type': type.name,
       'posterUrl': posterUrl,
       'rating': rating,
+      if (belongsToCollection != null) ...{
+        'collectionId': belongsToCollection!.id,
+        'collectionName': belongsToCollection!.name,
+      },
     };
   }
 
@@ -564,6 +580,13 @@ class MediaItem {
       ratingVal = double.tryParse(r) ?? 0.0;
     }
 
+    final colName = json['collectionName'] as String?;
+    final colId = (json['collectionId'] as num?)?.toInt();
+    MediaCollection? col;
+    if (colName != null && colName.isNotEmpty) {
+      col = MediaCollection(id: colId ?? 0, name: colName);
+    }
+
     return MediaItem(
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
@@ -572,6 +595,7 @@ class MediaItem {
       posterUrl: json['posterUrl'] as String?,
       overview: '',
       genres: const [],
+      belongsToCollection: col,
     );
   }
 }

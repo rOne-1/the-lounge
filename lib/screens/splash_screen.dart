@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import 'shell_screen.dart';
@@ -34,6 +35,16 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   void initState() {
     super.initState();
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Color(0xFF161312),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+
     final shouldAnimate = widget.enableAnimation ?? true;
 
     _controller = AnimationController(
@@ -98,75 +109,84 @@ class _SplashScreenState extends State<SplashScreen>
   Widget build(BuildContext context) {
     const darkBackground = Color(0xFF161312);
 
-    return Scaffold(
-      backgroundColor: darkBackground,
-      body: Container(
-        decoration: AppThemes.screeningRoomBackground().copyWith(
-          color: darkBackground,
-        ),
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: child,
-                ),
-              );
-            },
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Screening room logo icon container with champagne gold accent glow
-                Container(
-                  width: 88,
-                  height: 88,
-                  decoration: BoxDecoration(
-                    color: AppColors.srCard,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.srAcc.withValues(alpha: 0.4),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.srAcc.withValues(alpha: 0.2),
-                        blurRadius: 24,
-                        spreadRadius: 2,
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Color(0xFF161312),
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: darkBackground,
+        body: Container(
+          decoration: AppThemes.screeningRoomBackground().copyWith(
+            color: darkBackground,
+          ),
+          child: Center(
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                return FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: ScaleTransition(
+                    scale: _scaleAnimation,
+                    child: child,
+                  ),
+                );
+              },
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Screening room logo icon container with champagne gold accent glow
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: AppColors.srCard,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: AppColors.srAcc.withValues(alpha: 0.4),
+                        width: 1.5,
                       ),
-                    ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.srAcc.withValues(alpha: 0.2),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.local_movies_rounded,
+                      size: 42,
+                      color: AppColors.srAcc,
+                    ),
                   ),
-                  child: const Icon(
-                    Icons.local_movies_rounded,
-                    size: 42,
-                    color: AppColors.srAcc,
+                  const SizedBox(height: 24),
+                  // Typography - The Lounge
+                  Text(
+                    'THE LOUNGE',
+                    style: GoogleFonts.bodoniModa(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 4.0,
+                      color: AppColors.srInk,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
-                // Typography - The Lounge
-                Text(
-                  'THE LOUNGE',
-                  style: GoogleFonts.bodoniModa(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 4.0,
-                    color: AppColors.srInk,
+                  const SizedBox(height: 8),
+                  // Subtitle / Tagline accent
+                  Text(
+                    'CINEMATIC SCREENING ROOM',
+                    style: AppThemes.safeGeist(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 2.5,
+                      color: AppColors.srAcc,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 8),
-                // Subtitle / Tagline accent
-                Text(
-                  'CINEMATIC SCREENING ROOM',
-                  style: AppThemes.safeGeist(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 2.5,
-                    color: AppColors.srAcc,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

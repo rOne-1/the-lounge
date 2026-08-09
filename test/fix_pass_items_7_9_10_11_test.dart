@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'package:the_lounge/models/media_collection_detail.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/screens/browse_screen.dart';
@@ -34,6 +35,15 @@ class TestCollectionRepository extends MockMovieRepository {
 
   @override
   Future<List<MediaItem>> getTrendingMovies({int page = 1}) async {
+    return trendingByPage[page] ?? [];
+  }
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+    int page = 1,
+  }) async {
     return trendingByPage[page] ?? [];
   }
 

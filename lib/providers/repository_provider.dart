@@ -10,6 +10,30 @@ import '../repositories/tmdb_movie_repository.dart';
 import '../services/tmdb_api_service.dart';
 
 /// Provider for [TmdbApiService] using environment token if available.
+const List<Map<String, String>> supportedLanguages = [
+  {'code': 'en', 'name': 'English'},
+  {'code': 'ja', 'name': 'Japanese'},
+  {'code': 'fr', 'name': 'French'},
+  {'code': 'es', 'name': 'Spanish'},
+  {'code': 'de', 'name': 'German'},
+  {'code': 'ko', 'name': 'Korean'},
+  {'code': 'it', 'name': 'Italian'},
+  {'code': 'pt', 'name': 'Portuguese'},
+  {'code': 'zh', 'name': 'Mandarin'},
+  {'code': 'hi', 'name': 'Hindi'},
+  {'code': 'cn', 'name': 'Cantonese'},
+  {'code': 'ru', 'name': 'Russian'},
+  {'code': 'sv', 'name': 'Swedish'},
+  {'code': 'pl', 'name': 'Polish'},
+  {'code': 'da', 'name': 'Danish'},
+  {'code': 'no', 'name': 'Norwegian'},
+  {'code': 'nl', 'name': 'Dutch'},
+  {'code': 'tr', 'name': 'Turkish'},
+  {'code': 'th', 'name': 'Thai'},
+  {'code': 'ar', 'name': 'Arabic'},
+  {'code': 'vi', 'name': 'Vietnamese'},
+];
+
 final tmdbApiServiceProvider = Provider<TmdbApiService>((ref) {
   String? token;
   try {

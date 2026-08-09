@@ -6,6 +6,7 @@ import 'dart:math' as math;
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
+import '../models/discover_filter_params.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/segmented_toggle.dart';
 import '../widgets/pressable_scale.dart';
@@ -81,25 +82,47 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       final page1 = _currentPoolPage;
       final page2 = _currentPoolPage + 1;
 
+      const discoverParams = DiscoverFilterParams(minRating: 7.0);
       if (isMovies) {
-        final t1 = await repo.getTrendingMovies(page: page1);
-        rawList.addAll(t1);
-        try { final t2 = await repo.getTrendingMovies(page: page2); rawList.addAll(t2); } catch (_) {}
+        final d1 = await repo.discoverMedia(
+          isMovies: true,
+          params: discoverParams,
+          page: page1,
+        );
+        rawList.addAll(d1);
+        try {
+          final d2 = await repo.discoverMedia(
+            isMovies: true,
+            params: discoverParams,
+            page: page2,
+          );
+          rawList.addAll(d2);
+        } catch (_) {}
         try { final p1 = await repo.getPopularMovies(page: page1); rawList.addAll(p1); } catch (_) {}
-        try { final p2 = await repo.getPopularMovies(page: page2); rawList.addAll(p2); } catch (_) {}
       } else {
-        final t1 = await repo.getTrendingTvShows(page: page1);
-        rawList.addAll(t1);
-        try { final t2 = await repo.getTrendingTvShows(page: page2); rawList.addAll(t2); } catch (_) {}
+        final d1 = await repo.discoverMedia(
+          isMovies: false,
+          params: discoverParams,
+          page: page1,
+        );
+        rawList.addAll(d1);
+        try {
+          final d2 = await repo.discoverMedia(
+            isMovies: false,
+            params: discoverParams,
+            page: page2,
+          );
+          rawList.addAll(d2);
+        } catch (_) {}
         try { final top1 = await repo.getTopRatedTvShows(page: page1); rawList.addAll(top1); } catch (_) {}
-        try { final top2 = await repo.getTopRatedTvShows(page: page2); rawList.addAll(top2); } catch (_) {}
       }
 
       if (mounted) {
         setState(() {
           final seen = <String>{..._pool.map((item) => item.id)};
           final newItems = rawList
-              .where((item) => !isExcluded(item) && seen.add(item.id))
+              .where((item) =>
+                  item.rating >= 7.0 && !isExcluded(item) && seen.add(item.id))
               .toList();
           if (isReload) {
             _pool = [..._pool, ...newItems];
@@ -117,6 +140,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         });
       }
     }
+  }
+
+  bool _isUnreleased(MediaItem item) {
+    if (item.releaseDate != null && item.releaseDate!.isAfter(DateTime.now())) {
+      return true;
+    }
+    if (item.status != null) {
+      final s = item.status!.toLowerCase();
+      if (s == 'unreleased' || s == 'in production' || s == 'planned') {
+        return true;
+      }
+    }
+    return false;
   }
 
   void _onDirectionChanged(String? direction) {
@@ -137,6 +173,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     } else if (direction == 'Down') {
       notifier.addToWatchlist(item);
     } else if (direction == 'Up') {
+      if (_isUnreleased(item)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('This title has not been released yet.')),
+        );
+        return;
+      }
       notifier.addToWatchedList(item);
     }
 
@@ -350,33 +392,49 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _buildActionButton(
-                    icon: Icons.close,
-                    color: isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072),
-                    borderColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.5) : const Color.fromRGBO(138, 128, 114, 0.5),
-                    direction: 'Left',
-                    onTap: () => _triggerSwipe('Left'),
+                  _buildActionButtonWithLabel(
+                    label: '← Skip',
+                    button: _buildActionButton(
+                      icon: Icons.close,
+                      color: isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072),
+                      borderColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.5) : const Color.fromRGBO(138, 128, 114, 0.5),
+                      direction: 'Left',
+                      onTap: () => _triggerSwipe('Left'),
+                      isDark: isDark,
+                    ),
                     isDark: isDark,
                   ),
                   const SizedBox(width: 14),
-                  _buildActionButton(
-                    icon: Icons.star_border,
-                    activeIcon: Icons.star,
-                    color: isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50),
-                    borderColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.55) : const Color.fromRGBO(167, 106, 80, 0.55),
-                    direction: 'Right',
-                    onTap: () => _triggerSwipe('Right'),
+                  _buildActionButtonWithLabel(
+                    label: '→ Saved',
+                    button: _buildActionButton(
+                      icon: Icons.star_border,
+                      activeIcon: Icons.star,
+                      color: isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50),
+                      borderColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.55) : const Color.fromRGBO(167, 106, 80, 0.55),
+                      direction: 'Right',
+                      onTap: () => _triggerSwipe('Right'),
+                      isDark: isDark,
+                    ),
                     isDark: isDark,
                   ),
                   const SizedBox(width: 14),
-                  _buildWatchlistActionButton(isDark: isDark, accColor: accColor),
+                  _buildActionButtonWithLabel(
+                    label: '↓ Watchlist',
+                    button: _buildWatchlistActionButton(isDark: isDark, accColor: accColor),
+                    isDark: isDark,
+                  ),
                   const SizedBox(width: 14),
-                  _buildActionButton(
-                    icon: Icons.check,
-                    color: isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86),
-                    borderColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.55) : const Color.fromRGBO(86, 111, 134, 0.55),
-                    direction: 'Up',
-                    onTap: () => _triggerSwipe('Up'),
+                  _buildActionButtonWithLabel(
+                    label: '↑ Watched',
+                    button: _buildActionButton(
+                      icon: Icons.check,
+                      color: isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86),
+                      borderColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.55) : const Color.fromRGBO(86, 111, 134, 0.55),
+                      direction: 'Up',
+                      onTap: () => _triggerSwipe('Up'),
+                      isDark: isDark,
+                    ),
                     isDark: isDark,
                   ),
                 ],
@@ -385,6 +443,29 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           ],
         ),
         _buildLegendOverlay(isDark, accColor),
+      ],
+    );
+  }
+
+  Widget _buildActionButtonWithLabel({
+    required String label,
+    required Widget button,
+    required bool isDark,
+  }) {
+    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        button,
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: AppThemes.safeGeist(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: subColor,
+          ),
+        ),
       ],
     );
   }
@@ -992,6 +1073,34 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
             fit: BoxFit.cover,
             showFallbackTitle: false,
           ),
+          if (widget.item.releaseDate != null && widget.item.releaseDate!.isAfter(DateTime.now()))
+            Positioned(
+              top: 14,
+              left: 14,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE53935),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black38,
+                      blurRadius: 6,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  'UPCOMING • ${widget.item.releaseDate!.year}',
+                  style: AppThemes.safeGeist(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+              ),
+            ),
           
           // Soft Edge Glow / Tint overlay
           if (hintOpacity > 0 && activeColor != null)
@@ -1109,7 +1218,12 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
                         child: Text('★ ${widget.item.rating}', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFF1A140C) : Colors.white)),
                       ),
                       const SizedBox(width: 8),
-                      Text('2024 · Sci-fi', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: const Color.fromRGBO(255, 255, 255, 0.8))),
+                      Builder(builder: (context) {
+                        final yearStr = widget.item.releaseDate != null ? widget.item.releaseDate!.year.toString() : '';
+                        final genreStr = widget.item.genres.isNotEmpty ? widget.item.genres.take(2).join(', ') : '';
+                        final metaText = [if (yearStr.isNotEmpty) yearStr, if (genreStr.isNotEmpty) genreStr].join(' · ');
+                        return Text(metaText.isNotEmpty ? metaText : 'Discover', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: const Color.fromRGBO(255, 255, 255, 0.8)));
+                      }),
                     ],
                   ),
                   const SizedBox(height: 6),
@@ -1184,7 +1298,10 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
           ),
         );
       },
-      openBuilder: (context, _) => DetailScreen(id: widget.item.prefixedId),
+      openBuilder: (context, _) => DetailScreen(
+        id: widget.item.prefixedId,
+        initialItem: widget.item,
+      ),
     );
   }
 }

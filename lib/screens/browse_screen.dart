@@ -226,14 +226,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     {'id': 387, 'name': 'Peacock'},
   ];
 
-  final List<Map<String, String>> _languages = const [
-    {'code': 'en', 'name': 'English'},
-    {'code': 'ja', 'name': 'Japanese'},
-    {'code': 'fr', 'name': 'French'},
-    {'code': 'es', 'name': 'Spanish'},
-    {'code': 'de', 'name': 'German'},
-    {'code': 'ko', 'name': 'Korean'},
-  ];
+  List<Map<String, String>> get _languages => supportedLanguages;
 
   final List<Map<String, dynamic>> _tvNetworks = const [
     {'id': 49, 'name': 'HBO'},
@@ -615,15 +608,17 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   Widget _buildSearchModeBadge(bool isDark) {
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
 
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: accColor.withAlpha(25),
+        color: pillColor,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: accColor.withAlpha(100)),
+        border: Border.all(color: lineRgba, width: 1.0),
       ),
       child: Row(
         children: [
@@ -1127,8 +1122,15 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
 
     if (filterParams.originalLanguage != null &&
         filterParams.originalLanguage!.isNotEmpty) {
+      final langMatch = supportedLanguages.firstWhere(
+        (l) => l['code'] == filterParams.originalLanguage,
+        orElse: () => {
+          'code': filterParams.originalLanguage!,
+          'name': filterParams.originalLanguage!,
+        },
+      );
       chips.add(_buildChip(
-        label: 'Language: ${filterParams.originalLanguage}',
+        label: 'Language: ${langMatch['name']}',
         onDelete: () {
           ref.read(discoverFilterProvider.notifier).setOriginalLanguage(null);
         },
@@ -1256,20 +1258,13 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
     if (isSelected) {
       return AppColors.primaryButtonDecoration(isDark: isDark, borderRadius: 999).copyWith(
-        border: Border.all(color: accColor, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: accColor.withAlpha(80),
-            blurRadius: 6,
-            spreadRadius: 1,
-          ),
-        ],
+        border: Border.all(color: accColor, width: 1.0),
       );
     }
     return BoxDecoration(
       color: pillColor,
       borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: lineRgba),
+      border: Border.all(color: lineRgba, width: 1.0),
     );
   }
 

@@ -836,10 +836,13 @@ class TmdbMovieRepository implements MovieRepository {
 
     final rating = (json['vote_average'] as num?)?.toDouble() ?? 0.0;
 
-    final dateStr = (json['release_date'] as String?) ??
-        (json['first_air_date'] as String?);
+    final releaseStr = json['release_date'] as String?;
+    final airStr = json['first_air_date'] as String?;
+    final dateStr = (releaseStr != null && releaseStr.trim().isNotEmpty)
+        ? releaseStr.trim()
+        : ((airStr != null && airStr.trim().isNotEmpty) ? airStr.trim() : null);
     DateTime? releaseOrAirDate;
-    if (dateStr != null && dateStr.isNotEmpty) {
+    if (dateStr != null) {
       releaseOrAirDate = DateTime.tryParse(dateStr);
     }
 

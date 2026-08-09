@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
@@ -10,6 +11,7 @@ import '../constants.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/quick_status_sheet.dart';
+import '../widgets/segmented_toggle.dart';
 
 enum InProgressSubFilter { watching, onHold, dropped }
 
@@ -36,6 +38,8 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
     final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final isLarge = MediaQuery.of(context).size.width >= 600;
+    final paddingHorizontal = isLarge ? 24.0 : 18.0;
 
     List<MediaItem> filterList(Map<String, MediaItem> itemsMap) {
       return itemsMap.values
@@ -58,6 +62,30 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
       length: 4,
       child: Column(
         children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(paddingHorizontal, 12.0, paddingHorizontal, 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  'Your Space',
+                  style: GoogleFonts.bodoniModa(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w600,
+                    fontStyle: FontStyle.italic,
+                    color: inkColor,
+                  ),
+                ),
+                SegmentedMediaTypeToggle(
+                  activeType: navState.activeMediaType,
+                  onChanged: (type) =>
+                      ref.read(navigationProvider.notifier).setMediaType(type),
+                  isDark: isDark,
+                ),
+              ],
+            ),
+          ),
           TabBar(
             labelColor: accColor,
             unselectedLabelColor: subColor,
@@ -102,10 +130,9 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                   inkColor: inkColor,
                   accColor: accColor,
                 ),
-                _buildTabContent(
+                _buildWatchedTabContent(
                   context: context,
                   title: 'Watched',
-                  subtitle: null,
                   items: filterList(mediaState.watchedList),
                   isDark: isDark,
                   subColor: subColor,
@@ -115,7 +142,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.only(bottom: 6.0, top: 4.0),
+            padding: EdgeInsets.only(bottom: 90.0 + MediaQuery.of(context).padding.bottom, top: 4.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -416,6 +443,247 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
             begin: 0.1,
             end: 0,
             delay: (index.clamp(0, 5) * 40).ms);
+      },
+    );
+  }
+
+  Widget _buildWatchedTabContent({
+    required BuildContext context,
+    required String title,
+    required List<MediaItem> items,
+    required bool isDark,
+    required Color subColor,
+    required Color inkColor,
+  }) {
+    if (items.isEmpty) {
+      return Center(
+        child: Text(
+          'Nothing here yet.',
+          style: AppThemes.safeGeist(fontSize: 14, color: subColor),
+        ),
+      );
+    }
+
+    final Map<String, List<MediaItem>> groupedByCollection = {};
+    final List<MediaItem> standaloneItems = [];
+
+    for (final item in items) {
+      final colName = item.collectionName;
+      if (colName != null && colName.isNotEmpty) {
+        groupedByCollection.putIfAbsent(colName, () => []).add(item);
+      } else {
+        standaloneItems.add(item);
+      }
+    }
+
+    final isLarge = MediaQuery.of(context).size.width >= 600;
+    final paddingHorizontal = isLarge ? 24.0 : 18.0;
+    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
+
+    return SingleChildScrollView(
+      padding: EdgeInsets.fromLTRB(
+        paddingHorizontal,
+        16.0,
+        paddingHorizontal,
+        90.0 + MediaQuery.of(context).padding.bottom,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppThemes.safeGeist(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: inkColor,
+            ),
+          ),
+          const SizedBox(height: 12),
+          ...groupedByCollection.entries.map((entry) {
+            final colName = entry.key;
+            final colItems = entry.value;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: lineRgba, width: 1.0),
+              ),
+              child: Material(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(14),
+                clipBehavior: Clip.antiAlias,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    initiallyExpanded: true,
+                    iconColor: accColor,
+                    collapsedIconColor: subColor,
+                    title: Row(
+                      children: [
+                        Icon(Icons.collections_bookmark_outlined, size: 18, color: accColor),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            colName,
+                            style: AppThemes.safeGeist(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: inkColor,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: accColor.withAlpha(30),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${colItems.length}',
+                            style: AppThemes.safeGeist(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: accColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    children: [
+                      _buildSubGrid(context, colItems, isDark),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+          if (standaloneItems.isNotEmpty)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: lineRgba, width: 1.0),
+              ),
+              child: Material(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(14),
+                clipBehavior: Clip.antiAlias,
+                child: Theme(
+                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  child: ExpansionTile(
+                    initiallyExpanded: true,
+                    iconColor: accColor,
+                    collapsedIconColor: subColor,
+                    title: Row(
+                      children: [
+                        Icon(Icons.movie_outlined, size: 18, color: accColor),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Standalone Titles',
+                            style: AppThemes.safeGeist(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: inkColor,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: accColor.withAlpha(30),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '${standaloneItems.length}',
+                            style: AppThemes.safeGeist(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: accColor,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                    children: [
+                      _buildSubGrid(context, standaloneItems, isDark),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSubGrid(BuildContext context, List<MediaItem> items, bool isDark) {
+    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 120,
+        childAspectRatio: 2 / 3,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+      ),
+      itemCount: items.length,
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return PressableScale(
+          child: OpenContainer(
+            transitionDuration: AppPhysics.houseSpringDuration,
+            closedElevation: 0,
+            openElevation: 0,
+            closedColor: Colors.transparent,
+            openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+            middleColor: Colors.transparent,
+            closedShape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(11),
+            ),
+            closedBuilder: (context, openContainer) {
+              return GestureDetector(
+                onTap: openContainer,
+                onLongPress: () => showQuickStatusSheet(context, ref, item),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: phColor,
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(color: lineRgba),
+                    boxShadow: [
+                      BoxShadow(
+                        color: isDark
+                            ? const Color.fromRGBO(255, 255, 255, 0.05)
+                            : const Color.fromRGBO(255, 255, 255, 0.4),
+                        blurRadius: 0,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 1),
+                        blurStyle: BlurStyle.inner,
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: MediaImage(
+                    item: item,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              );
+            },
+            openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+          ),
+        ).animate().fade(duration: 250.ms).slideY(
+              begin: 0.1,
+              end: 0,
+              delay: (index.clamp(0, 5) * 40).ms,
+            );
       },
     );
   }

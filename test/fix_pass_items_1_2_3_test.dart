@@ -33,12 +33,20 @@ class _MockTestRepository extends MockMovieRepository {
         id: 'item3',
         title: 'Item Three',
         type: MediaType.movie,
-        rating: 6.5,
+        rating: 7.2,
         overview: 'Overview 3',
         genres: [],
       ),
     ];
   }
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+    int page = 1,
+  }) async =>
+      getTrendingMovies(page: page);
 
   @override
   Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
@@ -75,13 +83,6 @@ class _MockTestRepository extends MockMovieRepository {
 
   @override
   Future<List<Map<String, String>>> getWatchProviderRegions() async => [];
-
-  @override
-  Future<List<MediaItem>> discoverMedia({
-    required bool isMovies,
-    required DiscoverFilterParams params,
-    int page = 1,
-  }) async => [];
 
   @override
   Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
