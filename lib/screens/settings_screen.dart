@@ -129,8 +129,8 @@ class SettingsScreen extends ConsumerWidget {
                             onTap: () async {
                               final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.name);
                               try {
-                                await saveJsonFile(jsonString, 'the_lounge_backup.json');
-                                if (context.mounted) {
+                                final success = await saveJsonFile(jsonString, 'the_lounge_backup.json');
+                                if (success && context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
                                       content: Text('Backup exported successfully.', style: AppThemes.safeGeist(color: Colors.white)),

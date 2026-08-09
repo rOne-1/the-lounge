@@ -1,4 +1,4 @@
-Future<void> saveJsonFile(String jsonString, String fileName) async {
+Future<bool> saveJsonFile(String jsonString, String fileName) async {
   throw UnimplementedError('saveJsonFile is not implemented on this platform');
 }
 

@@ -4,7 +4,7 @@ import 'dart:js_interop';
 import 'dart:js_interop_unsafe';
 import 'package:file_picker/file_picker.dart';
 
-Future<void> saveJsonFile(String jsonString, String fileName) async {
+Future<bool> saveJsonFile(String jsonString, String fileName) async {
   final bytes = utf8.encode(jsonString);
   final blob = web.Blob([bytes.toJS].toJS, web.BlobPropertyBag(type: 'application/json'));
   final url = web.URL.createObjectURL(blob);
@@ -13,6 +13,7 @@ Future<void> saveJsonFile(String jsonString, String fileName) async {
     ..download = fileName;
   anchor.click();
   web.URL.revokeObjectURL(url);
+  return true;
 }
 
 Future<void> shareJsonFile(String jsonString, String fileName) async {

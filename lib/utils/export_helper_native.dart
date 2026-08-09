@@ -3,19 +3,14 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
-Future<void> saveJsonFile(String jsonString, String fileName) async {
+Future<bool> saveJsonFile(String jsonString, String fileName) async {
   final bytes = utf8.encode(jsonString);
   final path = await FilePicker.saveFile(
     dialogTitle: 'Save Backup',
     fileName: fileName,
     bytes: bytes,
   );
-  if (path != null && path.isNotEmpty) {
-    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
-      final file = File(path);
-      await file.writeAsString(jsonString);
-    }
-  }
+  return path != null && path.isNotEmpty;
 }
 
 Future<void> shareJsonFile(String jsonString, String fileName) async {
