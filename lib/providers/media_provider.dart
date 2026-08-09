@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
 import 'ambiance_provider.dart';
 import '../constants.dart';
+import 'repository_provider.dart';
 export 'repository_provider.dart';
 
 class MediaState {
@@ -480,6 +481,33 @@ class MediaNotifier extends Notifier<MediaState> {
       watchedEpisodes: newWatchedEpisodes,
     );
     _saveToPrefs();
+
+    if (item.type == MediaType.movie && item.belongsToCollection == null) {
+      _enrichWatchedItemCollection(item.id);
+    }
+  }
+
+  void _enrichWatchedItemCollection(String id) async {
+    try {
+      final repo = ref.read(movieRepositoryProvider);
+      final details = await repo.getMediaDetails(id);
+      if (details != null && details.belongsToCollection != null) {
+        if (state.watchedList.containsKey(id)) {
+          final currentItem = state.watchedList[id]!;
+          if (currentItem.belongsToCollection == null) {
+            final enrichedItem = currentItem.copyWith(
+              belongsToCollection: details.belongsToCollection,
+            );
+            final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+              ..[id] = enrichedItem;
+            state = state.copyWith(watchedList: newWatchedList);
+            _saveToPrefs();
+          }
+        }
+      }
+    } catch (_) {
+      // Fail silently to prevent throwing during background calls
+    }
   }
 
   void removeFromWatchedList(String id) {
