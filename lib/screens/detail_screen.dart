@@ -75,17 +75,14 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   @override
   Widget build(BuildContext context) {
     final detailAsync = ref.watch(mediaDetailsProvider(widget.id));
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final isDark = context.ambianceColors.isDark;
+    final inkColor = context.ambianceColors.ink;
 
     return SizedBox.expand(
       child: DecoratedBox(
-        decoration: isDark
-            ? AppThemes.screeningRoomBackground()
-            : AppThemes.readingRoomBackground(),
+        decoration: context.ambianceColors.background,
         child: Scaffold(
-          backgroundColor: isDark ? AppColors.srBase : AppColors.rrBase,
+          backgroundColor: context.ambianceColors.base,
           appBar: AppBar(
             leading: PressableScale(
               onTap: () => Navigator.maybePop(context),
@@ -144,8 +141,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     MediaItem item,
     bool isDark,
   ) {
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
 
     return SingleChildScrollView(
       child: Column(
@@ -251,8 +248,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     MediaItem item,
     bool isDark,
   ) {
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -359,7 +356,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 
   Widget _buildHero(BuildContext context, MediaItem item, bool isDark) {
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final phColor = context.ambianceColors.ph;
     return AspectRatio(
       aspectRatio: 16 / 9,
       child: Container(
@@ -377,8 +374,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 
   Widget _buildRatingBadge(MediaItem item, bool isDark) {
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final textColor = isDark ? const Color(0xFF1A140C) : Colors.white;
+    final accColor = context.ambianceColors.acc;
+    final textColor = Theme.of(context).colorScheme.onPrimary;
 
     final String ratingStr;
     if (item.voteCount != null && item.voteCount! > 0) {
@@ -417,9 +414,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 
   Widget _buildMetaRow(MediaItem item, bool isDark) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     final metaPills = <Widget>[];
 
@@ -582,9 +579,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 
   Widget _buildGenreChips(BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     return Wrap(
       spacing: 8,
@@ -632,10 +629,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       return const SizedBox.shrink();
     }
 
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final inkColor = context.ambianceColors.ink;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -697,9 +694,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final collection = item.belongsToCollection;
     if (collection == null) return const SizedBox.shrink();
 
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final cardBg = context.ambianceColors.card;
 
     final imageUrl = collection.backdropUrl ?? collection.posterUrl;
 
@@ -780,7 +777,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.2,
-                            color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                            color: context.ambianceColors.acc,
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -844,10 +841,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       return const SizedBox.shrink();
     }
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     void navigateToPerson(int? pId, String pName) {
       ref.read(discoverFilterProvider.notifier).setPerson(
@@ -957,9 +954,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       items = const [];
     }
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final inkColor = context.ambianceColors.ink;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
@@ -1054,10 +1051,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       return const SizedBox.shrink();
     }
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1121,10 +1118,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       return const SizedBox.shrink();
     }
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1200,13 +1197,13 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final inDropped = mediaState.droppedList.containsKey(item.id);
 
     final saveColor =
-        isDark ? AppColors.srStatusSave : AppColors.rrStatusSave;
+        context.ambianceColors.statusSave;
     final watchColor =
-        isDark ? AppColors.srStatusWatchlist : AppColors.rrStatusWatchlist;
+        context.ambianceColors.statusWatchlist;
     final watchingColor =
-        isDark ? AppColors.srStatusWatching : AppColors.rrStatusWatching;
+        context.ambianceColors.statusWatching;
     final watchedColor =
-        isDark ? AppColors.srStatusWatched : AppColors.rrStatusWatched;
+        context.ambianceColors.statusWatched;
     final onHoldColor =
         isDark ? const Color(0xFFD6A24D) : const Color(0xFFB87820);
     final droppedColor =
@@ -1329,8 +1326,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     MediaItem item,
     bool isDark,
   ) {
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final accentColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final inkColor = context.ambianceColors.ink;
+    final accentColor = context.ambianceColors.acc;
     final borderColor = isDark
         ? accentColor.withAlpha(50)
         : accentColor.withAlpha(50);
@@ -1392,7 +1389,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           color: isDark ? const Color(0xFF2C2419) : const Color(0xFFF0E5D8),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+            color: context.ambianceColors.lineRgba,
           ),
         ),
         child: Row(
@@ -1419,14 +1416,14 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               style: AppThemes.safeGeist(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.srInk : AppColors.rrInk,
+                color: context.ambianceColors.ink,
               ),
             ),
             const SizedBox(width: 4),
             Icon(
               Icons.open_in_new,
               size: 14,
-              color: isDark ? AppColors.srSub : AppColors.rrSub,
+              color: context.ambianceColors.sub,
             ),
           ],
         ),
@@ -1443,8 +1440,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     bool isDisabled = false,
   }) {
     final textColor = isSelected
-        ? (isDark ? const Color(0xFF1A140C) : Colors.white)
-        : (isDark ? AppColors.srSub : AppColors.rrSub);
+        ? (Theme.of(context).colorScheme.onPrimary)
+        : (context.ambianceColors.sub);
     final borderColor = isSelected
         ? accentColor
         : (isDark ? accentColor.withAlpha(50) : accentColor.withAlpha(50));
@@ -1482,10 +1479,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   ),
                 ],
               )
-            : AppColors.primaryButtonDecoration(
-                isDark: false,
-                borderRadius: 12,
-              ))
+            : context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(12)))
         : BoxDecoration(
             color: isDark ? const Color(0xFF100C0A) : const Color(0xFFE7DDC9),
             borderRadius: BorderRadius.circular(12),
@@ -1558,10 +1552,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   Widget _buildCastStrip(BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
     if (item.cast.isEmpty) return const SizedBox.shrink();
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1659,11 +1653,11 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final trailers = item.trailers;
     if (trailers == null || trailers.isEmpty) return const SizedBox.shrink();
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final accColor = context.ambianceColors.acc;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1772,9 +1766,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                                           style: AppThemes.safeGeist(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w700,
-                                            color: isDark
-                                                ? const Color(0xFF1A140C)
-                                                : Colors.white,
+                                            color: Theme.of(context).colorScheme.onPrimary,
                                           ),
                                         ),
                                       ),
@@ -1820,11 +1812,11 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final notifier = ref.read(mediaProvider.notifier);
     final regionsAsync = ref.watch(watchProviderRegionsProvider);
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final accColor = context.ambianceColors.acc;
 
     final defaultRegions = const [
       {'code': 'US', 'name': 'United States'},
@@ -1878,7 +1870,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 child: DropdownButtonHideUnderline(
                   child: DropdownButton<String>(
                     value: currentCountry,
-                    dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
+                    dropdownColor: context.ambianceColors.card,
                     icon: Icon(Icons.arrow_drop_down, color: subColor, size: 20),
                     isDense: true,
                     style: AppThemes.safeGeist(
@@ -2118,7 +2110,7 @@ class _ExpandableOverviewTextState extends State<ExpandableOverviewText> {
 
   @override
   Widget build(BuildContext context) {
-    final accentColor = widget.isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final accentColor = context.ambianceColors.acc;
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -2231,12 +2223,12 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
   Widget build(BuildContext context) {
     if (widget.item.type != MediaType.tv) return const SizedBox.shrink();
 
-    final inkColor = widget.isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = widget.isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = widget.isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = widget.isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final accColor = widget.isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final pillColor = widget.isDark ? AppColors.srPill : AppColors.rrPill;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final accColor = context.ambianceColors.acc;
+    final pillColor = context.ambianceColors.pill;
 
     final seasonsCount = widget.item.seasonsCount ?? 1;
 
@@ -2303,9 +2295,7 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                           fontSize: 12,
                           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                           color: isSelected
-                              ? (widget.isDark
-                                  ? const Color(0xFF1A140C)
-                                  : Colors.white)
+                              ? (Theme.of(context).colorScheme.onPrimary)
                               : subColor,
                         ),
                       ),
@@ -2385,9 +2375,7 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                             width: 64,
                             height: 40,
                             decoration: BoxDecoration(
-                              color: widget.isDark
-                                  ? AppColors.srCard
-                                  : AppColors.rrCard,
+                              color: context.ambianceColors.card,
                               borderRadius: BorderRadius.circular(6),
                               image: episode.stillUrl != null
                                   ? DecorationImage(
@@ -2507,9 +2495,7 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                           : Icons.check_outlined,
                                       size: 16,
                                       color: isWatched
-                                          ? (widget.isDark
-                                              ? const Color(0xFF1A140C)
-                                              : Colors.white)
+                                          ? (Theme.of(context).colorScheme.onPrimary)
                                           : subColor,
                                     ),
                                   ),

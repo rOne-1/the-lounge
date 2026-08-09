@@ -178,13 +178,12 @@ class HomeScreen extends ConsumerWidget {
       return '$dayName $timeOfDay';
     }
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.ambianceColors.isDark;
 
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final subColor = context.ambianceColors.sub;
+    final pillColor = context.ambianceColors.pill;
+    final accColor = context.ambianceColors.acc;
+    final inkColor = context.ambianceColors.ink;
 
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
@@ -459,9 +458,7 @@ class HomeScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(18),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isDark
-                    ? const Color.fromRGBO(203, 168, 106, 0.4)
-                    : const Color.fromRGBO(176, 81, 43, 0.36),
+                color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.4 : 0.36),
               ),
               boxShadow: [
                 BoxShadow(
@@ -502,8 +499,7 @@ class HomeScreen extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 9),
-                      decoration: AppColors.primaryButtonDecoration(
-                          isDark: isDark, borderRadius: 999),
+                      decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -512,18 +508,14 @@ class HomeScreen extends ConsumerWidget {
                             style: AppThemes.safeGeist(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: isDark
-                                  ? const Color(0xFF1A140C)
-                                  : Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Icon(
                             Icons.arrow_forward,
                             size: 15,
-                            color: isDark
-                                ? const Color(0xFF1A140C)
-                                : Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         ],
                       ),
@@ -552,11 +544,11 @@ class TvContinueWatchingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final subColor = context.ambianceColors.sub;
+    final inkColor = context.ambianceColors.ink;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final accColor = context.ambianceColors.acc;
 
     final seasonsAsync = ref.watch(tvShowSeasonsProvider(item));
 
@@ -565,7 +557,7 @@ class TvContinueWatchingCard extends ConsumerWidget {
       closedElevation: 0,
       openElevation: 0,
       closedColor: Colors.transparent,
-      openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+      openColor: context.ambianceColors.base,
       middleColor: Colors.transparent,
       closedShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -707,10 +699,10 @@ class MovieWatchlistCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final subColor = context.ambianceColors.sub;
+    final inkColor = context.ambianceColors.ink;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     final genreLabel = item.genres.isNotEmpty ? item.genres.first : 'Movie';
     final runtimeLabel = item.runtime != null ? '${item.runtime} min' : 'Up Next';
@@ -720,7 +712,7 @@ class MovieWatchlistCard extends ConsumerWidget {
       closedElevation: 0,
       openElevation: 0,
       closedColor: Colors.transparent,
-      openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+      openColor: context.ambianceColors.base,
       middleColor: Colors.transparent,
       closedShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
@@ -807,10 +799,10 @@ class MediaRail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final subColor = context.ambianceColors.sub;
+    final inkColor = context.ambianceColors.ink;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -869,7 +861,7 @@ class MediaRail extends ConsumerWidget {
                           closedElevation: 0,
                           openElevation: 0,
                           closedColor: Colors.transparent,
-                          openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+                          openColor: context.ambianceColors.base,
                           middleColor: Colors.transparent,
                           closedShape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(11),
@@ -1040,7 +1032,7 @@ class _NextEpisodeBannerCarouselState
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(3),
                 color: isSelected
-                    ? (widget.isDark ? AppColors.srAcc : AppColors.rrAcc)
+                    ? (context.ambianceColors.acc)
                     : (widget.isDark
                         ? AppColors.srSub.withAlpha(80)
                         : AppColors.rrSub.withAlpha(80)),
@@ -1067,9 +1059,9 @@ class NextEpisodeBannerCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final subColor = context.ambianceColors.sub;
+    final inkColor = context.ambianceColors.ink;
+    final phColor = context.ambianceColors.ph;
 
     final seasonsAsync = ref.watch(tvShowSeasonsProvider(show));
 

@@ -33,12 +33,11 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
     final activeType = isMovies ? MediaType.movie : MediaType.tv;
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.ambianceColors.isDark;
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final accColor = context.ambianceColors.acc;
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
 
@@ -273,8 +272,8 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     required Color accColor,
     required Color subColor,
   }) {
-    final pillBg = isDark ? AppColors.srPill : AppColors.rrPill;
-    final activeTextColor = isDark ? const Color(0xFF1A140C) : Colors.white;
+    final pillBg = context.ambianceColors.pill;
+    final activeTextColor = Theme.of(context).colorScheme.onPrimary;
 
     Widget buildPill(String label, InProgressSubFilter filter) {
       final isSelected = _inProgressFilter == filter;
@@ -320,8 +319,8 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
       return Center(child: Text('Nothing here yet.', style: AppThemes.safeGeist(fontSize: 14, color: subColor)));
     }
 
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
     final isLarge = MediaQuery.of(context).size.width >= 600;
 
     return GridView.builder(
@@ -342,7 +341,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
             closedElevation: 0,
             openElevation: 0,
             closedColor: Colors.transparent,
-            openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+            openColor: context.ambianceColors.base,
             middleColor: Colors.transparent,
             closedShape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(11),
@@ -409,9 +408,9 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
 
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
+    final accColor = context.ambianceColors.acc;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final cardBg = context.ambianceColors.card;
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
@@ -555,8 +554,8 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
   }
 
   Widget _buildSubGrid(BuildContext context, List<MediaItem> items, bool isDark) {
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     return GridView.builder(
       shrinkWrap: true,
@@ -576,7 +575,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
             closedElevation: 0,
             openElevation: 0,
             closedColor: Colors.transparent,
-            openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+            openColor: context.ambianceColors.base,
             middleColor: Colors.transparent,
             closedShape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(11),

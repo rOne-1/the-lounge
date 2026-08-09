@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'pressable_scale.dart';
+import '../constants.dart';
 
 export 'media_image.dart';
 
@@ -41,7 +42,7 @@ class NoNetworkWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.ambianceColors.isDark;
     final inkColor = isDark ? const Color(0xFFE6DFD5) : const Color(0xFF1A140C);
     final subColor = isDark ? const Color(0xFFA39B8B) : const Color(0xFF706859);
     final cardBg = isDark ? const Color(0xFF221C16) : const Color(0xFFF7F2EA);

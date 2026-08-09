@@ -28,15 +28,14 @@ class CollectionScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.ambianceColors.isDark;
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final bgColor = isDark ? AppColors.srBase : AppColors.rrBase;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final bgColor = context.ambianceColors.base;
+    final accColor = context.ambianceColors.acc;
 
     final collectionAsync = ref.watch(collectionDetailsProvider(collectionId));
 

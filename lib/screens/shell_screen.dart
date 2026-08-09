@@ -25,15 +25,13 @@ class ShellScreen extends ConsumerWidget {
     final navigationNotifier = ref.read(navigationProvider.notifier);
     final ambiance = ref.watch(ambianceProvider);
     final ambianceNotifier = ref.read(ambianceProvider.notifier);
-    final isDark = ambiance == AmbianceType.screeningRoom;
+    final isDark = context.ambianceColors.isDark;
 
     return SizedBox.expand(
       child: AnimatedContainer(
         duration: AppPhysics.houseSpringDuration,
         curve: AppPhysics.houseSpringCurve,
-        decoration: isDark
-            ? AppThemes.screeningRoomBackground()
-            : AppThemes.readingRoomBackground(),
+        decoration: context.ambianceColors.background,
         child: AnimatedTheme(
           duration: AppPhysics.houseSpringDuration,
           curve: AppPhysics.houseSpringCurve,
@@ -128,7 +126,7 @@ class ShellScreen extends ConsumerWidget {
                     child: Icon(
                       isDark ? Icons.light_mode : Icons.dark_mode,
                       key: ValueKey(isDark),
-                      color: isDark ? AppColors.srSub : AppColors.rrSub,
+                      color: context.ambianceColors.sub,
                       size: 20,
                     ),
                   ),
@@ -169,13 +167,13 @@ class ShellScreen extends ConsumerWidget {
                           ? const Color.fromRGBO(12, 9, 7, 0.82)
                           : const Color.fromRGBO(240, 232, 216, 0.86),
                       border: Border.all(
-                        color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                        color: Theme.of(context).extension<AmbianceColors>()!.lineRgba,
                       ),
                       borderRadius: BorderRadius.circular(33),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: _buildNavItems(state, notifier, isDark),
+                      children: _buildNavItems(context, state, notifier, isDark),
                     ),
                   ),
                 ),
@@ -207,7 +205,7 @@ class ShellScreen extends ConsumerWidget {
                 : const Color.fromRGBO(240, 232, 216, 0.86),
             border: Border(
               right: BorderSide(
-                color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                color: Theme.of(context).extension<AmbianceColors>()!.lineRgba,
               ),
             ),
           ),
@@ -230,7 +228,7 @@ class ShellScreen extends ConsumerWidget {
                       child: Icon(
                         isDark ? Icons.light_mode : Icons.dark_mode,
                         key: ValueKey(isDark),
-                        color: isDark ? AppColors.srSub : AppColors.rrSub,
+                        color: context.ambianceColors.sub,
                         size: 20,
                       ),
                     ),
@@ -241,7 +239,7 @@ class ShellScreen extends ConsumerWidget {
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: _buildNavItems(state, notifier, isDark, isRail: true),
+                    children: _buildNavItems(context, state, notifier, isDark, isRail: true),
                   ),
                 ),
               ],
@@ -272,14 +270,14 @@ class ShellScreen extends ConsumerWidget {
     );
   }
 
-  List<Widget> _buildNavItems(
+  List<Widget> _buildNavItems(BuildContext context, 
     NavigationState state,
     NavigationNotifier notifier,
     bool isDark, {
     bool isRail = false,
   }) {
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final accColor = context.ambianceColors.acc;
+    final subColor = context.ambianceColors.sub;
 
     Widget buildItem(AppTab tab, String label, IconData icon) {
       final isSelected = state.currentTab == tab;

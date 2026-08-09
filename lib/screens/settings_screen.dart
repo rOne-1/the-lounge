@@ -12,17 +12,15 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ambiance = ref.watch(ambianceProvider);
-    final isDark = ambiance == AmbianceType.screeningRoom;
+    final isDark = context.ambianceColors.isDark;
     final mediaState = ref.watch(mediaProvider);
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final accColor = context.ambianceColors.acc;
+    final cardBg = context.ambianceColors.card;
 
-    final bgDeco = isDark
-        ? AppThemes.screeningRoomBackground()
-        : AppThemes.readingRoomBackground();
+    final bgDeco = context.ambianceColors.background;
 
     return Scaffold(
       body: Container(
@@ -58,38 +56,57 @@ class SettingsScreen extends ConsumerWidget {
                   children: [
                     // Section 1: Ambiance
                     _buildSectionHeader('Ambiance', subColor),
-                    _buildCard(
+                    _buildCard(context, 
                       cardBg,
                       isDark,
-                      child: SwitchListTile(
-                        key: const ValueKey('ambiance_switch'),
-                        title: Text(
-                          'Screening Room',
-                          style: AppThemes.safeGeist(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: inkColor,
-                          ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              'Theme',
+                              style: AppThemes.safeGeist(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: inkColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SegmentedButton<AmbianceType>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: AmbianceType.readingRoom,
+                                  label: Text('Reading'),
+                                ),
+                                ButtonSegment(
+                                  value: AmbianceType.screeningRoom,
+                                  label: Text('Screening'),
+                                ),
+                                ButtonSegment(
+                                  value: AmbianceType.violetDusk,
+                                  label: Text('Violet'),
+                                ),
+                              ],
+                              selected: {ambiance},
+                              onSelectionChanged: (Set<AmbianceType> newSelection) {
+                                ref.read(ambianceProvider.notifier).setAmbiance(newSelection.first);
+                              },
+                              style: SegmentedButton.styleFrom(
+                                foregroundColor: subColor,
+                                selectedForegroundColor: context.ambianceColors.base,
+                                selectedBackgroundColor: accColor,
+                              ),
+                            ),
+                          ],
                         ),
-                        subtitle: Text(
-                          isDark ? 'Dark theme active' : 'Switch to dark theme',
-                          style: AppThemes.safeGeist(
-                            fontSize: 13,
-                            color: subColor,
-                          ),
-                        ),
-                        activeThumbColor: accColor,
-                        value: isDark,
-                        onChanged: (val) {
-                          ref.read(ambianceProvider.notifier).toggleAmbiance();
-                        },
                       ),
                     ),
                     const SizedBox(height: 24),
 
                     // Section 2: Data Management
                     _buildSectionHeader('Data Management', subColor),
-                    _buildCard(
+                    _buildCard(context, 
                       cardBg,
                       isDark,
                       child: Column(
@@ -133,7 +150,7 @@ class SettingsScreen extends ConsumerWidget {
                               }
                             },
                           ),
-                          Divider(color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba, height: 1),
+                          Divider(color: context.ambianceColors.lineRgba, height: 1),
                           ListTile(
                             key: const ValueKey('share_backup_button'),
                             leading: Icon(Icons.share, color: accColor),
@@ -165,7 +182,7 @@ class SettingsScreen extends ConsumerWidget {
                               }
                             },
                           ),
-                          Divider(color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba, height: 1),
+                          Divider(color: context.ambianceColors.lineRgba, height: 1),
                           ListTile(
                             key: const ValueKey('import_backup_button'),
                             leading: Icon(Icons.upload, color: accColor),
@@ -205,7 +222,7 @@ class SettingsScreen extends ConsumerWidget {
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(16),
                                         side: BorderSide(
-                                          color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                                          color: context.ambianceColors.lineRgba,
                                         ),
                                       ),
                                       title: Text(
@@ -292,7 +309,7 @@ class SettingsScreen extends ConsumerWidget {
 
                     // Section 3: About
                     _buildSectionHeader('About', subColor),
-                    _buildCard(
+                    _buildCard(context, 
                       cardBg,
                       isDark,
                       child: Padding(
@@ -377,14 +394,14 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildCard(Color bgColor, bool isDark, {required Widget child}) {
+  Widget _buildCard(BuildContext context, Color bgColor, bool isDark, {required Widget child}) {
     return Card(
       color: bgColor,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(
-          color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+          color: context.ambianceColors.lineRgba,
           width: 1,
         ),
       ),

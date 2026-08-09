@@ -234,8 +234,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       }
     });
 
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.ambianceColors.isDark;
     
     final subColor = isDark ? const Color.fromRGBO(239, 230, 216, 0.55) : const Color.fromRGBO(44, 32, 22, 0.55);
     final accColor = isDark ? const Color(0xFFCBA86A) : const Color(0xFFB0512B);
@@ -352,9 +351,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               Text(
                                 'No titles in recommendations',
                                 style: AppThemes.safeGeist(
-                                    color: isDark
-                                        ? AppColors.srInk
-                                        : AppColors.rrInk,
+                                    color: context.ambianceColors.ink,
                                     fontSize: 16,
                                     fontWeight: FontWeight.w600),
                               ),
@@ -374,7 +371,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                         height: 16,
                                         child: CircularProgressIndicator(
                                           strokeWidth: 2,
-                                          color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                                          color: Theme.of(context).colorScheme.onPrimary,
                                         ),
                                       )
                                     : const Icon(Icons.refresh),
@@ -491,7 +488,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     required Widget button,
     required bool isDark,
   }) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final subColor = context.ambianceColors.sub;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -615,7 +612,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 ),
           child: Icon(
             isActive ? Icons.bookmark : Icons.bookmark_border,
-            color: isDark ? const Color(0xFF1A140C) : Colors.white,
+            color: Theme.of(context).colorScheme.onPrimary,
             size: isActive ? 26 : 24,
           ),
         ),
@@ -632,7 +629,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         ? const [Color(0xFF1C1510), Color(0xFF120D0A)]
         : const [Color(0xFFF6EFE3), Color(0xFFE7DDC9)];
     final innerShadowColor = isDark ? const Color.fromRGBO(255, 255, 255, 0.08) : const Color.fromRGBO(255, 255, 255, 0.6);
-    final btnTextColor = isDark ? const Color(0xFF1A140C) : Colors.white;
+    final btnTextColor = Theme.of(context).colorScheme.onPrimary;
 
     return IgnorePointer(
       ignoring: !_showLegend,
@@ -758,10 +755,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
-                            decoration: AppColors.primaryButtonDecoration(
-                              isDark: isDark,
-                              borderRadius: 12,
-                            ),
+                            decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(12)),
                             alignment: Alignment.center,
                             child: Text(
                               'Got it — start swiping',
@@ -1256,7 +1250,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                         decoration: BoxDecoration(color: widget.accColor, borderRadius: BorderRadius.circular(5)),
-                        child: Text('★ ${widget.item.rating}', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w600, color: widget.isDark ? const Color(0xFF1A140C) : Colors.white)),
+                        child: Text('★ ${widget.item.rating}', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onPrimary)),
                       ),
                       const SizedBox(width: 8),
                       Builder(builder: (context) {
@@ -1288,7 +1282,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
       closedElevation: 0,
       openElevation: 0,
       closedColor: Colors.transparent,
-      openColor: widget.isDark ? AppColors.srBase : AppColors.rrBase,
+      openColor: context.ambianceColors.base,
       middleColor: Colors.transparent,
       closedShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(22),

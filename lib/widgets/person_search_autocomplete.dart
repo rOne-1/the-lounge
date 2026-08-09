@@ -75,11 +75,11 @@ class _PersonSearchAutocompleteState
   @override
   Widget build(BuildContext context) {
     final isDark = widget.isDark;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
-    final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final pillColor = context.ambianceColors.pill;
+    final cardBg = context.ambianceColors.card;
 
     final filterParams = ref.watch(discoverFilterProvider);
     final selectedPersonName = filterParams.personName;
@@ -91,10 +91,7 @@ class _PersonSearchAutocompleteState
         if (selectedPersonName != null && selectedPersonName.isNotEmpty) ...[
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: AppColors.primaryButtonDecoration(
-              isDark: isDark,
-              borderRadius: 999,
-            ),
+            decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -110,7 +107,7 @@ class _PersonSearchAutocompleteState
                     style: AppThemes.safeGeist(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -121,7 +118,7 @@ class _PersonSearchAutocompleteState
                   child: Icon(
                     Icons.close,
                     size: 16,
-                    color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
               ],
@@ -167,7 +164,7 @@ class _PersonSearchAutocompleteState
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: BorderSide(
-                color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                color: context.ambianceColors.acc,
                 width: 1.5,
               ),
             ),

@@ -11,8 +11,8 @@ void main() {
     });
 
     test('Reading Room primary button decoration uses warm linear gradient', () {
-      final decDark = AppColors.primaryButtonDecoration(isDark: true);
-      final decLight = AppColors.primaryButtonDecoration(isDark: false);
+      final decDark = AppThemes.srAmbianceColors.primaryButtonDecoration;
+      final decLight = AppThemes.rrAmbianceColors.primaryButtonDecoration;
 
       expect(decDark.color, equals(AppColors.srAcc));
       expect(decLight.gradient, equals(AppColors.rrPrimaryGradient));

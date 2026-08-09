@@ -25,12 +25,10 @@ class MediaPosterFallback extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final iconColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final textColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
-    final borderColor = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final iconColor = context.ambianceColors.acc;
+    final textColor = context.ambianceColors.ink;
+    final cardBg = context.ambianceColors.card;
+    final borderColor = context.ambianceColors.lineRgba;
 
     final resolvedIcon = icon ??
         (type == MediaType.tv ? Icons.tv_outlined : Icons.movie_outlined);

@@ -7,6 +7,7 @@ import '../constants.dart';
 ///
 /// Screening Room (Dark): Gold/copper warm aurora glow (`Color(0xFFCBA86A)`, `Color(0xFFD69784)`).
 /// Reading Room (Light): Deep rust/terracotta parchment glow (`Color(0xFFA76A50)`, `Color(0xFFB0512B)`).
+/// Violet Dusk (Dark): Deep violet/pink twilight glow (`Color(0xFF935073)`, `Color(0xFFF6DBC0)`).
 class AmbientGlowWidget extends StatefulWidget {
   final Widget? child;
   final Duration duration;
@@ -74,17 +75,15 @@ class _AmbientGlowWidgetState extends State<AmbientGlowWidget>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDark = context.ambianceColors.isDark;
 
     final effectiveColor1 = widget.color1 ??
-        (isDark ? AppColors.srGlow1 : AppColors.rrGlow1);
+        (context.ambianceColors.glow1);
     final effectiveColor2 = widget.color2 ??
-        (isDark ? AppColors.srGlow2 : AppColors.rrGlow2);
+        (context.ambianceColors.glow2);
 
     final effectiveBaseColor = widget.baseColor ??
-        (isDark
-            ? const Color.fromRGBO(36, 27, 21, 0.65)
-            : const Color.fromRGBO(246, 239, 225, 0.75));
+        context.ambianceColors.card.withValues(alpha: isDark ? 0.65 : 0.75);
 
     final effectiveBorderRadius =
         widget.borderRadius ?? BorderRadius.circular(16);

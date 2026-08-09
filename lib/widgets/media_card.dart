@@ -40,17 +40,17 @@ class MediaCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final subColor = context.ambianceColors.sub;
+    final inkColor = context.ambianceColors.ink;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     final posterWidget = OpenContainer(
       transitionDuration: AppPhysics.houseSpringDuration,
       closedElevation: 0,
       openElevation: 0,
       closedColor: Colors.transparent,
-      openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+      openColor: context.ambianceColors.base,
       middleColor: Colors.transparent,
       closedShape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(borderRadius),

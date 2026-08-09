@@ -283,9 +283,9 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) {
-        final cardBg = isDark ? AppColors.srCard : AppColors.rrCard;
-        final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-        final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+        final cardBg = context.ambianceColors.card;
+        final inkColor = context.ambianceColors.ink;
+        final subColor = context.ambianceColors.sub;
 
         return DragToDismissSheet(
           isDark: isDark,
@@ -307,7 +307,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   border: Border(
                     top: BorderSide(
-                      color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                      color: context.ambianceColors.lineRgba,
                     ),
                   ),
                 ),
@@ -345,17 +345,14 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
-                        decoration: AppColors.primaryButtonDecoration(
-                          isDark: isDark,
-                          borderRadius: 12,
-                        ),
+                        decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(12)),
                         alignment: Alignment.center,
                         child: Text(
                           'Apply Filters',
                           style: AppThemes.safeGeist(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimary,
                           ),
                         ),
                       ),
@@ -500,19 +497,16 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     });
 
     final isLarge = MediaQuery.of(context).size.width > 800;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
+    final isDark = context.ambianceColors.isDark;
+    final inkColor = context.ambianceColors.ink;
     final mediaType = ref.watch(navigationProvider).activeMediaType;
     final isMovies = mediaType == MediaTypeToggle.movies;
 
     return SizedBox.expand(
       child: DecoratedBox(
-        decoration: isDark
-            ? AppThemes.screeningRoomBackground()
-            : AppThemes.readingRoomBackground(),
+        decoration: context.ambianceColors.background,
         child: Scaffold(
-          backgroundColor: isDark ? AppColors.srBase : AppColors.rrBase,
+          backgroundColor: context.ambianceColors.base,
           appBar: AppBar(
             title: Text(
               _searchQuery.isNotEmpty
@@ -560,10 +554,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildTopSearchBar(bool isDark) {
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final phColor = context.ambianceColors.ph;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
@@ -606,10 +600,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildSearchModeBadge(bool isDark) {
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
+    final inkColor = context.ambianceColors.ink;
+    final accColor = context.ambianceColors.acc;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final pillColor = context.ambianceColors.pill;
 
     return Container(
       width: double.infinity,
@@ -666,7 +660,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         VerticalDivider(
           width: 1,
           thickness: 1,
-          color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+          color: context.ambianceColors.lineRgba,
         ),
         SizedBox(
           width: 320,
@@ -683,7 +677,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
                         fontStyle: FontStyle.italic,
-                        color: isDark ? AppColors.srInk : AppColors.rrInk,
+                        color: context.ambianceColors.ink,
                       ),
                     ),
                     if (ref.watch(discoverFilterProvider).hasActiveFilters)
@@ -694,7 +688,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           style: AppThemes.safeGeist(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                            color: context.ambianceColors.acc,
                           ),
                         ),
                       ),
@@ -723,8 +717,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildSearchModeBody(bool isDark, bool isMovies) {
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
     final filterParams = ref.watch(discoverFilterProvider);
 
     if (_isSearching) {
@@ -821,7 +815,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildDiscoverModeBody(bool isDark, bool isMovies) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final subColor = context.ambianceColors.sub;
 
     final discoverAsync = ref.watch(discoverMediaProvider(isMovies));
 
@@ -860,16 +854,13 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    decoration: AppColors.primaryButtonDecoration(
-                      isDark: isDark,
-                      borderRadius: 999,
-                    ),
+                    decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
                     child: Text(
                       'Reset All Filters',
                       style: AppThemes.safeGeist(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                        color: Theme.of(context).colorScheme.onPrimary,
                       ),
                     ),
                   ),
@@ -929,10 +920,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isDark ? AppColors.srPill : AppColors.rrPill,
+                  color: context.ambianceColors.pill,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: isDark ? AppColors.srLineRgba : AppColors.rrLineRgba,
+                    color: context.ambianceColors.lineRgba,
                   ),
                 ),
                 child: Text(
@@ -940,7 +931,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   style: AppThemes.safeGeist(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? AppColors.srInk : AppColors.rrInk,
+                    color: context.ambianceColors.ink,
                   ),
                 ),
               ),
@@ -949,8 +940,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildGridCard(MediaItem item, bool isDark) {
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
 
     return PressableScale(
       child: OpenContainer(
@@ -958,7 +949,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         closedElevation: 0,
         openElevation: 0,
         closedColor: Colors.transparent,
-        openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+        openColor: context.ambianceColors.base,
         middleColor: Colors.transparent,
         closedShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
@@ -989,8 +980,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
 
   Widget _buildActiveFilterChipBar(bool isDark) {
     final filterParams = ref.watch(discoverFilterProvider);
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final pillColor = context.ambianceColors.pill;
 
     final chips = <Widget>[];
 
@@ -1194,7 +1185,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.srPill : AppColors.rrPill,
+                color: context.ambianceColors.pill,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: lineRgba),
               ),
@@ -1203,7 +1194,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 style: AppThemes.safeGeist(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                  color: context.ambianceColors.acc,
                 ),
               ),
             ),
@@ -1220,10 +1211,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: AppColors.primaryButtonDecoration(
-        isDark: isDark,
-        borderRadius: 999,
-      ),
+      decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1232,7 +1220,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             style: AppThemes.safeGeist(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isDark ? const Color(0xFF1A140C) : Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
           const SizedBox(width: 6),
@@ -1241,7 +1229,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
             child: Icon(
               Icons.close,
               size: 14,
-              color: isDark ? const Color(0xFF1A140C) : Colors.white,
+              color: Theme.of(context).colorScheme.onPrimary,
             ),
           ),
         ],
@@ -1255,9 +1243,9 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     required Color pillColor,
     required Color lineRgba,
   }) {
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final accColor = context.ambianceColors.acc;
     if (isSelected) {
-      return AppColors.primaryButtonDecoration(isDark: isDark, borderRadius: 999).copyWith(
+      return context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)).copyWith(
         border: Border.all(color: accColor, width: 1.0),
       );
     }
@@ -1272,10 +1260,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     final activeRef = externalRef ?? ref;
     final filterParams = activeRef.watch(discoverFilterProvider);
     final filterNotifier = activeRef.read(discoverFilterProvider.notifier);
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final pillColor = context.ambianceColors.pill;
 
     final hasGenresOrKeywordsActive = (filterParams.genreName != null &&
             filterParams.genreName != 'All') ||
@@ -1359,7 +1347,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: isSelected
-                              ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                              ? (Theme.of(context).colorScheme.onPrimary)
                               : inkColor,
                         ),
                       ),
@@ -1424,10 +1412,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
               Builder(
                 builder: (context) {
                   final isRegionActive = filterParams.watchRegion != null && filterParams.watchRegion!.isNotEmpty;
-                  final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+                  final accColor = context.ambianceColors.acc;
                   return DropdownButtonFormField<String>(
                     initialValue: filterParams.watchRegion,
-                    dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
+                    dropdownColor: context.ambianceColors.card,
                     style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(
@@ -1517,7 +1505,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         style: AppThemes.safeGeist(
                           fontSize: 12,
                           color: filterParams.providerId == null
-                              ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                              ? (Theme.of(context).colorScheme.onPrimary)
                               : inkColor,
                         ),
                       ),
@@ -1552,7 +1540,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected
-                                ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                                ? (Theme.of(context).colorScheme.onPrimary)
                                 : inkColor,
                           ),
                         ),
@@ -1592,7 +1580,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                     style: AppThemes.safeGeist(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                      color: context.ambianceColors.acc,
                     ),
                   ),
                 ],
@@ -1602,7 +1590,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 min: 0.0,
                 max: 10.0,
                 divisions: 20,
-                activeColor: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                activeColor: context.ambianceColors.acc,
                 inactiveColor: lineRgba,
                 onChanged: (val) {
                   filterNotifier
@@ -1652,7 +1640,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           fontWeight:
                               isSelected ? FontWeight.w600 : FontWeight.w400,
                           color: isSelected
-                              ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                              ? (Theme.of(context).colorScheme.onPrimary)
                               : inkColor,
                         ),
                       ),
@@ -1673,10 +1661,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
               Builder(
                 builder: (context) {
                   final isSortActive = filterParams.sortBy != 'popularity.desc';
-                  final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+                  final accColor = context.ambianceColors.acc;
                   return DropdownButtonFormField<String>(
                     initialValue: filterParams.sortBy,
-                    dropdownColor: isDark ? AppColors.srCard : AppColors.rrCard,
+                    dropdownColor: context.ambianceColors.card,
                     style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
                     decoration: InputDecoration(
                       contentPadding: const EdgeInsets.symmetric(
@@ -1760,7 +1748,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                     style: AppThemes.safeGeist(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                      color: context.ambianceColors.acc,
                     ),
                   ),
                 ],
@@ -1773,7 +1761,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 min: 0.0,
                 max: 240.0,
                 divisions: 24,
-                activeColor: isDark ? AppColors.srAcc : AppColors.rrAcc,
+                activeColor: context.ambianceColors.acc,
                 inactiveColor: lineRgba,
                 onChanged: (values) {
                   final minR = values.start == 0.0 ? null : values.start.toInt();
@@ -1817,7 +1805,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         style: AppThemes.safeGeist(
                           fontSize: 12,
                           color: filterParams.originalLanguage == null
-                              ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                              ? (Theme.of(context).colorScheme.onPrimary)
                               : inkColor,
                         ),
                       ),
@@ -1848,7 +1836,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected
-                                ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                                ? (Theme.of(context).colorScheme.onPrimary)
                                 : inkColor,
                           ),
                         ),
@@ -1910,7 +1898,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                             fontWeight:
                                 isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected
-                                ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                                ? (Theme.of(context).colorScheme.onPrimary)
                                 : inkColor,
                           ),
                         ),
@@ -1956,7 +1944,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           style: AppThemes.safeGeist(
                             fontSize: 12,
                             color: filterParams.tvNetworkId == null
-                                ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                                ? (Theme.of(context).colorScheme.onPrimary)
                                 : inkColor,
                           ),
                         ),
@@ -1992,7 +1980,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                                   ? FontWeight.w600
                                   : FontWeight.w400,
                               color: isSelected
-                                  ? (isDark ? const Color(0xFF1A140C) : Colors.white)
+                                  ? (Theme.of(context).colorScheme.onPrimary)
                                   : inkColor,
                             ),
                           ),
@@ -2016,10 +2004,10 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     bool initiallyExpanded = false,
     bool hasActiveFilter = false,
   }) {
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final cardColor = isDark ? AppColors.srCard : AppColors.rrCard;
+    final inkColor = context.ambianceColors.ink;
+    final accColor = context.ambianceColors.acc;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final cardColor = context.ambianceColors.card;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -2038,13 +2026,13 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           key: PageStorageKey<String>('filter_accordion_$title'),
           initiallyExpanded: initiallyExpanded,
           iconColor: hasActiveFilter ? accColor : inkColor,
-          collapsedIconColor: hasActiveFilter ? accColor : (isDark ? AppColors.srSub : AppColors.rrSub),
+          collapsedIconColor: hasActiveFilter ? accColor : (context.ambianceColors.sub),
           title: Row(
             children: [
               Icon(
                 icon,
                 size: 18,
-                color: hasActiveFilter ? accColor : (isDark ? AppColors.srAcc : AppColors.rrAcc),
+                color: hasActiveFilter ? accColor : (context.ambianceColors.acc),
               ),
               const SizedBox(width: 10),
               Expanded(

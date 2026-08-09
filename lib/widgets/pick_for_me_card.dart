@@ -51,8 +51,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.ambianceColors.isDark;
 
     final mediaState = ref.watch(mediaProvider);
 
@@ -85,27 +84,23 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
       _selectedMovieId = selectedItem.id;
     }
 
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final subColor = context.ambianceColors.sub;
+    final inkColor = context.ambianceColors.ink;
+    final phColor = context.ambianceColors.ph;
+    final accColor = context.ambianceColors.acc;
 
     return AmbientGlowWidget(
       enableAnimation: widget.enableAnimation,
       padding: const EdgeInsets.all(16),
       borderRadius: BorderRadius.circular(18),
-      baseColor: isDark ? const Color(0xFF161312) : AppColors.rrCard,
+      baseColor: context.ambianceColors.card.withValues(alpha: 0.9),
       border: Border.all(
-        color: isDark
-            ? const Color.fromRGBO(203, 168, 106, 0.45)
-            : const Color.fromRGBO(176, 81, 43, 0.35),
+        color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.45 : 0.35),
         width: 1.2,
       ),
       boxShadow: [
         BoxShadow(
-          color: isDark
-              ? const Color.fromRGBO(203, 168, 106, 0.08)
-              : const Color.fromRGBO(0, 0, 0, 0.05),
+          color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.08 : 0.05),
           blurRadius: 12,
           offset: const Offset(0, 4),
         )
@@ -120,9 +115,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color.fromRGBO(203, 168, 106, 0.15)
-                      : const Color.fromRGBO(176, 81, 43, 0.12),
+                  color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.15 : 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -159,7 +152,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
             closedElevation: 0,
             openElevation: 0,
             closedColor: Colors.transparent,
-            openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+            openColor: context.ambianceColors.base,
             middleColor: Colors.transparent,
             closedShape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -178,9 +171,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                         color: phColor,
                         borderRadius: BorderRadius.circular(10),
                         border: Border.all(
-                          color: isDark
-                              ? AppColors.srLineRgba
-                              : AppColors.rrLineRgba,
+                          color: context.ambianceColors.lineRgba,
                         ),
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -270,14 +261,10 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                                 vertical: 7,
                               ),
                               decoration: BoxDecoration(
-                                color: isDark
-                                    ? const Color.fromRGBO(203, 168, 106, 0.15)
-                                    : const Color.fromRGBO(176, 81, 43, 0.12),
+                                color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.15 : 0.12),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: isDark
-                                      ? const Color.fromRGBO(203, 168, 106, 0.4)
-                                      : const Color.fromRGBO(176, 81, 43, 0.3),
+                                  color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.4 : 0.3),
                                 ),
                               ),
                               child: Row(
@@ -316,26 +303,22 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
   }
 
   Widget _buildEmptyState(BuildContext context, bool isDark) {
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
+    final subColor = context.ambianceColors.sub;
+    final inkColor = context.ambianceColors.ink;
+    final accColor = context.ambianceColors.acc;
 
     return AmbientGlowWidget(
       enableAnimation: widget.enableAnimation,
       padding: const EdgeInsets.all(18),
       borderRadius: BorderRadius.circular(18),
-      baseColor: isDark ? const Color(0xFF161312) : AppColors.rrCard,
+      baseColor: context.ambianceColors.card.withValues(alpha: 0.9),
       border: Border.all(
-        color: isDark
-            ? const Color.fromRGBO(203, 168, 106, 0.45)
-            : const Color.fromRGBO(176, 81, 43, 0.35),
+        color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.45 : 0.35),
         width: 1.2,
       ),
       boxShadow: [
         BoxShadow(
-          color: isDark
-              ? const Color.fromRGBO(203, 168, 106, 0.08)
-              : const Color.fromRGBO(0, 0, 0, 0.05),
+          color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.08 : 0.05),
           blurRadius: 12,
           offset: const Offset(0, 4),
         )
@@ -348,9 +331,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? const Color.fromRGBO(203, 168, 106, 0.15)
-                      : const Color.fromRGBO(176, 81, 43, 0.12),
+                  color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.15 : 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -396,17 +377,14 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                 .setTab(AppTab.discover),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: AppColors.primaryButtonDecoration(
-                isDark: isDark,
-                borderRadius: 999,
-              ),
+              decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
                     Icons.explore,
                     size: 15,
-                    color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                   const SizedBox(width: 6),
                   Text(
@@ -414,7 +392,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                     style: AppThemes.safeGeist(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w600,
-                      color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                      color: Theme.of(context).colorScheme.onPrimary,
                     ),
                   ),
                 ],

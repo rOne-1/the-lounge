@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -113,23 +112,17 @@ void main() {
     expect(find.text('DATA MANAGEMENT'), findsOneWidget);
     expect(find.text('ABOUT'), findsOneWidget);
 
-    final switchFinder = find.byKey(const ValueKey('ambiance_switch'));
+    final switchFinder = find.byType(SegmentedButton<AmbianceType>);
     expect(switchFinder, findsOneWidget);
 
-    final Switch switchWidget = tester.widget<Switch>(
-      find.descendant(of: switchFinder, matching: find.byType(Switch)),
-    );
-    expect(switchWidget.value, isTrue);
+    
 
-    await tester.tap(switchFinder);
+    await tester.tap(find.text('Reading'));
     await tester.pumpAndSettle();
 
     expect(container.read(ambianceProvider), equals(AmbianceType.readingRoom));
 
-    final Switch switchWidgetLight = tester.widget<Switch>(
-      find.descendant(of: switchFinder, matching: find.byType(Switch)),
-    );
-    expect(switchWidgetLight.value, isFalse);
+    
   });
 
   testWidgets('Export Backup triggers file picker serialization and saves file', (WidgetTester tester) async {

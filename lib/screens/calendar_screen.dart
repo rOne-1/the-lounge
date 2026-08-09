@@ -45,10 +45,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
+    final isDark = context.ambianceColors.isDark;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
 
     final navState = ref.watch(navigationProvider);
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
@@ -159,10 +158,10 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   Widget _buildAgendaCard(MediaItem item, bool isDark, Color inkColor, Color subColor, {required int index}) {
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc; // For Movies
-    final dotColor = item.type == MediaType.movie ? accColor : (isDark ? AppColors.srStatusWatched : AppColors.rrStatusWatched); // For TV
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final accColor = context.ambianceColors.acc; // For Movies
+    final dotColor = item.type == MediaType.movie ? accColor : (context.ambianceColors.statusWatched); // For TV
 
     return PressableScale(
       child: OpenContainer(
@@ -170,7 +169,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         closedElevation: 0,
         openElevation: 0,
         closedColor: Colors.transparent,
-        openColor: isDark ? AppColors.srBase : AppColors.rrBase,
+        openColor: context.ambianceColors.base,
         middleColor: Colors.transparent,
         closedShape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),

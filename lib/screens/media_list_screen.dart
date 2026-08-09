@@ -95,15 +95,14 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
+    final isDark = context.ambianceColors.isDark;
 
-    final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
-    final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
-    final bgColor = isDark ? AppColors.srBase : AppColors.rrBase;
-    final pillColor = isDark ? AppColors.srPill : AppColors.rrPill;
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final bgColor = context.ambianceColors.base;
+    final pillColor = context.ambianceColors.pill;
 
     final itemsAsync = ref.watch(widget.itemsProvider);
     final width = MediaQuery.of(context).size.width;
@@ -112,9 +111,7 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
 
     return SizedBox.expand(
       child: DecoratedBox(
-        decoration: isDark
-            ? AppThemes.screeningRoomBackground()
-            : AppThemes.readingRoomBackground(),
+        decoration: context.ambianceColors.background,
         child: Scaffold(
           backgroundColor: bgColor,
           extendBodyBehindAppBar: true,

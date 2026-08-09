@@ -23,10 +23,10 @@ class SegmentedMediaTypeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = isDark ? AppColors.srPill : AppColors.rrPill;
-    final accColor = isDark ? AppColors.srAcc : AppColors.rrAcc;
-    final subColor = isDark ? AppColors.srSub : AppColors.rrSub;
-    final onAccColor = isDark ? const Color(0xFF1A140C) : Colors.white;
+    final bgColor = context.ambianceColors.pill;
+    final accColor = context.ambianceColors.acc;
+    final subColor = context.ambianceColors.sub;
+    final onAccColor = Theme.of(context).colorScheme.onPrimary;
     final isMovies = activeType == MediaTypeToggle.movies;
 
     return Container(

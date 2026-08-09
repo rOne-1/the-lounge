@@ -72,9 +72,7 @@ class MyApp extends ConsumerWidget {
     return MaterialApp(
       title: 'The Lounge',
       debugShowCheckedModeBanner: false,
-      theme: ambiance == AmbianceType.screeningRoom
-          ? AppThemes.screeningRoomTheme
-          : AppThemes.readingRoomTheme,
+      theme: AppThemes.theme(ambiance),
       home: SplashScreen(enableAnimation: enableAnimation),
     );
   }
