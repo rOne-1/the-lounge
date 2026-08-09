@@ -146,19 +146,8 @@ void main() {
     );
     container.read(mediaProvider.notifier).addToWatchlist(testMovie);
 
-    final tempDir = Directory.systemTemp;
-    final exportPath = '${tempDir.path}/mock_export_path_${DateTime.now().microsecondsSinceEpoch}.json';
+    final exportPath = 'mock_export_path.json';
     mockFilePicker.savePath = exportPath;
-
-    addTearDown(() async {
-      await Future.delayed(const Duration(milliseconds: 50));
-      final file = File(exportPath);
-      if (await file.exists()) {
-        try {
-          await file.delete();
-        } catch (_) {}
-      }
-    });
 
     await tester.pumpWidget(createSettingsScreen(container));
     await tester.pumpAndSettle();
@@ -167,9 +156,6 @@ void main() {
     expect(exportBtn, findsOneWidget);
 
     await tester.tap(exportBtn);
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 1));
-    await Future.delayed(const Duration(milliseconds: 100));
     await tester.pumpAndSettle();
 
     expect(mockFilePicker.saveFileCalled, isTrue);

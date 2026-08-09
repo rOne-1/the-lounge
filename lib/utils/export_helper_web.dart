@@ -1,30 +1,33 @@
-// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:convert';
-import 'dart:html' as html;
+import 'package:web/web.dart' as web;
+import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 import 'package:file_picker/file_picker.dart';
 
 Future<void> saveJsonFile(String jsonString, String fileName) async {
   final bytes = utf8.encode(jsonString);
-  final blob = html.Blob([bytes], 'application/json');
-  final url = html.Url.createObjectUrlFromBlob(blob);
-  html.AnchorElement(href: url)
-    ..setAttribute('download', fileName)
-    ..click();
-  html.Url.revokeObjectUrl(url);
+  final blob = web.Blob([bytes.toJS].toJS, web.BlobPropertyBag(type: 'application/json'));
+  final url = web.URL.createObjectURL(blob);
+  final anchor = web.document.createElement('a') as web.HTMLAnchorElement
+    ..href = url
+    ..download = fileName;
+  anchor.click();
+  web.URL.revokeObjectURL(url);
 }
 
 Future<void> shareJsonFile(String jsonString, String fileName) async {
   // Try using navigator.share if supported on the browser
   try {
-    final jsNavigator = html.window.navigator as dynamic;
-    if (jsNavigator.share != null) {
-      await jsNavigator.share({
+    final jsNavigator = web.window.navigator;
+    if (jsNavigator.hasProperty('share'.toJS).toDart) {
+      final bytes = utf8.encode(jsonString);
+      final file = web.File([bytes.toJS].toJS, fileName, web.FilePropertyBag(type: 'application/json'));
+      final shareData = {
         'title': 'The Lounge Backup',
         'text': 'The Lounge Backup JSON',
-        'files': [
-          html.File([jsonString], fileName, {'type': 'application/json'})
-        ],
-      });
+        'files': [file],
+      }.jsify();
+      await (jsNavigator.callMethod<JSPromise>('share'.toJS, shareData)).toDart;
       return;
     }
   } catch (_) {

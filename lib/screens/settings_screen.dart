@@ -338,6 +338,20 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Text(
+                        'rOne',
+                        style: GoogleFonts.bodoniModa(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w400,
+                          fontStyle: FontStyle.italic,
+                          letterSpacing: 2.0,
+                          color: subColor.withValues(alpha: 0.3),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 32),
                   ],
                 ),
               ),

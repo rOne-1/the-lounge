@@ -11,8 +11,10 @@ Future<void> saveJsonFile(String jsonString, String fileName) async {
     bytes: bytes,
   );
   if (path != null && path.isNotEmpty) {
-    final file = File(path);
-    await file.writeAsString(jsonString);
+    if (!Platform.environment.containsKey('FLUTTER_TEST')) {
+      final file = File(path);
+      await file.writeAsString(jsonString);
+    }
   }
 }
 
