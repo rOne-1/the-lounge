@@ -191,7 +191,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify Title
       expect(find.text('Inception'), findsAtLeastNWidgets(1));
@@ -237,7 +238,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final genreChip = find.ancestor(
         of: find.text('Sci-Fi'),
@@ -245,9 +247,10 @@ void main() {
       );
       expect(genreChip, findsOneWidget);
 
-      await tester.ensureVisible(genreChip);
-      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(genreChip, 100, scrollable: find.byType(Scrollable).first);
       await tester.tap(genreChip);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(container.read(browseGenreProvider), equals('Sci-Fi'));
     });
@@ -271,7 +274,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify Title
       expect(find.text('Stranger Things'), findsAtLeastNWidgets(1));
@@ -314,7 +318,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify Seasons & Episodes section is rendered
       expect(find.text('Seasons & Episodes'), findsOneWidget);
@@ -324,10 +329,10 @@ void main() {
       expect(checkmarkIcons, findsAtLeastNWidgets(1));
 
       // Tap first episode watched toggle button
-      await tester.ensureVisible(checkmarkIcons.first);
-      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(checkmarkIcons.first, 100, scrollable: find.byType(Scrollable).first);
       await tester.tap(checkmarkIcons.first);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify episode is marked watched in mediaProvider
       final mediaState = container.read(mediaProvider);
@@ -357,7 +362,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Default country should be US
       expect(find.text('US'), findsOneWidget);
@@ -365,13 +371,15 @@ void main() {
 
       // Ensure the dropdown is scrolled into view and tapped
       await tester.ensureVisible(find.text('US'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(find.text('US'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Tap GB from dropdown menu
       await tester.tap(find.text('GB').last);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify state and preference update
       expect(container.read(mediaProvider).watchProvidersCountry, equals('GB'));
@@ -396,7 +404,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Where to Watch'), findsOneWidget);
       expect(
@@ -427,7 +436,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Inception'), findsAtLeastNWidgets(1));
       expect(find.text('★ 8.8'), findsOneWidget);
@@ -472,7 +482,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Find status toggle buttons
       final watchlistFinder = find.text('Watchlist');
@@ -488,25 +499,25 @@ void main() {
       // Pulse animation should be running
       await tester.pump(const Duration(milliseconds: 150));
       // Settle animation
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Tap Saved button to activate it
       final saveFinder = find.text('Saved');
       await tester.tap(saveFinder);
       await tester.pump();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Tap Watching button to activate it
       final watchingFinder = find.text('Watching');
       await tester.tap(watchingFinder);
       await tester.pump();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Tap Watched button to activate it
       final watchedFinder = find.text('Watched');
       await tester.tap(watchedFinder);
       await tester.pump();
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
     });
 
     testWidgets('Section 5: ExpandableOverviewText expands/collapses with AnimatedSize and AnimatedRotation',
@@ -527,7 +538,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify ExpandableOverviewText and AnimatedSize / AnimatedRotation exist
       expect(find.byType(ExpandableOverviewText), findsOneWidget);
@@ -548,7 +560,7 @@ void main() {
 
       // Pump partially through animation duration (300ms curve: houseSpringCurve)
       await tester.pump(const Duration(milliseconds: 150));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Text should now show 'Show less'
       expect(find.text('Show less'), findsOneWidget);
@@ -561,7 +573,7 @@ void main() {
 
       // Tap 'Show less' to collapse again
       await tester.tap(find.text('Show less'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Show more'), findsOneWidget);
       final animatedRotationCollapsed = tester.widget<AnimatedRotation>(
@@ -625,8 +637,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Tagline
       expect(find.text('"Your mind is the scene of the crime"'), findsOneWidget);
@@ -689,15 +701,17 @@ void main() {
       );
 
       await container.read(mediaDetailsProvider('movie-overhaul').future);
-      await tester.pumpAndSettle();
-      await tester.pump(const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final keywordChip = find.text('#dream');
       expect(keywordChip, findsOneWidget);
 
       await tester.ensureVisible(keywordChip);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(keywordChip);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(container.read(browseKeywordProvider), equals('dream'));
       expect(container.read(browseGenreProvider), equals('All'));
@@ -722,13 +736,15 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final watchTrailerFinder = find.text('Watch trailer');
       expect(watchTrailerFinder, findsOneWidget);
 
       await tester.tap(watchTrailerFinder);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(TrailerPlayer), findsOneWidget);
       debugDefaultTargetPlatformOverride = null;
@@ -783,7 +799,8 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify "Trailers" header section is visible
       expect(find.text('Trailers'), findsOneWidget);
@@ -797,7 +814,8 @@ void main() {
 
       // Tap trailer card
       await tester.tap(find.text('Official Main Trailer'));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Verify TrailerPlayer is pushed with correct videoId and videoTitle
       final playerFinder = find.byType(TrailerPlayer);

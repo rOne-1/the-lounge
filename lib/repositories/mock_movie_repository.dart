@@ -49,6 +49,9 @@ class MockMovieRepository implements MovieRepository {
       ],
       tagline: 'Your mind is the scene of the crime.',
       director: 'Christopher Nolan',
+      directors: const [
+        MediaCastMember(id: '525', name: 'Christopher Nolan', role: 'Director'),
+      ],
       certification: 'PG-13',
       voteCount: 34500,
       imdbId: 'tt1375666',
@@ -91,6 +94,9 @@ class MockMovieRepository implements MovieRepository {
       ],
       tagline: 'Every story has a beginning.',
       director: 'The Duffer Brothers',
+      directors: const [
+        MediaCastMember(id: '12341', name: 'The Duffer Brothers', role: 'Creator'),
+      ],
       certification: 'TV-14',
       createdBy: const ['The Duffer Brothers'],
       networks: const [MediaNetwork(id: 213, name: 'Netflix', logoUrl: null)],

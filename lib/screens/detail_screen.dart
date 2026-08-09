@@ -823,15 +823,23 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     MediaItem item,
     bool isDark,
   ) {
-    final String? label;
-    final String? names;
+    final hasDirectors = item.directors != null && item.directors!.isNotEmpty;
+    final String label;
 
-    if (item.director != null && item.director!.isNotEmpty) {
+    if (hasDirectors) {
+      final hasCreators = item.directors!.any((d) => d.role == 'Creator');
+      final hasMovieDirectors = item.directors!.any((d) => d.role == 'Director');
+      if (hasCreators && !hasMovieDirectors) {
+        label = item.directors!.length > 1 ? 'Creators' : 'Created by';
+      } else if (hasMovieDirectors && !hasCreators) {
+        label = item.directors!.length > 1 ? 'Directors' : 'Director';
+      } else {
+        label = 'Directors & Creators';
+      }
+    } else if (item.director != null && item.director!.isNotEmpty) {
       label = 'Director';
-      names = item.director;
     } else if (item.createdBy != null && item.createdBy!.isNotEmpty) {
       label = 'Created by';
-      names = item.createdBy!.join(', ');
     } else {
       return const SizedBox.shrink();
     }
@@ -841,60 +849,92 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
 
-    final pName = names!;
-    final pId = int.tryParse(pName);
+    void navigateToPerson(int? pId, String pName) {
+      ref.read(discoverFilterProvider.notifier).setPerson(
+            personId: pId,
+            personName: pName,
+          );
+      ref.read(navigationProvider.notifier).setTab(AppTab.search);
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const BrowseScreen()),
+      );
+    }
 
-    return PressableScale(
-      onTap: () {
-        ref.read(discoverFilterProvider.notifier).setPerson(
-              personId: pId,
-              personName: pName,
-            );
-        ref.read(navigationProvider.notifier).setTab(AppTab.search);
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const BrowseScreen()),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 20),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: phColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: lineRgba),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.video_camera_front_outlined, size: 20, color: subColor),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: AppThemes.safeGeist(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: subColor,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    pName,
-                    style: AppThemes.safeGeist(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: inkColor,
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+    Widget contentWidget;
+    if (hasDirectors) {
+      final directorList = item.directors!;
+      contentWidget = Wrap(
+        spacing: 12,
+        runSpacing: 4,
+        children: directorList.map((director) {
+          final pId = int.tryParse(director.id);
+          return PressableScale(
+            onTap: () => navigateToPerson(pId, director.name),
+            child: Text(
+              director.name,
+              style: AppThemes.safeGeist(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: inkColor,
               ),
             ),
-          ],
+          );
+        }).toList(),
+      );
+    } else {
+      final pName = (item.director != null && item.director!.isNotEmpty)
+          ? item.director!
+          : item.createdBy!.join(', ');
+      final pId = int.tryParse(pName);
+      contentWidget = PressableScale(
+        onTap: () => navigateToPerson(pId, pName),
+        child: Text(
+          pName,
+          style: AppThemes.safeGeist(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: phColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: lineRgba),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2.0),
+            child: Icon(Icons.video_camera_front_outlined, size: 20, color: subColor),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: AppThemes.safeGeist(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: subColor,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                contentWidget,
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -905,101 +945,107 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     MediaItem item,
     bool isDark,
   ) {
-    final similarAsync = ref.watch(similarMediaProvider(item.prefixedId));
     final recsAsync = ref.watch(mediaRecommendationsProvider(item.prefixedId));
+    final similarAsync = ref.watch(similarMediaProvider(item.prefixedId));
 
     final List<MediaItem> items;
-    if (similarAsync.hasValue && similarAsync.value!.isNotEmpty) {
-      items = similarAsync.value!;
-    } else if (recsAsync.hasValue && recsAsync.value!.isNotEmpty) {
+    if (recsAsync.hasValue && recsAsync.value!.isNotEmpty) {
       items = recsAsync.value!;
+    } else if (similarAsync.hasValue && similarAsync.value!.isNotEmpty) {
+      items = similarAsync.value!;
     } else {
-      return const SizedBox.shrink();
+      items = const [];
     }
 
     final inkColor = isDark ? AppColors.srInk : AppColors.rrInk;
     final phColor = isDark ? AppColors.srPh : AppColors.rrPh;
     final lineRgba = isDark ? AppColors.srLineRgba : AppColors.rrLineRgba;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        Text(
-          'Similar titles',
-          style: AppThemes.safeGeist(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: inkColor,
-          ),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 190,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final similarItem = items[index];
-              return Padding(
-                padding: const EdgeInsets.only(right: 12.0),
-                child: PressableScale(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => DetailScreen(id: similarItem.prefixedId),
-                      ),
-                    );
-                  },
-                  child: SizedBox(
-                    width: 110,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          width: 110,
-                          height: 155,
-                          decoration: BoxDecoration(
-                            color: phColor,
-                            borderRadius: BorderRadius.circular(11),
-                            border: Border.all(color: lineRgba),
-                            boxShadow: [
-                              BoxShadow(
-                                color: isDark
-                                    ? const Color.fromRGBO(255, 255, 255, 0.05)
-                                    : const Color.fromRGBO(0, 0, 0, 0.08),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              )
-                            ],
-                          ),
-                          clipBehavior: Clip.antiAlias,
-                          child: MediaImage(
-                            item: similarItem,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          similarItem.title,
-                          style: AppThemes.safeGeist(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: inkColor,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: items.isEmpty
+          ? const SizedBox.shrink(key: ValueKey('similar_titles_empty'))
+          : Column(
+              key: ValueKey('similar_titles_${item.prefixedId}'),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                Text(
+                  'Similar titles',
+                  style: AppThemes.safeGeist(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: inkColor,
                   ),
                 ),
-              );
-            },
-          ),
-        ),
-      ],
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 190,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      final similarItem = items[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 12.0),
+                        child: PressableScale(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => DetailScreen(id: similarItem.prefixedId),
+                              ),
+                            );
+                          },
+                          child: SizedBox(
+                            width: 110,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: 110,
+                                  height: 155,
+                                  decoration: BoxDecoration(
+                                    color: phColor,
+                                    borderRadius: BorderRadius.circular(11),
+                                    border: Border.all(color: lineRgba),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: isDark
+                                            ? const Color.fromRGBO(255, 255, 255, 0.05)
+                                            : const Color.fromRGBO(0, 0, 0, 0.08),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      )
+                                    ],
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: MediaImage(
+                                    item: similarItem,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  similarItem.title,
+                                  style: AppThemes.safeGeist(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: inkColor,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
     );
   }
 
@@ -1213,6 +1259,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                         (item.status!.toLowerCase() == 'unreleased' ||
                             item.status!.toLowerCase() == 'in production' ||
                             item.status!.toLowerCase() == 'planned'));
+                final seasons = ref.watch(tvShowSeasonsProvider(item)).value;
                 return _buildStatusToggle(
                   'Watched',
                   inWatched,
@@ -1227,7 +1274,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       );
                       return;
                     }
-                    notifier.toggleWatched(item);
+                    notifier.toggleWatched(item, seasons: seasons);
                   },
                   isDark,
                   isDisabled: isUnreleased,

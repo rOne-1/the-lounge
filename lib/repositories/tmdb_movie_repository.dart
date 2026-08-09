@@ -998,9 +998,48 @@ class TmdbMovieRepository implements MovieRepository {
         ? json['tagline'] as String
         : null;
 
+    final parsedDirectors = <MediaCastMember>[];
+    final seenDirectorIds = <String>{};
+
+    void addDirector(String id, String name, String? profilePath, {String role = 'Director'}) {
+      if (name.trim().isNotEmpty && seenDirectorIds.add(id.isNotEmpty ? id : name)) {
+        parsedDirectors.add(MediaCastMember(
+          id: id,
+          name: name.trim(),
+          profileUrl: TmdbImageHelper.getCastHeadshotUrl(profilePath),
+          role: role,
+        ));
+      }
+    }
+
+    if (creditsObj != null && creditsObj['crew'] is List) {
+      for (final member in creditsObj['crew'] as List) {
+        if (member is Map &&
+            member['job'] == 'Director' &&
+            member['name'] != null) {
+          final id = member['id']?.toString() ?? '';
+          final name = member['name'].toString();
+          final profilePath = member['profile_path'] as String?;
+          addDirector(id, name, profilePath, role: 'Director');
+        }
+      }
+    }
+
+    if (json['created_by'] is List) {
+      for (final creator in json['created_by'] as List) {
+        if (creator is Map && creator['name'] != null) {
+          final id = creator['id']?.toString() ?? '';
+          final name = creator['name'].toString();
+          final profilePath = creator['profile_path'] as String?;
+          addDirector(id, name, profilePath, role: 'Creator');
+        }
+      }
+    }
+
     String? director;
-    if (type == MediaType.movie) {
-      final creditsObj = json['credits'] as Map<String, dynamic>?;
+    if (parsedDirectors.isNotEmpty) {
+      director = parsedDirectors.map((d) => d.name).join(', ');
+    } else if (type == MediaType.movie) {
       if (creditsObj != null && creditsObj['crew'] is List) {
         for (final member in creditsObj['crew'] as List) {
           if (member is Map &&
@@ -1024,7 +1063,6 @@ class TmdbMovieRepository implements MovieRepository {
         }
       }
       if (director == null) {
-        final creditsObj = json['credits'] as Map<String, dynamic>?;
         if (creditsObj != null && creditsObj['crew'] is List) {
           for (final member in creditsObj['crew'] as List) {
             if (member is Map &&
@@ -1232,6 +1270,7 @@ class TmdbMovieRepository implements MovieRepository {
       castMembers: castMembers,
       tagline: tagline,
       director: director,
+      directors: parsedDirectors.isNotEmpty ? parsedDirectors : null,
       certification: certification,
       belongsToCollection: belongsToCollection,
       createdBy: createdBy,

@@ -77,11 +77,23 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                     color: inkColor,
                   ),
                 ),
-                SegmentedMediaTypeToggle(
-                  activeType: navState.activeMediaType,
-                  onChanged: (type) =>
-                      ref.read(navigationProvider.notifier).setMediaType(type),
-                  isDark: isDark,
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      key: const ValueKey('app_info_button'),
+                      icon: Icon(Icons.info_outline, color: subColor, size: 18),
+                      tooltip: 'App Info & Privacy',
+                      onPressed: () => _showAppInfoDialog(context, isDark),
+                    ),
+                    const SizedBox(width: 4),
+                    SegmentedMediaTypeToggle(
+                      activeType: navState.activeMediaType,
+                      onChanged: (type) =>
+                          ref.read(navigationProvider.notifier).setMediaType(type),
+                      isDark: isDark,
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -137,20 +149,6 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                   isDark: isDark,
                   subColor: subColor,
                   inkColor: inkColor,
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(bottom: 90.0 + MediaQuery.of(context).padding.bottom, top: 4.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  key: const ValueKey('app_info_button'),
-                  icon: Icon(Icons.info_outline, color: subColor, size: 16),
-                  tooltip: 'App Info & Privacy',
-                  onPressed: () => _showAppInfoDialog(context, isDark),
                 ),
               ],
             ),

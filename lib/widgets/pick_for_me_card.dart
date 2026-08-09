@@ -138,7 +138,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Decide from your Watchlist — We picked this for you.',
+                  'Decide from your watchlist.',
                   style: AppThemes.safeGeist(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,
@@ -259,44 +259,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                               ],
                             ],
                           ),
-                          const SizedBox(height: 6),
-
-                          // Tagline or Genres
-                          if (selectedItem.tagline != null &&
-                              selectedItem.tagline!.trim().isNotEmpty)
-                            Text(
-                              '"${selectedItem.tagline!.trim()}"',
-                              style: AppThemes.safeGeist(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w400,
-                                fontStyle: FontStyle.italic,
-                                color: subColor,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            )
-                          else if (selectedItem.genres.isNotEmpty)
-                            Text(
-                              selectedItem.genres.take(3).join(' · '),
-                              style: AppThemes.safeGeist(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w400,
-                                color: subColor,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Decide from your watchlist.',
-                            style: AppThemes.safeGeist(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w400,
-                              height: 1.35,
-                              color: subColor,
-                            ),
-                          ),
-                          const SizedBox(height: 10),
+                          const SizedBox(height: 12),
 
                           // Re-roll Button
                           PressableScale(
@@ -403,7 +366,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Decide from your Watchlist — We picked this for you.',
+                  'Decide from your watchlist.',
                   style: AppThemes.safeGeist(
                     fontSize: 12,
                     fontWeight: FontWeight.w400,

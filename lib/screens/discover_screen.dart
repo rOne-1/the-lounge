@@ -26,6 +26,7 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   List<MediaItem> _pool = [];
   bool _loading = true;
+  bool _isLoadingPool = false;
   Object? _error;
   bool _showLegend = true;
   bool _isSwiping = false;
@@ -42,7 +43,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   Future<void> _loadPool({bool isReload = false}) async {
     setState(() {
-      _loading = true;
+      if (!isReload) {
+        _loading = true;
+      }
+      _isLoadingPool = true;
       _error = null;
     });
     try {
@@ -130,6 +134,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             _pool = newItems;
           }
           _loading = false;
+          _isLoadingPool = false;
         });
       }
     } catch (e) {
@@ -137,6 +142,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         setState(() {
           _error = e;
           _loading = false;
+          _isLoadingPool = false;
         });
       }
     }
@@ -361,8 +367,17 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               ),
                               const SizedBox(height: 20),
                               FilledButton.icon(
-                                onPressed: () => _loadPool(isReload: true),
-                                icon: const Icon(Icons.refresh),
+                                onPressed: _isLoadingPool ? null : () => _loadPool(isReload: true),
+                                icon: _isLoadingPool
+                                    ? SizedBox(
+                                        width: 16,
+                                        height: 16,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: isDark ? const Color(0xFF1A140C) : Colors.white,
+                                        ),
+                                      )
+                                    : const Icon(Icons.refresh),
                                 label: const Text('Reload deck'),
                               ),
                             ],
@@ -387,59 +402,83 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               ),
             ),
             // Action buttons row
-            Padding(
-              padding: EdgeInsets.fromLTRB(0, 14.0, 0, 14.0 + MediaQuery.of(context).padding.bottom),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildActionButtonWithLabel(
-                    label: '← Skip',
-                    button: _buildActionButton(
-                      icon: Icons.close,
-                      color: isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072),
-                      borderColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.5) : const Color.fromRGBO(138, 128, 114, 0.5),
-                      direction: 'Left',
-                      onTap: () => _triggerSwipe('Left'),
+            Builder(builder: (context) {
+              final mediaState = ref.watch(mediaProvider);
+              final topItem = _pool.isNotEmpty ? _pool.first : null;
+              final isWatchlist = topItem != null &&
+                  (mediaState.watchlist.containsKey(topItem.prefixedId) ||
+                      mediaState.watchlist.containsKey(topItem.id));
+              final isMaybe = topItem != null &&
+                  (mediaState.maybeList.containsKey(topItem.prefixedId) ||
+                      mediaState.maybeList.containsKey(topItem.id));
+              final isWatched = topItem != null &&
+                  (mediaState.watchedList.containsKey(topItem.prefixedId) ||
+                      mediaState.watchedList.containsKey(topItem.id));
+              final isSkipped = topItem != null &&
+                  (ref.watch(skippedMediaIdsProvider).contains(topItem.prefixedId) ||
+                      ref.watch(skippedMediaIdsProvider).contains(topItem.id));
+
+              return Padding(
+                padding: EdgeInsets.fromLTRB(0, 14.0, 0, 14.0 + MediaQuery.of(context).padding.bottom),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _buildActionButtonWithLabel(
+                      label: '← Skip',
+                      button: _buildActionButton(
+                        icon: Icons.close,
+                        color: isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072),
+                        borderColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.5) : const Color.fromRGBO(138, 128, 114, 0.5),
+                        direction: 'Left',
+                        onTap: () => _triggerSwipe('Left'),
+                        isDark: isDark,
+                        isHighlighted: isSkipped,
+                      ),
                       isDark: isDark,
                     ),
-                    isDark: isDark,
-                  ),
-                  const SizedBox(width: 14),
-                  _buildActionButtonWithLabel(
-                    label: '→ Saved',
-                    button: _buildActionButton(
-                      icon: Icons.star_border,
-                      activeIcon: Icons.star,
-                      color: isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50),
-                      borderColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.55) : const Color.fromRGBO(167, 106, 80, 0.55),
-                      direction: 'Right',
-                      onTap: () => _triggerSwipe('Right'),
+                    const SizedBox(width: 14),
+                    _buildActionButtonWithLabel(
+                      label: '→ Saved',
+                      button: _buildActionButton(
+                        icon: Icons.star_border,
+                        activeIcon: Icons.star,
+                        color: isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50),
+                        borderColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.55) : const Color.fromRGBO(167, 106, 80, 0.55),
+                        direction: 'Right',
+                        onTap: () => _triggerSwipe('Right'),
+                        isDark: isDark,
+                        isHighlighted: isMaybe,
+                      ),
                       isDark: isDark,
                     ),
-                    isDark: isDark,
-                  ),
-                  const SizedBox(width: 14),
-                  _buildActionButtonWithLabel(
-                    label: '↓ Watchlist',
-                    button: _buildWatchlistActionButton(isDark: isDark, accColor: accColor),
-                    isDark: isDark,
-                  ),
-                  const SizedBox(width: 14),
-                  _buildActionButtonWithLabel(
-                    label: '↑ Watched',
-                    button: _buildActionButton(
-                      icon: Icons.check,
-                      color: isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86),
-                      borderColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.55) : const Color.fromRGBO(86, 111, 134, 0.55),
-                      direction: 'Up',
-                      onTap: () => _triggerSwipe('Up'),
+                    const SizedBox(width: 14),
+                    _buildActionButtonWithLabel(
+                      label: '↓ Watchlist',
+                      button: _buildWatchlistActionButton(
+                        isDark: isDark,
+                        accColor: accColor,
+                        isWatchlist: isWatchlist,
+                      ),
                       isDark: isDark,
                     ),
-                    isDark: isDark,
-                  ),
-                ],
-              ),
-            )
+                    const SizedBox(width: 14),
+                    _buildActionButtonWithLabel(
+                      label: '↑ Watched',
+                      button: _buildActionButton(
+                        icon: Icons.check,
+                        color: isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86),
+                        borderColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.55) : const Color.fromRGBO(86, 111, 134, 0.55),
+                        direction: 'Up',
+                        onTap: () => _triggerSwipe('Up'),
+                        isDark: isDark,
+                        isHighlighted: isWatched,
+                      ),
+                      isDark: isDark,
+                    ),
+                  ],
+                ),
+              );
+            })
           ],
         ),
         _buildLegendOverlay(isDark, accColor),
@@ -478,8 +517,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     required String direction,
     required VoidCallback onTap,
     required bool isDark,
+    bool isHighlighted = false,
   }) {
-    final isActive = _activeSwipeDirection == direction;
+    final isActive = _activeSwipeDirection == direction || isHighlighted;
     final effectiveIcon = isActive && activeIcon != null ? activeIcon : icon;
     final activeBg = color.withValues(alpha: isDark ? 0.35 : 0.25);
 
@@ -524,8 +564,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget _buildWatchlistActionButton({
     required bool isDark,
     required Color accColor,
+    bool isWatchlist = false,
   }) {
-    final isActive = _activeSwipeDirection == 'Down';
+    final isActive = _activeSwipeDirection == 'Down' || isWatchlist;
     final glowColor = isDark ? accColor : const Color(0xFFB0512B);
 
     return AnimatedScale(

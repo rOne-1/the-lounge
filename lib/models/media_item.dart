@@ -106,33 +106,39 @@ class TvSeason {
 }
 
 
-class CastMember {
+class MediaCastMember {
   final String id;
   final String name;
   final String? character;
+  final String? role;
   final String? profileUrl;
 
-  const CastMember({
+  const MediaCastMember({
     required this.id,
     required this.name,
     this.character,
+    this.role,
     this.profileUrl,
   });
 
-  CastMember copyWith({
+  MediaCastMember copyWith({
     String? id,
     String? name,
     String? character,
+    String? role,
     String? profileUrl,
   }) {
-    return CastMember(
+    return MediaCastMember(
       id: id ?? this.id,
       name: name ?? this.name,
       character: character ?? this.character,
+      role: role ?? this.role,
       profileUrl: profileUrl ?? this.profileUrl,
     );
   }
 }
+
+typedef CastMember = MediaCastMember;
 
 class WatchProviderInfo {
   final String providerName;
@@ -345,6 +351,7 @@ class MediaItem {
   final List<CastMember> castMembers;
   final String? tagline;
   final String? director;
+  final List<MediaCastMember>? directors;
   final String? certification;
   final MediaCollection? belongsToCollection;
   final List<String>? createdBy;
@@ -384,6 +391,7 @@ class MediaItem {
     this.castMembers = const [],
     this.tagline,
     this.director,
+    this.directors,
     this.certification,
     this.belongsToCollection,
     this.createdBy,
@@ -499,6 +507,7 @@ class MediaItem {
     List<CastMember>? castMembers,
     String? tagline,
     String? director,
+    List<MediaCastMember>? directors,
     String? certification,
     MediaCollection? belongsToCollection,
     List<String>? createdBy,
@@ -539,6 +548,7 @@ class MediaItem {
       castMembers: castMembers ?? this.castMembers,
       tagline: tagline ?? this.tagline,
       director: director ?? this.director,
+      directors: directors ?? this.directors,
       certification: certification ?? this.certification,
       belongsToCollection: belongsToCollection ?? this.belongsToCollection,
       createdBy: createdBy ?? this.createdBy,

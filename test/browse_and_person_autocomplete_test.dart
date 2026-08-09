@@ -237,14 +237,15 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
 
       final keywordChip = find.text('#historical fiction');
       await tester.scrollUntilVisible(keywordChip, 200, scrollable: find.byType(Scrollable).first);
       expect(keywordChip, findsOneWidget);
 
       await tester.tap(keywordChip);
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Now on BrowseScreen
       expect(find.byType(BrowseScreen), findsOneWidget);
