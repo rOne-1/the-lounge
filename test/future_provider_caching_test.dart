@@ -133,7 +133,9 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Test Movie 1'), findsOneWidget);
       expect(find.byType(CircularProgressIndicator), findsNothing);
@@ -141,7 +143,8 @@ void main() {
 
       // Ensure Watchlist button is visible before tapping
       await tester.ensureVisible(find.text('Watchlist'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       // Toggle Watchlist button
       await tester.tap(find.text('Watchlist'));
@@ -151,7 +154,9 @@ void main() {
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text('Test Movie 1'), findsOneWidget);
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(CircularProgressIndicator), findsNothing);
       // Repository call count should be cached and NOT incremented
       expect(mockRepo.getMediaDetailsCalls, equals(initialCalls));

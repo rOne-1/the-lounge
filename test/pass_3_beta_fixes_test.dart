@@ -9,6 +9,11 @@ import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/repositories/tmdb_movie_repository.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 
+class _TestSyncMovieRepository extends MockMovieRepository {
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -105,7 +110,7 @@ void main() {
     testWidgets('DetailScreen defers non-critical async section loading until transition frame completes', (tester) async {
       final container = ProviderContainer(
         overrides: [
-          movieRepositoryProvider.overrideWithValue(MockMovieRepository()),
+          movieRepositoryProvider.overrideWithValue(_TestSyncMovieRepository()),
         ],
       );
 
@@ -123,7 +128,9 @@ void main() {
       expect(find.byType(DetailScreen), findsOneWidget);
 
       // Complete post frame callbacks and transition animations
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
       expect(find.byType(DetailScreen), findsOneWidget);
     });
   });

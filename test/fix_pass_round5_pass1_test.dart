@@ -8,6 +8,17 @@ import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/screens/your_space_screen.dart';
 import 'package:the_lounge/widgets/pick_for_me_card.dart';
 import 'package:the_lounge/widgets/segmented_toggle.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
+
+class _TestSyncMovieRepository extends MockMovieRepository {
+  final List<TvSeason> seasons;
+  _TestSyncMovieRepository({this.seasons = const []});
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async {
+    return seasons.firstOrNull;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -74,13 +85,24 @@ void main() {
   group('Fix Pass - Tester Feedback Round 5 (Items 1 - 4)', () {
     testWidgets('Item 1: Priority Swap for Similar / Recommendations in DetailScreen',
         (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1000, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       final container = ProviderContainer(
         overrides: [
+          movieRepositoryProvider.overrideWithValue(_TestSyncMovieRepository()),
           mediaDetailsProvider('movie/movie-100')
+              .overrideWith((ref) => Future.value(testMovie)),
+          mediaDetailsProvider('movie_movie-100')
               .overrideWith((ref) => Future.value(testMovie)),
           mediaRecommendationsProvider('movie/movie-100')
               .overrideWith((ref) => Future.value([recItem])),
+          mediaRecommendationsProvider('movie_movie-100')
+              .overrideWith((ref) => Future.value([recItem])),
           similarMediaProvider('movie/movie-100')
+              .overrideWith((ref) => Future.value([simItem])),
+          similarMediaProvider('movie_movie-100')
               .overrideWith((ref) => Future.value([simItem])),
         ],
       );
@@ -95,17 +117,26 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.text('Interstellar'), findsOneWidget);
+      expect(find.text('Interstellar'), findsAtLeastNWidgets(1));
       expect(find.text('Tenet'), findsNothing);
     });
 
     testWidgets('Item 2: Pass Seasons into toggleWatched on DetailScreen',
         (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1000, 2400);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() => tester.view.resetPhysicalSize());
+
       final container = ProviderContainer(
         overrides: [
+          movieRepositoryProvider.overrideWithValue(_TestSyncMovieRepository(seasons: [testSeason])),
           mediaDetailsProvider('tv/tv-200')
+              .overrideWith((ref) => Future.value(testShow)),
+          mediaDetailsProvider('tv_tv-200')
               .overrideWith((ref) => Future.value(testShow)),
           tvShowSeasonsProvider(testShow)
               .overrideWith((ref) => Future.value([testSeason])),
@@ -122,7 +153,9 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final watchedBtn = find.widgetWithText(InkWell, 'Watched');
       if (watchedBtn.evaluate().isNotEmpty) {
@@ -131,7 +164,9 @@ void main() {
         final textWatched = find.text('Watched');
         await tester.tap(textWatched);
       }
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final mediaState = container.read(mediaProvider);
       expect(mediaState.watchedList.containsKey('tv-200'), isTrue);

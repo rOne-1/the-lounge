@@ -515,6 +515,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                 child: Theme(
                   data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
+                    key: PageStorageKey<String>('watched_col_$colName'),
                     initiallyExpanded: true,
                     iconColor: accColor,
                     collapsedIconColor: subColor,
@@ -572,6 +573,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                 child: Theme(
                   data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
+                    key: const PageStorageKey<String>('watched_standalone'),
                     initiallyExpanded: true,
                     iconColor: accColor,
                     collapsedIconColor: subColor,

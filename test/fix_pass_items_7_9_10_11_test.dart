@@ -264,15 +264,20 @@ void main() {
       ),
     );
 
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Tap collection banner
     final bannerFinder = find.textContaining('Part of the Star Wars Collection');
     expect(bannerFinder, findsOneWidget);
     await tester.ensureVisible(bannerFinder);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
     await tester.tap(bannerFinder);
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Verify navigated to CollectionScreen
     expect(find.text('Star Wars Collection'), findsWidgets);

@@ -148,7 +148,9 @@ void main() {
 
     // Verify tapping on PickForMe item navigates to DetailScreen
     await tester.tap(find.text('Continue Movie 0'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(DetailScreen), findsOneWidget);
     expect(find.text('Continue Movie 0'), findsOneWidget);

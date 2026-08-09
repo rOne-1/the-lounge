@@ -9,6 +9,11 @@ import 'package:the_lounge/screens/home_screen.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 
+class _TestSyncMovieRepository extends MockMovieRepository {
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -127,6 +132,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            movieRepositoryProvider.overrideWithValue(_TestSyncMovieRepository()),
             mediaDetailsProvider(upcomingMovie.prefixedId).overrideWith(
               (ref) => Future.value(upcomingMovie),
             ),
@@ -140,14 +146,20 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final watchedToggle = find.text('Watched');
       expect(watchedToggle, findsOneWidget);
 
       await tester.ensureVisible(watchedToggle);
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(watchedToggle);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('This title has not been released yet.'), findsOneWidget);
     });

@@ -2035,6 +2035,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         borderRadius: BorderRadius.circular(14),
         clipBehavior: Clip.antiAlias,
         child: ExpansionTile(
+          key: PageStorageKey<String>('filter_accordion_$title'),
           initiallyExpanded: initiallyExpanded,
           iconColor: hasActiveFilter ? accColor : inkColor,
           collapsedIconColor: hasActiveFilter ? accColor : (isDark ? AppColors.srSub : AppColors.rrSub),

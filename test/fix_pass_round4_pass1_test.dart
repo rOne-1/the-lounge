@@ -10,6 +10,12 @@ import 'package:the_lounge/widgets/segmented_toggle.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
+
+class _TestSyncMovieRepository extends MockMovieRepository {
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+}
 
 void main() {
   setUp(() {
@@ -94,6 +100,7 @@ void main() {
     testWidgets('Item 8: Tapping director credit sets person filter and navigates to search/browse', (WidgetTester tester) async {
       final container = ProviderContainer(
         overrides: [
+          movieRepositoryProvider.overrideWithValue(_TestSyncMovieRepository()),
           mediaDetailsProvider('movie-100').overrideWith((ref) => Future.value(testMovie)),
         ],
       );
@@ -108,16 +115,21 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
       final directorFinder = find.text('Christopher Nolan');
       await tester.scrollUntilVisible(directorFinder, 200, scrollable: find.byType(Scrollable).first);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Director'), findsOneWidget);
       expect(directorFinder, findsOneWidget);
 
       await tester.tap(directorFinder, warnIfMissed: false);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(BrowseScreen), findsOneWidget);
       final filterState = container.read(discoverFilterProvider);
@@ -127,6 +139,7 @@ void main() {
     testWidgets('Item 9: Similar Titles rail displays recommendations and navigates when tapped', (WidgetTester tester) async {
       final container = ProviderContainer(
         overrides: [
+          movieRepositoryProvider.overrideWithValue(_TestSyncMovieRepository()),
           mediaDetailsProvider('movie-100').overrideWith((ref) => Future.value(testMovie)),
           mediaDetailsProvider('movie-101').overrideWith((ref) => Future.value(similarMovie)),
           mediaDetailsProvider(similarMovie.prefixedId).overrideWith((ref) => Future.value(similarMovie)),
@@ -147,17 +160,23 @@ void main() {
         ),
       );
 
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
       final similarTitleFinder = find.text('Similar titles');
       await tester.scrollUntilVisible(similarTitleFinder, 200, scrollable: find.byType(Scrollable).first);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(similarTitleFinder, findsOneWidget);
       final target = find.text('Interstellar');
       await tester.ensureVisible(target);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(target);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.byType(DetailScreen, skipOffstage: false), findsNWidgets(2));
     });

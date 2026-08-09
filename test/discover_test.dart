@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
+import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
@@ -196,10 +197,12 @@ void main() {
 
     // Tap on the card
     await tester.tap(find.text('Movie 1'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
 
     // Verify we navigated to DetailScreen (e.g. Back button or detail layout appears)
-    expect(find.byIcon(Icons.arrow_back), findsOneWidget);
+    expect(find.byType(DetailScreen), findsOneWidget);
   });
 
   testWidgets('Swiping drag gesture triggers early completion when exceeding 70% threshold',

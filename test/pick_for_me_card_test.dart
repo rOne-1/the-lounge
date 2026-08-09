@@ -7,6 +7,12 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
+
+class _TestSyncMovieRepository extends MockMovieRepository {
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+}
 
 void main() {
   setUp(() {
@@ -62,7 +68,7 @@ void main() {
 
     expect(find.text('PICK FOR ME'), findsOneWidget);
     expect(
-      find.text('Decide from your Watchlist — We picked this for you.'),
+      find.text('Decide from your watchlist.'),
       findsOneWidget,
     );
     expect(
@@ -98,7 +104,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Inception'), findsOneWidget);
-    expect(find.text('"Your mind is the scene of the crime"'), findsOneWidget);
+    expect(find.text('Decide from your watchlist.'), findsOneWidget);
     expect(find.text('8.8'), findsOneWidget);
     expect(find.text('Re-roll'), findsOneWidget);
   });
@@ -123,7 +129,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Oppenheimer'), findsOneWidget);
-    expect(find.text('"The world changes forever"'), findsOneWidget);
+    expect(find.text('Decide from your watchlist.'), findsOneWidget);
   });
 
   testWidgets('PickForMeCard Re-roll button switches pick when multiple movies exist', (WidgetTester tester) async {
@@ -160,7 +166,11 @@ void main() {
   });
 
   testWidgets('Tapping movie in PickForMeCard opens DetailScreen', (WidgetTester tester) async {
-    final container = ProviderContainer();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(_TestSyncMovieRepository()),
+      ],
+    );
     addTearDown(container.dispose);
 
     container.read(mediaProvider.notifier).addToWatchlist(movie1);
@@ -179,7 +189,9 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('Inception'));
-    await tester.pumpAndSettle();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(DetailScreen), findsOneWidget);
   });

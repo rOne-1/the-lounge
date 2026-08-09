@@ -17,6 +17,9 @@ class MockPass1Repository extends MockMovieRepository {
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async => items[id];
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
 }
 
 void main() {
@@ -129,7 +132,9 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('Japanese'), findsOneWidget);
       expect(find.text('Returning Series'), findsOneWidget);
@@ -168,15 +173,20 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       final watchedButton = find.text('Watched');
       expect(watchedButton, findsOneWidget);
 
       await tester.ensureVisible(watchedButton);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
       await tester.tap(watchedButton);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('This title has not been released yet.'), findsOneWidget);
     });
