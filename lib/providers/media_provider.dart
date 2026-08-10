@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
 import 'ambiance_provider.dart';
+import '../themes/theme_registry.dart';
 import '../constants.dart';
 import 'repository_provider.dart';
 export 'repository_provider.dart';
@@ -947,10 +948,11 @@ class MediaNotifier extends Notifier<MediaState> {
 
       final ambianceStr = decoded['selectedAmbiance'];
       if (ambianceStr is String) {
-        final match = AmbianceType.values.firstWhere(
-          (e) => e.name == ambianceStr,
-          orElse: () => AmbianceType.screeningRoom,
-        );
+        String id = ambianceStr;
+        if (id == 'screeningRoom') id = 'screening_room';
+        if (id == 'readingRoom') id = 'reading_room';
+        if (id == 'violetDusk') id = 'violet_dusk';
+        final match = getThemeById(id);
         await ref.read(ambianceProvider.notifier).setAmbiance(match);
       }
 

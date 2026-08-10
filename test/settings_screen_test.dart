@@ -11,6 +11,9 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/constants.dart';
+import 'package:the_lounge/themes/app_theme.dart';
+import 'package:the_lounge/themes/screening_room_theme.dart';
+import 'package:the_lounge/themes/reading_room_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
 
 class MockFilePickerPlatform extends FilePickerPlatform {
@@ -102,7 +105,7 @@ void main() {
     final container = createContainer();
     addTearDown(container.dispose);
 
-    expect(container.read(ambianceProvider), equals(AmbianceType.screeningRoom));
+    expect(container.read(ambianceProvider), equals(screeningRoomTheme));
 
     await tester.pumpWidget(createSettingsScreen(container));
     await tester.pumpAndSettle();
@@ -112,7 +115,7 @@ void main() {
     expect(find.text('DATA MANAGEMENT'), findsOneWidget);
     expect(find.text('ABOUT'), findsOneWidget);
 
-    final switchFinder = find.byType(SegmentedButton<AmbianceType>);
+    final switchFinder = find.byType(SegmentedButton<AppTheme>);
     expect(switchFinder, findsOneWidget);
 
     
@@ -120,7 +123,7 @@ void main() {
     await tester.tap(find.text('Reading'));
     await tester.pumpAndSettle();
 
-    expect(container.read(ambianceProvider), equals(AmbianceType.readingRoom));
+    expect(container.read(ambianceProvider), equals(readingRoomTheme));
 
     
   });
@@ -230,7 +233,7 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(container.read(mediaProvider).watchlist.containsKey('movie_imported'), isTrue);
     expect(container.read(mediaProvider).watchProvidersCountry, equals('CA'));
-    expect(container.read(ambianceProvider), equals(AmbianceType.readingRoom));
+    expect(container.read(ambianceProvider), equals(readingRoomTheme));
     expect(find.text('Backup imported successfully.'), findsOneWidget);
   });
 

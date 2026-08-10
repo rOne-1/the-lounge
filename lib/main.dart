@@ -69,16 +69,19 @@ class MyApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ambiance = ref.watch(ambianceProvider);
 
-    return AnimatedTheme(
-      duration: AppPhysics.houseSpringDuration,
-      curve: AppPhysics.houseSpringCurve,
-      data: AppThemes.theme(ambiance),
-      child: MaterialApp(
-        title: 'The Lounge',
-        debugShowCheckedModeBanner: false,
-        theme: AppThemes.theme(ambiance),
-        home: SplashScreen(enableAnimation: enableAnimation),
-      ),
+    return MaterialApp(
+      title: 'The Lounge',
+      debugShowCheckedModeBanner: false,
+      theme: ambiance.themeData,
+      builder: (context, child) {
+        return AnimatedTheme(
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
+          data: ambiance.themeData,
+          child: child ?? const SizedBox(),
+        );
+      },
+      home: SplashScreen(enableAnimation: enableAnimation),
     );
   }
 }

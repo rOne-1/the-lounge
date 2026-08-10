@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../providers/media_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../constants.dart';
+import '../themes/theme_registry.dart';
+import '../themes/app_theme.dart';
 import '../utils/export_helper.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -74,23 +76,13 @@ class SettingsScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            SegmentedButton<AmbianceType>(
-                              segments: const [
-                                ButtonSegment(
-                                  value: AmbianceType.readingRoom,
-                                  label: Text('Reading'),
-                                ),
-                                ButtonSegment(
-                                  value: AmbianceType.screeningRoom,
-                                  label: Text('Screening'),
-                                ),
-                                ButtonSegment(
-                                  value: AmbianceType.violetDusk,
-                                  label: Text('Violet'),
-                                ),
-                              ],
+                            SegmentedButton<AppTheme>(
+                              segments: allThemes.map((t) => ButtonSegment(
+                                value: t,
+                                label: Text(t.displayName.split(' ').first),
+                              )).toList(),
                               selected: {ambiance},
-                              onSelectionChanged: (Set<AmbianceType> newSelection) {
+                              onSelectionChanged: (Set<AppTheme> newSelection) {
                                 ref.read(ambianceProvider.notifier).setAmbiance(newSelection.first);
                               },
                               style: SegmentedButton.styleFrom(
@@ -128,7 +120,7 @@ class SettingsScreen extends ConsumerWidget {
                               style: AppThemes.safeGeist(fontSize: 12, color: subColor),
                             ),
                             onTap: () async {
-                              final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.name);
+                              final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
                               try {
                                 final success = await saveJsonFile(jsonString, 'the_lounge_backup.json');
                                 if (success && context.mounted) {
@@ -168,7 +160,7 @@ class SettingsScreen extends ConsumerWidget {
                               style: AppThemes.safeGeist(fontSize: 12, color: subColor),
                             ),
                             onTap: () async {
-                              final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.name);
+                              final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
                               try {
                                 await shareJsonFile(jsonString, 'the_lounge_backup.json');
                               } catch (e) {
@@ -359,7 +351,7 @@ class SettingsScreen extends ConsumerWidget {
                                     ),
                                     TextButton(
                                       onPressed: () async {
-                                        final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.name);
+                                        final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
                                         await saveJsonFile(jsonString, 'the_lounge_backup.json');
                                       },
                                       child: Text(

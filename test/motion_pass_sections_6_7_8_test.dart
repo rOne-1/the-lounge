@@ -1,6 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:the_lounge/constants.dart';
+import 'package:the_lounge/themes/ambiance_colors.dart';
+import 'package:the_lounge/themes/screening_room_theme.dart';
+import 'package:the_lounge/themes/reading_room_theme.dart';
+import 'package:the_lounge/themes/theme_registry.dart';
+import 'package:the_lounge/themes/app_theme.dart';
+import 'package:the_lounge/themes/screening_room_theme.dart';
+import 'package:the_lounge/themes/reading_room_theme.dart';
+import 'package:the_lounge/themes/violet_dusk_theme.dart';
+import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/widgets/drag_to_dismiss_sheet.dart';
 
 void main() {
@@ -11,8 +20,8 @@ void main() {
     });
 
     test('Reading Room primary button decoration uses warm linear gradient', () {
-      final decDark = AppThemes.srAmbianceColors.primaryButtonDecoration;
-      final decLight = AppThemes.rrAmbianceColors.primaryButtonDecoration;
+      final decDark = srAmbianceColors.primaryButtonDecoration;
+      final decLight = rrAmbianceColors.primaryButtonDecoration;
 
       expect(decDark.color, equals(AppColors.srAcc));
       expect(decLight.gradient, equals(AppColors.rrPrimaryGradient));

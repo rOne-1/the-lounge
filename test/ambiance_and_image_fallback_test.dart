@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/constants.dart';
+import 'package:the_lounge/themes/theme_registry.dart';
+import 'package:the_lounge/themes/app_theme.dart';
+import 'package:the_lounge/themes/screening_room_theme.dart';
+import 'package:the_lounge/themes/reading_room_theme.dart';
+import 'package:the_lounge/themes/violet_dusk_theme.dart';
+import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/widgets/fallback_widgets.dart';
 
@@ -12,7 +18,7 @@ void main() {
 
   group('Task 1: Ambiance Background Gradient Tests', () {
     test('screeningRoomBackground gradient transitions to AppColors.srBase', () {
-      final decoration = AppThemes.screeningRoomBackground();
+      final decoration = screeningRoomBackground();
       expect(decoration.color, equals(AppColors.srBase));
       expect(decoration.gradient, isA<RadialGradient>());
 
@@ -23,7 +29,7 @@ void main() {
     });
 
     test('readingRoomBackground gradient transitions to AppColors.rrBase', () {
-      final decoration = AppThemes.readingRoomBackground();
+      final decoration = readingRoomBackground();
       expect(decoration.color, equals(AppColors.rrBase));
       expect(decoration.gradient, isA<RadialGradient>());
 
@@ -34,8 +40,8 @@ void main() {
     });
 
     testWidgets('ThemeData scaffoldBackgroundColor matches base colors', (WidgetTester tester) async {
-      final theme = AppThemes.screeningRoomTheme;
-      final rrTheme = AppThemes.readingRoomTheme;
+      final theme = screeningRoomTheme.themeData;
+      final rrTheme = readingRoomTheme.themeData;
       expect(theme.scaffoldBackgroundColor, equals(AppColors.srBase));
       expect(rrTheme.scaffoldBackgroundColor, equals(AppColors.rrBase));
     });

@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:the_lounge/constants.dart';
+import 'package:the_lounge/themes/theme_registry.dart';
+import 'package:the_lounge/themes/app_theme.dart';
+import 'package:the_lounge/themes/screening_room_theme.dart';
+import 'package:the_lounge/themes/reading_room_theme.dart';
+import 'package:the_lounge/themes/violet_dusk_theme.dart';
+import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/widgets/ambient_glow.dart';
 
 void main() {
@@ -9,7 +15,7 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: AppThemes.screeningRoomTheme,
+          theme: screeningRoomTheme.themeData,
           home: const Scaffold(
             body: AmbientGlowWidget(
               enableAnimation: false,
@@ -28,7 +34,7 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: AppThemes.readingRoomTheme,
+          theme: readingRoomTheme.themeData,
           home: const Scaffold(
             body: AmbientGlowWidget(
               enableAnimation: false,
@@ -46,7 +52,7 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: AppThemes.screeningRoomTheme,
+          theme: screeningRoomTheme.themeData,
           home: const Scaffold(
             body: AmbientGlowWidget(
               enableAnimation: true,
@@ -72,7 +78,7 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: AppThemes.screeningRoomTheme,
+          theme: screeningRoomTheme.themeData,
           home: const Scaffold(
             body: AmbientGlowWidget(
               child: SizedBox(width: 200, height: 100),
@@ -94,7 +100,7 @@ void main() {
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: AppThemes.screeningRoomTheme,
+          theme: screeningRoomTheme.themeData,
           home: const Scaffold(
             body: AmbientGlowWidget(
               enableAnimation: false,
@@ -111,7 +117,7 @@ void main() {
     testWidgets('accepts custom color overrides', (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: AppThemes.screeningRoomTheme,
+          theme: screeningRoomTheme.themeData,
           home: const Scaffold(
             body: AmbientGlowWidget(
               enableAnimation: false,

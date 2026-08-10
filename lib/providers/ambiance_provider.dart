@@ -7,41 +7,42 @@ final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
       'sharedPreferencesProvider must be overridden in main');
 });
 
-class AmbianceNotifier extends Notifier<AmbianceType> {
+class AmbianceNotifier extends Notifier<AppTheme> {
   static const _ambianceKey = 'selected_ambiance';
 
   @override
-  AmbianceType build() {
+  AppTheme build() {
     final prefs = ref.watch(sharedPreferencesProvider);
     final storedValue = prefs.getString(_ambianceKey);
 
     if (storedValue != null) {
-      return AmbianceType.values.firstWhere(
-        (e) => e.name == storedValue,
-        orElse: () => AmbianceType.screeningRoom,
-      );
+      String id = storedValue;
+      if (id == 'screeningRoom') id = 'screening_room';
+      if (id == 'readingRoom') id = 'reading_room';
+      if (id == 'violetDusk') id = 'violet_dusk';
+      return getThemeById(id);
     }
 
-    return AmbianceType.screeningRoom;
+    return allThemes.first;
   }
 
   Future<void> toggleAmbiance() async {
-    final newAmbiance = state == AmbianceType.screeningRoom
-        ? AmbianceType.readingRoom
-        : AmbianceType.screeningRoom;
+    final currentIndex = allThemes.indexWhere((t) => t.id == state.id);
+    final nextIndex = (currentIndex + 1) % allThemes.length;
+    final newAmbiance = allThemes[nextIndex];
 
     state = newAmbiance;
     final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_ambianceKey, newAmbiance.name);
+    await prefs.setString(_ambianceKey, newAmbiance.id);
   }
 
-  Future<void> setAmbiance(AmbianceType ambiance) async {
+  Future<void> setAmbiance(AppTheme ambiance) async {
     state = ambiance;
     final prefs = ref.read(sharedPreferencesProvider);
-    await prefs.setString(_ambianceKey, ambiance.name);
+    await prefs.setString(_ambianceKey, ambiance.id);
   }
 }
 
-final ambianceProvider = NotifierProvider<AmbianceNotifier, AmbianceType>(() {
+final ambianceProvider = NotifierProvider<AmbianceNotifier, AppTheme>(() {
   return AmbianceNotifier();
 });
