@@ -315,9 +315,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         scale: 0.92,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF1C1510) : const Color(0xFFDCCDB2),
+                            color: context.ambianceColors.card2,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: isDark ? const Color.fromRGBO(201, 168, 106, 0.1) : const Color.fromRGBO(160, 74, 42, 0.1)),
+                            border: Border.all(color: context.ambianceColors.lineRgba.withValues(alpha: 0.1)),
                           ),
                           child: Opacity(opacity: isDark ? 0.5 : 0.6),
                         ),
@@ -329,9 +329,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         scale: 0.96,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF241A12) : const Color(0xFFE3D5BD),
+                            color: context.ambianceColors.card,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: isDark ? const Color.fromRGBO(201, 168, 106, 0.14) : const Color.fromRGBO(160, 74, 42, 0.14)),
+                            border: Border.all(color: context.ambianceColors.lineRgba.withValues(alpha: 0.14)),
                           ),
                           child: Opacity(opacity: isDark ? 0.7 : 0.8),
                         ),
@@ -424,8 +424,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       label: '← Skip',
                       button: _buildActionButton(
                         icon: Icons.close,
-                        color: isDark ? const Color(0xFF9A9088) : const Color(0xFF8A8072),
-                        borderColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.5) : const Color.fromRGBO(138, 128, 114, 0.5),
+                        color: context.ambianceColors.sub,
+                        borderColor: context.ambianceColors.lineRgba,
                         direction: 'Left',
                         onTap: () => _triggerSwipe('Left'),
                         isDark: isDark,
@@ -439,8 +439,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       button: _buildActionButton(
                         icon: Icons.star_border,
                         activeIcon: Icons.star,
-                        color: isDark ? const Color(0xFFD69784) : const Color(0xFFA76A50),
-                        borderColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.55) : const Color.fromRGBO(167, 106, 80, 0.55),
+                        color: context.ambianceColors.statusSave,
+                        borderColor: context.ambianceColors.statusSave.withValues(alpha: 0.55),
                         direction: 'Right',
                         onTap: () => _triggerSwipe('Right'),
                         isDark: isDark,
@@ -463,8 +463,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       label: '↑ Watched',
                       button: _buildActionButton(
                         icon: Icons.check,
-                        color: isDark ? const Color(0xFF7E9BB5) : const Color(0xFF566F86),
-                        borderColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.55) : const Color.fromRGBO(86, 111, 134, 0.55),
+                        color: context.ambianceColors.statusWatched,
+                        borderColor: context.ambianceColors.statusWatched.withValues(alpha: 0.55),
                         direction: 'Up',
                         onTap: () => _triggerSwipe('Up'),
                         isDark: isDark,
@@ -577,10 +577,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           curve: Curves.easeOutCubic,
           width: 54,
           height: 54,
-          decoration: isDark
-              ? BoxDecoration(
-                  color: accColor,
-                  shape: BoxShape.circle,
+          decoration: context.ambianceColors.primaryButtonDecoration.copyWith(
                   border: isActive
                       ? Border.all(color: Colors.white, width: 2)
                       : null,
@@ -588,22 +585,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       ? [
                           BoxShadow(
                             color: glowColor.withValues(alpha: 0.6),
-                            blurRadius: 16,
-                            spreadRadius: 3,
-                          ),
-                        ]
-                      : null,
-                )
-              : BoxDecoration(
-                  gradient: AppColors.rrPrimaryGradient,
-                  shape: BoxShape.circle,
-                  border: isActive
-                      ? Border.all(color: const Color(0xFFB0512B), width: 2)
-                      : null,
-                  boxShadow: isActive
-                      ? [
-                          BoxShadow(
-                            color: glowColor.withValues(alpha: 0.5),
                             blurRadius: 16,
                             spreadRadius: 3,
                           ),
@@ -621,13 +602,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   Widget _buildLegendOverlay(bool isDark, Color accColor) {
-    final titleColor = isDark ? const Color(0xFFEFE6D8) : const Color(0xFF2C2016);
-    final subColor = isDark ? const Color.fromRGBO(239, 230, 216, 0.55) : const Color.fromRGBO(44, 32, 22, 0.55);
-    final borderColor = isDark ? const Color.fromRGBO(201, 168, 106, 0.25) : const Color.fromRGBO(160, 74, 42, 0.25);
-    final backdropColor = isDark ? const Color.fromRGBO(6, 4, 3, 0.72) : const Color.fromRGBO(44, 32, 22, 0.45);
-    final sheetBgColors = isDark
-        ? const [Color(0xFF1C1510), Color(0xFF120D0A)]
-        : const [Color(0xFFF6EFE3), Color(0xFFE7DDC9)];
+    final titleColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final borderColor = context.ambianceColors.lineRgba;
+    final backdropColor = context.ambianceColors.base.withValues(alpha: 0.85);
+    
+    // Instead of using hardcoded sheetBgColors, we can reuse base and card colors
+    final sheetBgColors = [context.ambianceColors.base, context.ambianceColors.card];
     final innerShadowColor = isDark ? const Color.fromRGBO(255, 255, 255, 0.08) : const Color.fromRGBO(255, 255, 255, 0.6);
     final btnTextColor = Theme.of(context).colorScheme.onPrimary;
 
@@ -710,8 +691,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           icon: Icons.arrow_back,
                           title: 'Swipe left — Skip for now',
                           subtitle: 'Session only, won\'t reappear tonight — not permanent',
-                          color: isDark ? const Color(0xFFB3A99F) : const Color(0xFF8A8072),
-                          bgColor: isDark ? const Color.fromRGBO(154, 144, 136, 0.16) : const Color.fromRGBO(138, 128, 114, 0.16),
+                          color: context.ambianceColors.sub,
+                          bgColor: context.ambianceColors.sub.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -719,8 +700,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           icon: Icons.arrow_forward,
                           title: 'Swipe right — Save for later',
                           subtitle: 'A "maybe" bookmark → lands in your Maybe pile',
-                          color: isDark ? const Color(0xFFE0A894) : const Color(0xFFA76A50),
-                          bgColor: isDark ? const Color.fromRGBO(214, 151, 132, 0.16) : const Color.fromRGBO(167, 106, 80, 0.16),
+                          color: context.ambianceColors.statusSave,
+                          bgColor: context.ambianceColors.statusSave.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -728,8 +709,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           icon: Icons.arrow_downward,
                           title: 'Swipe down — Add to watchlist',
                           subtitle: 'A committed pick you intend to watch',
-                          color: isDark ? const Color(0xFFC9A86A) : const Color(0xFFB0512B),
-                          bgColor: isDark ? const Color.fromRGBO(201, 168, 106, 0.16) : const Color.fromRGBO(176, 81, 43, 0.16),
+                          color: context.ambianceColors.statusWatchlist,
+                          bgColor: context.ambianceColors.statusWatchlist.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -737,8 +718,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           icon: Icons.arrow_upward,
                           title: 'Swipe up — Already watched',
                           subtitle: 'Logs to Watched history',
-                          color: isDark ? const Color(0xFF8FAEC4) : const Color(0xFF566F86),
-                          bgColor: isDark ? const Color.fromRGBO(126, 155, 181, 0.16) : const Color.fromRGBO(86, 111, 134, 0.16),
+                          color: context.ambianceColors.statusWatched,
+                          bgColor: context.ambianceColors.statusWatched.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -746,8 +727,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           icon: Icons.touch_app,
                           title: 'Tap — Open full details',
                           subtitle: 'The complete Movie / TV detail view',
-                          color: isDark ? const Color(0xFFEFE6D8) : const Color(0xFF2C2016),
-                          bgColor: isDark ? const Color.fromRGBO(239, 230, 216, 0.08) : const Color.fromRGBO(44, 32, 22, 0.08),
+                          color: context.ambianceColors.ink,
+                          bgColor: context.ambianceColors.ink.withValues(alpha: 0.08),
                         ),
                         const SizedBox(height: 22),
                         PressableScale(
@@ -787,8 +768,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     required Color color,
     required Color bgColor,
   }) {
-    final titleColor = isDark ? const Color(0xFFEFE6D8) : const Color(0xFF2C2016);
-    final subtitleColor = isDark ? const Color.fromRGBO(239, 230, 216, 0.5) : const Color.fromRGBO(44, 32, 22, 0.55);
+    final titleColor = context.ambianceColors.ink;
+    final subtitleColor = context.ambianceColors.sub;
 
     return Row(
       children: [

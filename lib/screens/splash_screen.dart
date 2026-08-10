@@ -107,21 +107,22 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    const darkBackground = Color(0xFF161312);
+    final ambianceColors = context.ambianceColors;
+    final baseColor = ambianceColors.base;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: const SystemUiOverlayStyle(
+      value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: Color(0xFF161312),
-        systemNavigationBarIconBrightness: Brightness.light,
+        statusBarIconBrightness: ambianceColors.isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: ambianceColors.isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: baseColor,
+        systemNavigationBarIconBrightness: ambianceColors.isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
-        backgroundColor: darkBackground,
+        backgroundColor: baseColor,
         body: Container(
-          decoration: AppThemes.screeningRoomBackground().copyWith(
-            color: darkBackground,
+          decoration: ambianceColors.background.copyWith(
+            color: baseColor,
           ),
           child: Center(
             child: AnimatedBuilder(
@@ -143,24 +144,24 @@ class _SplashScreenState extends State<SplashScreen>
                     width: 88,
                     height: 88,
                     decoration: BoxDecoration(
-                      color: AppColors.srCard,
+                      color: ambianceColors.card,
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.srAcc.withValues(alpha: 0.4),
+                        color: ambianceColors.acc.withValues(alpha: 0.4),
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.srAcc.withValues(alpha: 0.2),
+                          color: ambianceColors.acc.withValues(alpha: 0.2),
                           blurRadius: 24,
                           spreadRadius: 2,
                         ),
                       ],
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.local_movies_rounded,
                       size: 42,
-                      color: AppColors.srAcc,
+                      color: ambianceColors.acc,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -171,7 +172,7 @@ class _SplashScreenState extends State<SplashScreen>
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 4.0,
-                      color: AppColors.srInk,
+                      color: ambianceColors.ink,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -182,7 +183,7 @@ class _SplashScreenState extends State<SplashScreen>
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
                       letterSpacing: 2.5,
-                      color: AppColors.srAcc,
+                      color: ambianceColors.acc,
                     ),
                   ),
                 ],

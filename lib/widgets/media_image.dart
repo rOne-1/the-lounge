@@ -156,9 +156,7 @@ class MediaImage extends StatelessWidget {
         memCacheHeight: memCacheHeight,
         fadeInDuration: const Duration(milliseconds: 150),
         placeholder: (context, url) => Container(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.srPh
-              : AppColors.rrPh,
+          color: context.ambianceColors.ph,
         ),
         errorWidget: (context, url, error) => fallbackWidget,
       );

@@ -121,9 +121,7 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
               child: BackdropFilter(
                 filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                 child: Container(
-                  color: isDark
-                      ? AppColors.srBase.withAlpha(191)
-                      : AppColors.rrBase.withAlpha(191),
+                  color: context.ambianceColors.base.withValues(alpha: 0.75),
                   child: AppBar(
                     backgroundColor: Colors.transparent,
                     elevation: 0,

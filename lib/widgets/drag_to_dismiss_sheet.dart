@@ -82,9 +82,7 @@ class _DragToDismissSheetState extends State<DragToDismissSheet>
 
   @override
   Widget build(BuildContext context) {
-    final handleColor = widget.isDark
-        ? const Color.fromRGBO(239, 230, 216, 0.25)
-        : const Color.fromRGBO(44, 32, 22, 0.25);
+    final handleColor = context.ambianceColors.sub.withValues(alpha: 0.25);
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,

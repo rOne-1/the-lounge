@@ -42,11 +42,10 @@ class NoNetworkWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isDark = context.ambianceColors.isDark;
-    final inkColor = isDark ? const Color(0xFFE6DFD5) : const Color(0xFF1A140C);
-    final subColor = isDark ? const Color(0xFFA39B8B) : const Color(0xFF706859);
-    final cardBg = isDark ? const Color(0xFF221C16) : const Color(0xFFF7F2EA);
-    final borderColor = isDark ? const Color(0x33E6DFD5) : const Color(0x331A140C);
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final cardBg = context.ambianceColors.card;
+    final borderColor = context.ambianceColors.lineRgba;
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: 1.0),

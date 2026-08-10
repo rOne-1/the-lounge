@@ -50,27 +50,27 @@ class QuickStatusSheet extends ConsumerWidget {
     if (inWatching) {
       activeStatusLabel = 'Watching';
       activeStatusIcon = Icons.play_circle_fill_rounded;
-      activeBadgeColor = AppColors.srStatusWatching;
+      activeBadgeColor = context.ambianceColors.statusWatching;
     } else if (inWatchlist) {
       activeStatusLabel = 'Watchlist';
       activeStatusIcon = Icons.bookmark_rounded;
-      activeBadgeColor = AppColors.srStatusWatchlist;
+      activeBadgeColor = context.ambianceColors.statusWatchlist;
     } else if (inSaved) {
       activeStatusLabel = 'Saved';
       activeStatusIcon = Icons.archive_rounded;
-      activeBadgeColor = AppColors.srStatusSave;
+      activeBadgeColor = context.ambianceColors.statusSave;
     } else if (inWatched) {
       activeStatusLabel = 'Watched';
       activeStatusIcon = Icons.check_circle_rounded;
-      activeBadgeColor = AppColors.srStatusWatched;
+      activeBadgeColor = context.ambianceColors.statusWatched;
     } else if (inOnHold) {
       activeStatusLabel = 'On-Hold';
       activeStatusIcon = Icons.pause_circle_filled_rounded;
-      activeBadgeColor = const Color(0xFFD6A24D);
+      activeBadgeColor = context.ambianceColors.acc; // Assuming fallback to acc
     } else if (inDropped) {
       activeStatusLabel = 'Dropped';
       activeStatusIcon = Icons.remove_circle_rounded;
-      activeBadgeColor = const Color(0xFFC76464);
+      activeBadgeColor = context.ambianceColors.acc; // Assuming fallback to acc
     }
 
     final yearStr = item.releaseOrAirDate?.year != null
@@ -79,10 +79,10 @@ class QuickStatusSheet extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF161312),
+        color: context.ambianceColors.base,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         border: Border.all(
-          color: const Color.fromRGBO(201, 168, 106, 0.2),
+          color: context.ambianceColors.lineRgba,
           width: 1,
         ),
         boxShadow: const [
@@ -110,7 +110,7 @@ class QuickStatusSheet extends ConsumerWidget {
               width: 36,
               height: 4,
               decoration: BoxDecoration(
-                color: const Color.fromRGBO(239, 230, 216, 0.3),
+                color: context.ambianceColors.sub.withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -140,7 +140,7 @@ class QuickStatusSheet extends ConsumerWidget {
                       style: AppThemes.safeGeist(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.srInk,
+                        color: context.ambianceColors.ink,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -151,7 +151,7 @@ class QuickStatusSheet extends ConsumerWidget {
                       style: AppThemes.safeGeist(
                         fontSize: 12,
                         fontWeight: FontWeight.w400,
-                        color: AppColors.srSub,
+                        color: context.ambianceColors.sub,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -193,10 +193,10 @@ class QuickStatusSheet extends ConsumerWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: AppColors.srPill,
+                          color: context.ambianceColors.pill,
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: const Color.fromRGBO(239, 230, 216, 0.15),
+                            color: context.ambianceColors.lineRgba,
                             width: 1,
                           ),
                         ),
@@ -205,7 +205,7 @@ class QuickStatusSheet extends ConsumerWidget {
                           style: AppThemes.safeGeist(
                             fontSize: 11,
                             fontWeight: FontWeight.w400,
-                            color: AppColors.srSub,
+                            color: context.ambianceColors.sub,
                           ),
                         ),
                       ),
@@ -215,8 +215,8 @@ class QuickStatusSheet extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 20),
-          const Divider(
-            color: Color.fromRGBO(201, 168, 106, 0.16),
+          Divider(
+            color: context.ambianceColors.lineRgba,
             height: 1,
           ),
           const SizedBox(height: 16),
@@ -322,20 +322,20 @@ class _StatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     // Gold active indicator borders (#CBA86A / AppColors.srAcc)
     final borderColor = isActive
-        ? const Color(0xFFCBA86A)
-        : const Color.fromRGBO(201, 168, 106, 0.16);
+        ? context.ambianceColors.acc
+        : context.ambianceColors.lineRgba;
     final bgColor = isActive
-        ? const Color.fromRGBO(203, 168, 106, 0.15)
-        : AppColors.srPill;
+        ? context.ambianceColors.acc.withValues(alpha: 0.15)
+        : context.ambianceColors.pill;
     final contentColor =
-        isActive ? const Color(0xFFCBA86A) : AppColors.srInk;
+        isActive ? context.ambianceColors.acc : context.ambianceColors.ink;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        splashColor: const Color.fromRGBO(201, 168, 106, 0.2),
+        splashColor: context.ambianceColors.acc.withValues(alpha: 0.2),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -370,10 +370,10 @@ class _StatusPill extends StatelessWidget {
               ),
               if (isActive) ...[
                 const SizedBox(width: 4),
-                const Icon(
+                Icon(
                   Icons.check_rounded,
                   size: 14,
-                  color: Color(0xFFCBA86A),
+                  color: context.ambianceColors.acc,
                 ),
               ],
             ],

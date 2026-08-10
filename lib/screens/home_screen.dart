@@ -1032,10 +1032,8 @@ class _NextEpisodeBannerCarouselState
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(3),
                 color: isSelected
-                    ? (context.ambianceColors.acc)
-                    : (widget.isDark
-                        ? AppColors.srSub.withAlpha(80)
-                        : AppColors.rrSub.withAlpha(80)),
+                    ? context.ambianceColors.acc
+                    : context.ambianceColors.sub.withValues(alpha: 0.31),
               ),
             );
           }),
