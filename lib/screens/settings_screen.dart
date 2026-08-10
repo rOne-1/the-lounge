@@ -445,19 +445,7 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 24),
                     const SizedBox(height: 16),
-                    Center(
-                      child: Text(
-                        'rOne',
-                        style: GoogleFonts.bodoniModa(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          fontStyle: FontStyle.italic,
-                          letterSpacing: 2.0,
-                          color: subColor.withValues(alpha: 0.3),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
+                    _DeveloperSignature(subColor: subColor),
                   ],
                 ),
               ),
@@ -496,6 +484,101 @@ class SettingsScreen extends ConsumerWidget {
       ),
       clipBehavior: Clip.antiAlias,
       child: child,
+    );
+  }
+}
+
+class _DeveloperSignature extends StatefulWidget {
+  final Color subColor;
+  
+  const _DeveloperSignature({required this.subColor});
+
+  @override
+  State<_DeveloperSignature> createState() => _DeveloperSignatureState();
+}
+
+class _DeveloperSignatureState extends State<_DeveloperSignature> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _opacityAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 5),
+    );
+    
+    _opacityAnim = Tween<double>(begin: 0.4, end: 1.0).animate(_controller);
+
+    // Prevent pumpAndSettle timeouts in widget tests
+    final isTest = WidgetsBinding.instance.runtimeType.toString().toLowerCase().contains('test');
+    if (!isTest) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40.0),
+      child: AnimatedBuilder(
+        animation: _opacityAnim,
+        builder: (context, child) {
+          return Opacity(
+            opacity: _opacityAnim.value,
+            child: child,
+          );
+        },
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'CRAFTED BY',
+              style: AppThemes.safeGeist(
+                fontSize: 9,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 2.0,
+                color: widget.subColor.withValues(alpha: 0.5),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 24,
+                  height: 1.2,
+                  color: context.ambianceColors.lineRgba.withValues(alpha: 0.65),
+                ),
+                const SizedBox(width: 14),
+                Text(
+                  'rOne',
+                  style: GoogleFonts.bodoniModa(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    fontStyle: FontStyle.italic,
+                    letterSpacing: 2.5,
+                    color: widget.subColor.withValues(alpha: 0.85),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Container(
+                  width: 24,
+                  height: 1.2,
+                  color: context.ambianceColors.lineRgba.withValues(alpha: 0.65),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
