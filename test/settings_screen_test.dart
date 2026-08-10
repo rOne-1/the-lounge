@@ -15,6 +15,7 @@ import 'package:the_lounge/themes/app_theme.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/reading_room_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/widgets/animated_segmented_control.dart';
 
 class MockFilePickerPlatform extends FilePickerPlatform {
   String? savePath;
@@ -115,7 +116,7 @@ void main() {
     expect(find.text('DATA MANAGEMENT'), findsOneWidget);
     expect(find.text('ABOUT'), findsOneWidget);
 
-    final switchFinder = find.byType(SegmentedButton<AppTheme>);
+    final switchFinder = find.byType(AnimatedSegmentedControl<AppTheme>);
     expect(switchFinder, findsOneWidget);
 
     

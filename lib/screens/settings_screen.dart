@@ -7,6 +7,7 @@ import '../constants.dart';
 import '../themes/theme_registry.dart';
 import '../themes/app_theme.dart';
 import '../utils/export_helper.dart';
+import '../widgets/animated_segmented_control.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -76,20 +77,13 @@ class SettingsScreen extends ConsumerWidget {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            SegmentedButton<AppTheme>(
-                              segments: allThemes.map((t) => ButtonSegment(
-                                value: t,
-                                label: Text(t.displayName.split(' ').first),
-                              )).toList(),
-                              selected: {ambiance},
-                              onSelectionChanged: (Set<AppTheme> newSelection) {
-                                ref.read(ambianceProvider.notifier).setAmbiance(newSelection.first);
+                            AnimatedSegmentedControl<AppTheme>(
+                              items: allThemes,
+                              selectedItem: ambiance,
+                              labelBuilder: (theme) => theme.displayName.split(' ').first,
+                              onSelected: (theme) {
+                                ref.read(ambianceProvider.notifier).setAmbiance(theme);
                               },
-                              style: SegmentedButton.styleFrom(
-                                foregroundColor: subColor,
-                                selectedForegroundColor: context.ambianceColors.base,
-                                selectedBackgroundColor: accColor,
-                              ),
                             ),
                           ],
                         ),
