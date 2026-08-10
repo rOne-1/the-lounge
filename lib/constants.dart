@@ -48,6 +48,10 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
 
   final Color statusWatched;
 
+  final Color statusOnHold;
+
+  final Color statusDropped;
+
   final Color glow1;
 
   final Color glow2;
@@ -87,6 +91,10 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     required this.statusWatching,
 
     required this.statusWatched,
+
+    required this.statusOnHold,
+
+    required this.statusDropped,
 
     required this.glow1,
 
@@ -132,6 +140,10 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
 
     Color? statusWatched,
 
+    Color? statusOnHold,
+
+    Color? statusDropped,
+
     Color? glow1,
 
     Color? glow2,
@@ -171,6 +183,10 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       statusWatching: statusWatching ?? this.statusWatching,
 
       statusWatched: statusWatched ?? this.statusWatched,
+
+      statusOnHold: statusOnHold ?? this.statusOnHold,
+
+      statusDropped: statusDropped ?? this.statusDropped,
 
       glow1: glow1 ?? this.glow1,
 
@@ -221,6 +237,10 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       statusWatching: Color.lerp(statusWatching, other.statusWatching, t)!,
 
       statusWatched: Color.lerp(statusWatched, other.statusWatched, t)!,
+
+      statusOnHold: Color.lerp(statusOnHold, other.statusOnHold, t)!,
+
+      statusDropped: Color.lerp(statusDropped, other.statusDropped, t)!,
 
       glow1: Color.lerp(glow1, other.glow1, t)!,
 
@@ -280,6 +300,10 @@ class AppColors {
 
   static const Color srStatusWatched = Color(0xFF7E9BB5);
 
+  static const Color srStatusOnHold = Color(0xFFD6A24D);
+
+  static const Color srStatusDropped = Color(0xFFC76464);
+
 
 
   static const Color srGlow1 = Color(0xFFCBA86A);
@@ -317,6 +341,8 @@ class AppColors {
   static const Color rrStatusSave = Color(0xFFA76A50);
   static const Color rrStatusWatching = Color(0xFF388E6C);
   static const Color rrStatusWatched = Color(0xFF566F86);
+  static const Color rrStatusOnHold = Color(0xFFC5954F);
+  static const Color rrStatusDropped = Color(0xFFB55D5D);
 
   static const Color rrGlow1 = Color(0xFFA76A50);
   static const Color rrGlow2 = Color(0xFFB0512B);
@@ -346,6 +372,10 @@ class AppColors {
   static const Color vdStatusSave = Color(0xFFF6DBC0);
 
   static const Color vdStatusWatched = Color(0xFF7E9BB5);
+
+  static const Color vdStatusOnHold = Color(0xFFD4B07B);
+
+  static const Color vdStatusDropped = Color(0xFFC57B8A);
 
   static const Color vdGlow1 = Color(0xFF935073);
 
@@ -475,6 +505,10 @@ class AppThemes {
 
     statusWatched: AppColors.srStatusWatched,
 
+    statusOnHold: AppColors.srStatusOnHold,
+
+    statusDropped: AppColors.srStatusDropped,
+
     glow1: AppColors.srGlow1,
 
     glow2: AppColors.srGlow2,
@@ -523,6 +557,10 @@ class AppThemes {
 
     statusWatched: AppColors.rrStatusWatched,
 
+    statusOnHold: AppColors.rrStatusOnHold,
+
+    statusDropped: AppColors.rrStatusDropped,
+
     glow1: AppColors.rrGlow1,
 
     glow2: AppColors.rrGlow2,
@@ -570,6 +608,10 @@ class AppThemes {
     statusWatching: AppColors.srStatusWatching, // fallback
 
     statusWatched: AppColors.vdStatusWatched,
+
+    statusOnHold: AppColors.vdStatusOnHold,
+
+    statusDropped: AppColors.vdStatusDropped,
 
     glow1: AppColors.vdGlow1,
 

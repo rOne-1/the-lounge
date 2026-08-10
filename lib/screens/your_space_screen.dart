@@ -484,7 +484,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                     ),
                     childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     children: [
-                      _buildSubGrid(context, colItems, isDark),
+                      _buildSubGrid(context, colItems, isDark, colName),
                     ],
                   ),
                 ),
@@ -542,7 +542,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                     ),
                     childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                     children: [
-                      _buildSubGrid(context, standaloneItems, isDark),
+                      _buildSubGrid(context, standaloneItems, isDark, 'standalone'),
                     ],
                   ),
                 ),
@@ -553,11 +553,12 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     );
   }
 
-  Widget _buildSubGrid(BuildContext context, List<MediaItem> items, bool isDark) {
+  Widget _buildSubGrid(BuildContext context, List<MediaItem> items, bool isDark, String keySuffix) {
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
 
     return GridView.builder(
+      key: PageStorageKey<String>('watched_grid_$keySuffix'),
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(

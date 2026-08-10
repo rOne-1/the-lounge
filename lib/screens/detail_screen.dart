@@ -1205,9 +1205,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final watchedColor =
         context.ambianceColors.statusWatched;
     final onHoldColor =
-        isDark ? const Color(0xFFD6A24D) : const Color(0xFFB87820);
+        context.ambianceColors.statusOnHold;
     final droppedColor =
-        isDark ? const Color(0xFFC76464) : const Color(0xFFA83A3A);
+        context.ambianceColors.statusDropped;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

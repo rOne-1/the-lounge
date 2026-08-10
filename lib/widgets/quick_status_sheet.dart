@@ -45,7 +45,7 @@ class QuickStatusSheet extends ConsumerWidget {
     // Active status details
     String? activeStatusLabel;
     IconData? activeStatusIcon;
-    Color activeBadgeColor = const Color(0xFFCBA86A);
+    Color? activeBadgeColor;
 
     if (inWatching) {
       activeStatusLabel = 'Watching';
@@ -66,11 +66,11 @@ class QuickStatusSheet extends ConsumerWidget {
     } else if (inOnHold) {
       activeStatusLabel = 'On-Hold';
       activeStatusIcon = Icons.pause_circle_filled_rounded;
-      activeBadgeColor = context.ambianceColors.acc; // Assuming fallback to acc
+      activeBadgeColor = context.ambianceColors.statusOnHold;
     } else if (inDropped) {
       activeStatusLabel = 'Dropped';
       activeStatusIcon = Icons.remove_circle_rounded;
-      activeBadgeColor = context.ambianceColors.acc; // Assuming fallback to acc
+      activeBadgeColor = context.ambianceColors.statusDropped;
     }
 
     final yearStr = item.releaseOrAirDate?.year != null
@@ -156,7 +156,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ),
                     const SizedBox(height: 6),
                     // Active Status Badge
-                    if (activeStatusLabel != null)
+                    if (activeStatusLabel != null && activeBadgeColor != null)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
@@ -235,6 +235,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.bookmark_rounded
                     : Icons.bookmark_outline_rounded,
                 isActive: inWatchlist,
+                activeColor: context.ambianceColors.statusWatchlist,
                 onTap: () {
                   mediaNotifier.toggleWatchlist(item);
                   Navigator.of(context).pop();
@@ -244,6 +245,7 @@ class QuickStatusSheet extends ConsumerWidget {
                 label: 'Saved',
                 icon: inSaved ? Icons.archive_rounded : Icons.archive_outlined,
                 isActive: inSaved,
+                activeColor: context.ambianceColors.statusSave,
                 onTap: () {
                   mediaNotifier.toggleMaybe(item);
                   Navigator.of(context).pop();
@@ -255,6 +257,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.play_circle_fill_rounded
                     : Icons.play_circle_outline_rounded,
                 isActive: inWatching,
+                activeColor: context.ambianceColors.statusWatching,
                 onTap: () {
                   mediaNotifier.toggleWatching(item);
                   Navigator.of(context).pop();
@@ -266,6 +269,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.pause_circle_filled_rounded
                     : Icons.pause_circle_outline_rounded,
                 isActive: inOnHold,
+                activeColor: context.ambianceColors.statusOnHold,
                 onTap: () {
                   mediaNotifier.toggleOnHold(item);
                   Navigator.of(context).pop();
@@ -277,6 +281,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.remove_circle_rounded
                     : Icons.remove_circle_outline_rounded,
                 isActive: inDropped,
+                activeColor: context.ambianceColors.statusDropped,
                 onTap: () {
                   mediaNotifier.toggleDropped(item);
                   Navigator.of(context).pop();
@@ -288,6 +293,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.check_circle_rounded
                     : Icons.check_circle_outline_rounded,
                 isActive: inWatched,
+                activeColor: context.ambianceColors.statusWatched,
                 onTap: () {
                   if (inWatched) {
                     mediaNotifier.removeFromWatchedList(item.id);
@@ -309,26 +315,27 @@ class _StatusPill extends StatelessWidget {
   final String label;
   final IconData icon;
   final bool isActive;
+  final Color activeColor;
   final VoidCallback onTap;
 
   const _StatusPill({
     required this.label,
     required this.icon,
     required this.isActive,
+    required this.activeColor,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Gold active indicator borders (#CBA86A / AppColors.srAcc)
     final borderColor = isActive
-        ? context.ambianceColors.acc
+        ? activeColor
         : context.ambianceColors.lineRgba;
     final bgColor = isActive
-        ? context.ambianceColors.acc.withValues(alpha: 0.15)
+        ? activeColor.withValues(alpha: 0.15)
         : context.ambianceColors.pill;
     final contentColor =
-        isActive ? context.ambianceColors.acc : context.ambianceColors.ink;
+        isActive ? activeColor : context.ambianceColors.ink;
 
     return Material(
       color: Colors.transparent,
@@ -373,7 +380,7 @@ class _StatusPill extends StatelessWidget {
                 Icon(
                   Icons.check_rounded,
                   size: 14,
-                  color: context.ambianceColors.acc,
+                  color: activeColor,
                 ),
               ],
             ],

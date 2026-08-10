@@ -13,6 +13,7 @@ import 'discover_screen.dart';
 import 'browse_screen.dart';
 import 'your_space_screen.dart';
 import 'calendar_screen.dart';
+import 'settings_screen.dart';
 
 class ShellScreen extends ConsumerWidget {
   final bool? enableAnimation;
@@ -113,24 +114,26 @@ class ShellScreen extends ConsumerWidget {
             child: Align(
               alignment: Alignment.centerRight,
               child: PressableScale(
-                onTap: () => ambianceNotifier.toggleAmbiance(),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsScreen(),
+                    ),
+                  );
+                },
                 child: IconButton(
-                  icon: AnimatedSwitcher(
-                    duration: AppPhysics.houseSpringDuration,
-                    switchInCurve: AppPhysics.houseSpringCurve,
-                    switchOutCurve: Curves.easeOut,
-                    transitionBuilder: (child, animation) => ScaleTransition(
-                      scale: animation,
-                      child: child,
-                    ),
-                    child: Icon(
-                      isDark ? Icons.light_mode : Icons.dark_mode,
-                      key: ValueKey(isDark),
-                      color: context.ambianceColors.sub,
-                      size: 20,
-                    ),
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: context.ambianceColors.sub,
+                    size: 20,
                   ),
-                  onPressed: () => ambianceNotifier.toggleAmbiance(),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -215,24 +218,26 @@ class ShellScreen extends ConsumerWidget {
               children: [
                 const SizedBox(height: 24),
                 PressableScale(
-                  onTap: () => ambianceNotifier.toggleAmbiance(),
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
                   child: IconButton(
-                    icon: AnimatedSwitcher(
-                      duration: AppPhysics.houseSpringDuration,
-                      switchInCurve: AppPhysics.houseSpringCurve,
-                      switchOutCurve: Curves.easeOut,
-                      transitionBuilder: (child, animation) => ScaleTransition(
-                        scale: animation,
-                        child: child,
-                      ),
-                      child: Icon(
-                        isDark ? Icons.light_mode : Icons.dark_mode,
-                        key: ValueKey(isDark),
-                        color: context.ambianceColors.sub,
-                        size: 20,
-                      ),
+                    icon: Icon(
+                      Icons.settings_outlined,
+                      color: context.ambianceColors.sub,
+                      size: 20,
                     ),
-                    onPressed: () => ambianceNotifier.toggleAmbiance(),
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const SettingsScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 const SizedBox(height: 32),

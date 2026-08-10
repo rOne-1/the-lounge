@@ -959,6 +959,24 @@ class MediaNotifier extends Notifier<MediaState> {
       return false;
     }
   }
+
+  Future<void> clearAllData() async {
+    state = const MediaState();
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      await Future.wait([
+        prefs.remove(_watchlistKey),
+        prefs.remove(_maybeListKey),
+        prefs.remove(_watchingListKey),
+        prefs.remove(_watchedListKey),
+        prefs.remove(_droppedListKey),
+        prefs.remove(_onHoldListKey),
+        prefs.remove(_watchedEpisodesKey),
+      ]);
+    } catch (_) {
+      // Ignore errors
+    }
+  }
 }
 
 final mediaProvider = NotifierProvider<MediaNotifier, MediaState>(() {

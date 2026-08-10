@@ -52,6 +52,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: ListView(
+                  cacheExtent: 5000,
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   children: [
                     // Section 1: Ambiance
@@ -296,6 +297,102 @@ class SettingsScreen extends ConsumerWidget {
                                     SnackBar(
                                       content: Text('Import failed: $e', style: AppThemes.safeGeist(color: Colors.white)),
                                       backgroundColor: Colors.red,
+                                    ),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                          Divider(color: context.ambianceColors.lineRgba, height: 1),
+                          ListTile(
+                            key: const ValueKey('reset_account_button'),
+                            leading: const Icon(Icons.delete_forever, color: Colors.redAccent),
+                            title: Text(
+                              'Reset Account',
+                              style: AppThemes.safeGeist(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: inkColor,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Erase all local data and preferences',
+                              style: AppThemes.safeGeist(fontSize: 12, color: subColor),
+                            ),
+                            onTap: () async {
+                              final shouldReset = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  backgroundColor: cardBg,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                    side: BorderSide(
+                                      color: context.ambianceColors.lineRgba,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    'Reset everything?',
+                                    style: AppThemes.safeGeist(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: inkColor,
+                                    ),
+                                  ),
+                                  content: Text(
+                                    'This will delete all your local data, including watchlists and history. This action cannot be undone.',
+                                    style: AppThemes.safeGeist(
+                                      fontSize: 14,
+                                      color: subColor,
+                                    ),
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: Text(
+                                        'Cancel',
+                                        style: AppThemes.safeGeist(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: subColor,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () async {
+                                        final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.name);
+                                        await saveJsonFile(jsonString, 'the_lounge_backup.json');
+                                      },
+                                      child: Text(
+                                        'Export Backup',
+                                        style: AppThemes.safeGeist(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: inkColor,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                      child: Text(
+                                        'Reset Everything',
+                                        style: AppThemes.safeGeist(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.redAccent,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ) ?? false;
+
+                              if (shouldReset && context.mounted) {
+                                await ref.read(mediaProvider.notifier).clearAllData();
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('Account reset successfully.', style: AppThemes.safeGeist(color: Colors.white)),
+                                      backgroundColor: Colors.green,
                                     ),
                                   );
                                 }

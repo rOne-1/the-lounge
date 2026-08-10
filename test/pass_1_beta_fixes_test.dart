@@ -88,6 +88,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Settings'), findsOneWidget);
+      
+      final scrollable = find.byType(Scrollable);
+      if (scrollable.evaluate().isNotEmpty) {
+        await tester.scrollUntilVisible(
+          find.text('TMDB Attribution', skipOffstage: false),
+          50.0,
+          scrollable: scrollable,
+        );
+        await tester.pumpAndSettle();
+      }
+      
       expect(find.text('TMDB Attribution'), findsOneWidget);
       expect(
         find.text('This product uses the TMDB API but is not endorsed or certified by TMDB.'),
