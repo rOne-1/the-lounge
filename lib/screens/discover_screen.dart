@@ -236,8 +236,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
     final isDark = context.ambianceColors.isDark;
     
-    final subColor = isDark ? const Color.fromRGBO(239, 230, 216, 0.55) : const Color.fromRGBO(44, 32, 22, 0.55);
-    final accColor = isDark ? const Color(0xFFCBA86A) : const Color(0xFFB0512B);
+    final subColor = context.ambianceColors.sub;
+    final accColor = context.ambianceColors.acc;
 
     if (_loading) {
       return const Center(child: CircularProgressIndicator());
@@ -992,8 +992,8 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    final phColor = widget.isDark ? const Color.fromRGBO(239, 230, 216, 0.09) : const Color.fromRGBO(44, 32, 22, 0.09);
-    final borderColor = widget.isDark ? const Color.fromRGBO(201, 168, 106, 0.22) : const Color.fromRGBO(160, 74, 42, 0.24);
+    final phColor = context.ambianceColors.ph;
+    final borderColor = context.ambianceColors.lineRgba;
 
     const double commitThreshold = 100.0;
     final bool isHorizontalDominant = _dragOffset.dx.abs() > _dragOffset.dy.abs();

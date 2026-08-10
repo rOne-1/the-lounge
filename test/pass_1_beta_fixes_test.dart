@@ -8,7 +8,8 @@ import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
-import 'package:the_lounge/screens/your_space_screen.dart';
+import 'package:the_lounge/widgets/quick_status_sheet.dart';
+import 'package:the_lounge/screens/shell_screen.dart';
 
 class MockPass1Repository extends MockMovieRepository {
   final Map<String, MediaItem> items;
@@ -74,7 +75,7 @@ void main() {
           container: container,
           child: const MaterialApp(
             home: Scaffold(
-              body: YourSpaceScreen(),
+              body: ShellScreen(enableAnimation: false),
             ),
           ),
         ),

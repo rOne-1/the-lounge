@@ -77,29 +77,11 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                     color: inkColor,
                   ),
                 ),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      key: const ValueKey('settings_button'),
-                      icon: Icon(Icons.settings_outlined, color: subColor, size: 18),
-                      tooltip: 'Settings',
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (context) => const SettingsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(width: 4),
-                    SegmentedMediaTypeToggle(
-                      activeType: navState.activeMediaType,
-                      onChanged: (type) =>
-                          ref.read(navigationProvider.notifier).setMediaType(type),
-                      isDark: isDark,
-                    ),
-                  ],
+                SegmentedMediaTypeToggle(
+                  activeType: navState.activeMediaType,
+                  onChanged: (type) =>
+                      ref.read(navigationProvider.notifier).setMediaType(type),
+                  isDark: isDark,
                 ),
               ],
             ),

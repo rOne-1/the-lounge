@@ -36,9 +36,7 @@ class ShellScreen extends ConsumerWidget {
         child: AnimatedTheme(
           duration: AppPhysics.houseSpringDuration,
           curve: AppPhysics.houseSpringCurve,
-          data: isDark
-              ? AppThemes.screeningRoomTheme
-              : AppThemes.readingRoomTheme,
+          data: AppThemes.theme(ambiance),
           child: Stack(
             children: [
               Scaffold(
@@ -113,28 +111,20 @@ class ShellScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
             child: Align(
               alignment: Alignment.centerRight,
-              child: PressableScale(
-                onTap: () {
+              child: IconButton(
+                key: const ValueKey('settings_button'),
+                icon: Icon(
+                  Icons.settings_outlined,
+                  color: context.ambianceColors.sub,
+                  size: 20,
+                ),
+                onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => const SettingsScreen(),
                     ),
                   );
                 },
-                child: IconButton(
-                  icon: Icon(
-                    Icons.settings_outlined,
-                    color: context.ambianceColors.sub,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsScreen(),
-                      ),
-                    );
-                  },
-                ),
               ),
             ),
           ),
@@ -217,28 +207,20 @@ class ShellScreen extends ConsumerWidget {
             child: Column(
               children: [
                 const SizedBox(height: 24),
-                PressableScale(
-                  onTap: () {
+                IconButton(
+                  key: const ValueKey('settings_button'),
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: context.ambianceColors.sub,
+                    size: 20,
+                  ),
+                  onPressed: () {
                     Navigator.of(context).push(
                       MaterialPageRoute(
                         builder: (context) => const SettingsScreen(),
                       ),
                     );
                   },
-                  child: IconButton(
-                    icon: Icon(
-                      Icons.settings_outlined,
-                      color: context.ambianceColors.sub,
-                      size: 20,
-                    ),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const SettingsScreen(),
-                        ),
-                      );
-                    },
-                  ),
                 ),
                 const SizedBox(height: 32),
                 Expanded(

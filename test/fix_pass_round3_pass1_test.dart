@@ -7,7 +7,8 @@ import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/widgets/pick_for_me_card.dart';
-import 'package:the_lounge/screens/your_space_screen.dart';
+import 'package:the_lounge/screens/detail_screen.dart';
+import 'package:the_lounge/screens/shell_screen.dart';
 
 void main() {
   setUp(() {
@@ -86,7 +87,7 @@ void main() {
           container: container,
           child: const MaterialApp(
             home: Scaffold(
-              body: YourSpaceScreen(),
+              body: ShellScreen(enableAnimation: false),
             ),
           ),
         ),

@@ -407,39 +407,45 @@ class MediaItem {
 
   /// Helper getter returning user-facing display string for original language.
   String? get originalLanguageDisplay {
+    if (originalLanguage != null && originalLanguage!.trim().isNotEmpty) {
+      final raw = originalLanguage!.trim();
+      const map = {
+        'en': 'English',
+        'ja': 'Japanese',
+        'fr': 'French',
+        'es': 'Spanish',
+        'de': 'German',
+        'ko': 'Korean',
+        'it': 'Italian',
+        'zh': 'Chinese',
+        'cn': 'Cantonese',
+        'ru': 'Russian',
+        'pt': 'Portuguese',
+        'hi': 'Hindi',
+        'sv': 'Swedish',
+        'da': 'Danish',
+        'no': 'Norwegian',
+        'nl': 'Dutch',
+        'pl': 'Polish',
+        'tr': 'Turkish',
+        'ar': 'Arabic',
+        'fi': 'Finnish',
+      };
+      final lower = raw.toLowerCase();
+      if (map.containsKey(lower)) {
+        return map[lower];
+      }
+    }
+
     if (spokenLanguages != null && spokenLanguages!.isNotEmpty) {
       final first = spokenLanguages!.first.trim();
       if (first.isNotEmpty) return first;
     }
+
     if (originalLanguage == null || originalLanguage!.trim().isEmpty) {
       return null;
     }
     final raw = originalLanguage!.trim();
-    const map = {
-      'en': 'English',
-      'ja': 'Japanese',
-      'fr': 'French',
-      'es': 'Spanish',
-      'de': 'German',
-      'ko': 'Korean',
-      'it': 'Italian',
-      'zh': 'Chinese',
-      'ru': 'Russian',
-      'pt': 'Portuguese',
-      'hi': 'Hindi',
-      'sv': 'Swedish',
-      'da': 'Danish',
-      'no': 'Norwegian',
-      'nl': 'Dutch',
-      'pl': 'Polish',
-      'tr': 'Turkish',
-      'ar': 'Arabic',
-      'fi': 'Finnish',
-    };
-    final lower = raw.toLowerCase();
-    if (map.containsKey(lower)) {
-      return map[lower];
-    }
     return raw.length <= 3 ? raw.toUpperCase() : raw;
   }
 

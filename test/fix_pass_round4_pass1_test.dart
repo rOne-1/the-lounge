@@ -64,7 +64,6 @@ void main() {
 
       expect(find.text('Your Space'), findsOneWidget);
       expect(find.byType(SegmentedMediaTypeToggle), findsOneWidget);
-      expect(find.byKey(const ValueKey('settings_button')), findsOneWidget);
 
       // Verify toggle switches media type
       expect(container.read(navigationProvider).activeMediaType, equals(MediaTypeToggle.movies));
