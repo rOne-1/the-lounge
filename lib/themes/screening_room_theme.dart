@@ -1,16 +1,37 @@
 import 'package:flutter/material.dart';
-import '../constants.dart';
 import 'app_theme.dart';
+import 'ambiance_colors.dart';
+import 'typography.dart';
+
+const Color _srBase = Color(0xFF171310);
+const Color _srCard = Color(0xFF241B15);
+const Color _srCard2 = Color(0xFF2C2018);
+const Color _srLineRgba = Color.fromRGBO(201, 168, 106, 0.16);
+const Color _srInk = Color(0xFFEFE6D8);
+const Color _srSub = Color.fromRGBO(239, 230, 216, 0.55);
+const Color _srAcc = Color(0xFFCBA86A);
+const Color _srPh = Color.fromRGBO(239, 230, 216, 0.07);
+const Color _srPill = Color.fromRGBO(239, 230, 216, 0.08);
+
+const Color _srStatusWatchlist = Color(0xFFCBA86A);
+const Color _srStatusSave = Color(0xFFD69784);
+const Color _srStatusWatching = Color(0xFF62A87C);
+const Color _srStatusWatched = Color(0xFF7E9BB5);
+const Color _srStatusOnHold = Color(0xFFD6A24D);
+const Color _srStatusDropped = Color(0xFFC76464);
+
+const Color _srGlow1 = Color(0xFFCBA86A);
+const Color _srGlow2 = Color(0xFFD69784);
 
 BoxDecoration screeningRoomBackground() {
   return const BoxDecoration(
-    color: AppColors.srBase,
+    color: _srBase,
     gradient: RadialGradient(
       center: Alignment(0, -1.16),
       radius: 1.2,
       colors: [
         Color(0xFF241812),
-        AppColors.srBase,
+        _srBase,
       ],
       stops: [0.0, 0.6],
     ),
@@ -18,26 +39,26 @@ BoxDecoration screeningRoomBackground() {
 }
 
 final AmbianceColors srAmbianceColors = AmbianceColors(
-  base: AppColors.srBase,
-  card: AppColors.srCard,
-  card2: AppColors.srCard2,
-  lineRgba: AppColors.srLineRgba,
-  ink: AppColors.srInk,
-  sub: AppColors.srSub,
-  acc: AppColors.srAcc,
-  ph: AppColors.srPh,
-  pill: AppColors.srPill,
-  statusWatchlist: AppColors.srStatusWatchlist,
-  statusSave: AppColors.srStatusSave,
-  statusWatching: AppColors.srStatusWatching,
-  statusWatched: AppColors.srStatusWatched,
-  statusOnHold: AppColors.srStatusOnHold,
-  statusDropped: AppColors.srStatusDropped,
-  glow1: AppColors.srGlow1,
-  glow2: AppColors.srGlow2,
+  base: _srBase,
+  card: _srCard,
+  card2: _srCard2,
+  lineRgba: _srLineRgba,
+  ink: _srInk,
+  sub: _srSub,
+  acc: _srAcc,
+  ph: _srPh,
+  pill: _srPill,
+  statusWatchlist: _srStatusWatchlist,
+  statusSave: _srStatusSave,
+  statusWatching: _srStatusWatching,
+  statusWatched: _srStatusWatched,
+  statusOnHold: _srStatusOnHold,
+  statusDropped: _srStatusDropped,
+  glow1: _srGlow1,
+  glow2: _srGlow2,
   background: screeningRoomBackground(),
   primaryButtonDecoration: BoxDecoration(
-    color: AppColors.srAcc,
+    color: _srAcc,
     borderRadius: BorderRadius.circular(999),
   ),
   isDark: true,
@@ -51,18 +72,18 @@ final AppTheme screeningRoomTheme = AppTheme(
   isDark: true,
   themeData: ThemeData(
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColors.srBase,
-    primaryColor: AppColors.srAcc,
+    scaffoldBackgroundColor: _srBase,
+    primaryColor: _srAcc,
     colorScheme: const ColorScheme.dark(
-      primary: AppColors.srAcc,
-      surface: AppColors.srBase,
+      primary: _srAcc,
+      surface: _srBase,
       onPrimary: Color(0xFF1A140C),
-      onSurface: AppColors.srInk,
-      surfaceContainerHighest: AppColors.srCard,
-      outline: AppColors.srLineRgba,
+      onSurface: _srInk,
+      surfaceContainerHighest: _srCard,
+      outline: _srLineRgba,
     ),
-    dividerColor: AppColors.srLineRgba,
-    textTheme: buildTextTheme(AppColors.srInk),
+    dividerColor: _srLineRgba,
+    textTheme: buildTextTheme(_srInk),
     extensions: [srAmbianceColors],
   ),
 );

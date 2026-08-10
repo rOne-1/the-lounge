@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:the_lounge/constants.dart';
 import 'package:the_lounge/themes/theme_registry.dart';
 import 'package:the_lounge/themes/app_theme.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
@@ -17,33 +16,33 @@ void main() {
   });
 
   group('Task 1: Ambiance Background Gradient Tests', () {
-    test('screeningRoomBackground gradient transitions to AppColors.srBase', () {
+    test('screeningRoomBackground gradient transitions to srAmbianceColors.base', () {
       final decoration = screeningRoomBackground();
-      expect(decoration.color, equals(AppColors.srBase));
+      expect(decoration.color, equals(srAmbianceColors.base));
       expect(decoration.gradient, isA<RadialGradient>());
 
       final gradient = decoration.gradient as RadialGradient;
       expect(gradient.colors[0], equals(const Color(0xFF241812)));
-      expect(gradient.colors[1], equals(AppColors.srBase));
+      expect(gradient.colors[1], equals(srAmbianceColors.base));
       expect(gradient.colors.contains(Colors.transparent), isFalse);
     });
 
-    test('readingRoomBackground gradient transitions to AppColors.rrBase', () {
+    test('readingRoomBackground gradient transitions to rrAmbianceColors.base', () {
       final decoration = readingRoomBackground();
-      expect(decoration.color, equals(AppColors.rrBase));
+      expect(decoration.color, equals(rrAmbianceColors.base));
       expect(decoration.gradient, isA<RadialGradient>());
 
       final gradient = decoration.gradient as RadialGradient;
       expect(gradient.colors[0], equals(const Color(0xFFE8DCC8)));
-      expect(gradient.colors[1], equals(AppColors.rrBase));
+      expect(gradient.colors[1], equals(rrAmbianceColors.base));
       expect(gradient.colors.contains(Colors.transparent), isFalse);
     });
 
     testWidgets('ThemeData scaffoldBackgroundColor matches base colors', (WidgetTester tester) async {
       final theme = screeningRoomTheme.themeData;
       final rrTheme = readingRoomTheme.themeData;
-      expect(theme.scaffoldBackgroundColor, equals(AppColors.srBase));
-      expect(rrTheme.scaffoldBackgroundColor, equals(AppColors.rrBase));
+      expect(theme.scaffoldBackgroundColor, equals(srAmbianceColors.base));
+      expect(rrTheme.scaffoldBackgroundColor, equals(rrAmbianceColors.base));
     });
   });
 

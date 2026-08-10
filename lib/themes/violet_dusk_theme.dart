@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
-import '../constants.dart';
 import 'app_theme.dart';
+import 'ambiance_colors.dart';
+import 'typography.dart';
+
+const Color _vdBase = Color(0xFF1B0B22);
+const Color _vdCard = Color(0xFF502D55);
+const Color _vdInk = Color(0xFFF8F4E9);
+const Color _vdStatusWatchlist = Color(0xFF935073);
+const Color _vdStatusSave = Color(0xFFF6DBC0);
+const Color _vdStatusWatched = Color(0xFF7E9BB5);
+const Color _vdStatusOnHold = Color(0xFFD4B07B);
+const Color _vdStatusDropped = Color(0xFFC57B8A);
+const Color _vdGlow1 = Color(0xFF935073);
+const Color _vdGlow2 = Color(0xFFF6DBC0);
+const Color _vdStatusWatching = Color(0xFF62A87C);
 
 BoxDecoration violetDuskBackground() {
   return const BoxDecoration(
-    color: AppColors.vdBase,
+    color: _vdBase,
     gradient: RadialGradient(
       center: Alignment(0, -1.16),
       radius: 1.2,
       colors: [
         Color(0xFF3B1A46),
-        AppColors.vdBase,
+        _vdBase,
       ],
       stops: [0.0, 0.6],
     ),
@@ -18,26 +31,26 @@ BoxDecoration violetDuskBackground() {
 }
 
 final AmbianceColors vdAmbianceColors = AmbianceColors(
-  base: AppColors.vdBase,
-  card: AppColors.vdCard,
-  card2: AppColors.vdCard,
+  base: _vdBase,
+  card: _vdCard,
+  card2: _vdCard,
   lineRgba: const Color.fromRGBO(248, 244, 233, 0.16),
-  ink: AppColors.vdInk,
+  ink: _vdInk,
   sub: const Color.fromRGBO(248, 244, 233, 0.55),
-  acc: AppColors.vdStatusWatchlist,
+  acc: _vdStatusWatchlist,
   ph: const Color.fromRGBO(248, 244, 233, 0.07),
   pill: const Color.fromRGBO(248, 244, 233, 0.08),
-  statusWatchlist: AppColors.vdStatusWatchlist,
-  statusSave: AppColors.vdStatusSave,
-  statusWatching: AppColors.srStatusWatching,
-  statusWatched: AppColors.vdStatusWatched,
-  statusOnHold: AppColors.vdStatusOnHold,
-  statusDropped: AppColors.vdStatusDropped,
-  glow1: AppColors.vdGlow1,
-  glow2: AppColors.vdGlow2,
+  statusWatchlist: _vdStatusWatchlist,
+  statusSave: _vdStatusSave,
+  statusWatching: _vdStatusWatching,
+  statusWatched: _vdStatusWatched,
+  statusOnHold: _vdStatusOnHold,
+  statusDropped: _vdStatusDropped,
+  glow1: _vdGlow1,
+  glow2: _vdGlow2,
   background: violetDuskBackground(),
   primaryButtonDecoration: BoxDecoration(
-    color: AppColors.vdStatusWatchlist,
+    color: _vdStatusWatchlist,
     borderRadius: BorderRadius.circular(999),
   ),
   isDark: true,
@@ -51,18 +64,18 @@ final AppTheme violetDuskTheme = AppTheme(
   isDark: true,
   themeData: ThemeData(
     brightness: Brightness.dark,
-    scaffoldBackgroundColor: AppColors.vdBase,
-    primaryColor: AppColors.vdStatusWatchlist,
+    scaffoldBackgroundColor: _vdBase,
+    primaryColor: _vdStatusWatchlist,
     colorScheme: const ColorScheme.dark(
-      primary: AppColors.vdStatusWatchlist,
-      surface: AppColors.vdBase,
+      primary: _vdStatusWatchlist,
+      surface: _vdBase,
       onPrimary: Color(0xFF1A140C),
-      onSurface: AppColors.vdInk,
-      surfaceContainerHighest: AppColors.vdCard,
+      onSurface: _vdInk,
+      surfaceContainerHighest: _vdCard,
       outline: Color.fromRGBO(248, 244, 233, 0.16),
     ),
     dividerColor: const Color.fromRGBO(248, 244, 233, 0.16),
-    textTheme: buildTextTheme(AppColors.vdInk),
+    textTheme: buildTextTheme(_vdInk),
     extensions: [vdAmbianceColors],
   ),
 );
