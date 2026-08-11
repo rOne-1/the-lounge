@@ -24,129 +24,10 @@ class DiscoverScreen extends ConsumerStatefulWidget {
 }
 
 class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
-  List<MediaItem> _pool = [];
-  bool _loading = true;
-  bool _isLoadingPool = false;
-  Object? _error;
   bool _showLegend = true;
   bool _isSwiping = false;
   String? _activeSwipeDirection;
   final Map<String, GlobalKey<_SwipeCardState>> _cardKeys = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _loadPool();
-  }
-
-  int _currentPoolPage = 1;
-
-  Future<void> _loadPool({bool isReload = false}) async {
-    setState(() {
-      if (!isReload) {
-        _loading = true;
-      }
-      _isLoadingPool = true;
-      _error = null;
-    });
-    try {
-      if (isReload) {
-        _currentPoolPage += 2;
-      } else {
-        _currentPoolPage = 1;
-      }
-
-      final repo = ref.read(movieRepositoryProvider);
-      final mediaState = ref.read(mediaProvider);
-
-      final skippedIds = ref.read(skippedMediaIdsProvider);
-
-      final excludedIds = <String>{
-        ...mediaState.watchlist.keys,
-        ...mediaState.maybeList.keys,
-        ...mediaState.watchedList.keys,
-        ...mediaState.watchingList.keys,
-        ...mediaState.droppedList.keys,
-        ...mediaState.onHoldList.keys,
-        ...skippedIds,
-        ..._pool.map((e) => e.id),
-      };
-
-      bool isExcluded(MediaItem item) {
-        final cleanId = item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
-        return excludedIds.contains(item.id) ||
-            excludedIds.contains(item.prefixedId) ||
-            excludedIds.contains(cleanId);
-      }
-
-      final navState = ref.read(navigationProvider);
-      final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
-
-      final List<MediaItem> rawList = [];
-      final page1 = _currentPoolPage;
-      final page2 = _currentPoolPage + 1;
-
-      const discoverParams = DiscoverFilterParams(minRating: 7.0);
-      if (isMovies) {
-        final d1 = await repo.discoverMedia(
-          isMovies: true,
-          params: discoverParams,
-          page: page1,
-        );
-        rawList.addAll(d1);
-        try {
-          final d2 = await repo.discoverMedia(
-            isMovies: true,
-            params: discoverParams,
-            page: page2,
-          );
-          rawList.addAll(d2);
-        } catch (_) {}
-        try { final p1 = await repo.getPopularMovies(page: page1); rawList.addAll(p1); } catch (_) {}
-      } else {
-        final d1 = await repo.discoverMedia(
-          isMovies: false,
-          params: discoverParams,
-          page: page1,
-        );
-        rawList.addAll(d1);
-        try {
-          final d2 = await repo.discoverMedia(
-            isMovies: false,
-            params: discoverParams,
-            page: page2,
-          );
-          rawList.addAll(d2);
-        } catch (_) {}
-        try { final top1 = await repo.getTopRatedTvShows(page: page1); rawList.addAll(top1); } catch (_) {}
-      }
-
-      if (mounted) {
-        setState(() {
-          final seen = <String>{..._pool.map((item) => item.id)};
-          final newItems = rawList
-              .where((item) =>
-                  item.rating >= 7.0 && !isExcluded(item) && seen.add(item.id))
-              .toList();
-          if (isReload) {
-            _pool = [..._pool, ...newItems];
-          } else {
-            _pool = newItems;
-          }
-          _loading = false;
-          _isLoadingPool = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _error = e;
-          _loading = false;
-          _isLoadingPool = false;
-        });
-      }
-    }
-  }
 
   bool _isUnreleased(MediaItem item) {
     if (item.releaseDate != null && item.releaseDate!.isAfter(DateTime.now())) {
@@ -191,24 +72,30 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     if (mounted) {
       setState(() {
         _activeSwipeDirection = null;
-        if (_pool.isNotEmpty) {
-          final removed = _pool.removeAt(0);
-          _cardKeys.remove(removed.id);
-        }
+        _cardKeys.remove(item.id);
       });
-      if (_pool.isEmpty) {
-        _loadPool(isReload: true);
+      
+      final isMovies = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies;
+      if (isMovies) {
+        ref.read(discoverMoviesDeckProvider.notifier).popCard();
+      } else {
+        ref.read(discoverTvDeckProvider.notifier).popCard();
       }
     }
   }
 
   void _triggerSwipe(String direction) {
-    if (_pool.isEmpty || _isSwiping) return;
+    final navState = ref.read(navigationProvider);
+    final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
+    final deckState = ref.read(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider);
+    final pool = deckState.pool;
+
+    if (pool.isEmpty || _isSwiping) return;
     _isSwiping = true;
     setState(() {
       _activeSwipeDirection = direction;
     });
-    final topItem = _pool.first;
+    final topItem = pool.first;
     final topKey = _cardKeys[topItem.id];
 
     if (topKey?.currentState != null) {
@@ -228,28 +115,29 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
 
   @override
   Widget build(BuildContext context) {
-    ref.listen<NavigationState>(navigationProvider, (previous, next) {
-      if (previous?.activeMediaType != next.activeMediaType) {
-        _loadPool(isReload: false);
-      }
-    });
+    final navState = ref.watch(navigationProvider);
+    final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
+    final deckState = ref.watch(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider);
+    final pool = deckState.pool;
+    final loading = deckState.isLoading;
+    final error = deckState.error;
 
     final isDark = context.ambianceColors.isDark;
     
     final subColor = context.ambianceColors.sub;
     final accColor = context.ambianceColors.acc;
 
-    if (_loading) {
+    if (loading) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (_error != null) {
-      final message = _error.toString().replaceAll('Exception: ', '');
+    if (error != null) {
+      final message = error.toString().replaceAll('Exception: ', '');
       return FullScreenErrorWidget(
         message: message.isNotEmpty
             ? message
             : 'Failed to load recommendations. Please check your connection.',
-        onRetry: _loadPool,
+        onRetry: () => ref.read(isMovies ? discoverMoviesDeckProvider.notifier : discoverTvDeckProvider.notifier).loadPool(isReload: true),
       );
     }
 
@@ -338,7 +226,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       ),
                     ),
                     // Active cards
-                    if (_pool.isEmpty)
+                    if (pool.isEmpty)
                       Center(
                         child: Padding(
                           padding: const EdgeInsets.all(24.0),
@@ -364,8 +252,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               ),
                               const SizedBox(height: 20),
                               FilledButton.icon(
-                                onPressed: _isLoadingPool ? null : () => _loadPool(isReload: true),
-                                icon: _isLoadingPool
+                                onPressed: loading ? null : () => ref.read(isMovies ? discoverMoviesDeckProvider.notifier : discoverTvDeckProvider.notifier).loadPool(isReload: true),
+                                icon: loading
                                     ? SizedBox(
                                         width: 16,
                                         height: 16,
@@ -382,8 +270,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ),
                       )
                     else
-                      ..._pool.reversed.map((item) {
-                        final isTop = item.id == _pool.first.id;
+                      ...pool.reversed.map((item) {
+                        final isTop = item.id == pool.first.id;
                         return SwipeCard(
                           key: _getKeyFor(item.id),
                           item: item,
@@ -401,7 +289,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
             // Action buttons row
             Builder(builder: (context) {
               final mediaState = ref.watch(mediaProvider);
-              final topItem = _pool.isNotEmpty ? _pool.first : null;
+              final topItem = pool.isNotEmpty ? pool.first : null;
               final isWatchlist = topItem != null &&
                   (mediaState.watchlist.containsKey(topItem.prefixedId) ||
                       mediaState.watchlist.containsKey(topItem.id));
@@ -412,8 +300,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   (mediaState.watchedList.containsKey(topItem.prefixedId) ||
                       mediaState.watchedList.containsKey(topItem.id));
               final isSkipped = topItem != null &&
-                  (ref.watch(skippedMediaIdsProvider).contains(topItem.prefixedId) ||
-                      ref.watch(skippedMediaIdsProvider).contains(topItem.id));
+                  (ref.watch(skippedMediaIdsProvider).containsKey(topItem.prefixedId) ||
+                      ref.watch(skippedMediaIdsProvider).containsKey(topItem.id));
 
               return Padding(
                 padding: EdgeInsets.fromLTRB(0, 14.0, 0, 14.0 + MediaQuery.of(context).padding.bottom),

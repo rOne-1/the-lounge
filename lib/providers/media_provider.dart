@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
+import '../models/discover_filter_params.dart';
 import 'ambiance_provider.dart';
 import '../themes/theme_registry.dart';
 import '../constants.dart';
@@ -1081,6 +1082,7 @@ class MediaNotifier extends Notifier<MediaState> {
         prefs.remove(_onHoldListKey),
         prefs.remove(_watchedEpisodesKey),
       ]);
+      ref.read(skippedMediaIdsProvider.notifier).clear();
     } catch (_) {
       // Ignore errors
     }
@@ -1091,31 +1093,212 @@ final mediaProvider = NotifierProvider<MediaNotifier, MediaState>(() {
   return MediaNotifier();
 });
 
-class SkippedMediaIdsNotifier extends Notifier<Set<String>> {
+class SkippedMediaIdsNotifier extends Notifier<Map<String, DateTime>> {
+  static const _key = 'the_lounge_skipped_media_v2';
+
   @override
-  Set<String> build() => {};
+  Map<String, DateTime> build() {
+    Map<String, DateTime> loaded = {};
+    try {
+      final prefs = ref.watch(sharedPreferencesProvider);
+      final stored = prefs.getString(_key);
+      if (stored != null) {
+        final decoded = jsonDecode(stored) as Map<String, dynamic>;
+        final now = DateTime.now();
+        final cutoff = now.subtract(const Duration(days: 30));
+        decoded.forEach((k, v) {
+          final dt = DateTime.tryParse(v.toString());
+          if (dt != null && dt.isAfter(cutoff)) {
+            loaded[k] = dt;
+          }
+        });
+      }
+    } catch (_) {}
+    return loaded;
+  }
+
+  void _save() {
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      final toSave = state.map((k, v) => MapEntry(k, v.toIso8601String()));
+      prefs.setString(_key, jsonEncode(toSave));
+    } catch (_) {}
+  }
 
   void add(String id) {
-    state = {...state, id};
+    state = {...state, id: DateTime.now()};
+    _save();
   }
 
   void addAll(Iterable<String> ids) {
-    state = {...state, ...ids};
+    final now = DateTime.now();
+    final Map<String, DateTime> additions = {};
+    for (final id in ids) {
+      additions[id] = now;
+    }
+    state = {...state, ...additions};
+    _save();
   }
 
   void remove(String id) {
-    final next = Set<String>.from(state);
+    final next = Map<String, DateTime>.from(state);
     next.remove(id);
     state = next;
+    _save();
   }
 
   void clear() {
     state = {};
+    _save();
   }
 }
 
 final skippedMediaIdsProvider =
-    NotifierProvider<SkippedMediaIdsNotifier, Set<String>>(() {
+    NotifierProvider<SkippedMediaIdsNotifier, Map<String, DateTime>>(() {
   return SkippedMediaIdsNotifier();
+});
+
+class DiscoverDeckState {
+  final List<MediaItem> pool;
+  final bool isLoading;
+  final Object? error;
+  final int currentPage;
+
+  const DiscoverDeckState({
+    this.pool = const [],
+    this.isLoading = false,
+    this.error,
+    this.currentPage = 1,
+  });
+
+  DiscoverDeckState copyWith({
+    List<MediaItem>? pool,
+    bool? isLoading,
+    Object? error,
+    int? currentPage,
+  }) {
+    return DiscoverDeckState(
+      pool: pool ?? this.pool,
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
+      currentPage: currentPage ?? this.currentPage,
+    );
+  }
+}
+
+abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
+  bool get isMovies;
+
+  @override
+  DiscoverDeckState build() {
+    Future.microtask(() => loadPool());
+    return const DiscoverDeckState(isLoading: true);
+  }
+
+  Future<void> loadPool({bool isReload = false}) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      int page = isReload ? state.currentPage + 2 : 1;
+      if (!isReload) {
+        state = state.copyWith(pool: []);
+      }
+      
+      final repo = ref.read(movieRepositoryProvider);
+      final mediaState = ref.read(mediaProvider);
+      final skippedIds = ref.read(skippedMediaIdsProvider);
+
+      final excludedIds = <String>{
+        ...mediaState.watchlist.keys,
+        ...mediaState.maybeList.keys,
+        ...mediaState.watchedList.keys,
+        ...mediaState.watchingList.keys,
+        ...mediaState.droppedList.keys,
+        ...mediaState.onHoldList.keys,
+        ...skippedIds.keys,
+        ...state.pool.map((e) => e.id),
+      };
+
+      bool isExcluded(MediaItem item) {
+        final cleanId = item.id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+        return excludedIds.contains(item.id) ||
+            excludedIds.contains(item.prefixedId) ||
+            excludedIds.contains(cleanId);
+      }
+
+      final discoverParams = DiscoverFilterParams(minRating: 7.0);
+      List<MediaItem> newItems = [];
+      int attempts = 0;
+      
+      while (newItems.length < 5 && attempts < 5) {
+        final List<MediaItem> rawList = [];
+        final p1 = page;
+        final p2 = page + 1;
+        
+        if (isMovies) {
+          final d1 = await repo.discoverMedia(isMovies: true, params: discoverParams, page: p1);
+          rawList.addAll(d1);
+          try {
+            final d2 = await repo.discoverMedia(isMovies: true, params: discoverParams, page: p2);
+            rawList.addAll(d2);
+          } catch (_) {}
+          try { final pop1 = await repo.getPopularMovies(page: p1); rawList.addAll(pop1); } catch (_) {}
+        } else {
+          final d1 = await repo.discoverMedia(isMovies: false, params: discoverParams, page: p1);
+          rawList.addAll(d1);
+          try {
+            final d2 = await repo.discoverMedia(isMovies: false, params: discoverParams, page: p2);
+            rawList.addAll(d2);
+          } catch (_) {}
+          try { final top1 = await repo.getTopRatedTvShows(page: p1); rawList.addAll(top1); } catch (_) {}
+        }
+        
+        final seen = <String>{...state.pool.map((e) => e.id), ...newItems.map((e) => e.id)};
+        final filtered = rawList.where((item) =>
+            item.rating >= 7.0 && !isExcluded(item) && seen.add(item.id)).toList();
+            
+        newItems.addAll(filtered);
+        page += 2;
+        attempts++;
+      }
+      
+      state = state.copyWith(
+        pool: isReload ? [...state.pool, ...newItems] : newItems,
+        currentPage: page - 2,
+        isLoading: false,
+      );
+    } catch (e) {
+      state = DiscoverDeckState(pool: state.pool, isLoading: false, error: e, currentPage: state.currentPage);
+    }
+  }
+
+  void popCard() {
+    if (state.pool.isNotEmpty) {
+      final newPool = List<MediaItem>.from(state.pool)..removeAt(0);
+      state = state.copyWith(pool: newPool);
+      if (newPool.isEmpty) {
+        loadPool(isReload: true);
+      }
+    }
+  }
+}
+
+class DiscoverMoviesDeckNotifier extends DiscoverDeckNotifier {
+  @override
+  bool get isMovies => true;
+}
+
+class DiscoverTvDeckNotifier extends DiscoverDeckNotifier {
+  @override
+  bool get isMovies => false;
+}
+
+final discoverMoviesDeckProvider =
+    NotifierProvider<DiscoverMoviesDeckNotifier, DiscoverDeckState>(() {
+  return DiscoverMoviesDeckNotifier();
+});
+
+final discoverTvDeckProvider =
+    NotifierProvider<DiscoverTvDeckNotifier, DiscoverDeckState>(() {
+  return DiscoverTvDeckNotifier();
 });
 

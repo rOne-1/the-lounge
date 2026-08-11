@@ -8,6 +8,10 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:the_lounge/providers/navigation_provider.dart';
+import 'package:the_lounge/providers/ambiance_provider.dart';
 
 class TestRepository extends MockMovieRepository {
   @override
@@ -298,6 +302,100 @@ void main() {
 
     // Movie 3 is now displayed
     expect(find.text('Movie 3'), findsOneWidget);
+  });
+
+  test('Skipped titles are successfully persisted to SharedPreferences and pruned after their expiration window', () async {
+    SharedPreferences.setMockInitialValues({
+      'the_lounge_skipped_media_v2': jsonEncode({
+        'expired_id': DateTime.now().subtract(const Duration(days: 35)).toIso8601String(),
+        'valid_id': DateTime.now().subtract(const Duration(days: 10)).toIso8601String(),
+      }),
+    });
+    final prefs = await SharedPreferences.getInstance();
+    
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+
+    final skippedIds = container.read(skippedMediaIdsProvider);
+    expect(skippedIds.containsKey('expired_id'), isFalse);
+    expect(skippedIds.containsKey('valid_id'), isTrue);
+
+    container.read(skippedMediaIdsProvider.notifier).add('new_id');
+    final stored = prefs.getString('the_lounge_skipped_media_v2');
+    expect(stored, isNotNull);
+    final decoded = jsonDecode(stored!) as Map<String, dynamic>;
+    expect(decoded.containsKey('new_id'), isTrue);
+    expect(decoded.containsKey('valid_id'), isTrue);
+    expect(decoded.containsKey('expired_id'), isFalse);
+  });
+
+  testWidgets('Discover deck state is preserved when switching tabs', (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    final mockRepo = TestRepository();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: DiscoverScreen(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    
+    final moviesDeckBefore = container.read(discoverMoviesDeckProvider);
+    expect(moviesDeckBefore.pool.isNotEmpty, isTrue);
+
+    // Switch to TV
+    container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
+    await tester.pumpAndSettle();
+
+    // Switch back to Movies
+    container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.movies);
+    await tester.pumpAndSettle();
+
+    final moviesDeckAfter = container.read(discoverMoviesDeckProvider);
+    expect(moviesDeckAfter.pool, equals(moviesDeckBefore.pool));
+  });
+
+  test('Discover deck pagination search automatically fetches new pages in background when pages are fully excluded', () async {
+    final mockRepo = TestRepository();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    
+    // add '1' and '2' to watchlist so they are excluded
+    final mediaNotifier = container.read(mediaProvider.notifier);
+    mediaNotifier.addToWatchlist(const MediaItem(id: '1', title: 'Movie 1', type: MediaType.movie, rating: 8.0, overview: '', genres: []));
+    mediaNotifier.addToWatchlist(const MediaItem(id: '2', title: 'Movie 2', type: MediaType.movie, rating: 7.0, overview: '', genres: []));
+
+    // this will attempt to load and initially see 1 and 2 excluded, and since TestRepository only returns 4 items, 
+    // it should fetch pages and then end up with item 3 and 4 in the pool.
+    final deckNotifier = container.read(discoverMoviesDeckProvider.notifier);
+    await deckNotifier.loadPool();
+    
+    final pool = container.read(discoverMoviesDeckProvider).pool;
+    expect(pool.any((item) => item.id == '1' || item.id == '2'), isFalse);
+    expect(pool.any((item) => item.id == '3' || item.id == '4'), isTrue);
   });
 }
 
