@@ -1158,14 +1158,22 @@ final skippedMediaIdsProvider =
   return SkippedMediaIdsNotifier();
 });
 
+class SwipeRecord {
+  final MediaItem item;
+  final String direction;
+  const SwipeRecord({required this.item, required this.direction});
+}
+
 class DiscoverDeckState {
   final List<MediaItem> pool;
+  final SwipeRecord? lastSwipe;
   final bool isLoading;
   final Object? error;
   final int currentPage;
 
   const DiscoverDeckState({
     this.pool = const [],
+    this.lastSwipe,
     this.isLoading = false,
     this.error,
     this.currentPage = 1,
@@ -1173,12 +1181,14 @@ class DiscoverDeckState {
 
   DiscoverDeckState copyWith({
     List<MediaItem>? pool,
+    SwipeRecord? lastSwipe,
     bool? isLoading,
     Object? error,
     int? currentPage,
   }) {
     return DiscoverDeckState(
       pool: pool ?? this.pool,
+      lastSwipe: lastSwipe ?? this.lastSwipe,
       isLoading: isLoading ?? this.isLoading,
       error: error,
       currentPage: currentPage ?? this.currentPage,
@@ -1271,14 +1281,49 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
     }
   }
 
-  void popCard() {
+  void popCard(MediaItem item, String direction) {
     if (state.pool.isNotEmpty) {
-      final newPool = List<MediaItem>.from(state.pool)..removeAt(0);
-      state = state.copyWith(pool: newPool);
-      if (newPool.isEmpty) {
+      final nextPool = List<MediaItem>.from(state.pool)..removeAt(0);
+      state = state.copyWith(
+        pool: nextPool,
+        lastSwipe: SwipeRecord(item: item, direction: direction),
+      );
+      if (nextPool.isEmpty) {
         loadPool(isReload: true);
       }
     }
+  }
+
+  void undoLastSwipe() {
+    final lastSwipe = state.lastSwipe;
+    if (lastSwipe == null) return;
+
+    final mediaNotifier = ref.read(mediaProvider.notifier);
+    final skippedNotifier = ref.read(skippedMediaIdsProvider.notifier);
+
+    switch (lastSwipe.direction) {
+      case 'Left':
+        skippedNotifier.remove(lastSwipe.item.id);
+        skippedNotifier.remove(lastSwipe.item.prefixedId);
+        break;
+      case 'Right':
+        mediaNotifier.removeFromMaybeList(lastSwipe.item.id);
+        break;
+      case 'Down':
+        mediaNotifier.removeFromWatchlist(lastSwipe.item.id);
+        break;
+      case 'Up':
+        mediaNotifier.removeFromWatchedList(lastSwipe.item.id);
+        break;
+    }
+
+    state = DiscoverDeckState(
+      pool: [lastSwipe.item, ...state.pool],
+      lastSwipe: null,
+      isLoading: state.isLoading,
+      error: state.error,
+      currentPage: state.currentPage,
+    );
   }
 }
 

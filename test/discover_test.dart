@@ -397,7 +397,80 @@ void main() {
     expect(pool.any((item) => item.id == '1' || item.id == '2'), isFalse);
     expect(pool.any((item) => item.id == '3' || item.id == '4'), isTrue);
   });
-}
 
+  testWidgets('Swiping a card shows Undo SnackBar and tapping it reverts the swipe', (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    final mockRepo = TestRepository();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+      ],
+    );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: DiscoverScreen(),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    // Dismiss Legend Overlay
+    await tester.tapAt(const Offset(100, 100));
+    await tester.pumpAndSettle();
+
+    // Verify Movie 1 is displayed
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    // Simulate Left swipe (Skip)
+    await tester.tap(find.byIcon(Icons.close).last);
+    await tester.pumpAndSettle();
+
+    // Verify SnackBar is shown
+    expect(find.text('Skipped "Movie 1"'), findsOneWidget);
+    expect(find.text('Undo'), findsOneWidget);
+    
+    // Movie 1 should be gone, Movie 2 displayed
+    expect(find.text('Movie 1'), findsNothing);
+    expect(find.text('Movie 2'), findsOneWidget);
+
+    // Tap Undo
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    // Movie 1 should be back
+    expect(find.text('Movie 1'), findsOneWidget);
+
+    // Verify it was unskipped
+    final skippedState = container.read(skippedMediaIdsProvider);
+    expect(skippedState.containsKey('1'), isFalse);
+    expect(skippedState.containsKey('movie_1'), isFalse); // Assert on prefixed id as well
+
+    // Second swipe invalidates first swipe
+    await tester.tap(find.byIcon(Icons.star_border)); // Right swipe (Save for later)
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saved "Movie 1"'), findsOneWidget);
+    
+    await tester.tap(find.byIcon(Icons.bookmark_border)); // Down swipe (Watchlist)
+    await tester.pumpAndSettle();
+
+    expect(find.text('Added to Watchlist "Movie 2"'), findsOneWidget);
+    
+    // Tap Undo (should only undo Movie 2)
+    await tester.tap(find.text('Undo'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Movie 2'), findsOneWidget);
+    final mediaState = container.read(mediaProvider);
+    expect(mediaState.maybeList.containsKey('1'), isTrue); // Movie 1 remains saved
+    expect(mediaState.watchlist.containsKey('2'), isFalse); // Movie 2 undone
+  });
+}
 
 

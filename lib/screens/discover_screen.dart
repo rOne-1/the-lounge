@@ -27,6 +27,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   bool _showLegend = true;
   bool _isSwiping = false;
   String? _activeSwipeDirection;
+  String? _undoneMediaId;
+  String? _undoneDirection;
   final Map<String, GlobalKey<_SwipeCardState>> _cardKeys = {};
 
   bool _isUnreleased(MediaItem item) {
@@ -51,6 +53,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   void _onSwipe(MediaItem item, String direction) {
+    _undoneMediaId = null;
+    _undoneDirection = null;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+
     final notifier = ref.read(mediaProvider.notifier);
     if (direction == 'Left') {
       ref.read(skippedMediaIdsProvider.notifier).add(item.id);
@@ -76,11 +82,36 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       });
       
       final isMovies = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies;
-      if (isMovies) {
-        ref.read(discoverMoviesDeckProvider.notifier).popCard();
-      } else {
-        ref.read(discoverTvDeckProvider.notifier).popCard();
-      }
+      final deckNotifier = isMovies ? ref.read(discoverMoviesDeckProvider.notifier) : ref.read(discoverTvDeckProvider.notifier);
+      deckNotifier.popCard(item, direction);
+
+      final actionWord = direction == 'Left'
+          ? 'Skipped'
+          : direction == 'Right'
+              ? 'Saved'
+              : direction == 'Down'
+                  ? 'Added to Watchlist'
+                  : 'Marked as Watched';
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$actionWord "${item.title}"'),
+          action: SnackBarAction(
+            label: 'Undo',
+            onPressed: () {
+              final lastSwipe = ref.read(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider).lastSwipe;
+              if (lastSwipe != null) {
+                setState(() {
+                  _undoneMediaId = lastSwipe.item.id;
+                  _undoneDirection = lastSwipe.direction;
+                });
+                deckNotifier.undoLastSwipe();
+              }
+            },
+          ),
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -272,6 +303,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     else
                       ...pool.reversed.map((item) {
                         final isTop = item.id == pool.first.id;
+                        final isUndone = item.id == _undoneMediaId;
                         return SwipeCard(
                           key: _getKeyFor(item.id),
                           item: item,
@@ -280,6 +312,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           onDirectionChanged: isTop ? _onDirectionChanged : null,
                           isDark: isDark,
                           accColor: accColor,
+                          entryDirection: isUndone ? _undoneDirection : null,
                         );
                       }),
                   ],
@@ -705,6 +738,7 @@ class SwipeCard extends ConsumerStatefulWidget {
   final ValueChanged<String?>? onDirectionChanged;
   final bool isDark;
   final Color accColor;
+  final String? entryDirection;
 
   const SwipeCard({
     super.key,
@@ -714,6 +748,7 @@ class SwipeCard extends ConsumerStatefulWidget {
     this.onDirectionChanged,
     required this.isDark,
     required this.accColor,
+    this.entryDirection,
   });
 
   @override
@@ -734,6 +769,38 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
   @override
   void initState() {
     super.initState();
+    if (widget.entryDirection != null) {
+      double w = 1500;
+      double h = 1500;
+      try {
+        final view = WidgetsBinding.instance.platformDispatcher.implicitView;
+        if (view != null) {
+          final s = view.physicalSize / view.devicePixelRatio;
+          w = s.width;
+          h = s.height;
+        }
+      } catch (_) {}
+      
+      switch (widget.entryDirection) {
+        case 'Left':
+          _dragOffset = Offset(-w * 1.2, 0);
+          break;
+        case 'Right':
+          _dragOffset = Offset(w * 1.2, 0);
+          break;
+        case 'Up':
+          _dragOffset = Offset(0, -h * 1.2);
+          break;
+        case 'Down':
+          _dragOffset = Offset(0, h * 1.2);
+          break;
+      }
+      _angle = _dragOffset.dx / 300 * (math.pi / 8);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _settleSpring();
+      });
+    }
+
     _motionController = AnimationController.unbounded(vsync: this);
     _motionController.addListener(() {
       if (_currentSimulation != null && mounted) {
