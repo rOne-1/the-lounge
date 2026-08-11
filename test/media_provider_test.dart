@@ -2,6 +2,35 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
+
+class TestMovieRepository extends MockMovieRepository {
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async {
+    final now = DateTime.now();
+    return TvSeason(
+      id: 1,
+      seasonNumber: 1,
+      name: 'Season 1',
+      episodes: [
+        TvEpisode(
+          id: 1,
+          episodeNumber: 1,
+          seasonNumber: 1,
+          name: 'Released Ep',
+          airDate: now.subtract(const Duration(days: 1)),
+        ),
+        TvEpisode(
+          id: 2,
+          episodeNumber: 2,
+          seasonNumber: 1,
+          name: 'Unreleased Ep',
+          airDate: now.add(const Duration(days: 1)),
+        ),
+      ],
+    );
+  }
+}
 
 void main() {
   group('MediaNotifier logic tests', () {
@@ -319,6 +348,55 @@ void main() {
       state = container.read(mediaProvider);
       expect(state.watchingList.containsKey(tvShowItem.id), isFalse);
       expect(state.watchedList.containsKey(tvShowItem.id), isFalse);
+    });
+
+    test('addToWatchedList guards against unreleased episodes', () async {
+      final mockRepo = TestMovieRepository();
+      final localContainer = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+      final notifier = localContainer.read(mediaProvider.notifier);
+      
+      const mixedShow = MediaItem(
+        id: 'tv-mixed',
+        title: 'Mixed Release Show',
+        type: MediaType.tv,
+        seasonsCount: 1,
+        genres: [],
+        overview: '',
+        rating: 0.0,
+      );
+
+      // 1. With seasons passed
+      final now = DateTime.now();
+      final season = TvSeason(
+        id: 1,
+        seasonNumber: 1,
+        name: 'Season 1',
+        episodes: [
+          TvEpisode(id: 1, episodeNumber: 1, seasonNumber: 1, name: 'Released', airDate: now.subtract(const Duration(days: 1))),
+          TvEpisode(id: 2, episodeNumber: 2, seasonNumber: 1, name: 'Unreleased', airDate: now.add(const Duration(days: 1))),
+        ],
+      );
+      notifier.addToWatchedList(mixedShow, seasons: [season]);
+      var state = localContainer.read(mediaProvider);
+      
+      expect(state.watchedEpisodes['tv-mixed']?.contains('S1E1'), isTrue);
+      expect(state.watchedEpisodes['tv-mixed']?.contains('S1E2'), isFalse);
+      
+      // Cleanup for second part
+      notifier.removeFromWatchedList(mixedShow.id);
+
+      // 2. With seasons being null (triggers async pruning)
+      notifier.addToWatchedList(mixedShow, seasons: null);
+      // Wait for async task to complete
+      await Future.delayed(const Duration(milliseconds: 100)); 
+      
+      state = localContainer.read(mediaProvider);
+      expect(state.watchedEpisodes['tv-mixed']?.contains('S1E1'), isTrue);
+      expect(state.watchedEpisodes['tv-mixed']?.contains('S1E2'), isFalse);
     });
   });
 }

@@ -468,6 +468,7 @@ class MediaNotifier extends Notifier<MediaState> {
             }
           }
         }
+        _enrichWatchedTvShow(item);
       }
       newWatchedEpisodes[item.id] = epSet;
     }
@@ -684,6 +685,9 @@ class MediaNotifier extends Notifier<MediaState> {
         return;
       }
       showEpisodes.add(key);
+      if (seasons == null || seasons.isEmpty) {
+        _enrichSingleEpisodeWatched(showId, seasonNumber, episodeNumber, showItem);
+      }
     }
 
     if (showEpisodes.isEmpty) {
@@ -858,6 +862,78 @@ class MediaNotifier extends Notifier<MediaState> {
     }
   }
 
+  Future<void> _enrichWatchedTvShow(MediaItem item) async {
+    if (item.type != MediaType.tv) return;
+    try {
+      final repo = ref.read(movieRepositoryProvider);
+      final seasonsCount = item.seasonsCount ?? 1;
+      final List<TvSeason> seasons = [];
+      for (int s = 1; s <= seasonsCount; s++) {
+        final season = await repo.getTvSeasonDetails(item.id, s);
+        if (season != null && season.episodes.isNotEmpty) {
+          seasons.add(season);
+        }
+      }
+      if (seasons.isNotEmpty) {
+        final now = DateTime.now();
+        final epSet = <String>{};
+        for (final season in seasons) {
+          for (final ep in season.episodes) {
+            if (ep.airDate == null || !ep.airDate!.isAfter(now)) {
+              epSet.add('S${season.seasonNumber}E${ep.episodeNumber}');
+            }
+          }
+        }
+        
+        if (state.watchedList.containsKey(item.id)) {
+          final newWatchedEpisodes = Map<String, Set<String>>.from(
+            state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
+          );
+          newWatchedEpisodes[item.id] = epSet;
+          state = state.copyWith(watchedEpisodes: newWatchedEpisodes);
+          _saveToPrefs();
+        }
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _enrichSingleEpisodeWatched(
+    String showId,
+    int seasonNumber,
+    int episodeNumber,
+    MediaItem showItem,
+  ) async {
+    try {
+      final repo = ref.read(movieRepositoryProvider);
+      final season = await repo.getTvSeasonDetails(showId, seasonNumber);
+      if (season != null) {
+        final now = DateTime.now();
+        for (final ep in season.episodes) {
+          if (ep.episodeNumber == episodeNumber &&
+              ep.airDate != null &&
+              ep.airDate!.isAfter(now)) {
+            final currentMap = Map<String, Set<String>>.from(
+              state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
+            );
+            final showEpisodes = Set<String>.from(currentMap[showId] ?? {});
+            final key = 'S${seasonNumber}E$episodeNumber';
+            if (showEpisodes.contains(key)) {
+              showEpisodes.remove(key);
+              if (showEpisodes.isEmpty) {
+                currentMap.remove(showId);
+              } else {
+                currentMap[showId] = showEpisodes;
+              }
+              state = state.copyWith(watchedEpisodes: currentMap);
+              _saveToPrefs();
+            }
+            break;
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
   String exportBackupJson(String selectedAmbiance) {
     final backup = {
       'version': 1,
@@ -924,6 +1000,36 @@ class MediaNotifier extends Notifier<MediaState> {
       final onHoldList = parseMediaMap(decoded['onHoldList']);
       final watchedEpisodes = parseWatchedEpisodes(decoded['watchedEpisodes']);
       
+      try {
+        final repo = ref.read(movieRepositoryProvider);
+        final now = DateTime.now();
+        for (final showId in watchedEpisodes.keys.toList()) {
+          final epSet = watchedEpisodes[showId]!;
+          final epsToRemove = <String>[];
+          for (final epKey in epSet) {
+            final match = RegExp(r'^S(\d+)E(\d+)$').firstMatch(epKey);
+            if (match != null) {
+              final seasonNum = int.parse(match.group(1)!);
+              final epNum = int.parse(match.group(2)!);
+              final season = await repo.getTvSeasonDetails(showId, seasonNum);
+              if (season != null) {
+                final ep = season.episodes.cast<TvEpisode?>().firstWhere(
+                  (e) => e?.episodeNumber == epNum,
+                  orElse: () => null,
+                );
+                if (ep != null && ep.airDate != null && ep.airDate!.isAfter(now)) {
+                  epsToRemove.add(epKey);
+                }
+              }
+            }
+          }
+          epSet.removeAll(epsToRemove);
+          if (epSet.isEmpty) {
+            watchedEpisodes.remove(showId);
+          }
+        }
+      } catch (_) {}
+
       String country = 'US';
       if (decoded['watchProvidersCountry'] is String) {
         country = decoded['watchProvidersCountry'];
