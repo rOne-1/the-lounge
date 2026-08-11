@@ -195,7 +195,6 @@ class _OrganicNoisePainter extends CustomPainter {
     // Strictly constant brightness peak with zero phase-based alpha pulsing
     final peak1 = isDark ? 0.22 : 0.18;
     final paint1 = Paint()
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28.0)
       ..shader = RadialGradient(
         center: center1,
         radius: radius1,
@@ -226,7 +225,6 @@ class _OrganicNoisePainter extends CustomPainter {
     // Strictly constant brightness peak with zero phase-based alpha pulsing
     final peak2 = isDark ? 0.19 : 0.15;
     final paint2 = Paint()
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 28.0)
       ..shader = RadialGradient(
         center: center2,
         radius: radius2,

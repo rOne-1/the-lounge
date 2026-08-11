@@ -141,7 +141,7 @@ class MediaImage extends StatelessWidget {
           showTitle: showFallbackTitle,
         );
 
-    final effectiveMemCacheWidth = memCacheWidth ?? (useDetailPoster ? 700 : 350);
+    final effectiveMemCacheWidth = memCacheWidth ?? (useDetailPoster ? 700 : 200);
 
     Widget imageContent;
     if (effectiveUrl == null || effectiveUrl.isEmpty || willFail) {
