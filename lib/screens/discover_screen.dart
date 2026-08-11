@@ -27,8 +27,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   bool _showLegend = true;
   bool _isSwiping = false;
   String? _activeSwipeDirection;
-  String? _undoneMediaId;
-  String? _undoneDirection;
   final Map<String, GlobalKey<_SwipeCardState>> _cardKeys = {};
 
   bool _isUnreleased(MediaItem item) {
@@ -53,9 +51,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   void _onSwipe(MediaItem item, String direction) {
-    _undoneMediaId = null;
-    _undoneDirection = null;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
 
     final notifier = ref.read(mediaProvider.notifier);
     if (direction == 'Left') {
@@ -84,34 +79,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       final isMovies = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies;
       final deckNotifier = isMovies ? ref.read(discoverMoviesDeckProvider.notifier) : ref.read(discoverTvDeckProvider.notifier);
       deckNotifier.popCard(item, direction);
-
-      final actionWord = direction == 'Left'
-          ? 'Skipped'
-          : direction == 'Right'
-              ? 'Saved'
-              : direction == 'Down'
-                  ? 'Added to Watchlist'
-                  : 'Marked as Watched';
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$actionWord "${item.title}"'),
-          action: SnackBarAction(
-            label: 'Undo',
-            onPressed: () {
-              final lastSwipe = ref.read(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider).lastSwipe;
-              if (lastSwipe != null) {
-                setState(() {
-                  _undoneMediaId = lastSwipe.item.id;
-                  _undoneDirection = lastSwipe.direction;
-                });
-                deckNotifier.undoLastSwipe();
-              }
-            },
-          ),
-          duration: const Duration(seconds: 4),
-        ),
-      );
     }
   }
 
@@ -303,7 +270,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     else
                       ...pool.reversed.map((item) {
                         final isTop = item.id == pool.first.id;
-                        final isUndone = item.id == _undoneMediaId;
+                        final isUndone = item.id == deckState.undoneMediaId;
                         return SwipeCard(
                           key: _getKeyFor(item.id),
                           item: item,
@@ -312,7 +279,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           onDirectionChanged: isTop ? _onDirectionChanged : null,
                           isDark: isDark,
                           accColor: accColor,
-                          entryDirection: isUndone ? _undoneDirection : null,
+                          entryDirection: isUndone ? deckState.undoneDirection : null,
                         );
                       }),
                   ],

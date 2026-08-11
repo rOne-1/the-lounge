@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import '../providers/navigation_provider.dart';
+import '../providers/media_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../widgets/noise_texture_overlay.dart';
 import '../widgets/responsive_layout.dart';
@@ -110,23 +111,26 @@ class ShellScreen extends ConsumerWidget {
           bottom: false,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: IconButton(
-                key: const ValueKey('settings_button'),
-                icon: Icon(
-                  Icons.settings_outlined,
-                  color: context.ambianceColors.sub,
-                  size: 20,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                const UndoTopBarButton(isLarge: false),
+                IconButton(
+                  key: const ValueKey('settings_button'),
+                  icon: Icon(
+                    Icons.settings_outlined,
+                    color: context.ambianceColors.sub,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsScreen(),
+                      ),
+                    );
+                  },
                 ),
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const SettingsScreen(),
-                    ),
-                  );
-                },
-              ),
+              ],
             ),
           ),
         ),
@@ -223,6 +227,7 @@ class ShellScreen extends ConsumerWidget {
                     );
                   },
                 ),
+                const UndoTopBarButton(isLarge: true),
                 const SizedBox(height: 32),
                 Expanded(
                   child: Column(
@@ -358,6 +363,91 @@ class ShellScreen extends ConsumerWidget {
             const CalendarScreen(key: PageStorageKey(AppTab.calendar)),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class UndoTopBarButton extends ConsumerWidget {
+  final bool isLarge;
+  const UndoTopBarButton({super.key, this.isLarge = false});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final navState = ref.watch(navigationProvider);
+    if (navState.currentTab != AppTab.discover) {
+      return const SizedBox.shrink();
+    }
+
+    final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
+    final deckState = ref.watch(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider);
+    final hasLastSwipe = deckState.lastSwipe != null;
+
+    final accColor = context.ambianceColors.acc;
+    final inkColor = context.ambianceColors.ink;
+    final pillColor = context.ambianceColors.pill;
+
+    return AnimatedScale(
+      scale: hasLastSwipe ? 1.0 : 0.0,
+      duration: AppPhysics.houseSpringDuration,
+      curve: AppPhysics.houseSpringCurve,
+      child: AnimatedOpacity(
+        opacity: hasLastSwipe ? 1.0 : 0.0,
+        duration: const Duration(milliseconds: 200),
+        child: hasLastSwipe
+            ? (isLarge
+                ? PressableScale(
+                    onTap: () {
+                      ref.read(isMovies ? discoverMoviesDeckProvider.notifier : discoverTvDeckProvider.notifier).undoLastSwipe();
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(top: 16),
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: pillColor,
+                        border: Border.all(color: context.ambianceColors.lineRgba),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(Icons.undo, color: accColor, size: 18),
+                    ),
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PressableScale(
+                        onTap: () {
+                          ref.read(isMovies ? discoverMoviesDeckProvider.notifier : discoverTvDeckProvider.notifier).undoLastSwipe();
+                        },
+                        child: Container(
+                          height: 32,
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            color: pillColor,
+                            border: Border.all(color: context.ambianceColors.lineRgba),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.undo, color: accColor, size: 14),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Undo',
+                                style: AppThemes.safeGeist(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: inkColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                  ))
+            : const SizedBox.shrink(),
       ),
     );
   }

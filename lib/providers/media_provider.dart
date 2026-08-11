@@ -1170,6 +1170,8 @@ class DiscoverDeckState {
   final bool isLoading;
   final Object? error;
   final int currentPage;
+  final String? undoneMediaId;
+  final String? undoneDirection;
 
   const DiscoverDeckState({
     this.pool = const [],
@@ -1177,6 +1179,8 @@ class DiscoverDeckState {
     this.isLoading = false,
     this.error,
     this.currentPage = 1,
+    this.undoneMediaId,
+    this.undoneDirection,
   });
 
   DiscoverDeckState copyWith({
@@ -1185,6 +1189,9 @@ class DiscoverDeckState {
     bool? isLoading,
     Object? error,
     int? currentPage,
+    String? undoneMediaId,
+    String? undoneDirection,
+    bool clearUndone = false,
   }) {
     return DiscoverDeckState(
       pool: pool ?? this.pool,
@@ -1192,6 +1199,8 @@ class DiscoverDeckState {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       currentPage: currentPage ?? this.currentPage,
+      undoneMediaId: clearUndone ? null : (undoneMediaId ?? this.undoneMediaId),
+      undoneDirection: clearUndone ? null : (undoneDirection ?? this.undoneDirection),
     );
   }
 }
@@ -1287,6 +1296,7 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
       state = state.copyWith(
         pool: nextPool,
         lastSwipe: SwipeRecord(item: item, direction: direction),
+        clearUndone: true,
       );
       if (nextPool.isEmpty) {
         loadPool(isReload: true);
@@ -1323,6 +1333,8 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
       isLoading: state.isLoading,
       error: state.error,
       currentPage: state.currentPage,
+      undoneMediaId: lastSwipe.item.id,
+      undoneDirection: lastSwipe.direction,
     );
   }
 }

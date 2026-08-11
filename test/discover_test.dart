@@ -12,6 +12,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
+import 'package:the_lounge/screens/shell_screen.dart';
 
 class TestRepository extends MockMovieRepository {
   @override
@@ -401,28 +402,37 @@ void main() {
   testWidgets('Swiping a card shows Undo SnackBar and tapping it reverts the swipe', (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     final mockRepo = TestRepository();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
+
+    // Switch active tab to AppTab.discover
+    container.read(navigationProvider.notifier).setTab(AppTab.discover);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
-          home: Scaffold(
-            body: DiscoverScreen(),
-          ),
+          home: ShellScreen(enableAnimation: false),
         ),
       ),
     );
 
     await tester.pumpAndSettle();
 
-    // Dismiss Legend Overlay
-    await tester.tapAt(const Offset(100, 100));
-    await tester.pumpAndSettle();
+    // Dismiss Legend Overlay if it exists
+    if (find.text('Got it — start swiping').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Got it — start swiping'));
+      await tester.pumpAndSettle();
+    } else {
+      await tester.tapAt(const Offset(100, 100));
+      await tester.pumpAndSettle();
+    }
 
     // Verify Movie 1 is displayed
     expect(find.text('Movie 1'), findsOneWidget);
@@ -431,16 +441,18 @@ void main() {
     await tester.tap(find.byIcon(Icons.close).last);
     await tester.pumpAndSettle();
 
-    // Verify SnackBar is shown
-    expect(find.text('Skipped "Movie 1"'), findsOneWidget);
-    expect(find.text('Undo'), findsOneWidget);
+    // Verify no SnackBar is shown (we removed it)
+    expect(find.text('Skipped "Movie 1"'), findsNothing);
+    
+    // Find the undo button on the top bar
+    expect(find.byIcon(Icons.undo), findsOneWidget);
     
     // Movie 1 should be gone, Movie 2 displayed
     expect(find.text('Movie 1'), findsNothing);
     expect(find.text('Movie 2'), findsOneWidget);
 
     // Tap Undo
-    await tester.tap(find.text('Undo'));
+    await tester.tap(find.byIcon(Icons.undo));
     await tester.pumpAndSettle();
 
     // Movie 1 should be back
@@ -452,18 +464,18 @@ void main() {
     expect(skippedState.containsKey('movie_1'), isFalse); // Assert on prefixed id as well
 
     // Second swipe invalidates first swipe
-    await tester.tap(find.byIcon(Icons.star_border)); // Right swipe (Save for later)
+    await tester.tap(find.byIcon(Icons.star_border).last); // Right swipe (Save for later)
     await tester.pumpAndSettle();
 
-    expect(find.text('Saved "Movie 1"'), findsOneWidget);
+    expect(find.byIcon(Icons.undo), findsOneWidget);
     
-    await tester.tap(find.byIcon(Icons.bookmark_border)); // Down swipe (Watchlist)
+    await tester.tap(find.byIcon(Icons.bookmark_border).last); // Down swipe (Watchlist)
     await tester.pumpAndSettle();
 
-    expect(find.text('Added to Watchlist "Movie 2"'), findsOneWidget);
+    expect(find.byIcon(Icons.undo), findsOneWidget);
     
     // Tap Undo (should only undo Movie 2)
-    await tester.tap(find.text('Undo'));
+    await tester.tap(find.byIcon(Icons.undo));
     await tester.pumpAndSettle();
 
     expect(find.text('Movie 2'), findsOneWidget);
