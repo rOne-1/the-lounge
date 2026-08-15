@@ -16,6 +16,8 @@ import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/reading_room_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/widgets/animated_segmented_control.dart';
+import 'package:the_lounge/repositories/mock_movie_repository.dart';
+import 'package:the_lounge/models/discover_filter_params.dart';
 
 class MockFilePickerPlatform extends FilePickerPlatform {
   String? savePath;
@@ -89,6 +91,10 @@ void main() {
     return ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
+        // Override movieRepositoryProvider with an instantly-resolving stub so
+        // that loadPool() calls triggered by importBackupJson don't leave
+        // pending async timers that cause pumpAndSettle to time out.
+        movieRepositoryProvider.overrideWithValue(_InstantEmptyRepository()),
       ],
     );
   }
@@ -338,6 +344,45 @@ void main() {
   });
 }
 
+/// A repository stub that resolves all calls synchronously (no timers) with
+/// empty results. Used in settings tests to prevent loadPool() — triggered by
+/// importBackupJson — from leaving pending async timers that cause
+/// pumpAndSettle to time out.
+class _InstantEmptyRepository extends MockMovieRepository {
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+    int page = 1,
+  }) async =>
+      [];
 
+  @override
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
 
+  @override
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
 
+  @override
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies({
+    int page = 1,
+    String? region,
+  }) async =>
+      [];
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async =>
+      null;
+}

@@ -483,6 +483,248 @@ void main() {
     expect(mediaState.maybeList.containsKey('1'), isTrue); // Movie 1 remains saved
     expect(mediaState.watchlist.containsKey('2'), isFalse); // Movie 2 undone
   });
+
+  test(
+      'TF-2: importBackupJson refreshes discover pool and evicts imported titles',
+      () async {
+    // A repository that always returns an empty list — so after import the
+    // refreshed pool will be empty regardless of any exclusion logic.
+    final emptyRepo = _EmptyRepository();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(emptyRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    // Seed the movies deck pool with movie_1 manually by calling loadPool on a
+    // separate TestRepository that returns exactly movie_1, then swap to the
+    // empty repo before running the import — but the simpler approach is to
+    // directly write to the notifier via a seeded pool.  Here we just call
+    // loadPool() which, against _EmptyRepository, returns nothing; then we
+    // directly confirm the post-import pool is empty to prove eviction.
+    //
+    // More precisely: we pre-populate the deck state by using a separate
+    // container that contains movie_1, then switch to the empty repo for the
+    // import step.  The cleanest self-contained approach is:
+    //   1. Load pool with a repo that returns movie_1.
+    //   2. Confirm movie_1 is in the pool.
+    //   3. Call importBackupJson with movie_1 in watchlist.
+    //   4. Allow the async loadPool triggered by import to settle.
+    //   5. Confirm movie_1 is no longer in the pool.
+
+    final seedingRepo = _SingleMovieRepository();
+    final seedContainer = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(seedingRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(seedContainer.dispose);
+
+    // Step 1-2: seed pool with movie_1.
+    final deckNotifier =
+        seedContainer.read(discoverMoviesDeckProvider.notifier);
+    await deckNotifier.loadPool(isReload: false);
+
+    final poolBefore = seedContainer.read(discoverMoviesDeckProvider).pool;
+    expect(poolBefore.any((item) => item.id == '1'), isTrue,
+        reason: 'Precondition: movie_1 must be in the pool before import');
+
+    // Step 3: import a backup that puts movie_1 in the watchlist.
+    // Switch the repo to emptyRepo so that the loadPool triggered by import
+    // returns nothing (simulating that the server no longer has movie_1, or
+    // simply that everything is excluded).
+    final importContainer = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(emptyRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(importContainer.dispose);
+
+    // Pre-populate the deck with movie_1 so there is something to evict.
+    final importDeckNotifier =
+        importContainer.read(discoverMoviesDeckProvider.notifier);
+    // Manually set a non-empty pool via the seeding repo.
+    final importSeedingRepo = _SingleMovieRepository();
+    final preSeedContainer = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(importSeedingRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(preSeedContainer.dispose);
+    await preSeedContainer
+        .read(discoverMoviesDeckProvider.notifier)
+        .loadPool(isReload: false);
+    final preSeedPool =
+        preSeedContainer.read(discoverMoviesDeckProvider).pool;
+    expect(preSeedPool.any((item) => item.id == '1'), isTrue,
+        reason: 'Precondition: movie_1 must be seeded before import');
+
+    // Now run the import — use a container whose movieRepositoryProvider
+    // returns empty so the post-import loadPool yields an empty pool.
+    final finalContainer = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(emptyRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(finalContainer.dispose);
+
+    // Seed pool to contain movie_1 before import.
+    final seedingRepo2 = _SingleMovieRepository();
+    final preSeedContainer2 = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(seedingRepo2),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(preSeedContainer2.dispose);
+
+    // Build the backup JSON with movie_1 in watchlist.
+    final backupJson = jsonEncode({
+      'version': 1,
+      'watchlist': {
+        '1': {
+          'id': '1',
+          'title': 'Movie 1',
+          'type': 'movie',
+          'rating': 8.0,
+          'posterUrl': null,
+        },
+      },
+      'maybeList': {},
+      'watchingList': {},
+      'watchedList': {},
+      'droppedList': {},
+      'onHoldList': {},
+      'watchedEpisodes': {},
+      'watchProvidersCountry': 'US',
+      'selectedAmbiance': null,
+    });
+
+    // Use a single container: repo that initially returns movie_1, but after
+    // import the loadPool refresh is also run against that same repo.  To truly
+    // evict movie_1 we rely on the exclusion logic: movie_1 is now in the
+    // watchlist, so loadPool excludes it.  Use _SingleMovieRepository which
+    // returns movie_1 from discoverMedia — importBackupJson's pool refresh will
+    // then exclude it via the updated watchlist.
+    final singleRepoContainer = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(_SingleMovieRepository()),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(singleRepoContainer.dispose);
+
+    // Seed the deck.
+    await singleRepoContainer
+        .read(discoverMoviesDeckProvider.notifier)
+        .loadPool(isReload: false);
+    expect(
+        singleRepoContainer
+            .read(discoverMoviesDeckProvider)
+            .pool
+            .any((item) => item.id == '1'),
+        isTrue,
+        reason: 'Precondition: movie_1 must be in pool before import');
+
+    // Run the import.
+    final importResult = await singleRepoContainer
+        .read(mediaProvider.notifier)
+        .importBackupJson(backupJson);
+    expect(importResult, isTrue);
+
+    // Allow the async loadPool triggered inside importBackupJson to finish.
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+
+    // Step 5: movie_1 must no longer appear in the discover pool.
+    final poolAfter =
+        singleRepoContainer.read(discoverMoviesDeckProvider).pool;
+    expect(poolAfter.any((item) => item.id == '1'), isFalse,
+        reason:
+            'movie_1 was imported into watchlist and must be evicted from the discover pool');
+  });
 }
 
+/// A mock repository that returns exactly one movie (id=1, rating=8.0) from
+/// [discoverMedia], used to seed the discover deck pool in TF-2 tests.
+class _SingleMovieRepository extends MockMovieRepository {
+  static const _movie1 = MediaItem(
+    id: '1',
+    title: 'Movie 1',
+    type: MediaType.movie,
+    rating: 8.0,
+    overview: '',
+    genres: [],
+  );
 
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+    int page = 1,
+  }) async {
+    if (!isMovies || page > 1) return [];
+    return [_movie1];
+  }
+
+  @override
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies({
+    int page = 1,
+    String? region,
+  }) async =>
+      [];
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+}
+
+/// A mock repository that always returns empty lists, used to simulate an empty
+/// pool after a backup import in TF-2 tests.
+class _EmptyRepository extends MockMovieRepository {
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+    int page = 1,
+  }) async =>
+      [];
+
+  @override
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies({
+    int page = 1,
+    String? region,
+  }) async =>
+      [];
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async =>
+      null;
+}

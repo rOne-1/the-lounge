@@ -1063,6 +1063,14 @@ class MediaNotifier extends Notifier<MediaState> {
         await ref.read(ambianceProvider.notifier).setAmbiance(match);
       }
 
+      // Refresh both discover decks so newly-imported titles are evicted from
+      // the in-memory pool. loadPool(isReload: false) clears the existing pool
+      // and rebuilds it from page 1, re-snapshotting the updated exclusion IDs.
+      try {
+        ref.read(discoverMoviesDeckProvider.notifier).loadPool(isReload: false);
+        ref.read(discoverTvDeckProvider.notifier).loadPool(isReload: false);
+      } catch (_) {}
+
       return true;
     } catch (_) {
       return false;
