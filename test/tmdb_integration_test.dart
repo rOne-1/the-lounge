@@ -472,6 +472,45 @@ void main() {
           isNot(contains('Already Released (stale TMDB bucket)')));
     });
 
+    test(
+        'TF-22 regression: falls back to the unfiltered page instead of an empty list '
+        'when every title is filtered out (e.g. device clock skew)', () async {
+      final now = DateTime.now();
+      final pastDate =
+          now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
+
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/movie/upcoming')) {
+          return http.Response(
+              jsonEncode({
+                'page': 1,
+                'results': [
+                  {
+                    'id': 1,
+                    'title': 'Already Released A',
+                    'release_date': pastDate,
+                  },
+                  {
+                    'id': 2,
+                    'title': 'Already Released B',
+                    'release_date': pastDate,
+                  },
+                ]
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final upcoming = await repo.getUpcomingMovies();
+
+      expect(upcoming.map((m) => m.title),
+          containsAll(['Already Released A', 'Already Released B']));
+    });
+
     test('getWatchProviderRegions fetches and returns dynamic country regions',
         () async {
       final mockClient = MockClient((request) async {

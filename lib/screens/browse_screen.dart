@@ -8,6 +8,7 @@ import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
+import '../utils/scroll_chrome_tracker.dart';
 import '../utils/weighted_rating.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/fallback_widgets.dart';
@@ -105,6 +106,28 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   bool _isSearching = false;
   Object? _searchError;
 
+  // E1/TF-9: collapses the search bar/badge/filter-chip header on scroll to
+  // reclaim space for results, matching the shell top bar's behavior
+  // (ChromeVisibilityNotifier) but scoped locally since this chrome is
+  // specific to this screen, not shared across tabs.
+  final _chromeTracker = ScrollChromeTracker();
+  bool _isChromeVisible = true;
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    final next = _chromeTracker.handle(notification);
+    if (next != null && next != _isChromeVisible) {
+      setState(() => _isChromeVisible = next);
+    }
+    return false;
+  }
+
+  void _showChrome() {
+    _chromeTracker.reset();
+    if (!_isChromeVisible) {
+      setState(() => _isChromeVisible = true);
+    }
+  }
+
   void _onSearchChanged(String query) async {
     final trimmed = query.trim();
     if (trimmed.isEmpty) {
@@ -114,6 +137,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         _isSearching = false;
         _searchError = null;
       });
+      _showChrome();
       return;
     }
 
@@ -122,6 +146,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
       _isSearching = true;
       _searchError = null;
     });
+    _showChrome();
 
     try {
       final repo = ref.read(movieRepositoryProvider);
@@ -282,6 +307,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     ref.read(discoverFilterProvider.notifier).resetFilters();
     ref.read(browseGenreProvider.notifier).setGenre('All');
     ref.read(browseKeywordProvider.notifier).clearKeyword();
+    _showChrome();
   }
 
   void _showFilterBottomSheet(BuildContext context, bool isDark, bool isMovies) {
@@ -496,6 +522,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           _hasMore = true;
           _accumulatedItems.clear();
         });
+        _showChrome();
       }
     });
 
@@ -506,6 +533,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           _hasMore = true;
           _accumulatedItems.clear();
         });
+        _showChrome();
       }
     });
 
@@ -545,50 +573,37 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         decoration: context.ambianceColors.background,
         child: Scaffold(
           backgroundColor: context.ambianceColors.base,
-          appBar: AppBar(
-            title: Text(
-              _searchQuery.isNotEmpty
-                  ? (isMovies ? 'Search Movies' : 'Search TV Shows')
-                  : (isMovies ? 'Browse Movies' : 'Browse TV Shows'),
-              style: GoogleFonts.bodoniModa(
-                fontStyle: FontStyle.italic,
-                color: inkColor,
-              ),
-            ),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            iconTheme: IconThemeData(color: inkColor),
-            actions: [
-              if (!isLarge)
-                PressableScale(
-                  onTap: () => _showFilterBottomSheet(context, isDark, isMovies),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.filter_list, color: inkColor, size: 20),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Filters',
-                          style: AppThemes.safeGeist(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                            color: inkColor,
-                          ),
-                        ),
-                      ],
+          // E1/TF-9: only the large/desktop layout keeps a stock AppBar --
+          // it has a permanent 320px filter sidebar and room to spare.
+          // Compact renders its own collapsible header inside
+          // _buildCompactLayout instead, so it can shrink away on scroll
+          // along with the search bar/filter chips beneath it.
+          appBar: isLarge
+              ? AppBar(
+                  title: Text(
+                    _headerTitle(isMovies),
+                    style: GoogleFonts.bodoniModa(
+                      fontStyle: FontStyle.italic,
+                      color: inkColor,
                     ),
                   ),
-                ),
-            ],
-          ),
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  iconTheme: IconThemeData(color: inkColor),
+                )
+              : null,
           body: isLarge
               ? _buildLargeLayout(isDark, isMovies)
               : _buildCompactLayout(isDark, isMovies),
         ),
       ),
     );
+  }
+
+  String _headerTitle(bool isMovies) {
+    return _searchQuery.isNotEmpty
+        ? (isMovies ? 'Search Movies' : 'Search TV Shows')
+        : (isMovies ? 'Browse Movies' : 'Browse TV Shows');
   }
 
   Widget _buildTopSearchBar(bool isDark) {
@@ -672,12 +687,81 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildCompactLayout(bool isDark, bool isMovies) {
+    final inkColor = context.ambianceColors.ink;
+
     return Column(
       children: [
-        _buildTopSearchBar(isDark),
-        if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
-        _buildActiveFilterChipBar(isDark),
-        Expanded(child: _buildBody(isDark, isMovies)),
+        SafeArea(
+          bottom: false,
+          child: AnimatedSize(
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            alignment: Alignment.topCenter,
+            child: AnimatedOpacity(
+              duration: AppPhysics.houseSpringDuration,
+              curve: AppPhysics.houseSpringCurve,
+              opacity: _isChromeVisible ? 1.0 : 0.0,
+              child: _isChromeVisible
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _headerTitle(isMovies),
+                                style: GoogleFonts.bodoniModa(
+                                  fontSize: 19,
+                                  fontWeight: FontWeight.w600,
+                                  fontStyle: FontStyle.italic,
+                                  color: inkColor,
+                                ),
+                              ),
+                              PressableScale(
+                                onTap: () =>
+                                    _showFilterBottomSheet(context, isDark, isMovies),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8.0,
+                                    vertical: 12.0,
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.filter_list, color: inkColor, size: 20),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Filters',
+                                        style: AppThemes.safeGeist(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                          color: inkColor,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        _buildTopSearchBar(isDark),
+                        if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
+                        _buildActiveFilterChipBar(isDark),
+                      ],
+                    )
+                  : const SizedBox(width: double.infinity),
+            ),
+          ),
+        ),
+        Expanded(
+          child: NotificationListener<ScrollNotification>(
+            onNotification: _handleScrollNotification,
+            child: _buildBody(isDark, isMovies),
+          ),
+        ),
       ],
     );
   }

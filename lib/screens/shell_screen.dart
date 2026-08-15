@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/ambiance_provider.dart';
+import '../providers/chrome_visibility_provider.dart';
 import '../widgets/noise_texture_overlay.dart';
 import '../widgets/responsive_layout.dart';
 import '../widgets/segmented_toggle.dart';
@@ -28,6 +29,16 @@ class ShellScreen extends ConsumerWidget {
     final ambianceNotifier = ref.read(ambianceProvider.notifier);
     final isDark = context.ambianceColors.isDark;
 
+    // E1/TF-4: a fresh tab always starts with its top bar fully visible --
+    // otherwise switching tabs while scrolled down elsewhere in a
+    // permanently-mounted IndexedStack (see _buildBody) could strand the
+    // bar hidden on a tab the user hasn't scrolled yet.
+    ref.listen(navigationProvider.select((s) => s.currentTab), (previous, next) {
+      if (previous != next) {
+        ref.read(chromeVisibilityProvider.notifier).reset();
+      }
+    });
+
     return SizedBox.expand(
       child: AnimatedContainer(
         duration: AppPhysics.houseSpringDuration,
@@ -45,6 +56,7 @@ class ShellScreen extends ConsumerWidget {
                 body: ResponsiveLayout(
                   compact: (context) => _buildCompactLayout(
                     context,
+                    ref,
                     navigationState,
                     navigationNotifier,
                     ambiance,
@@ -94,6 +106,7 @@ class ShellScreen extends ConsumerWidget {
 
   Widget _buildCompactLayout(
     BuildContext context,
+    WidgetRef ref,
     NavigationState state,
     NavigationNotifier notifier,
     AppTheme ambiance,
@@ -102,79 +115,100 @@ class ShellScreen extends ConsumerWidget {
   ) {
     final mediaQuery = MediaQuery.of(context);
     final reservedBottomInset = 66.0 + 16.0 + 16.0 + mediaQuery.padding.bottom;
+    final isChromeVisible = ref.watch(chromeVisibilityProvider);
 
     return Column(
       children: [
         SafeArea(
           bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                const UndoTopBarButton(isLarge: false),
-                IconButton(
-                  key: const ValueKey('settings_button'),
-                  icon: Icon(
-                    Icons.settings_outlined,
-                    color: context.ambianceColors.sub,
-                    size: 20,
-                  ),
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => const SettingsScreen(),
+          child: AnimatedSize(
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            alignment: Alignment.topCenter,
+            child: AnimatedOpacity(
+              duration: AppPhysics.houseSpringDuration,
+              curve: AppPhysics.houseSpringCurve,
+              opacity: isChromeVisible ? 1.0 : 0.0,
+              child: isChromeVisible
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          const UndoTopBarButton(isLarge: false),
+                          IconButton(
+                            key: const ValueKey('settings_button'),
+                            icon: Icon(
+                              Icons.settings_outlined,
+                              color: context.ambianceColors.sub,
+                              size: 20,
+                            ),
+                            onPressed: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (context) => const SettingsScreen(),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
-                    );
-                  },
-                ),
-              ],
+                    )
+                  : const SizedBox(width: double.infinity),
             ),
           ),
         ),
         Expanded(
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: MediaQuery(
-                  data: mediaQuery.copyWith(
-                    padding: mediaQuery.padding.copyWith(
-                      bottom: reservedBottomInset,
-                    ),
-                    viewPadding: mediaQuery.viewPadding.copyWith(
-                      bottom: reservedBottomInset,
-                    ),
-                  ),
-                  child: _buildBody(state.currentTab),
-                ),
-              ),
-              Positioned(
-                bottom: 16,
-                left: 16,
-                right: 16,
-                child: SafeArea(
-                  top: false,
-                  child: AnimatedContainer(
-                    duration: AppPhysics.houseSpringDuration,
-                    curve: AppPhysics.houseSpringCurve,
-                    height: 66,
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color.fromRGBO(12, 9, 7, 0.82)
-                          : const Color.fromRGBO(240, 232, 216, 0.86),
-                      border: Border.all(
-                        color: Theme.of(context).extension<AmbianceColors>()!.lineRgba,
+          child: NotificationListener<ScrollNotification>(
+            onNotification: (notification) {
+              ref
+                  .read(chromeVisibilityProvider.notifier)
+                  .handleScrollNotification(notification);
+              return false;
+            },
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: MediaQuery(
+                    data: mediaQuery.copyWith(
+                      padding: mediaQuery.padding.copyWith(
+                        bottom: reservedBottomInset,
                       ),
-                      borderRadius: BorderRadius.circular(33),
+                      viewPadding: mediaQuery.viewPadding.copyWith(
+                        bottom: reservedBottomInset,
+                      ),
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: _buildNavItems(context, state, notifier, isDark),
+                    child: _buildBody(state.currentTab),
+                  ),
+                ),
+                Positioned(
+                  bottom: 16,
+                  left: 16,
+                  right: 16,
+                  child: SafeArea(
+                    top: false,
+                    child: AnimatedContainer(
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
+                      height: 66,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? const Color.fromRGBO(12, 9, 7, 0.82)
+                            : const Color.fromRGBO(240, 232, 216, 0.86),
+                        border: Border.all(
+                          color: Theme.of(context).extension<AmbianceColors>()!.lineRgba,
+                        ),
+                        borderRadius: BorderRadius.circular(33),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: _buildNavItems(context, state, notifier, isDark),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],

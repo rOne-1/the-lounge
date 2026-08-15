@@ -79,21 +79,30 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  'Your Space',
-                  style: GoogleFonts.bodoniModa(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w600,
-                    fontStyle: FontStyle.italic,
-                    color: inkColor,
+                Flexible(
+                  child: Text(
+                    'Your Space',
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.bodoniModa(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w600,
+                      fontStyle: FontStyle.italic,
+                      color: inkColor,
+                    ),
                   ),
                 ),
-                SegmentedMediaTypeToggle(
-                  activeType: navState.activeMediaType,
-                  onChanged: (type) =>
-                      ref.read(navigationProvider.notifier).setMediaType(type),
-                  isDark: isDark,
-                ),
+                // Large/desktop layout already gets a global toggle from
+                // ShellScreen's top bar (see _buildTopBarToggle) -- Home,
+                // Discover, and Calendar all gate their own embedded toggle
+                // behind `!isLarge` for the same reason; this one was
+                // missing that gate, causing a second toggle to render here.
+                if (!isLarge)
+                  SegmentedMediaTypeToggle(
+                    activeType: navState.activeMediaType,
+                    onChanged: (type) =>
+                        ref.read(navigationProvider.notifier).setMediaType(type),
+                    isDark: isDark,
+                  ),
               ],
             ),
           ),

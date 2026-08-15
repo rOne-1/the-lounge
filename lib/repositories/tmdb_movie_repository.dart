@@ -402,14 +402,23 @@ class TmdbMovieRepository implements MovieRepository {
       final results =
           (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       final now = DateTime.now();
-      // TF-22: TMDB's /movie/upcoming can include titles already released
-      // (region/date-window quirks) — filter those out client-side.
-      return results
+      final mapped = results
           .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.movie))
+          .toList();
+      // TF-22: TMDB's /movie/upcoming can include titles already released
+      // (region/date-window quirks) — filter those out client-side. Falls
+      // back to the unfiltered page rather than an empty rail if every item
+      // gets excluded (e.g. device clock skew vs. TMDB's release window) —
+      // a genuinely empty "Upcoming" list is worse than a few already-out
+      // titles slipping through, and MediaRail renders total silence (no
+      // error, no empty state) when this list is empty, so the failure mode
+      // is invisible to the user otherwise.
+      final upcoming = mapped
           .where((item) =>
               item.releaseOrAirDate == null ||
               item.releaseOrAirDate!.isAfter(now))
           .toList();
+      return upcoming.isNotEmpty ? upcoming : mapped;
     } catch (e, stack) {
       _logError('Failed to fetch upcoming movies from TMDB API.', e, stack);
       if (fallbackRepository != null) {
