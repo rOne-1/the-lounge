@@ -423,6 +423,15 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         }
       }
 
+      // 6. Original Language filter. Search mode never sent this to TMDB at
+      // all (searchMedia has no language param to give it), so it was
+      // silently a no-op there; Discover mode's server-side
+      // with_original_language still applies on top of this independently.
+      if (params.originalLanguage != null &&
+          params.originalLanguage!.isNotEmpty) {
+        if (item.originalLanguage != params.originalLanguage) return false;
+      }
+
       // 8. Person filter. Items from a bulk TMDB discover-list response never
       // carry cast/director data (that requires a separate per-title credits
       // call TMDB's discover endpoint doesn't make) -- only items enriched

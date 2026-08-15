@@ -698,6 +698,25 @@ class TmdbMovieRepository implements MovieRepository {
     }
     try {
       await _ensureGenresLoaded();
+
+      // TMDB's /discover/tv endpoint has no with_people parameter at all
+      // (unlike /discover/movie, which does) -- a cast/crew filter there
+      // silently does nothing server-side, so a TV-mode person filter
+      // combined with Discover just returns the generic, unfiltered
+      // result set. Use the person's real filmography (already built for
+      // cast/crew search) as the candidate set instead, for both movies
+      // and TV, so the filter actually works in both modes.
+      if (params.personId != null) {
+        if (page > 1) {
+          // The filmography is fetched whole, not paginated -- nothing
+          // further to add on subsequent "Load More" pages.
+          return [];
+        }
+        final filmography = await getPersonFilmography(params.personId!);
+        final targetType = isMovies ? MediaType.movie : MediaType.tv;
+        return filmography.where((item) => item.type == targetType).toList();
+      }
+
       final endpoint = isMovies ? '/discover/movie' : '/discover/tv';
       final queryParams = <String, dynamic>{
         'page': page,
