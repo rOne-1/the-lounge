@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/reading_room_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -141,6 +142,91 @@ void main() {
       expect(find.byType(MediaPosterFallback), findsOneWidget);
       expect(find.text('Broken Image Title'), findsOneWidget);
       expect(find.byIcon(Icons.movie_outlined), findsOneWidget);
+    });
+  });
+
+  group('B4/B11: MediaImage decodes at real on-screen physical size', () {
+    const item = MediaItem(
+      id: 'sized-1',
+      title: 'Sized Poster',
+      type: MediaType.movie,
+      rating: 7.0,
+      overview: '',
+      genres: [],
+      posterUrl: 'https://example.com/poster.jpg',
+    );
+
+    testWidgets('memCacheWidth/Height scale with bounded constraints x devicePixelRatio',
+        (WidgetTester tester) async {
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(() => tester.view.resetDevicePixelRatio());
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 110,
+              height: 155,
+              child: MediaImage(item: item),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
+      expect(image.memCacheWidth, equals(220)); // 110 * 2.0
+      expect(image.memCacheHeight, equals(310)); // 155 * 2.0
+    });
+
+    testWidgets('a different card size on the same devicePixelRatio produces a different decode size',
+        (WidgetTester tester) async {
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetDevicePixelRatio());
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 60,
+              height: 60,
+              child: MediaImage(item: item),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
+      expect(image.memCacheWidth, equals(180)); // 60 * 3.0
+      expect(image.memCacheHeight, equals(180));
+    });
+
+    testWidgets('explicit memCacheWidth/Height overrides the auto-computed size',
+        (WidgetTester tester) async {
+      tester.view.devicePixelRatio = 3.0;
+      addTearDown(() => tester.view.resetDevicePixelRatio());
+
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 110,
+              height: 155,
+              child: MediaImage(
+                item: item,
+                memCacheWidth: 800,
+                memCacheHeight: 450,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump();
+
+      final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
+      expect(image.memCacheWidth, equals(800));
+      expect(image.memCacheHeight, equals(450));
     });
   });
 }

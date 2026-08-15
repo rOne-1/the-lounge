@@ -141,24 +141,45 @@ class MediaImage extends StatelessWidget {
           showTitle: showFallbackTitle,
         );
 
-    final effectiveMemCacheWidth = memCacheWidth ?? (useDetailPoster ? 700 : 200);
-
     Widget imageContent;
     if (effectiveUrl == null || effectiveUrl.isEmpty || willFail) {
       imageContent = fallbackWidget;
     } else {
-      imageContent = CachedNetworkImage(
-        imageUrl: effectiveUrl,
-        fit: fit,
-        width: double.infinity,
-        height: double.infinity,
-        memCacheWidth: effectiveMemCacheWidth,
-        memCacheHeight: memCacheHeight,
-        fadeInDuration: const Duration(milliseconds: 150),
-        placeholder: (context, url) => Container(
-          color: context.ambianceColors.ph,
-        ),
-        errorWidget: (context, url, error) => fallbackWidget,
+      // B4/B11: decode at the card's actual on-screen physical size (logical
+      // constraints x devicePixelRatio), not a single blanket default. A
+      // fixed 200 was too small for large cards on high-DPI screens (soft
+      // images, B11) and too large for small cards (wasted decode work
+      // scaling with rail length, B4). Falls back to the previous
+      // fixed defaults only when a parent gives unbounded constraints
+      // (LayoutBuilder can't size from those) or a caller explicitly
+      // overrides via memCacheWidth/memCacheHeight (e.g. a hero banner with
+      // a deliberately fixed size).
+      imageContent = LayoutBuilder(
+        builder: (context, constraints) {
+          final dpr = MediaQuery.of(context).devicePixelRatio;
+          final resolvedWidth = memCacheWidth ??
+              (constraints.hasBoundedWidth
+                  ? (constraints.maxWidth * dpr).round()
+                  : (useDetailPoster ? 700 : 200));
+          final resolvedHeight = memCacheHeight ??
+              (constraints.hasBoundedHeight
+                  ? (constraints.maxHeight * dpr).round()
+                  : null);
+
+          return CachedNetworkImage(
+            imageUrl: effectiveUrl,
+            fit: fit,
+            width: double.infinity,
+            height: double.infinity,
+            memCacheWidth: resolvedWidth,
+            memCacheHeight: resolvedHeight,
+            fadeInDuration: const Duration(milliseconds: 150),
+            placeholder: (context, url) => Container(
+              color: context.ambianceColors.ph,
+            ),
+            errorWidget: (context, url, error) => fallbackWidget,
+          );
+        },
       );
     }
 

@@ -1584,13 +1584,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               Widget avatarContent;
               if (profileUrl != null && profileUrl.isNotEmpty) {
                 avatarContent = ClipOval(
-                  child: Image.network(
-                    profileUrl,
-                    width: 60,
-                    height: 60,
+                  child: MediaImage(
+                    imageUrl: profileUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Icon(Icons.person, color: subColor),
+                    fallback: Icon(Icons.person, color: subColor),
                   ),
                 );
               } else {
@@ -1708,10 +1705,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                           child: Stack(
                             fit: StackFit.expand,
                             children: [
-                              Image.network(
-                                thumbnailUrl,
+                              MediaImage(
+                                imageUrl: thumbnailUrl,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Container(
+                                fallback: Container(
                                   color: phColor,
                                   child: Icon(Icons.movie_outlined, color: subColor),
                                 ),
