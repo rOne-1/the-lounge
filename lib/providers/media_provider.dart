@@ -18,7 +18,6 @@ class MediaState {
   final Map<String, MediaItem> droppedList;
   final Map<String, MediaItem> onHoldList;
   final Map<String, Set<String>> watchedEpisodes; // showId -> set of "S1E1" episode keys
-  final List<MediaItem> discoverPool;
   final String watchProvidersCountry;
 
   const MediaState({
@@ -29,7 +28,6 @@ class MediaState {
     this.droppedList = const {},
     this.onHoldList = const {},
     this.watchedEpisodes = const {},
-    this.discoverPool = const [],
     this.watchProvidersCountry = 'US',
   });
 
@@ -41,7 +39,6 @@ class MediaState {
     Map<String, MediaItem>? droppedList,
     Map<String, MediaItem>? onHoldList,
     Map<String, Set<String>>? watchedEpisodes,
-    List<MediaItem>? discoverPool,
     String? watchProvidersCountry,
   }) {
     return MediaState(
@@ -52,7 +49,6 @@ class MediaState {
       droppedList: droppedList ?? this.droppedList,
       onHoldList: onHoldList ?? this.onHoldList,
       watchedEpisodes: watchedEpisodes ?? this.watchedEpisodes,
-      discoverPool: discoverPool ?? this.discoverPool,
       watchProvidersCountry:
           watchProvidersCountry ?? this.watchProvidersCountry,
     );
@@ -1006,17 +1002,6 @@ class MediaNotifier extends Notifier<MediaState> {
       watchedEpisodes: newWatchedEpisodes,
     );
     _saveToPrefs();
-  }
-
-  void setDiscoverPool(List<MediaItem> items) {
-    state = state.copyWith(discoverPool: items);
-  }
-
-  void popFromDiscoverPool() {
-    if (state.discoverPool.isNotEmpty) {
-      final newPool = List<MediaItem>.from(state.discoverPool)..removeAt(0);
-      state = state.copyWith(discoverPool: newPool);
-    }
   }
 
   Future<void> setWatchProvidersCountry(String countryCode) async {
