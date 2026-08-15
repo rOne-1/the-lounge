@@ -24,28 +24,32 @@ class TestRepository extends MockMovieRepository {
           type: MediaType.movie,
           rating: 8.0,
           overview: '',
-          genres: []),
+          genres: [],
+          voteCount: 5000),
       const MediaItem(
           id: '2',
           title: 'Movie 2',
           type: MediaType.movie,
           rating: 7.0,
           overview: '',
-          genres: []),
+          genres: [],
+          voteCount: 5000),
       const MediaItem(
           id: '3',
           title: 'Movie 3',
           type: MediaType.movie,
           rating: 7.5,
           overview: '',
-          genres: []),
+          genres: [],
+          voteCount: 5000),
       const MediaItem(
           id: '4',
           title: 'Movie 4',
           type: MediaType.movie,
           rating: 7.2,
           overview: '',
-          genres: []),
+          genres: [],
+          voteCount: 5000),
     ];
   }
 
@@ -662,6 +666,7 @@ class _SingleMovieRepository extends MockMovieRepository {
     rating: 8.0,
     overview: '',
     genres: [],
+    voteCount: 5000,
   );
 
   @override

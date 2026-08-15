@@ -8,6 +8,7 @@ import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
+import '../utils/weighted_rating.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/person_search_autocomplete.dart';
@@ -86,6 +87,12 @@ class BrowseScreen extends ConsumerStatefulWidget {
 }
 
 class _BrowseScreenState extends ConsumerState<BrowseScreen> {
+  /// `m` in the weighted-rating formula (SP-3/E2) for Browse's manual rating
+  /// filter/sort. Lower than the Discover deck's threshold (see
+  /// DiscoverDeckNotifier) since this is a broad exploratory filter, not a
+  /// curated deck — it shouldn't punish niche titles as hard.
+  static const double _minVotesForFullWeight = 50.0;
+
   int _currentPage = 1;
   bool _isLoadingMore = false;
   bool _hasMore = true;
@@ -373,6 +380,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     bool isMovies,
   ) {
     final expectedType = isMovies ? MediaType.movie : MediaType.tv;
+    final poolMean = meanRatingOf(items.where((i) => i.type == expectedType));
 
     final filtered = items.where((item) {
       // 1. Media Type toggle matching
@@ -387,9 +395,15 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         if (!matchesGenre) return false;
       }
 
-      // 3. Min Rating filter
+      // 3. Min Rating filter (SP-3/E2: weighted rating, not raw average, so
+      // a low-vote title can't pass the bar on a lucky handful of votes)
       if (params.minRating != null) {
-        if (item.rating < params.minRating!) return false;
+        final wr = weightedRatingOf(
+          item,
+          poolMean: poolMean,
+          minVotes: _minVotesForFullWeight,
+        );
+        if (wr < params.minRating!) return false;
       }
 
       // 4. Min Vote Count filter
@@ -433,7 +447,11 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     filtered.sort((a, b) {
       switch (params.sortBy) {
         case 'vote_average.desc':
-          return b.rating.compareTo(a.rating);
+          final wrA = weightedRatingOf(a,
+              poolMean: poolMean, minVotes: _minVotesForFullWeight);
+          final wrB = weightedRatingOf(b,
+              poolMean: poolMean, minVotes: _minVotesForFullWeight);
+          return wrB.compareTo(wrA);
         case 'primary_release_date.desc':
         case 'first_air_date.desc':
           final aDate = a.releaseOrAirDate ?? DateTime(1900);

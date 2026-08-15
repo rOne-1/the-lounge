@@ -6,6 +6,7 @@ import '../models/discover_filter_params.dart';
 import 'ambiance_provider.dart';
 import '../themes/theme_registry.dart';
 import '../constants.dart';
+import '../utils/weighted_rating.dart';
 import 'repository_provider.dart';
 export 'repository_provider.dart';
 
@@ -1216,6 +1217,25 @@ class DiscoverDeckState {
 abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
   bool get isMovies;
 
+  /// Server-side floor (SP-3/E2, CO-9): only asks TMDB to exclude
+  /// effectively-unvoted noise. The real quality bar is the weighted-rating
+  /// threshold below, computed client-side once the candidate pool is in
+  /// hand — a raw TMDB `vote_average.gte` floor let a 2-vote title occupy
+  /// the same space as a 20,000-vote title of the same raw average.
+  static const int _minVoteCountFloor = 50;
+
+  /// `m` in the weighted-rating formula — how many votes a title needs
+  /// before its own average is trusted close to face value. Deliberately
+  /// higher than Browse's filter (see browse_screen.dart) since the deck is
+  /// meant to read as curated, not just "everything above a bar."
+  static const double _minVotesForFullWeight = 300.0;
+
+  /// Weighted-rating cutoff a candidate must clear to enter the deck. Lower
+  /// than the old raw 7.0 floor it replaces, because WR already discounts
+  /// low-vote titles toward the pool mean — an absolute WR of 6.5 stays
+  /// meaningfully selective without double-penalizing well-voted titles.
+  static const double _weightedRatingThreshold = 6.5;
+
   @override
   DiscoverDeckState build() {
     Future.microtask(() => loadPool());
@@ -1252,7 +1272,8 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
             excludedIds.contains(cleanId);
       }
 
-      final discoverParams = DiscoverFilterParams(minRating: 7.0);
+      final discoverParams =
+          DiscoverFilterParams(minVoteCount: _minVoteCountFloor);
       List<MediaItem> newItems = [];
       int attempts = 0;
       
@@ -1280,9 +1301,18 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
         }
         
         final seen = <String>{...state.pool.map((e) => e.id), ...newItems.map((e) => e.id)};
-        final filtered = rawList.where((item) =>
-            item.rating >= 7.0 && !isExcluded(item) && seen.add(item.id)).toList();
-            
+        final poolMean = meanRatingOf(rawList);
+        final filtered = rawList.where((item) {
+          final wr = weightedRatingOf(
+            item,
+            poolMean: poolMean,
+            minVotes: _minVotesForFullWeight,
+          );
+          return wr >= _weightedRatingThreshold &&
+              !isExcluded(item) &&
+              seen.add(item.id);
+        }).toList();
+
         newItems.addAll(filtered);
         page += 2;
         attempts++;
