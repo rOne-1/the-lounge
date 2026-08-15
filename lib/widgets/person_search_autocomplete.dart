@@ -130,6 +130,15 @@ class _PersonSearchAutocompleteState
           const SizedBox(height: 8),
         ],
         TextField(
+          // Without its own key, this field's internal Scrollable inherits
+          // the enclosing ExpansionTile's PageStorageKey (see
+          // _buildExpansionSection in browse_screen.dart) as its nearest
+          // ancestor identity, and collides with the bool the ExpansionTile
+          // itself stores there for its expanded/collapsed state --
+          // restoreScrollOffset() then throws trying to read that bool as
+          // a double scroll offset. A key of its own gives it an
+          // independent PageStorage bucket.
+          key: const PageStorageKey<String>('person_search_autocomplete_field'),
           controller: _controller,
           focusNode: _focusNode,
           onChanged: _onQueryChanged,
@@ -218,6 +227,11 @@ class _PersonSearchAutocompleteState
                     child: Material(
                       color: Colors.transparent,
                       child: ListView.separated(
+                      // Same PageStorage-collision reasoning as the
+                      // TextField's key above -- an unkeyed Scrollable here
+                      // would also inherit the enclosing ExpansionTile's
+                      // storage bucket.
+                      key: const PageStorageKey<String>('person_search_autocomplete_results'),
                       shrinkWrap: true,
                       padding: const EdgeInsets.symmetric(vertical: 4),
                       itemCount: results.length,
