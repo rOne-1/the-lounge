@@ -6,8 +6,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 import 'providers/ambiance_provider.dart';
+import 'providers/repository_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/crash_reporting_service.dart';
+import 'widgets/fallback_widgets.dart';
 
 void main() async {
   final stopwatch = Stopwatch()..start();
@@ -68,6 +70,8 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ambiance = ref.watch(ambianceProvider);
+    final shouldShowConfigurationError =
+        ref.watch(shouldShowConfigurationErrorProvider);
 
     return MaterialApp(
       title: 'The Lounge',
@@ -81,7 +85,9 @@ class MyApp extends ConsumerWidget {
           child: child ?? const SizedBox(),
         );
       },
-      home: SplashScreen(enableAnimation: enableAnimation),
+      home: shouldShowConfigurationError
+          ? const ConfigurationErrorScreen()
+          : SplashScreen(enableAnimation: enableAnimation),
     );
   }
 }

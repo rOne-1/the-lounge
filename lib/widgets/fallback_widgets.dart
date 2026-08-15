@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'pressable_scale.dart';
 import '../constants.dart';
 
@@ -317,6 +318,93 @@ class PlaybackUnavailableWidget extends StatelessWidget {
                   label: const Text('Add to watchlist'),
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Blocking, app-root-level state for a release build with no valid TMDB
+/// API token configured. Distinct from [FullScreenErrorWidget] — that widget
+/// is for retryable network/data failures, but a missing embedded token
+/// can't be fixed by retrying; it needs a fresh build with the token set.
+/// See B6/D2 in the triage report: a release build must never silently fall
+/// back to mock/placeholder content.
+class ConfigurationErrorScreen extends StatelessWidget {
+  const ConfigurationErrorScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final ambianceColors = context.ambianceColors;
+    final errorColor = Theme.of(context).colorScheme.error;
+
+    return Scaffold(
+      backgroundColor: ambianceColors.base,
+      body: Container(
+        decoration: ambianceColors.background.copyWith(color: ambianceColors.base),
+        child: Center(
+          child: TweenAnimationBuilder<double>(
+            tween: Tween<double>(begin: 0.0, end: 1.0),
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            builder: (context, opacity, child) {
+              return Opacity(opacity: opacity, child: child);
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      color: ambianceColors.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: errorColor.withValues(alpha: 0.4),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: errorColor.withValues(alpha: 0.2),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Icon(
+                      Icons.settings_suggest_outlined,
+                      size: 40,
+                      color: errorColor,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'CONFIGURATION REQUIRED',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.bodoniModa(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 2.0,
+                      color: ambianceColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    "This build is missing the connection it needs to load titles. "
+                    "Please reinstall the latest release or contact support.",
+                    textAlign: TextAlign.center,
+                    style: AppThemes.safeGeist(
+                      fontSize: 13,
+                      color: ambianceColors.sub,
+                      height: 1.5,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,4 +1,5 @@
 import 'dart:developer' as developer;
+import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/discover_filter_params.dart';
@@ -47,12 +48,33 @@ final tmdbApiServiceProvider = Provider<TmdbApiService>((ref) {
   return TmdbApiService(token: token);
 });
 
+/// Whether this binary is a release build. Wraps [kReleaseMode] behind a
+/// provider so tests can override it instead of relying on the real,
+/// non-overridable compile-time constant (which is always false under
+/// `flutter test`).
+final isReleaseBuildProvider = Provider<bool>((ref) => kReleaseMode);
+
 /// Provider for [MovieRepository], automatically using [TmdbMovieRepository]
-/// if TMDB token is valid, or falling back to [MockMovieRepository].
+/// if TMDB token is valid, or falling back to [MockMovieRepository] in
+/// debug/profile builds only. A release build with a missing or placeholder
+/// token must never silently serve fake data — it stays on an unconfigured
+/// [TmdbMovieRepository] instead, and [shouldShowConfigurationErrorProvider]
+/// gates the app on an explicit configuration-error state before any of its
+/// (would-be-empty/failing) calls are made.
 final movieRepositoryProvider = Provider<MovieRepository>((ref) {
   final apiService = ref.watch(tmdbApiServiceProvider);
+  final isRelease = ref.watch(isReleaseBuildProvider);
 
   if (!apiService.hasToken) {
+    if (isRelease) {
+      developer.log(
+        'TMDB_READ_ACCESS_TOKEN not found or default placeholder used in a '
+        'release build. Refusing to fall back to MockMovieRepository — the '
+        'app will show a configuration-error state instead.',
+        name: 'RepositoryProvider',
+      );
+      return TmdbMovieRepository(apiService: apiService);
+    }
     developer.log(
       'TMDB_READ_ACCESS_TOKEN not found or default placeholder used. Falling back to MockMovieRepository.',
       name: 'RepositoryProvider',
@@ -69,6 +91,15 @@ final isUsingMockRepositoryProvider = Provider<bool>((ref) {
   if (repo is MockMovieRepository) return true;
   if (repo is TmdbMovieRepository) return !repo.isConfigured;
   return false;
+});
+
+/// True only when this is a release build with no valid TMDB token — the
+/// one case the app must refuse to render normally (see B6/D2 in the triage
+/// report). The app root should show an explicit configuration-error state
+/// instead of navigating into the shell.
+final shouldShowConfigurationErrorProvider = Provider<bool>((ref) {
+  if (!ref.watch(isReleaseBuildProvider)) return false;
+  return ref.watch(isUsingMockRepositoryProvider);
 });
 
 final trendingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {

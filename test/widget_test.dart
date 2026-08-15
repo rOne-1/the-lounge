@@ -110,4 +110,52 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
   });
+
+  group('B6: app-root configuration-error gating', () {
+    testWidgets(
+        'shows ConfigurationErrorScreen instead of SplashScreen when shouldShowConfigurationErrorProvider is true',
+        (WidgetTester tester) async {
+      GoogleFonts.config.allowRuntimeFetching = false;
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            shouldShowConfigurationErrorProvider.overrideWithValue(true),
+          ],
+          child: const MyApp(enableAnimation: false),
+        ),
+      );
+      await tester.pump();
+
+      expect(find.byType(ConfigurationErrorScreen), findsOneWidget);
+      expect(find.text('CONFIGURATION REQUIRED'), findsOneWidget);
+    });
+
+    testWidgets(
+        'shows the normal SplashScreen/shell path when shouldShowConfigurationErrorProvider is false',
+        (WidgetTester tester) async {
+      GoogleFonts.config.allowRuntimeFetching = false;
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final mockRepo = TestRepository();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            movieRepositoryProvider.overrideWithValue(mockRepo),
+            shouldShowConfigurationErrorProvider.overrideWithValue(false),
+          ],
+          child: const MyApp(enableAnimation: false),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ConfigurationErrorScreen), findsNothing);
+      expect(find.text('Movies'), findsWidgets);
+    });
+  });
 }
