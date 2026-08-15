@@ -2480,6 +2480,7 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                                   episodeNumber: episode.episodeNumber,
                                                   showItem: widget.item,
                                                   totalEpisodeCount: totalEpisodes,
+                                                  seasons: allSeasonsAsync.value,
                                                 );
                                           },
                                     child: AnimatedContainer(

@@ -382,21 +382,28 @@ void main() {
       );
       notifier.addToWatchedList(mixedShow, seasons: [season]);
       var state = localContainer.read(mediaProvider);
-      
+
       expect(state.watchedEpisodes['tv-mixed']?.contains('S1E1'), isTrue);
       expect(state.watchedEpisodes['tv-mixed']?.contains('S1E2'), isFalse);
-      
-      // Cleanup for second part
-      notifier.removeFromWatchedList(mixedShow.id);
+
+      // B2: a show may never rest in Watched while unreleased episodes
+      // remain — it should have landed in Watching instead.
+      expect(state.watchingList.containsKey('tv-mixed'), isTrue);
+      expect(state.watchedList.containsKey('tv-mixed'), isFalse);
+
+      // Cleanup for second part (item may be in watchingList, not watchedList)
+      notifier.removeFromAllLists(mixedShow.id);
 
       // 2. With seasons being null (triggers async pruning)
       notifier.addToWatchedList(mixedShow, seasons: null);
       // Wait for async task to complete
-      await Future.delayed(const Duration(milliseconds: 100)); 
-      
+      await Future.delayed(const Duration(milliseconds: 100));
+
       state = localContainer.read(mediaProvider);
       expect(state.watchedEpisodes['tv-mixed']?.contains('S1E1'), isTrue);
       expect(state.watchedEpisodes['tv-mixed']?.contains('S1E2'), isFalse);
+      expect(state.watchingList.containsKey('tv-mixed'), isTrue);
+      expect(state.watchedList.containsKey('tv-mixed'), isFalse);
     });
   });
 }

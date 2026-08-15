@@ -26,6 +26,18 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
   InProgressSubFilter _inProgressFilter = InProgressSubFilter.watching;
 
   @override
+  void initState() {
+    super.initState();
+    // B2/E5: monthly new-season/new-episode refresh for Watched shows.
+    // No-ops internally unless 30+ days have passed since the last run.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(mediaProvider.notifier).refreshWatchedShowsIfDue();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final mediaState = ref.watch(mediaProvider);
     final navState = ref.watch(navigationProvider);

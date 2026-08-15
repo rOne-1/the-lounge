@@ -68,6 +68,7 @@ class MediaNotifier extends Notifier<MediaState> {
   static const _droppedListKey = 'the_lounge_dropped_list';
   static const _onHoldListKey = 'the_lounge_on_hold_list';
   static const _watchedEpisodesKey = 'the_lounge_watched_episodes';
+  static const _lastMonthlyRefreshKey = 'the_lounge_last_monthly_refresh';
 
   @override
   MediaState build() {
@@ -406,6 +407,96 @@ class MediaNotifier extends Notifier<MediaState> {
 
   void toggleWatchingList(MediaItem item) => toggleWatching(item);
 
+  /// Splits a show's episodes into released vs unreleased keys of the form
+  /// "S{season}E{ep}". This is the ground-truth source for the B2 state
+  /// machine (O1): real per-season episode data, not the TMDB summary
+  /// `number_of_episodes` header field, which isn't reliably known to
+  /// include unaired episodes.
+  ///
+  /// TMDB sometimes leaves an episode's air date null (an announced-but-
+  /// unscheduled season, e.g.) rather than giving it a future date. A null
+  /// date defaults to unreleased — the safer assumption, since the whole
+  /// point of B2 is not falsely telling a user they're caught up. The one
+  /// exception: if the user has already marked that episode watched
+  /// (`watchedKeys`), their explicit action is trusted over TMDB's missing
+  /// metadata, so a show can't get permanently stuck just because one
+  /// episode never receives a date.
+  ({Set<String> released, Set<String> unreleased}) _classifyEpisodes(
+    List<TvSeason> seasons, {
+    Set<String>? watchedKeys,
+  }) {
+    final now = DateTime.now();
+    final released = <String>{};
+    final unreleased = <String>{};
+    for (final season in seasons) {
+      for (final ep in season.episodes) {
+        final key = 'S${season.seasonNumber}E${ep.episodeNumber}';
+        final isDatedAndReleased =
+            ep.airDate != null && !ep.airDate!.isAfter(now);
+        final isUndatedButAlreadyWatched =
+            ep.airDate == null && (watchedKeys?.contains(key) ?? false);
+        if (isDatedAndReleased || isUndatedButAlreadyWatched) {
+          released.add(key);
+        } else {
+          unreleased.add(key);
+        }
+      }
+    }
+    return (released: released, unreleased: unreleased);
+  }
+
+  /// Whether `seasons` actually covers every season the show is supposed to
+  /// have (`item.seasonsCount`), not just however many happened to come
+  /// back non-empty from the network this time. A single flaky/rate-limited
+  /// fetch for one season silently drops it from the list with no error —
+  /// which, left unguarded, lets the classifier reason from partial data
+  /// and confidently (and wrongly) declare a show fully released. Missing
+  /// data must never be read as "nothing more to release."
+  bool _hasCompleteSeasonData(List<TvSeason> seasons, MediaItem item) {
+    final expected = item.seasonsCount;
+    if (expected == null) return true;
+    return seasons.map((s) => s.seasonNumber).toSet().length >= expected;
+  }
+
+  /// Moves a show to exactly one of watched/watching/watchlist, clearing it
+  /// from every other status list. Used by the B2 status state machine.
+  void _setTvShowStatus(String id, MediaItem item, String target) {
+    final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
+      ..remove(id);
+    final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
+      ..remove(id);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+      ..remove(id);
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+      ..remove(id);
+    final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
+      ..remove(id);
+    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
+      ..remove(id);
+
+    switch (target) {
+      case 'watched':
+        newWatchedList[id] = item;
+        break;
+      case 'watching':
+        newWatchingList[id] = item;
+        break;
+      case 'watchlist':
+        newWatchlist[id] = item;
+        break;
+    }
+
+    state = state.copyWith(
+      watchlist: newWatchlist,
+      maybeList: newMaybeList,
+      watchingList: newWatchingList,
+      watchedList: newWatchedList,
+      droppedList: newDroppedList,
+      onHoldList: newOnHoldList,
+    );
+    _saveToPrefs();
+  }
+
   void addToWatchedList(MediaItem item, {List<TvSeason>? seasons}) {
     if (state.watchedList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
@@ -416,13 +507,9 @@ class MediaNotifier extends Notifier<MediaState> {
       return;
     }
 
-    final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
-      ..[item.id] = item;
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
       ..remove(item.id);
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
-      ..remove(item.id);
-    final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
       ..remove(item.id);
     final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
       ..remove(item.id);
@@ -433,18 +520,23 @@ class MediaNotifier extends Notifier<MediaState> {
       state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
     );
 
+    // A show can only rest in Watched once every episode is released.
+    // Defaults to true for movies (no episode concept).
+    bool targetIsWatched = true;
+
     if (item.type == MediaType.tv) {
-      final epSet = <String>{};
-      final now = DateTime.now();
       if (seasons != null && seasons.isNotEmpty) {
-        for (final season in seasons) {
-          for (final ep in season.episodes) {
-            if (ep.airDate == null || !ep.airDate!.isAfter(now)) {
-              epSet.add('S${season.seasonNumber}E${ep.episodeNumber}');
-            }
-          }
-        }
+        final classified = _classifyEpisodes(
+          seasons,
+          watchedKeys: state.watchedEpisodes[item.id],
+        );
+        newWatchedEpisodes[item.id] = classified.released;
+        targetIsWatched = classified.unreleased.isEmpty &&
+            classified.released.isNotEmpty &&
+            _hasCompleteSeasonData(seasons, item);
       } else {
+        final epSet = <String>{};
+        final now = DateTime.now();
         final isShowUnreleased = item.releaseOrAirDate != null &&
             item.releaseOrAirDate!.isAfter(now);
         if (!isShowUnreleased) {
@@ -470,9 +562,22 @@ class MediaNotifier extends Notifier<MediaState> {
             }
           }
         }
+        newWatchedEpisodes[item.id] = epSet;
+        // Optimistic placement using estimated episode counts; corrected
+        // below once real season data (incl. unreleased episodes) arrives.
+        targetIsWatched = true;
         _enrichWatchedTvShow(item);
       }
-      newWatchedEpisodes[item.id] = epSet;
+    }
+
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList);
+    final newWatchingList = Map<String, MediaItem>.from(state.watchingList);
+    if (targetIsWatched) {
+      newWatchedList[item.id] = item;
+      newWatchingList.remove(item.id);
+    } else {
+      newWatchingList[item.id] = item;
+      newWatchedList.remove(item.id);
     }
 
     state = state.copyWith(
@@ -698,53 +803,57 @@ class MediaNotifier extends Notifier<MediaState> {
       currentMap[showId] = showEpisodes;
     }
 
-    int totalCount = totalEpisodeCount ?? 0;
-    if (totalCount == 0 && seasons != null && seasons.isNotEmpty) {
-      totalCount = seasons.fold<int>(0, (sum, s) => sum + s.episodes.length);
-    }
-    if (totalCount == 0 && showItem.episodesCount != null && showItem.episodesCount! > 0) {
-      totalCount = showItem.episodesCount!;
-    }
-    if (totalCount == 0 && showItem.episodesList != null && showItem.episodesList!.isNotEmpty) {
-      totalCount = showItem.episodesList!.length * (showItem.seasonsCount ?? 1);
-    }
-
-    final newWatchedList = Map<String, MediaItem>.from(state.watchedList);
-    final newWatchingList = Map<String, MediaItem>.from(state.watchingList);
-    final newWatchlist = Map<String, MediaItem>.from(state.watchlist);
-    final newMaybeList = Map<String, MediaItem>.from(state.maybeList);
-    final newDroppedList = Map<String, MediaItem>.from(state.droppedList);
-    final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList);
-
-    if (showEpisodes.isNotEmpty && (totalCount == 0 || showEpisodes.length < totalCount)) {
-      newWatchingList[showItem.id] = showItem;
-      newWatchedList.remove(showItem.id);
-      newWatchlist.remove(showItem.id);
-      newMaybeList.remove(showItem.id);
-      newDroppedList.remove(showItem.id);
-      newOnHoldList.remove(showItem.id);
-    } else if (totalCount > 0 && showEpisodes.length == totalCount) {
-      newWatchedList[showItem.id] = showItem;
-      newWatchingList.remove(showItem.id);
-      newWatchlist.remove(showItem.id);
-      newMaybeList.remove(showItem.id);
-      newDroppedList.remove(showItem.id);
-      newOnHoldList.remove(showItem.id);
+    // Prefer real per-season episode data (O1 ground truth) so a show with
+    // unreleased episodes never reaches "complete" just because a stale or
+    // released-only header count matches the watched count.
+    int releasedCount;
+    bool hasUnreleased;
+    if (seasons != null && seasons.isNotEmpty) {
+      final classified =
+          _classifyEpisodes(seasons, watchedKeys: showEpisodes);
+      releasedCount = classified.released.length;
+      // Incomplete season data (a flaky fetch silently dropped one) must
+      // never be read as "nothing more to release" — force hasUnreleased.
+      hasUnreleased = classified.unreleased.isNotEmpty ||
+          !_hasCompleteSeasonData(seasons, showItem);
     } else {
-      newWatchingList.remove(showItem.id);
-      newWatchedList.remove(showItem.id);
+      int totalCount = totalEpisodeCount ?? 0;
+      if (totalCount == 0 &&
+          showItem.episodesCount != null &&
+          showItem.episodesCount! > 0) {
+        totalCount = showItem.episodesCount!;
+      }
+      if (totalCount == 0 &&
+          showItem.episodesList != null &&
+          showItem.episodesList!.isNotEmpty) {
+        totalCount =
+            showItem.episodesList!.length * (showItem.seasonsCount ?? 1);
+      }
+      releasedCount = totalCount;
+      hasUnreleased = false;
     }
 
-    state = state.copyWith(
-      watchedEpisodes: currentMap,
-      watchedList: newWatchedList,
-      watchingList: newWatchingList,
-      watchlist: newWatchlist,
-      maybeList: newMaybeList,
-      droppedList: newDroppedList,
-      onHoldList: newOnHoldList,
-    );
-    _saveToPrefs();
+    final isFullyReleasedAndWatched = !hasUnreleased &&
+        releasedCount > 0 &&
+        showEpisodes.length >= releasedCount;
+
+    state = state.copyWith(watchedEpisodes: currentMap);
+
+    if (isFullyReleasedAndWatched) {
+      _setTvShowStatus(showItem.id, showItem, 'watched');
+    } else if (showEpisodes.isNotEmpty) {
+      _setTvShowStatus(showItem.id, showItem, 'watching');
+    } else {
+      final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
+        ..remove(showItem.id);
+      final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
+        ..remove(showItem.id);
+      state = state.copyWith(
+        watchedList: newWatchedList,
+        watchingList: newWatchingList,
+      );
+      _saveToPrefs();
+    }
   }
 
   bool isEpisodeWatched(String showId, int seasonNumber, int episodeNumber) {
@@ -780,37 +889,93 @@ class MediaNotifier extends Notifier<MediaState> {
     return null;
   }
 
+  /// New-season/new-episode status transitions for an already-Watched show
+  /// (B2/E5, locked spec). A Watched show's watchedEpisodes set is, by the
+  /// "never rest in Watched" invariant enforced elsewhere, exactly its
+  /// released-episode set at the time it became Watched — so any episode
+  /// released or added since then shows up as a diff against fresh season
+  /// data, with no separate "last known" snapshot needed.
+  ///
+  /// - Some newly-released episodes AND some still-unreleased ones (the new
+  ///   season is mid-air) -> move to Watching.
+  /// - Newly-released episodes with nothing left unreleased (new season
+  ///   fully aired already), or only new unreleased episodes (announced,
+  ///   not started) -> move to Watchlist.
+  /// - No new content at all -> no change.
+  ///
+  /// A Watching show needs no action here: new episodes on an
+  /// already-Watching show are absorbed by the normal watch flow.
   void reevaluateShowCompletion({
     required String showId,
     required List<TvSeason> seasons,
   }) {
-    final now = DateTime.now();
-    int totalReleasedEpisodes = 0;
-    for (final season in seasons) {
-      for (final ep in season.episodes) {
-        if (ep.airDate == null || !ep.airDate!.isAfter(now)) {
-          totalReleasedEpisodes++;
-        }
-      }
-    }
-
-    if (totalReleasedEpisodes == 0) return;
+    if (seasons.isEmpty) return;
+    if (!state.watchedList.containsKey(showId)) return;
 
     final watchedSet = state.watchedEpisodes[showId] ?? <String>{};
+    // No watchedKeys trust exception here, deliberately: for a genuinely
+    // Watched show, watchedSet is already exactly its real released set
+    // (by the "never rest in Watched" invariant), so the exception could
+    // never add real coverage — but this method also fires reactively on
+    // every media-provider state change (see SeasonsSectionWidget), which
+    // can race addToWatchedList's optimistic fallback placement while
+    // watchedSet is still a coarse, unconfirmed count-based guess rather
+    // than real per-episode confirmation. Trusting it there previously let
+    // a guessed episode number coincidentally "confirm" a same-numbered
+    // undated real episode and misclassify it as released.
+    final classified = _classifyEpisodes(seasons);
+    final newlyReleased = classified.released.difference(watchedSet);
 
-    if (state.watchedList.containsKey(showId) &&
-        watchedSet.length < totalReleasedEpisodes) {
-      final showItem = state.watchedList[showId]!;
-      final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
-        ..remove(showId);
-      final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
-        ..[showId] = showItem;
+    if (newlyReleased.isEmpty && classified.unreleased.isEmpty) {
+      return;
+    }
 
-      state = state.copyWith(
-        watchedList: newWatchedList,
-        watchingList: newWatchingList,
-      );
-      _saveToPrefs();
+    final showItem = state.watchedList[showId]!;
+    final isMidAir = newlyReleased.isNotEmpty && classified.unreleased.isNotEmpty;
+    _setTvShowStatus(showId, showItem, isMidAir ? 'watching' : 'watchlist');
+  }
+
+  /// Monthly refresh trigger (B2/E5): re-checks every Watched TV show for
+  /// new seasons/episodes so the status state machine above also catches
+  /// shows the user hasn't opened the detail page for recently. Gated by a
+  /// stored timestamp so repeated calls (e.g. every Your Space open) only
+  /// do real work once every 30 days.
+  Future<void> refreshWatchedShowsIfDue() async {
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      final lastMs = prefs.getInt(_lastMonthlyRefreshKey);
+      final now = DateTime.now();
+      if (lastMs != null) {
+        final last = DateTime.fromMillisecondsSinceEpoch(lastMs);
+        if (now.difference(last) < const Duration(days: 30)) return;
+      }
+      await prefs.setInt(_lastMonthlyRefreshKey, now.millisecondsSinceEpoch);
+
+      final tvShows = state.watchedList.values
+          .where((item) => item.type == MediaType.tv)
+          .toList();
+      final repo = ref.read(movieRepositoryProvider);
+
+      for (final show in tvShows) {
+        try {
+          // Re-fetch the show's own metadata first: the stored MediaItem's
+          // seasonsCount is a snapshot from whenever it was marked Watched,
+          // and tvShowSeasonsProvider only fetches up to that count — so
+          // without this, a wholly new season (not just new episodes within
+          // an already-known one) would never even be requested.
+          final freshDetails = await repo.getMediaDetails(show.id);
+          final showForSeasons = freshDetails ?? show;
+          final seasons =
+              await ref.read(tvShowSeasonsProvider(showForSeasons).future);
+          if (seasons.isNotEmpty) {
+            reevaluateShowCompletion(showId: show.id, seasons: seasons);
+          }
+        } catch (_) {
+          // Skip this show on failure; next monthly pass retries it.
+        }
+      }
+    } catch (_) {
+      // Defensively catch missing SharedPreferences override in unit tests
     }
   }
 
@@ -877,23 +1042,35 @@ class MediaNotifier extends Notifier<MediaState> {
         }
       }
       if (seasons.isNotEmpty) {
-        final now = DateTime.now();
-        final epSet = <String>{};
-        for (final season in seasons) {
-          for (final ep in season.episodes) {
-            if (ep.airDate == null || !ep.airDate!.isAfter(now)) {
-              epSet.add('S${season.seasonNumber}E${ep.episodeNumber}');
-            }
-          }
-        }
-        
-        if (state.watchedList.containsKey(item.id)) {
+        // Deliberately no watchedKeys trust exception here: the episode set
+        // currently in state for this item is still the coarse, count-based
+        // guess from addToWatchedList's fallback branch (every episode
+        // number up to an estimated total), not a real per-episode
+        // confirmation — so it can't be trusted to decide whether an
+        // undated episode is genuinely released.
+        final classified = _classifyEpisodes(seasons);
+
+        // Only correct the show we just optimistically placed above — not
+        // any other show that happens to be Watched/Watching for unrelated
+        // reasons.
+        final currentItem =
+            state.watchedList[item.id] ?? state.watchingList[item.id];
+        if (currentItem != null) {
           final newWatchedEpisodes = Map<String, Set<String>>.from(
             state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
           );
-          newWatchedEpisodes[item.id] = epSet;
+          newWatchedEpisodes[item.id] = classified.released;
           state = state.copyWith(watchedEpisodes: newWatchedEpisodes);
-          _saveToPrefs();
+
+          // Never rest in Watched while unreleased episodes remain — or
+          // while a season fetch came back incomplete (a flaky/rate-limited
+          // request silently drops that season rather than erroring, so
+          // missing data must default to "don't know, don't promote").
+          final shouldBeWatched = classified.unreleased.isEmpty &&
+              classified.released.isNotEmpty &&
+              _hasCompleteSeasonData(seasons, item);
+          final target = shouldBeWatched ? 'watched' : 'watching';
+          _setTvShowStatus(item.id, currentItem, target);
         }
       }
     } catch (_) {}
