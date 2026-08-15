@@ -255,6 +255,56 @@ void main() {
       expect(filterState.keywordName, equals('historical fiction'));
     });
 
+    testWidgets(
+        'Regression: person filter does not hide items with no cast/director data '
+        '(Discover-mode grid, credit-less TMDB discover-list items)',
+        (WidgetTester tester) async {
+      // Real TMDB discover-list responses never include per-item credits
+      // (that requires a separate append_to_response=credits call), so cast
+      // and director are empty/null here -- exactly like production data.
+      // A cast/crew tap from DetailScreen sets personName/personId and lands
+      // on this Discover-mode grid with no search query typed.
+      final filmography = {
+        for (var i = 1; i <= 3; i++)
+          'movie_$i': MediaItem(
+            id: 'movie_$i',
+            title: 'Filmography Title $i',
+            overview: '',
+            type: MediaType.movie,
+            rating: 7.5,
+            genres: const [],
+          ),
+      };
+
+      final container = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(
+            _TestRepository(filmography),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container.read(discoverFilterProvider.notifier).setPerson(
+            personId: 42,
+            personName: 'Tom Holland',
+          );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: BrowseScreen(),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('No media found matching your filters.'), findsNothing);
+      expect(find.text('Filmography Title 1'), findsWidgets);
+    });
+
     testWidgets('Dual-mode switching between Discover Mode and Search Mode with mode badge',
         (WidgetTester tester) async {
       final testItem = MediaItem(

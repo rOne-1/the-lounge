@@ -423,14 +423,25 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         }
       }
 
-      // 8. Person filter
+      // 8. Person filter. Items from a bulk TMDB discover-list response never
+      // carry cast/director data (that requires a separate per-title credits
+      // call TMDB's discover endpoint doesn't make) -- only items enriched
+      // with full details do. When an item has no credit data to check at
+      // all, trust the upstream filter (server-side with_people, already
+      // applied in discoverMediaProvider) rather than reject a false
+      // negative -- otherwise every credit-less item fails this check and
+      // Discover-mode browsing by cast/crew returns nothing.
       if (params.personName != null && params.personName!.isNotEmpty) {
-        final targetPerson = params.personName!.toLowerCase();
-        final inCast =
-            item.cast.any((c) => c.toLowerCase().contains(targetPerson));
-        final inDirector =
-            item.director?.toLowerCase().contains(targetPerson) ?? false;
-        if (!inCast && !inDirector) return false;
+        final hasCreditData =
+            item.cast.isNotEmpty || (item.director?.isNotEmpty ?? false);
+        if (hasCreditData) {
+          final targetPerson = params.personName!.toLowerCase();
+          final inCast =
+              item.cast.any((c) => c.toLowerCase().contains(targetPerson));
+          final inDirector =
+              item.director?.toLowerCase().contains(targetPerson) ?? false;
+          if (!inCast && !inDirector) return false;
+        }
       }
 
       // 9. Provider filter
