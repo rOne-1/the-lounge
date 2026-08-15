@@ -426,6 +426,52 @@ void main() {
       expect(caProviders, contains(const WatchProviderInfo(providerName: 'Crave', category: 'Stream')));
     });
 
+    test('TF-22: getUpcomingMovies filters out already-released titles TMDB still lists as upcoming',
+        () async {
+      final now = DateTime.now();
+      final futureDate =
+          now.add(const Duration(days: 30)).toIso8601String().split('T').first;
+      final pastDate =
+          now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
+
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/movie/upcoming')) {
+          return http.Response(
+              jsonEncode({
+                'page': 1,
+                'results': [
+                  {
+                    'id': 1,
+                    'title': 'Genuinely Upcoming',
+                    'release_date': futureDate,
+                  },
+                  {
+                    'id': 2,
+                    'title': 'Already Released (stale TMDB bucket)',
+                    'release_date': pastDate,
+                  },
+                  {
+                    'id': 3,
+                    'title': 'No Release Date Yet',
+                  },
+                ]
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final upcoming = await repo.getUpcomingMovies();
+
+      expect(upcoming.map((m) => m.title),
+          containsAll(['Genuinely Upcoming', 'No Release Date Yet']));
+      expect(upcoming.map((m) => m.title),
+          isNot(contains('Already Released (stale TMDB bucket)')));
+    });
+
     test('getWatchProviderRegions fetches and returns dynamic country regions',
         () async {
       final mockClient = MockClient((request) async {

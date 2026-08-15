@@ -401,8 +401,14 @@ class TmdbMovieRepository implements MovieRepository {
       }
       final results =
           (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+      final now = DateTime.now();
+      // TF-22: TMDB's /movie/upcoming can include titles already released
+      // (region/date-window quirks) — filter those out client-side.
       return results
           .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.movie))
+          .where((item) =>
+              item.releaseOrAirDate == null ||
+              item.releaseOrAirDate!.isAfter(now))
           .toList();
     } catch (e, stack) {
       _logError('Failed to fetch upcoming movies from TMDB API.', e, stack);
