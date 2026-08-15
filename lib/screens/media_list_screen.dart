@@ -36,6 +36,11 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
   bool _isLoadingMore = false;
   bool _hasMore = true;
   bool _initialLoaded = false;
+  // B8/TF-23: distinct from `_currentPage > 1` -- a list that exhausts on
+  // the very first "Load More" tap never advances _currentPage, but the
+  // user still made an attempt and deserves the explicit "reached the end"
+  // state, not silence.
+  bool _hasAttemptedLoadMore = false;
 
   Future<List<MediaItem>> _fetchNextPage(int page) async {
     if (widget.fetchPage != null) {
@@ -67,6 +72,7 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
     if (_isLoadingMore || !_hasMore) return;
     setState(() {
       _isLoadingMore = true;
+      _hasAttemptedLoadMore = true;
     });
     try {
       final nextPage = _currentPage + 1;
@@ -321,6 +327,28 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                                   ],
                                 ),
                         ),
+                      ),
+                    )
+                  else if (_hasAttemptedLoadMore)
+                    // B8/TF-23: previously the button just vanished once the
+                    // list was exhausted, with nothing marking that as
+                    // intentional rather than a stalled/broken load.
+                    Padding(
+                      padding: EdgeInsets.fromLTRB(16, 8, 16, 20.0 + bottomPadding),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.check_circle_outline, color: subColor, size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            'You\'ve reached the end',
+                            style: AppThemes.safeGeist(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: subColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                 ],

@@ -417,6 +417,19 @@ class HomeScreen extends ConsumerWidget {
               itemsAsync: rail4Deduplicated,
               isDark: isDark,
               onSeeAll: () {
+                // B8/TF-23: MediaListScreen's default page-fetch routing
+                // guesses which repository method to call from the title
+                // string and only ever passes `page` -- it has no way to
+                // also carry region, the one extra parameter
+                // getNowPlayingMovies needs. Without it, "Load More" pages
+                // silently fell back to the US region regardless of the
+                // user's actual watch-providers country, producing a
+                // mismatched/inconsistent list that read as broken
+                // pagination. Explicit fetchPage keeps every page on the
+                // same region as the initial load.
+                final country = ref.read(
+                  mediaProvider.select((s) => s.watchProvidersCountry),
+                );
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -425,6 +438,11 @@ class HomeScreen extends ConsumerWidget {
                       itemsProvider: isMovies
                           ? nowPlayingMoviesProvider
                           : airingTodayTvShowsProvider,
+                      fetchPage: isMovies
+                          ? (page) => ref
+                              .read(movieRepositoryProvider)
+                              .getNowPlayingMovies(page: page, region: country)
+                          : null,
                     ),
                   ),
                 );
