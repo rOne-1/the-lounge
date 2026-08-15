@@ -822,6 +822,14 @@ class MediaRail extends ConsumerWidget {
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
 
+    // Hide the whole rail -- header, "See all", everything -- once data has
+    // genuinely resolved empty, rather than leaving the header floating
+    // over blank space with no explanation (loading/error states still
+    // render normally below).
+    if (itemsAsync.asData?.value.isEmpty ?? false) {
+      return const SizedBox.shrink();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -863,9 +871,9 @@ class MediaRail extends ConsumerWidget {
             key: ValueKey('${title}_${itemsAsync.isLoading}'),
             height: 144,
             child: itemsAsync.when(
+              // Empty is handled by the whole-widget guard at the top of
+              // build() -- data here is guaranteed non-empty.
               data: (items) {
-                if (items.isEmpty) return const SizedBox.shrink();
-
                 return ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: items.length,

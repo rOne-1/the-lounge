@@ -473,26 +473,72 @@ void main() {
     });
 
     test(
-        'TF-22 regression: falls back to the unfiltered page instead of an empty list '
-        'when every title is filtered out (e.g. device clock skew)', () async {
+        'TF-22 regression: widens to a later page instead of returning an empty '
+        'or unfiltered-raw list when page 1 is entirely already-released '
+        '(confirmed live against the real TMDB API: not a hypothetical -- an '
+        'entire real page can come back with zero titles still upcoming)',
+        () async {
+      final now = DateTime.now();
+      final pastDate =
+          now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
+      final futureDate =
+          now.add(const Duration(days: 30)).toIso8601String().split('T').first;
+
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/movie/upcoming')) {
+          final page = request.url.queryParameters['page'];
+          if (page == '2') {
+            return http.Response(
+                jsonEncode({
+                  'page': 2,
+                  'results': [
+                    {
+                      'id': 3,
+                      'title': 'Genuinely Upcoming (page 2)',
+                      'release_date': futureDate,
+                    },
+                  ]
+                }),
+                200);
+          }
+          return http.Response(
+              jsonEncode({
+                'page': 1,
+                'results': [
+                  {'id': 1, 'title': 'Already Released A', 'release_date': pastDate},
+                  {'id': 2, 'title': 'Already Released B', 'release_date': pastDate},
+                ]
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final upcoming = await repo.getUpcomingMovies();
+
+      expect(upcoming.map((m) => m.title), ['Genuinely Upcoming (page 2)']);
+    });
+
+    test(
+        'TF-22 regression: returns empty rather than raw already-released data '
+        'when every nearby page is entirely already-released', () async {
       final now = DateTime.now();
       final pastDate =
           now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
 
       final mockClient = MockClient((request) async {
         if (request.url.path.contains('/movie/upcoming')) {
+          final page = request.url.queryParameters['page'] ?? '1';
           return http.Response(
               jsonEncode({
-                'page': 1,
+                'page': int.parse(page),
                 'results': [
                   {
-                    'id': 1,
-                    'title': 'Already Released A',
-                    'release_date': pastDate,
-                  },
-                  {
-                    'id': 2,
-                    'title': 'Already Released B',
+                    'id': int.parse(page),
+                    'title': 'Already Released (page $page)',
                     'release_date': pastDate,
                   },
                 ]
@@ -507,8 +553,7 @@ void main() {
 
       final upcoming = await repo.getUpcomingMovies();
 
-      expect(upcoming.map((m) => m.title),
-          containsAll(['Already Released A', 'Already Released B']));
+      expect(upcoming, isEmpty);
     });
 
     test('getWatchProviderRegions fetches and returns dynamic country regions',

@@ -159,10 +159,15 @@ void main() {
   testWidgets('HomeScreen contains AnimatedSize, AnimatedCrossFade and AnimatedSwitcher transitions for TV mode', (WidgetTester tester) async {
     final trending = createMockItems(6, 'Trending', MediaType.movie);
     final popular = createMockItems(4, 'Continue', MediaType.movie);
+    // Non-empty: MediaRail now hides itself entirely (no AnimatedSwitcher)
+    // once its data has resolved empty (E1 cleanup), so this needs real TV
+    // rail content for the "at least 2 AnimatedSwitcher" assertion below to
+    // mean anything in TV mode.
+    final trendingTv = createMockItems(4, 'Trending TV', MediaType.tv);
     final mockRepo = MockTestRepository(
       trendingMovies: trending,
       popularMovies: popular,
-      trendingTvShows: [],
+      trendingTvShows: trendingTv,
     );
 
     final container = ProviderContainer(

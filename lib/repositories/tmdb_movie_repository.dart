@@ -392,33 +392,53 @@ class TmdbMovieRepository implements MovieRepository {
     }
     try {
       await _ensureGenresLoaded();
-      final key = cacheService
-          .generateKey('/movie/upcoming', {'page': page, 'include_adult': false});
-      Map<String, dynamic>? res = await cacheService.get(key);
-      if (res == null) {
-        res = await apiService.getUpcomingMovies(page: page);
-        await cacheService.put(key, res);
-      }
-      final results =
-          (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
       final now = DateTime.now();
-      final mapped = results
-          .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.movie))
-          .toList();
-      // TF-22: TMDB's /movie/upcoming can include titles already released
-      // (region/date-window quirks) — filter those out client-side. Falls
-      // back to the unfiltered page rather than an empty rail if every item
-      // gets excluded (e.g. device clock skew vs. TMDB's release window) —
-      // a genuinely empty "Upcoming" list is worse than a few already-out
-      // titles slipping through, and MediaRail renders total silence (no
-      // error, no empty state) when this list is empty, so the failure mode
-      // is invisible to the user otherwise.
-      final upcoming = mapped
-          .where((item) =>
-              item.releaseOrAirDate == null ||
-              item.releaseOrAirDate!.isAfter(now))
-          .toList();
-      return upcoming.isNotEmpty ? upcoming : mapped;
+
+      Future<List<MediaItem>> fetchFilteredPage(int p) async {
+        final key = cacheService
+            .generateKey('/movie/upcoming', {'page': p, 'include_adult': false});
+        Map<String, dynamic>? res = await cacheService.get(key);
+        if (res == null) {
+          res = await apiService.getUpcomingMovies(page: p);
+          await cacheService.put(key, res);
+        }
+        final results =
+            (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        // TF-22: TMDB's /movie/upcoming can include titles already released
+        // (region/date-window quirks) — filter those out client-side.
+        // Confirmed live (not hypothetical): a full real page can come back
+        // with every title already released, decades-old catalog entries
+        // included -- filtering client-side but returning that page
+        // unfiltered as a "better than nothing" fallback actively misleads
+        // (an "Upcoming" rail showing 1990s films), so this never does that.
+        return results
+            .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.movie))
+            .where((item) =>
+                item.releaseOrAirDate == null ||
+                item.releaseOrAirDate!.isAfter(now))
+            .toList();
+      }
+
+      final firstPage = await fetchFilteredPage(page);
+      if (firstPage.isNotEmpty || page > 1) {
+        // For an explicit "load more" page (page > 1), a genuinely empty
+        // filtered result is a legitimate "nothing more here" signal for
+        // that caller's own pagination bookkeeping -- don't widen the
+        // search there, only for the common page-1 case below.
+        return firstPage;
+      }
+
+      // Page 1 came back with nothing genuinely upcoming. Rather than an
+      // empty rail (MediaRail renders total silence for an empty list, no
+      // error/empty-state) or the misleading raw-page fallback described
+      // above, look a few pages further -- a real title with a future
+      // release_date is very likely to exist somewhere nearby even when
+      // page 1 happens to be entirely already-released.
+      for (var nextPage = page + 1; nextPage <= page + 3; nextPage++) {
+        final more = await fetchFilteredPage(nextPage);
+        if (more.isNotEmpty) return more;
+      }
+      return firstPage;
     } catch (e, stack) {
       _logError('Failed to fetch upcoming movies from TMDB API.', e, stack);
       if (fallbackRepository != null) {
