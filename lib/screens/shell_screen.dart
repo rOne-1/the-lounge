@@ -393,7 +393,8 @@ class UndoTopBarButton extends ConsumerWidget {
       curve: AppPhysics.houseSpringCurve,
       child: AnimatedOpacity(
         opacity: hasLastSwipe ? 1.0 : 0.0,
-        duration: const Duration(milliseconds: 200),
+        duration: AppPhysics.houseSpringDuration,
+        curve: AppPhysics.houseSpringCurve,
         child: hasLastSwipe
             ? (isLarge
                 ? PressableScale(

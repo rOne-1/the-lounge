@@ -40,15 +40,15 @@ class SegmentedMediaTypeToggle extends StatelessWidget {
       child: Stack(
         children: [
           AnimatedAlign(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeInOutCubic,
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
             alignment: isMovies ? Alignment.centerLeft : Alignment.centerRight,
             child: FractionallySizedBox(
               widthFactor: 0.5,
               heightFactor: 1.0,
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeInOutCubic,
+                duration: AppPhysics.houseSpringDuration,
+                curve: AppPhysics.houseSpringCurve,
                 decoration: BoxDecoration(
                   color: accColor,
                   borderRadius: BorderRadius.circular(999),
@@ -64,8 +64,8 @@ class SegmentedMediaTypeToggle extends StatelessWidget {
                   child: Container(
                     alignment: Alignment.center,
                     child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeInOutCubic,
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                       style: AppThemes.safeGeist(
                         fontSize: fontSize,
                         fontWeight: FontWeight.w600,
@@ -82,8 +82,8 @@ class SegmentedMediaTypeToggle extends StatelessWidget {
                   child: Container(
                     alignment: Alignment.center,
                     child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeInOutCubic,
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                       style: AppThemes.safeGeist(
                         fontSize: fontSize,
                         fontWeight: FontWeight.w600,

@@ -2007,12 +2007,14 @@ class StatusPulseRing extends StatefulWidget {
   final Widget child;
   final bool isSelected;
   final Color accentColor;
+  final double borderRadius;
 
   const StatusPulseRing({
     super.key,
     required this.child,
     required this.isSelected,
     required this.accentColor,
+    this.borderRadius = 12,
   });
 
   @override
@@ -2071,7 +2073,7 @@ class _StatusPulseRingState extends State<StatusPulseRing> with SingleTickerProv
                       opacity: _pulseOpacity.value.clamp(0.0, 1.0),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(widget.borderRadius),
                           border: Border.all(color: widget.accentColor, width: 2),
                         ),
                       ),
@@ -2449,54 +2451,72 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                       : 'Mark as watched'),
                               child: Opacity(
                                 opacity: isEpisodeUnaired ? 0.4 : 1.0,
-                                child: PressableScale(
-                                  onTap: isEpisodeUnaired
-                                      ? () {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            const SnackBar(
-                                              content: Text(
-                                                  'This episode has not aired yet.'),
-                                            ),
-                                          );
-                                        }
-                                      : () {
-                                          final totalEpisodes = widget
-                                                  .item.episodesCount ??
-                                              ((widget.item.seasonsCount ?? 1) *
-                                                  allEpisodes.length);
+                                child: StatusPulseRing(
+                                  isSelected: isWatched,
+                                  accentColor: accColor,
+                                  borderRadius: 999,
+                                  child: PressableScale(
+                                    onTap: isEpisodeUnaired
+                                        ? () {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              const SnackBar(
+                                                content: Text(
+                                                    'This episode has not aired yet.'),
+                                              ),
+                                            );
+                                          }
+                                        : () {
+                                            final totalEpisodes = widget
+                                                    .item.episodesCount ??
+                                                ((widget.item.seasonsCount ?? 1) *
+                                                    allEpisodes.length);
 
-                                          ref
-                                              .read(mediaProvider.notifier)
-                                              .toggleEpisodeWatched(
-                                                showId: widget.item.id,
-                                                seasonNumber: episode.seasonNumber,
-                                                episodeNumber: episode.episodeNumber,
-                                                showItem: widget.item,
-                                                totalEpisodeCount: totalEpisodes,
-                                              );
-                                        },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: isWatched
-                                          ? accColor
-                                          : Colors.transparent,
-                                      border: Border.all(
+                                            ref
+                                                .read(mediaProvider.notifier)
+                                                .toggleEpisodeWatched(
+                                                  showId: widget.item.id,
+                                                  seasonNumber: episode.seasonNumber,
+                                                  episodeNumber: episode.episodeNumber,
+                                                  showItem: widget.item,
+                                                  totalEpisodeCount: totalEpisodes,
+                                                );
+                                          },
+                                    child: AnimatedContainer(
+                                      duration: AppPhysics.houseSpringDuration,
+                                      curve: AppPhysics.houseSpringCurve,
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
                                         color: isWatched
                                             ? accColor
-                                            : subColor.withAlpha(128),
+                                            : Colors.transparent,
+                                        border: Border.all(
+                                          color: isWatched
+                                              ? accColor
+                                              : subColor.withAlpha(128),
+                                        ),
                                       ),
-                                    ),
-                                    child: Icon(
-                                      isWatched
-                                          ? Icons.check
-                                          : Icons.check_outlined,
-                                      size: 16,
-                                      color: isWatched
-                                          ? (Theme.of(context).colorScheme.onPrimary)
-                                          : subColor,
+                                      child: AnimatedSwitcher(
+                                        duration: AppPhysics.houseSpringDuration,
+                                        switchInCurve: AppPhysics.houseSpringCurve,
+                                        switchOutCurve: Curves.easeOut,
+                                        transitionBuilder: (child, animation) =>
+                                            ScaleTransition(
+                                          scale: animation,
+                                          child: child,
+                                        ),
+                                        child: Icon(
+                                          isWatched
+                                              ? Icons.check
+                                              : Icons.check_outlined,
+                                          key: ValueKey('episode-check-$isWatched'),
+                                          size: 16,
+                                          color: isWatched
+                                              ? (Theme.of(context).colorScheme.onPrimary)
+                                              : subColor,
+                                        ),
+                                      ),
                                     ),
                                   ),
                                 ),
