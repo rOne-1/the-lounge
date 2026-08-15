@@ -108,6 +108,56 @@ void main() {
     });
 
     testWidgets(
+        'Regression: does not throw when nested inside an ExpansionTile with a '
+        'PageStorageKey (production structure -- browse_screen.dart wraps this '
+        'in a keyed ExpansionTile, and an unkeyed TextField/ListView inside it '
+        'inherits that key as its own PageStorage identity, colliding with the '
+        "tile's own stored bool expanded-state)",
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: PageStorage(
+                bucket: PageStorageBucket(),
+                child: ListView(
+                  children: [
+                    ExpansionTile(
+                      key: const PageStorageKey<String>('filter_accordion_Cast & Crew'),
+                      title: const Text('Cast & Crew'),
+                      children: const [
+                        PersonSearchAutocomplete(isDark: true),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Match the real repro exactly: starts collapsed, tap to expand --
+      // this is the transition that writes the tile's bool state to
+      // PageStorage and triggers the TextField's Scrollable to (mis)read it.
+      await tester.tap(find.text('Cast & Crew'));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.byType(TextField), findsOneWidget);
+
+      // The results dropdown (a separate Scrollable) must also render
+      // without throwing.
+      await tester.enterText(find.byType(TextField), 'Nolan');
+      await tester.pump(const Duration(milliseconds: 350));
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Christopher Nolan'), findsWidgets);
+    });
+
+    testWidgets(
         'Selecting a person sets personId and personName in discoverFilterProvider',
         (WidgetTester tester) async {
       late WidgetRef savedRef;
@@ -303,6 +353,57 @@ void main() {
 
       expect(find.text('No media found matching your filters.'), findsNothing);
       expect(find.text('Filmography Title 1'), findsWidgets);
+    });
+
+    testWidgets(
+        'Regression: originalLanguage filter actually narrows results '
+        '(_applyClientFilters previously had no language check at all, so '
+        'the filter chip was cosmetic and did nothing)',
+        (WidgetTester tester) async {
+      final items = {
+        'movie_1': const MediaItem(
+          id: '1',
+          title: 'Korean Drama',
+          overview: '',
+          type: MediaType.movie,
+          rating: 8.0,
+          genres: [],
+          originalLanguage: 'ko',
+        ),
+        'movie_2': const MediaItem(
+          id: '2',
+          title: 'English Show',
+          overview: '',
+          type: MediaType.movie,
+          rating: 8.0,
+          genres: [],
+          originalLanguage: 'en',
+        ),
+      };
+
+      final container = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(_TestRepository(items)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      container
+          .read(discoverFilterProvider.notifier)
+          .updateParams(const DiscoverFilterParams(originalLanguage: 'ko'));
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: Scaffold(body: BrowseScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Korean Drama'), findsWidgets);
+      expect(find.text('English Show'), findsNothing);
     });
 
     testWidgets('Dual-mode switching between Discover Mode and Search Mode with mode badge',

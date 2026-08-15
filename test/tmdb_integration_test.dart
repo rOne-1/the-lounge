@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/repositories/tmdb_movie_repository.dart';
@@ -656,6 +657,70 @@ void main() {
       final results = await repo.searchMedia('Dune');
       expect(results.length, equals(1));
       expect(results.first.title, equals('Dune'));
+    });
+
+    test(
+        'B1: discoverMedia with a person filter uses real filmography instead of '
+        "TMDB's with_people, which /discover/tv doesn't support at all",
+        () async {
+      var discoverTvWasCalled = false;
+
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/discover/tv')) {
+          // TMDB's real /discover/tv endpoint has no with_people param --
+          // if the app were still relying on it, this would be hit and
+          // would return an unfiltered, generic result set.
+          discoverTvWasCalled = true;
+          return http.Response(
+              jsonEncode({
+                'results': [
+                  {
+                    'id': 999,
+                    'name': 'Unrelated Generic Show',
+                    'popularity': 500.0,
+                    'poster_path': '/generic.jpg',
+                  },
+                ],
+              }),
+              200);
+        }
+        if (request.url.path.contains('/person/77/movie_credits')) {
+          return http.Response(jsonEncode({'cast': [], 'crew': []}), 200);
+        }
+        if (request.url.path.contains('/person/77/tv_credits')) {
+          return http.Response(
+              jsonEncode({
+                'cast': [
+                  {
+                    'id': 55,
+                    'name': 'Their Actual Drama',
+                    'popularity': 40.0,
+                    'poster_path': '/drama.jpg',
+                  },
+                ],
+                'crew': [],
+              }),
+              200);
+        }
+        if (request.url.path.contains('/genre/')) {
+          return http.Response(jsonEncode({'genres': []}), 200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final results = await repo.discoverMedia(
+        isMovies: false,
+        params: const DiscoverFilterParams(personId: 77),
+      );
+
+      expect(discoverTvWasCalled, isFalse,
+          reason: 'must not hit /discover/tv at all when a person filter is '
+              'active -- with_people silently does nothing there');
+      expect(results.length, equals(1));
+      expect(results.first.title, equals('Their Actual Drama'));
     });
 
     test(

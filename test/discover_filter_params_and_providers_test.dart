@@ -77,6 +77,21 @@ void main() {
     });
   });
 
+  group('supportedLanguages', () {
+    test('includes every major Indian regional-language film/TV industry', () {
+      final codes = supportedLanguages.map((l) => l['code']).toSet();
+      // Hindi already existed; these are the ones that were missing.
+      for (final code in ['hi', 'ta', 'te', 'ml', 'kn', 'bn', 'mr', 'pa', 'gu', 'ur', 'or', 'as']) {
+        expect(codes, contains(code), reason: 'missing Indian language code $code');
+      }
+    });
+
+    test('has no duplicate language codes', () {
+      final codes = supportedLanguages.map((l) => l['code']).toList();
+      expect(codes.toSet().length, equals(codes.length));
+    });
+  });
+
   group('TmdbApiService Discover & SearchPersons Unit Tests', () {
     test('discoverMovies passes parameters correctly', () async {
       late Uri requestedUri;
