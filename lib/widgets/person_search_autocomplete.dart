@@ -85,43 +85,46 @@ class _PersonSearchAutocompleteState
     final selectedPersonName = filterParams.personName;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (selectedPersonName != null && selectedPersonName.isNotEmpty) ...[
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.person,
-                  size: 16,
-                  color: Colors.white,
-                ),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    selectedPersonName,
-                    style: AppThemes.safeGeist(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.person,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      selectedPersonName,
+                      style: AppThemes.safeGeist(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: _clearSelectedPerson,
+                    child: Icon(
+                      Icons.close,
+                      size: 16,
                       color: Theme.of(context).colorScheme.onPrimary,
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _clearSelectedPerson,
-                  child: Icon(
-                    Icons.close,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 8),
