@@ -103,6 +103,70 @@ class TestRepository extends MockMovieRepository {
   Future<List<Map<String, dynamic>>> searchPersons(String query) async => [];
 }
 
+/// A repository that returns two brand-new, well-voted items for every page
+/// requested (effectively unlimited unique content), used to prove
+/// swipe-triggered auto-pagination keeps working regardless of page number.
+class _ManyPagesRepository extends MockMovieRepository {
+  final Set<int> pagesServed = {};
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+    int page = 1,
+  }) async {
+    if (!isMovies) return [];
+    pagesServed.add(page);
+    return [
+      MediaItem(
+        id: 'p${page}a',
+        title: 'Page $page Movie A',
+        type: MediaType.movie,
+        rating: 8.0,
+        overview: '',
+        genres: const [],
+        voteCount: 5000,
+      ),
+      MediaItem(
+        id: 'p${page}b',
+        title: 'Page $page Movie B',
+        type: MediaType.movie,
+        rating: 8.0,
+        overview: '',
+        genres: const [],
+        voteCount: 5000,
+      ),
+    ];
+  }
+
+  @override
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => [];
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => [];
+}
+
 void main() {
   testWidgets('Discover screen swipe gestures update provider state',
       (WidgetTester tester) async {
@@ -309,24 +373,42 @@ void main() {
     expect(find.text('Movie 3'), findsOneWidget);
   });
 
-  test('Skipped titles are successfully persisted to SharedPreferences and pruned after their expiration window', () async {
+  test('Skipped titles are successfully persisted to SharedPreferences and pruned after their 6-month expiration window (B9)', () async {
     SharedPreferences.setMockInitialValues({
       'the_lounge_skipped_media_v2': jsonEncode({
-        'expired_id': DateTime.now().subtract(const Duration(days: 35)).toIso8601String(),
-        'valid_id': DateTime.now().subtract(const Duration(days: 10)).toIso8601String(),
+        // Older than the old 30-day window but well inside the new 6-month
+        // (182-day) one -- must survive.
+        'valid_id': {
+          'lastSkippedAt': DateTime.now().subtract(const Duration(days: 60)).toIso8601String(),
+          'count': 1,
+        },
+        // Older than even the new 6-month window -- must be pruned.
+        'expired_id': {
+          'lastSkippedAt': DateTime.now().subtract(const Duration(days: 200)).toIso8601String(),
+          'count': 1,
+        },
+        // Old and would normally be pruned, but crossed the permanent-skip
+        // threshold -- must survive regardless of age.
+        'permanent_id': {
+          'lastSkippedAt': DateTime.now().subtract(const Duration(days: 200)).toIso8601String(),
+          'count': 6,
+        },
       }),
     });
     final prefs = await SharedPreferences.getInstance();
-    
+
     final container = ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
+    addTearDown(container.dispose);
 
     final skippedIds = container.read(skippedMediaIdsProvider);
     expect(skippedIds.containsKey('expired_id'), isFalse);
     expect(skippedIds.containsKey('valid_id'), isTrue);
+    expect(skippedIds.containsKey('permanent_id'), isTrue);
+    expect(skippedIds['permanent_id']!.isPermanent, isTrue);
 
     container.read(skippedMediaIdsProvider.notifier).add('new_id');
     final stored = prefs.getString('the_lounge_skipped_media_v2');
@@ -334,7 +416,42 @@ void main() {
     final decoded = jsonDecode(stored!) as Map<String, dynamic>;
     expect(decoded.containsKey('new_id'), isTrue);
     expect(decoded.containsKey('valid_id'), isTrue);
+    expect(decoded.containsKey('permanent_id'), isTrue);
     expect(decoded.containsKey('expired_id'), isFalse);
+  });
+
+  test('A title becomes permanently skipped after more than 5 skips, and undo correctly decrements rather than wiping history (B9)', () async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(skippedMediaIdsProvider.notifier);
+
+    for (var i = 0; i < 5; i++) {
+      notifier.add('title_x');
+    }
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.count, equals(5));
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent, isFalse);
+
+    // The 6th skip tips it into permanent.
+    notifier.add('title_x');
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.count, equals(6));
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent, isTrue);
+
+    // Undoing that 6th skip must decrement back to 5/not-permanent, not
+    // erase the whole history.
+    notifier.undoSkip('title_x');
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.count, equals(5));
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent, isFalse);
+
+    // Undoing down to zero removes the record entirely.
+    for (var i = 0; i < 5; i++) {
+      notifier.undoSkip('title_x');
+    }
+    expect(container.read(skippedMediaIdsProvider).containsKey('title_x'), isFalse);
   });
 
   testWidgets('Discover deck state is preserved when switching tabs', (WidgetTester tester) async {
@@ -401,6 +518,104 @@ void main() {
     final pool = container.read(discoverMoviesDeckProvider).pool;
     expect(pool.any((item) => item.id == '1' || item.id == '2'), isFalse);
     expect(pool.any((item) => item.id == '3' || item.id == '4'), isTrue);
+  });
+
+  group('B9: daily-capped manual "Reload deck", unlimited swipe pagination', () {
+    test('manualReload works once, then is a no-op for the rest of the calendar day', () async {
+      final mockRepo = TestRepository();
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(discoverMoviesDeckProvider.notifier);
+      await notifier.loadPool();
+      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday, isTrue);
+
+      final firstAttempt = await notifier.manualReload();
+      expect(firstAttempt, isTrue);
+      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday, isFalse);
+      expect(container.read(discoverMoviesDeckProvider).lastManualReloadAt, isNotNull);
+
+      // Persisted, so it survives a fresh notifier read (simulates the app
+      // being reopened later the same day).
+      final stored = prefs.getString('the_lounge_last_manual_reload_movies');
+      expect(stored, isNotNull);
+
+      final secondAttempt = await notifier.manualReload();
+      expect(secondAttempt, isFalse,
+          reason: 'a second manual reload the same day must be a no-op');
+    });
+
+    test('movies and TV each get their own independent daily reload allowance', () async {
+      final mockRepo = TestRepository();
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // Bare container.read() on a NotifierProvider that nothing else
+      // watches can race its own build()-triggered microtask against
+      // disposal; hold a listener as a real Discover screen would.
+      container.listen(discoverMoviesDeckProvider, (_, __) {});
+      container.listen(discoverTvDeckProvider, (_, __) {});
+
+      await container.read(discoverMoviesDeckProvider.notifier).loadPool();
+      await container.read(discoverMoviesDeckProvider.notifier).manualReload();
+
+      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday, isFalse);
+      // The TV deck's allowance is untouched by the movies deck's use.
+      expect(container.read(discoverTvDeckProvider).canManuallyReloadToday, isTrue);
+    });
+
+    test('swipe-triggered auto-pagination (popCard) stays unlimited within a session, unaffected by the manual-reload cap', () async {
+      final mockRepo = _ManyPagesRepository();
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final notifier = container.read(discoverMoviesDeckProvider.notifier);
+      await notifier.loadPool();
+      expect(container.read(discoverMoviesDeckProvider).pool, isNotEmpty);
+
+      // Use up today's one manual reload up front.
+      await notifier.manualReload();
+      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday, isFalse);
+
+      // Swipe through several cards -- each pop that empties the pool
+      // triggers popCard's internal auto-reload (isReload: true), which
+      // must keep working even though the manual allowance is spent.
+      for (var i = 0; i < 20; i++) {
+        final pool = container.read(discoverMoviesDeckProvider).pool;
+        if (pool.isEmpty) break;
+        notifier.popCard(pool.first, 'Left');
+        // popCard's internal reload is async; let it settle.
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+      }
+
+      expect(mockRepo.pagesServed.length, greaterThan(1),
+          reason: 'auto-pagination must have fetched beyond page 1 despite '
+              'the manual-reload allowance already being used');
+      expect(container.read(discoverMoviesDeckProvider).pool, isNotEmpty,
+          reason: 'there is still more content available via normal swipe '
+              'pagination -- the daily cap must not have blocked it');
+    });
   });
 
   testWidgets('Swiping a card shows Undo SnackBar and tapping it reverts the swipe', (WidgetTester tester) async {

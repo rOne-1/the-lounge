@@ -1274,23 +1274,58 @@ final mediaProvider = NotifierProvider<MediaNotifier, MediaState>(() {
   return MediaNotifier();
 });
 
-class SkippedMediaIdsNotifier extends Notifier<Map<String, DateTime>> {
+/// A title skipped more than this many times is excluded from Discover
+/// permanently (B9) rather than aging out with the rest.
+const int kPermanentSkipThreshold = 5;
+
+/// How long a skip is remembered before it's pruned and the title can
+/// reappear in Discover, unless it's crossed [kPermanentSkipThreshold] (B9;
+/// extended from the previous 30 days per dev decision).
+const Duration kSkipRetention = Duration(days: 182);
+
+class SkipRecord {
+  final DateTime lastSkippedAt;
+  final int count;
+
+  const SkipRecord({required this.lastSkippedAt, required this.count});
+
+  bool get isPermanent => count > kPermanentSkipThreshold;
+
+  Map<String, dynamic> toJson() => {
+        'lastSkippedAt': lastSkippedAt.toIso8601String(),
+        'count': count,
+      };
+
+  static SkipRecord? tryParse(dynamic json) {
+    if (json is Map<String, dynamic>) {
+      final dt = DateTime.tryParse(json['lastSkippedAt']?.toString() ?? '');
+      final count = json['count'];
+      if (dt != null && count is int) {
+        return SkipRecord(lastSkippedAt: dt, count: count);
+      }
+    }
+    return null;
+  }
+}
+
+class SkippedMediaIdsNotifier extends Notifier<Map<String, SkipRecord>> {
   static const _key = 'the_lounge_skipped_media_v2';
 
   @override
-  Map<String, DateTime> build() {
-    Map<String, DateTime> loaded = {};
+  Map<String, SkipRecord> build() {
+    Map<String, SkipRecord> loaded = {};
     try {
       final prefs = ref.watch(sharedPreferencesProvider);
       final stored = prefs.getString(_key);
       if (stored != null) {
         final decoded = jsonDecode(stored) as Map<String, dynamic>;
         final now = DateTime.now();
-        final cutoff = now.subtract(const Duration(days: 30));
+        final cutoff = now.subtract(kSkipRetention);
         decoded.forEach((k, v) {
-          final dt = DateTime.tryParse(v.toString());
-          if (dt != null && dt.isAfter(cutoff)) {
-            loaded[k] = dt;
+          final record = SkipRecord.tryParse(v);
+          if (record != null &&
+              (record.isPermanent || record.lastSkippedAt.isAfter(cutoff))) {
+            loaded[k] = record;
           }
         });
       }
@@ -1301,29 +1336,52 @@ class SkippedMediaIdsNotifier extends Notifier<Map<String, DateTime>> {
   void _save() {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
-      final toSave = state.map((k, v) => MapEntry(k, v.toIso8601String()));
+      final toSave = state.map((k, v) => MapEntry(k, v.toJson()));
       prefs.setString(_key, jsonEncode(toSave));
     } catch (_) {}
   }
 
   void add(String id) {
-    state = {...state, id: DateTime.now()};
+    final existing = state[id];
+    state = {
+      ...state,
+      id: SkipRecord(
+        lastSkippedAt: DateTime.now(),
+        count: (existing?.count ?? 0) + 1,
+      ),
+    };
     _save();
   }
 
   void addAll(Iterable<String> ids) {
     final now = DateTime.now();
-    final Map<String, DateTime> additions = {};
+    final Map<String, SkipRecord> next = {...state};
     for (final id in ids) {
-      additions[id] = now;
+      next[id] = SkipRecord(
+        lastSkippedAt: now,
+        count: (state[id]?.count ?? 0) + 1,
+      );
     }
-    state = {...state, ...additions};
+    state = next;
     _save();
   }
 
-  void remove(String id) {
-    final next = Map<String, DateTime>.from(state);
-    next.remove(id);
+  /// Reverts one skip (undo), decrementing the count rather than wiping the
+  /// title's whole skip history -- so undoing the skip that just tipped a
+  /// title into permanent correctly un-permanents it, without erasing the
+  /// skips before it.
+  void undoSkip(String id) {
+    final existing = state[id];
+    if (existing == null) return;
+    final next = Map<String, SkipRecord>.from(state);
+    if (existing.count <= 1) {
+      next.remove(id);
+    } else {
+      next[id] = SkipRecord(
+        lastSkippedAt: existing.lastSkippedAt,
+        count: existing.count - 1,
+      );
+    }
     state = next;
     _save();
   }
@@ -1335,7 +1393,7 @@ class SkippedMediaIdsNotifier extends Notifier<Map<String, DateTime>> {
 }
 
 final skippedMediaIdsProvider =
-    NotifierProvider<SkippedMediaIdsNotifier, Map<String, DateTime>>(() {
+    NotifierProvider<SkippedMediaIdsNotifier, Map<String, SkipRecord>>(() {
   return SkippedMediaIdsNotifier();
 });
 
@@ -1353,6 +1411,7 @@ class DiscoverDeckState {
   final int currentPage;
   final String? undoneMediaId;
   final String? undoneDirection;
+  final DateTime? lastManualReloadAt;
 
   const DiscoverDeckState({
     this.pool = const [],
@@ -1362,7 +1421,21 @@ class DiscoverDeckState {
     this.currentPage = 1,
     this.undoneMediaId,
     this.undoneDirection,
+    this.lastManualReloadAt,
   });
+
+  /// B9: normal swipe-triggered pagination (see [DiscoverDeckNotifier.popCard])
+  /// stays unlimited within a session -- this only gates the explicit
+  /// "Reload deck" action offered once the pool is genuinely empty, to once
+  /// per calendar day.
+  bool get canManuallyReloadToday {
+    final last = lastManualReloadAt;
+    if (last == null) return true;
+    final now = DateTime.now();
+    return last.year != now.year ||
+        last.month != now.month ||
+        last.day != now.day;
+  }
 
   DiscoverDeckState copyWith({
     List<MediaItem>? pool,
@@ -1373,6 +1446,7 @@ class DiscoverDeckState {
     String? undoneMediaId,
     String? undoneDirection,
     bool clearUndone = false,
+    DateTime? lastManualReloadAt,
   }) {
     return DiscoverDeckState(
       pool: pool ?? this.pool,
@@ -1382,6 +1456,7 @@ class DiscoverDeckState {
       currentPage: currentPage ?? this.currentPage,
       undoneMediaId: clearUndone ? null : (undoneMediaId ?? this.undoneMediaId),
       undoneDirection: clearUndone ? null : (undoneDirection ?? this.undoneDirection),
+      lastManualReloadAt: lastManualReloadAt ?? this.lastManualReloadAt,
     );
   }
 }
@@ -1408,10 +1483,40 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
   /// meaningfully selective without double-penalizing well-voted titles.
   static const double _weightedRatingThreshold = 6.5;
 
+  String get _lastManualReloadKey =>
+      'the_lounge_last_manual_reload_${isMovies ? 'movies' : 'tv'}';
+
   @override
   DiscoverDeckState build() {
+    DateTime? lastManualReloadAt;
+    try {
+      final prefs = ref.watch(sharedPreferencesProvider);
+      final stored = prefs.getString(_lastManualReloadKey);
+      if (stored != null) {
+        lastManualReloadAt = DateTime.tryParse(stored);
+      }
+    } catch (_) {}
     Future.microtask(() => loadPool());
-    return const DiscoverDeckState(isLoading: true);
+    return DiscoverDeckState(
+      isLoading: true,
+      lastManualReloadAt: lastManualReloadAt,
+    );
+  }
+
+  /// B9: the explicit "Reload deck" action, capped to once per calendar
+  /// day (see [DiscoverDeckState.canManuallyReloadToday]). Returns false
+  /// (and does nothing) if today's manual reload has already been used --
+  /// callers show the "come back tomorrow" state in that case instead.
+  Future<bool> manualReload() async {
+    if (!state.canManuallyReloadToday) return false;
+    final now = DateTime.now();
+    state = state.copyWith(lastManualReloadAt: now);
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      await prefs.setString(_lastManualReloadKey, now.toIso8601String());
+    } catch (_) {}
+    await loadPool(isReload: true);
+    return true;
   }
 
   Future<void> loadPool({bool isReload = false}) async {
@@ -1523,8 +1628,8 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
 
     switch (lastSwipe.direction) {
       case 'Left':
-        skippedNotifier.remove(lastSwipe.item.id);
-        skippedNotifier.remove(lastSwipe.item.prefixedId);
+        skippedNotifier.undoSkip(lastSwipe.item.id);
+        skippedNotifier.undoSkip(lastSwipe.item.prefixedId);
         break;
       case 'Right':
         mediaNotifier.removeFromMaybeList(lastSwipe.item.id);

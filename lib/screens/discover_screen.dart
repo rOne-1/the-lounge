@@ -230,11 +230,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.movie_filter_outlined,
+                              Icon(
+                                  deckState.canManuallyReloadToday
+                                      ? Icons.movie_filter_outlined
+                                      : Icons.nightlight_round,
                                   size: 64, color: subColor),
                               const SizedBox(height: 16),
                               Text(
-                                'No titles in recommendations',
+                                deckState.canManuallyReloadToday
+                                    ? 'No titles in recommendations'
+                                    : 'You\'re all caught up',
                                 style: AppThemes.safeGeist(
                                     color: context.ambianceColors.ink,
                                     fontSize: 16,
@@ -242,26 +247,39 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'You\'ve gone through all available recommendations in this stack.',
+                                deckState.canManuallyReloadToday
+                                    ? 'You\'ve gone through all available recommendations in this stack.'
+                                    : 'Come back tomorrow for more — today\'s deck (and its one reload) is used up.',
                                 textAlign: TextAlign.center,
                                 style: AppThemes.safeGeist(
                                     color: subColor, fontSize: 13),
                               ),
                               const SizedBox(height: 20),
-                              FilledButton.icon(
-                                onPressed: loading ? null : () => ref.read(isMovies ? discoverMoviesDeckProvider.notifier : discoverTvDeckProvider.notifier).loadPool(isReload: true),
-                                icon: loading
-                                    ? SizedBox(
-                                        width: 16,
-                                        height: 16,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Theme.of(context).colorScheme.onPrimary,
-                                        ),
-                                      )
-                                    : const Icon(Icons.refresh),
-                                label: const Text('Reload deck'),
-                              ),
+                              // B9: normal swipe pagination stays unlimited
+                              // within a session (see popCard) -- this
+                              // button is the one thing capped to once per
+                              // calendar day, per dev decision.
+                              if (deckState.canManuallyReloadToday)
+                                FilledButton.icon(
+                                  onPressed: loading
+                                      ? null
+                                      : () => ref
+                                          .read(isMovies
+                                              ? discoverMoviesDeckProvider.notifier
+                                              : discoverTvDeckProvider.notifier)
+                                          .manualReload(),
+                                  icon: loading
+                                      ? SizedBox(
+                                          width: 16,
+                                          height: 16,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Theme.of(context).colorScheme.onPrimary,
+                                          ),
+                                        )
+                                      : const Icon(Icons.refresh),
+                                  label: const Text('Reload deck'),
+                                ),
                             ],
                           ),
                         ),
@@ -577,7 +595,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           isDark: isDark,
                           icon: Icons.arrow_back,
                           title: 'Swipe left — Skip for now',
-                          subtitle: 'Session only, won\'t reappear tonight — not permanent',
+                          subtitle: 'Won\'t reappear for 6 months — skip it 6 times and it\'s gone for good',
                           color: context.ambianceColors.sub,
                           bgColor: context.ambianceColors.sub.withValues(alpha: 0.16),
                         ),
