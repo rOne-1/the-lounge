@@ -490,25 +490,41 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
       return true;
     }).toList();
 
-    filtered.sort((a, b) {
-      switch (params.sortBy) {
-        case 'vote_average.desc':
+    // 'popularity.desc' is the default (no sort explicitly chosen) --
+    // TMDB's own discover/search responses already arrive in that order, so
+    // this deliberately does NOT re-sort in that case. Re-sorting the whole
+    // accumulated list by voteCount on every rebuild (the previous
+    // behavior) broke Browse's "Load More": since _accumulatedItems grows
+    // across pages but this filter/sort re-runs on every build, each new
+    // page got interleaved throughout the existing list by vote count
+    // instead of appending at the end, making the grid reorder out from
+    // under the user on every load. Only an explicit user-chosen sort
+    // (Rating, Release Date) should reorder the list at all.
+    switch (params.sortBy) {
+      case 'vote_average.desc':
+        filtered.sort((a, b) {
           final wrA = weightedRatingOf(a,
               poolMean: poolMean, minVotes: _minVotesForFullWeight);
           final wrB = weightedRatingOf(b,
               poolMean: poolMean, minVotes: _minVotesForFullWeight);
           return wrB.compareTo(wrA);
-        case 'primary_release_date.desc':
-        case 'first_air_date.desc':
+        });
+        break;
+      case 'primary_release_date.desc':
+      case 'first_air_date.desc':
+        filtered.sort((a, b) {
           final aDate = a.releaseOrAirDate ?? DateTime(1900);
           final bDate = b.releaseOrAirDate ?? DateTime(1900);
           return bDate.compareTo(aDate);
-        case 'revenue.desc':
-        case 'popularity.desc':
-        default:
-          return (b.voteCount ?? 0).compareTo(a.voteCount ?? 0);
-      }
-    });
+        });
+        break;
+      case 'revenue.desc':
+        filtered.sort((a, b) => (b.voteCount ?? 0).compareTo(a.voteCount ?? 0));
+        break;
+      case 'popularity.desc':
+      default:
+        break;
+    }
 
     return filtered;
   }
@@ -1074,7 +1090,14 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
 
+    // Keyed by item identity so Flutter re-associates each grid cell (and
+    // its OpenContainer/PressableScale animation state) with the same
+    // title across rebuilds, instead of reusing whatever widget happens to
+    // sit at the same index -- without this, any legitimate list-order
+    // change (a real re-sort, not just the Load More bug fixed alongside
+    // this) could visually misattribute transition state between cards.
     return PressableScale(
+      key: ValueKey(item.prefixedId),
       child: OpenContainer(
         transitionDuration: AppPhysics.houseSpringDuration,
         closedElevation: 0,
