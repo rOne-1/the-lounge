@@ -514,6 +514,151 @@ void main() {
     });
 
     test(
+        'B1: searchMedia fetches the real filmography when the top result is a person, '
+        'instead of known_for + unrelated title-text matches',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/search/multi')) {
+          return http.Response(
+              jsonEncode({
+                'results': [
+                  {
+                    'id': 31,
+                    'media_type': 'person',
+                    'name': 'Tom Hanks',
+                    'popularity': 95.0,
+                    'known_for': [
+                      {
+                        'id': 13,
+                        'media_type': 'movie',
+                        'title': 'Forrest Gump',
+                        'popularity': 80.0,
+                        'poster_path': '/gump.jpg',
+                      }
+                    ],
+                  },
+                  {
+                    'id': 999,
+                    'media_type': 'movie',
+                    'title': 'Tom Hanks: Hollywood\'s Mr. Nice Guy',
+                    'popularity': 5.0,
+                    'poster_path': '/doc.jpg',
+                  },
+                ],
+              }),
+              200);
+        }
+        if (request.url.path.contains('/person/31/movie_credits')) {
+          return http.Response(
+              jsonEncode({
+                'cast': [
+                  {
+                    'id': 13,
+                    'title': 'Forrest Gump',
+                    'popularity': 80.0,
+                    'poster_path': '/gump.jpg',
+                  },
+                  {
+                    'id': 857,
+                    'title': 'Saving Private Ryan',
+                    'popularity': 70.0,
+                    'poster_path': '/ryan.jpg',
+                  },
+                ],
+                'crew': [
+                  {
+                    'id': 13,
+                    'title': 'Forrest Gump',
+                    'popularity': 80.0,
+                    'poster_path': '/gump.jpg',
+                  },
+                  {
+                    'id': 12345,
+                    'title': 'Unposterable Credit',
+                    'popularity': 1.0,
+                    'poster_path': null,
+                  },
+                ],
+              }),
+              200);
+        }
+        if (request.url.path.contains('/person/31/tv_credits')) {
+          return http.Response(
+              jsonEncode({
+                'cast': [
+                  {
+                    'id': 55,
+                    'name': 'Band of Brothers',
+                    'popularity': 60.0,
+                    'poster_path': '/bob.jpg',
+                  },
+                ],
+                'crew': [],
+              }),
+              200);
+        }
+        if (request.url.path.contains('/genre/')) {
+          return http.Response(jsonEncode({'genres': []}), 200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final results = await repo.searchMedia('Tom Hanks');
+
+      // Real filmography (movie + TV, cast + crew, deduped), not the noisy
+      // known_for + title-text-match mix.
+      final titles = results.map((r) => r.title).toSet();
+      expect(titles, contains('Forrest Gump'));
+      expect(titles, contains('Saving Private Ryan'));
+      expect(titles, contains('Band of Brothers'));
+      // Deduped: Forrest Gump appeared in both cast and crew.
+      expect(results.where((r) => r.title == 'Forrest Gump').length, equals(1));
+      // Invalid credit (no poster) excluded.
+      expect(titles, isNot(contains('Unposterable Credit')));
+      // The unrelated documentary that only matched on literal title text
+      // must not appear -- this is exactly the TF-16/TF-24 bug.
+      expect(titles, isNot(contains('Tom Hanks: Hollywood\'s Mr. Nice Guy')));
+    });
+
+    test(
+        'B1: searchMedia falls back to title matches when the top result is not a person',
+        () async {
+      // A title search for an actual person's-name-shaped movie title
+      // (no person entry ranked first) must not trigger the filmography
+      // path -- covered structurally by the existing relevance-order test
+      // above (its top result is 'High Relevance Movie', a movie), plus
+      // this explicit no-person-at-all case.
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/search/multi')) {
+          return http.Response(
+              jsonEncode({
+                'results': [
+                  {
+                    'id': 1,
+                    'media_type': 'movie',
+                    'title': 'Dune',
+                    'popularity': 120.0,
+                    'poster_path': '/dune.jpg',
+                  },
+                ],
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final results = await repo.searchMedia('Dune');
+      expect(results.length, equals(1));
+      expect(results.first.title, equals('Dune'));
+    });
+
+    test(
         'selects full official trailer key when both teaser and trailer are present in videos.results',
         () async {
       final mockClient = MockClient((request) async {

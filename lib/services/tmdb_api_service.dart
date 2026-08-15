@@ -9,10 +9,22 @@ class SearchFilterResult {
   final List<Map<String, dynamic>> personFilmographies;
   final List<Map<String, dynamic>> allOrdered;
 
+  /// The TMDB person ID of the *top-ranked* result, only when that top
+  /// result is itself a `person` match — i.e. TMDB's own combined
+  /// relevance ranking judged a person to be the strongest match for this
+  /// query, not just "a person happened to appear somewhere in the list."
+  /// Null otherwise. Callers should treat a non-null value as "this is a
+  /// cast/crew name search" and fetch that person's real filmography (see
+  /// [TmdbApiService.getPersonMovieCredits] / [getPersonTvCredits]) rather
+  /// than mixing in [personFilmographies], which is only TMDB's own narrow
+  /// "known for" sample (2-4 titles), not a filmography.
+  final int? topPersonId;
+
   const SearchFilterResult({
     required this.titles,
     required this.personFilmographies,
     required this.allOrdered,
+    this.topPersonId,
   });
 }
 
@@ -302,7 +314,23 @@ class TmdbApiService {
     });
   }
 
-  bool _isValidSearchItem(Map<String, dynamic> item) {
+  /// GET /3/person/{id}/movie_credits — this person's actual movie
+  /// filmography (cast + crew), not TMDB's narrow "known for" sample.
+  Future<Map<String, dynamic>> getPersonMovieCredits(String personId) async {
+    return _get('/person/$personId/movie_credits');
+  }
+
+  /// GET /3/person/{id}/tv_credits — this person's actual TV filmography
+  /// (cast + crew), not TMDB's narrow "known for" sample.
+  Future<Map<String, dynamic>> getPersonTvCredits(String personId) async {
+    return _get('/person/$personId/tv_credits');
+  }
+
+  /// Whether a raw TMDB search/credit item is worth showing: has a real
+  /// title, and (when present) a poster and non-zero popularity. Shared by
+  /// [filterSearchResults] and person-filmography fetching so both apply
+  /// the same noise filter.
+  bool isValidSearchItem(Map<String, dynamic> item) {
     final title = item['title'] as String? ??
         item['name'] as String? ??
         item['original_title'] as String? ??
@@ -336,11 +364,16 @@ class TmdbApiService {
     final List<Map<String, dynamic>> titles = [];
     final List<Map<String, dynamic>> personFilmographies = [];
     final List<Map<String, dynamic>> allOrdered = [];
+    final int? topPersonId = results.isNotEmpty &&
+            results.first['media_type'] == 'person' &&
+            results.first['id'] is int
+        ? results.first['id'] as int
+        : null;
 
     for (final item in results) {
       final mediaType = item['media_type'] as String?;
       if (mediaType == 'movie' || mediaType == 'tv') {
-        if (_isValidSearchItem(item)) {
+        if (isValidSearchItem(item)) {
           titles.add(item);
           allOrdered.add(item);
         }
@@ -350,7 +383,7 @@ class TmdbApiService {
         for (final kf in knownFor) {
           final kfType = kf['media_type'] as String?;
           if (kfType == 'movie' || kfType == 'tv') {
-            if (_isValidSearchItem(kf)) {
+            if (isValidSearchItem(kf)) {
               personFilmographies.add(kf);
               allOrdered.add(kf);
             }
@@ -363,6 +396,7 @@ class TmdbApiService {
       titles: titles,
       personFilmographies: personFilmographies,
       allOrdered: allOrdered,
+      topPersonId: topPersonId,
     );
   }
 

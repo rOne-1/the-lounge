@@ -592,6 +592,22 @@ class TmdbMovieRepository implements MovieRepository {
 
       final filterResult = apiService.filterSearchResults(res);
 
+      if (filterResult.topPersonId != null) {
+        // TMDB's own combined relevance ranking judged a person to be the
+        // strongest match for this query -- a cast/crew name search, not a
+        // title search. TMDB's "known for" sample is only 2-4 titles, and
+        // literal title-text matches for a person's name pull in unrelated
+        // biography documentaries/specials (e.g. searching "Tom Hanks"
+        // surfacing an SNL episode titled "Tom Hanks"). Fetch their real
+        // filmography instead of mixing known_for with title-text noise.
+        final filmography = await getPersonFilmography(filterResult.topPersonId!);
+        if (filmography.isNotEmpty) {
+          return filmography;
+        }
+        // Fall through to the title-match path if this person had no
+        // usable credits (e.g. a crew-only role with nothing valid).
+      }
+
       final items = <MediaItem>[];
       final seenIds = <String>{};
 
@@ -1460,6 +1476,62 @@ class TmdbMovieRepository implements MovieRepository {
       _logError('Failed to fetch similar media for $mediaId', e, stack);
       if (fallbackRepository != null) {
         return fallbackRepository!.getSimilarMedia(mediaId);
+      }
+      return [];
+    }
+  }
+
+  @override
+  Future<List<MediaItem>> getPersonFilmography(int personId) async {
+    if (!isConfigured) {
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getPersonFilmography(personId);
+      }
+      return [];
+    }
+    try {
+      await _ensureGenresLoaded();
+
+      final movieKey =
+          cacheService.generateKey('/person/$personId/movie_credits');
+      Map<String, dynamic>? movieRes = await cacheService.get(movieKey);
+      if (movieRes == null) {
+        movieRes = await apiService.getPersonMovieCredits('$personId');
+        await cacheService.put(movieKey, movieRes);
+      }
+
+      final tvKey = cacheService.generateKey('/person/$personId/tv_credits');
+      Map<String, dynamic>? tvRes = await cacheService.get(tvKey);
+      if (tvRes == null) {
+        tvRes = await apiService.getPersonTvCredits('$personId');
+        await cacheService.put(tvKey, tvRes);
+      }
+
+      final items = <MediaItem>[];
+      final seenIds = <String>{};
+
+      void addCredits(Map<String, dynamic> res, MediaType type) {
+        final cast =
+            (res['cast'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        final crew =
+            (res['crew'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        for (final json in [...cast, ...crew]) {
+          if (!apiService.isValidSearchItem(json)) continue;
+          final item = _mapJsonToMediaItem(json, overrideType: type);
+          if (seenIds.add(item.prefixedId)) {
+            items.add(item);
+          }
+        }
+      }
+
+      addCredits(movieRes, MediaType.movie);
+      addCredits(tvRes, MediaType.tv);
+
+      return items;
+    } catch (e, stack) {
+      _logError('Failed to fetch filmography for person $personId', e, stack);
+      if (fallbackRepository != null) {
+        return fallbackRepository!.getPersonFilmography(personId);
       }
       return [];
     }

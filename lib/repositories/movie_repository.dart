@@ -22,6 +22,13 @@ abstract class MovieRepository {
     int page = 1,
   });
   Future<List<Map<String, dynamic>>> searchPersons(String query);
+
+  /// This person's real filmography (movie + TV, cast + crew), used to
+  /// power cast/crew name search with an actual body of work instead of
+  /// TMDB's narrow "known for" sample. Default no-op so existing
+  /// implementers don't need to add it unless they want to support it.
+  Future<List<MediaItem>> getPersonFilmography(int personId) async => [];
+
   Future<List<MediaItem>> getRecommendations(String mediaId) async => [];
   Future<List<MediaItem>> getSimilarMedia(String mediaId) async => [];
   Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) async => null;

@@ -736,6 +736,35 @@ class MockMovieRepository implements MovieRepository {
   }
 
   @override
+  Future<List<MediaItem>> getPersonFilmography(int personId) async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    // Mirror searchPersons' id scheme (name.hashCode.abs()) to find which
+    // cast/director name this id refers to, then return every mock title
+    // that credits them.
+    String? matchedName;
+    for (final item in _mockData) {
+      for (final actor in item.cast) {
+        if (actor.hashCode.abs() == personId) {
+          matchedName = actor;
+          break;
+        }
+      }
+      if (matchedName == null &&
+          item.director != null &&
+          item.director!.hashCode.abs() == personId) {
+        matchedName = item.director;
+      }
+      if (matchedName != null) break;
+    }
+    if (matchedName == null) return [];
+
+    return _mockData
+        .where((item) =>
+            item.cast.contains(matchedName) || item.director == matchedName)
+        .toList();
+  }
+
+  @override
   Future<List<MediaItem>> getRecommendations(String mediaId) async {
     return _mockData.where((item) => item.id != mediaId && item.prefixedId != mediaId).toList();
   }
