@@ -158,6 +158,41 @@ void main() {
     });
 
     testWidgets(
+        'Regression: fills the ExpansionTile width instead of shrink-wrapping to a '
+        'blank card (TF-10 -- root Column used mainAxisSize.min + '
+        'crossAxisAlignment.start, which shrink-wraps under an ExpansionTile with '
+        'expandedCrossAxisAlignment.start since the tile gives unconstrained width)',
+        (WidgetTester tester) async {
+      const tileWidth = 350.0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: tileWidth,
+              child: ExpansionTile(
+                key: const PageStorageKey<String>('filter_accordion_Cast & Crew'),
+                title: const Text('Cast & Crew'),
+                initiallyExpanded: true,
+                expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                children: const [
+                  ProviderScope(child: PersonSearchAutocomplete(isDark: true)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final textFieldWidth = tester.getSize(find.byType(TextField)).width;
+      // A collapsed/blank card renders at (or near) zero width; the real
+      // field should span essentially the full tile width, well clear of
+      // that failure mode.
+      expect(textFieldWidth, greaterThan(tileWidth * 0.8));
+    });
+
+    testWidgets(
         'Selecting a person sets personId and personName in discoverFilterProvider',
         (WidgetTester tester) async {
       late WidgetRef savedRef;
