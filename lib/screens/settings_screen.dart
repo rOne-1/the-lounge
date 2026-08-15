@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/media_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../constants.dart';
-import '../themes/theme_registry.dart';
-import '../themes/app_theme.dart';
 import '../utils/export_helper.dart';
 import '../widgets/animated_segmented_control.dart';
 
@@ -55,7 +54,7 @@ class SettingsScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: ListView(
-                  cacheExtent: 5000,
+                  scrollCacheExtent: const ScrollCacheExtent.pixels(5000),
                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   children: [
                     // Section 1: Ambiance

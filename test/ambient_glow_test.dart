@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:the_lounge/constants.dart';
-import 'package:the_lounge/themes/theme_registry.dart';
-import 'package:the_lounge/themes/app_theme.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/reading_room_theme.dart';
-import 'package:the_lounge/themes/violet_dusk_theme.dart';
-import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/widgets/ambient_glow.dart';
 
 void main() {

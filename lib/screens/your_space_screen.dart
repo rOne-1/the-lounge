@@ -7,7 +7,6 @@ import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import 'detail_screen.dart';
-import 'settings_screen.dart';
 import '../constants.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';

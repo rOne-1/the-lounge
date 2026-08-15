@@ -6,7 +6,6 @@ import 'dart:math' as math;
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
-import '../models/discover_filter_params.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/segmented_toggle.dart';
 import '../widgets/pressable_scale.dart';

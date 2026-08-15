@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'app_theme.dart';
 
 BoxDecoration midnightCinemaBackground() {
   return const BoxDecoration(

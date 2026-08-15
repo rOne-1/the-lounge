@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import '../themes/app_theme.dart';
 import 'pressable_scale.dart';
 
 class AnimatedSegmentedControl<T> extends StatelessWidget {

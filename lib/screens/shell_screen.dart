@@ -9,7 +9,6 @@ import '../widgets/responsive_layout.dart';
 import '../widgets/segmented_toggle.dart';
 import '../widgets/pressable_scale.dart';
 import '../constants.dart';
-import '../themes/app_theme.dart';
 import 'home_screen.dart';
 import 'discover_screen.dart';
 import 'browse_screen.dart';
