@@ -26,6 +26,11 @@ class MockFilePickerPlatform extends FilePickerPlatform {
   Uint8List? savedBytes;
   bool pickFilesCalled = false;
 
+  /// Real (fake-clock-tracked) delay so tests can observe the E8 blocking
+  /// overlay mid-flight via `tester.pump()` before it resolves, instead of
+  /// racing a zero-latency mock that would already be done by the next frame.
+  Duration saveDelay = Duration.zero;
+
   @override
   Future<String?> saveFile({
     String? dialogTitle,
@@ -36,6 +41,9 @@ class MockFilePickerPlatform extends FilePickerPlatform {
     Uint8List? bytes,
     bool lockParentWindow = false,
   }) async {
+    if (saveDelay > Duration.zero) {
+      await Future<void>.delayed(saveDelay);
+    }
     saveFileCalled = true;
     savedBytes = bytes;
     return savePath;
@@ -319,6 +327,113 @@ void main() {
     expect(find.text('Backup imported successfully.'), findsOneWidget);
   });
 
+  testWidgets('Reset Account prompts for confirmation and clears data (E8)', (WidgetTester tester) async {
+    final container = createContainer();
+    addTearDown(container.dispose);
+
+    final testMovie = MediaItem(
+      id: 'movie_1',
+      title: 'Inception',
+      type: MediaType.movie,
+      rating: 8.8,
+      overview: 'Dream within a dream',
+      genres: const [],
+    );
+    container.read(mediaProvider.notifier).addToWatchlist(testMovie);
+    expect(container.read(mediaProvider).watchlist, isNotEmpty);
+
+    await tester.pumpWidget(createSettingsScreen(container));
+    await tester.pumpAndSettle();
+
+    final resetBtn = find.byKey(const ValueKey('reset_account_button'));
+    await tester.tap(resetBtn);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reset everything?'), findsOneWidget);
+
+    // Cancelling must not touch any data.
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(container.read(mediaProvider).watchlist, isNotEmpty);
+
+    await tester.tap(resetBtn);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reset Everything'));
+    await tester.pumpAndSettle();
+
+    expect(container.read(mediaProvider).watchlist, isEmpty);
+    expect(find.text('Account reset successfully.'), findsOneWidget);
+  });
+
+  test('clearAllData refreshes the discover pool exclusion snapshot (B5)', () async {
+    // Plain (non-widget) test, deliberately: this only needs
+    // MediaNotifier.clearAllData() and the discover deck provider, neither
+    // of which SettingsScreen's own widget tree watches -- driving it
+    // through testWidgets' fake-async pump cycle for an unobserved provider
+    // is exactly what made this flaky/hang-prone (see git history). A plain
+    // test runs real async/real Timers directly, no pumping involved.
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        movieRepositoryProvider.overrideWithValue(_SingleMovieResetRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    // movie_1 is in the watchlist, so it must be excluded from the pool.
+    container.read(mediaProvider.notifier).addToWatchlist(
+          const MediaItem(
+            id: '1',
+            title: 'Movie 1',
+            type: MediaType.movie,
+            rating: 8.0,
+            overview: '',
+            genres: [],
+          ),
+        );
+    await container.read(discoverMoviesDeckProvider.notifier).loadPool(isReload: false);
+    expect(
+      container.read(discoverMoviesDeckProvider).pool.any((item) => item.id == '1'),
+      isFalse,
+      reason: 'Precondition: movie_1 must be excluded (it is in the watchlist)',
+    );
+
+    await container.read(mediaProvider.notifier).clearAllData();
+    // clearAllData() fires the deck refresh without awaiting it (matching
+    // importBackupJson's existing fire-and-forget pattern).
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+
+    // The watchlist is now empty, so movie_1 must reappear in the pool --
+    // this only happens if clearAllData() actually re-ran loadPool().
+    expect(
+      container.read(discoverMoviesDeckProvider).pool.any((item) => item.id == '1'),
+      isTrue,
+      reason: 'movie_1 is no longer excluded after reset and must be back in the pool',
+    );
+  });
+
+  testWidgets('Export shows the blocking loading overlay while running, then clears it (E8)', (WidgetTester tester) async {
+    final container = createContainer();
+    addTearDown(container.dispose);
+
+    mockFilePicker.savePath = 'mock_export_path.json';
+    // Force a real (fake-clock) gap so the overlay is observably up before
+    // the operation resolves, instead of racing a zero-latency mock.
+    mockFilePicker.saveDelay = const Duration(milliseconds: 50);
+
+    await tester.pumpWidget(createSettingsScreen(container));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('export_backup_button')));
+    await tester.pump();
+    expect(find.text('Exporting your backup…'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+    await tester.pumpAndSettle();
+    expect(find.text('Exporting your backup…'), findsNothing);
+    expect(find.text('Backup exported successfully.'), findsOneWidget);
+  });
+
   testWidgets('Import Backup with malformed/unsupported file shows error message', (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
@@ -385,4 +500,63 @@ class _InstantEmptyRepository extends MockMovieRepository {
   @override
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async =>
       null;
+}
+
+/// A repository that returns exactly one movie (id='1') from [discoverMedia],
+/// used to prove the discover pool's exclusion snapshot actually gets
+/// refreshed after a reset (B5).
+class _SingleMovieResetRepository extends MockMovieRepository {
+  static const _movie1 = MediaItem(
+    id: '1',
+    title: 'Movie 1',
+    type: MediaType.movie,
+    rating: 8.0,
+    overview: '',
+    genres: [],
+    // Without a vote count, meanRatingOf/weightedRatingOf treat this as
+    // "unvoted" and exclude it from the pool mean entirely, collapsing its
+    // own weighted rating to 0 and failing loadPool's quality filter --
+    // nothing to do with exclusion. Matches discover_test.dart's proven
+    // _SingleMovieRepository fixture.
+    voteCount: 5000,
+  );
+
+  @override
+  Future<List<MediaItem>> discoverMedia({
+    required bool isMovies,
+    required DiscoverFilterParams params,
+    int page = 1,
+  }) async =>
+      isMovies && page == 1 ? [_movie1] : [];
+
+  // loadPool's fallback calls (getPopularMovies for movies, getTopRatedTvShows
+  // for TV) fall through to MockMovieRepository's base implementations,
+  // which carry real 100ms Future.delayed() calls each. Since discoverMedia
+  // above only ever returns one item (so loadPool's `< 5 items` loop
+  // condition never short-circuits and always runs all 5 attempts), those
+  // delays compound to ~1.5s+ per loadPool() call if left in place.
+  // Overriding these to resolve instantly, matching discover_test.dart's
+  // proven _SingleMovieRepository pattern, keeps this test fast and
+  // deterministic.
+  @override
+  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies({
+    int page = 1,
+    String? region,
+  }) async =>
+      [];
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
 }

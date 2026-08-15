@@ -8,11 +8,31 @@ import '../constants.dart';
 import '../utils/export_helper.dart';
 import '../widgets/animated_segmented_control.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  // E8/TF-1: dev-confirmed intent is a deliberate blocking state during
+  // backup/import/reset, not just a progress indicator -- the whole screen
+  // is intentionally frozen on a loading page until the operation
+  // completes, per _BlockingLoadingOverlay below.
+  String? _busyMessage;
+
+  Future<T> _runBusy<T>(String message, Future<T> Function() action) async {
+    setState(() => _busyMessage = message);
+    try {
+      return await action();
+    } finally {
+      if (mounted) setState(() => _busyMessage = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final ambiance = ref.watch(ambianceProvider);
     final isDark = context.ambianceColors.isDark;
     final mediaState = ref.watch(mediaProvider);
@@ -25,7 +45,9 @@ class SettingsScreen extends ConsumerWidget {
     final bgDeco = context.ambianceColors.background;
 
     return Scaffold(
-      body: Container(
+      body: Stack(
+        children: [
+          Container(
         decoration: bgDeco,
         child: SafeArea(
           child: Column(
@@ -115,7 +137,10 @@ class SettingsScreen extends ConsumerWidget {
                             onTap: () async {
                               final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
                               try {
-                                final success = await saveJsonFile(jsonString, 'the_lounge_backup.json');
+                                final success = await _runBusy(
+                                  'Exporting your backup…',
+                                  () => saveJsonFile(jsonString, 'the_lounge_backup.json'),
+                                );
                                 if (success && context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -155,7 +180,10 @@ class SettingsScreen extends ConsumerWidget {
                             onTap: () async {
                               final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
                               try {
-                                await shareJsonFile(jsonString, 'the_lounge_backup.json');
+                                await _runBusy(
+                                  'Preparing your backup…',
+                                  () => shareJsonFile(jsonString, 'the_lounge_backup.json'),
+                                );
                               } catch (e) {
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -257,7 +285,10 @@ class SettingsScreen extends ConsumerWidget {
                                 }
 
                                 if (shouldImport && context.mounted) {
-                                  final success = await ref.read(mediaProvider.notifier).importBackupJson(jsonString);
+                                  final success = await _runBusy(
+                                    'Importing your backup…',
+                                    () => ref.read(mediaProvider.notifier).importBackupJson(jsonString),
+                                  );
                                   if (context.mounted) {
                                     if (success) {
                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -372,7 +403,10 @@ class SettingsScreen extends ConsumerWidget {
                               ) ?? false;
 
                               if (shouldReset && context.mounted) {
-                                await ref.read(mediaProvider.notifier).clearAllData();
+                                await _runBusy(
+                                  'Resetting your data…',
+                                  () => ref.read(mediaProvider.notifier).clearAllData(),
+                                );
                                 if (context.mounted) {
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
@@ -445,6 +479,9 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
         ),
+          ),
+          if (_busyMessage != null) _BlockingLoadingOverlay(message: _busyMessage!),
+        ],
       ),
     );
   }
@@ -570,6 +607,91 @@ class _DeveloperSignatureState extends State<_DeveloperSignature> with SingleTic
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// E8/TF-1: a deliberate, opaque blocking state during backup/import/reset
+/// -- not a stock spinner-in-a-dialog, but a full-screen page matching the
+/// app's own screening-room identity (see SplashScreen), so an operation
+/// that must not be interrupted reads as an intentional moment rather than
+/// a stalled app.
+class _BlockingLoadingOverlay extends StatelessWidget {
+  final String message;
+
+  const _BlockingLoadingOverlay({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final ambianceColors = context.ambianceColors;
+
+    return Positioned.fill(
+      child: AbsorbPointer(
+        child: AnimatedOpacity(
+          opacity: 1.0,
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
+          child: Container(
+            decoration: ambianceColors.background.copyWith(
+              color: ambianceColors.base,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      color: ambianceColors.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: ambianceColors.acc.withValues(alpha: 0.4),
+                        width: 1.5,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: ambianceColors.acc.withValues(alpha: 0.2),
+                          blurRadius: 20,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(ambianceColors.acc),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.bodoniModa(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      fontStyle: FontStyle.italic,
+                      color: ambianceColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Please don\'t close the app',
+                    style: AppThemes.safeGeist(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500,
+                      letterSpacing: 1.2,
+                      color: ambianceColors.acc,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

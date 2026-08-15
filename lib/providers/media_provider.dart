@@ -1257,6 +1257,16 @@ class MediaNotifier extends Notifier<MediaState> {
     } catch (_) {
       // Ignore errors
     }
+
+    // Same exclusion-refresh need as importBackupJson (B5/SP-1): a reset
+    // clears the watchlist/watched/etc that the discover pool's exclusion
+    // snapshot was built from, so without this, previously-excluded titles
+    // stay excluded from the in-memory pool until the user happens to
+    // reload it themselves.
+    try {
+      ref.read(discoverMoviesDeckProvider.notifier).loadPool(isReload: false);
+      ref.read(discoverTvDeckProvider.notifier).loadPool(isReload: false);
+    } catch (_) {}
   }
 }
 
