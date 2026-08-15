@@ -834,6 +834,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
 
   Widget _buildDiscoverModeBody(bool isDark, bool isMovies) {
     final subColor = context.ambianceColors.sub;
+    final filterParams = ref.watch(discoverFilterProvider);
 
     final discoverAsync = ref.watch(discoverMediaProvider(isMovies));
 
@@ -843,8 +844,16 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
           _accumulatedItems.addAll(items);
         }
 
-        final displayItems =
+        final rawDisplayItems =
             _accumulatedItems.isNotEmpty ? _accumulatedItems : items;
+        // SP-3/E2: re-rank/filter with weighted rating instead of trusting
+        // TMDB's raw vote_average server response as-is -- this was the gap
+        // logged in outstanding_issues_notepad.md item 19: the search-mode
+        // path already did this via _applyClientFilters, but the default
+        // no-query Discover-mode grid (this one, how most people actually
+        // browse) never called it at all.
+        final displayItems =
+            _applyClientFilters(rawDisplayItems, filterParams, isMovies);
 
         if (displayItems.isEmpty) {
           return Center(
