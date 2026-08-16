@@ -233,7 +233,22 @@ final episodeSkeletonCacheServiceProvider =
 final tvShowSeasonsProvider =
     FutureProvider.family<List<TvSeason>, MediaItem>((ref, item) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final seasonsCount = item.seasonsCount ?? 1;
+  // TV-1: lightweight MediaItem objects from search/discover/trending
+  // often arrive with seasonsCount == null. Defaulting that straight to 1
+  // silently truncated every multi-season show to Season 1 only, so once
+  // Season 1 was fully watched, getNextUnwatchedEpisode had nothing left
+  // to advance to and TvContinueWatchingCard showed a false "Done". Fetch
+  // full details first to get the real season count before looping --
+  // gated to TV items only, since this provider is also watched
+  // unconditionally from DetailScreen's status toggles for movies, which
+  // never have a seasonsCount and would otherwise trigger a pointless
+  // getMediaDetails call on every item.
+  var seasonsCount = item.seasonsCount;
+  if (seasonsCount == null && item.type == MediaType.tv) {
+    final fullDetails = await repo.getMediaDetails(item.id);
+    seasonsCount = fullDetails?.seasonsCount ?? 1;
+  }
+  seasonsCount ??= 1;
   final List<TvSeason> seasons = [];
   for (int s = 1; s <= seasonsCount; s++) {
     final season = await repo.getTvSeasonDetails(item.id, s);

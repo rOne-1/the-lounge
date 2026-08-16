@@ -223,6 +223,98 @@ void main() {
     expect(find.textContaining('Half Loop'), findsNWidgets(2));
   });
 
+  testWidgets(
+      'TV-1: a 3-season show with seasonsCount == null advances to Season 2 Episode 1 instead of showing a false "Done"',
+      (WidgetTester tester) async {
+    // Lightweight MediaItem exactly as search/discover/trending endpoints
+    // hand it over -- no seasonsCount at all.
+    final lightweightShow = MediaItem(
+      id: 'tv-30',
+      title: 'Multi Season Show',
+      type: MediaType.tv,
+      rating: 8.0,
+      overview: 'A show with more than one season.',
+      genres: const ['Drama'],
+    );
+
+    // Full details (as returned by getMediaDetails) carries the real count.
+    final fullShowDetails = lightweightShow.copyWith(seasonsCount: 3);
+
+    List<TvEpisode> seasonEpisodes(int season) => [
+          TvEpisode(
+            id: season * 100 + 1,
+            episodeNumber: 1,
+            seasonNumber: season,
+            name: 'S$season Episode 1',
+            airDate: DateTime(2026, 1, season),
+          ),
+          TvEpisode(
+            id: season * 100 + 2,
+            episodeNumber: 2,
+            seasonNumber: season,
+            name: 'S$season Episode 2',
+            airDate: DateTime(2026, 1, season + 1),
+          ),
+        ];
+
+    final threeSeasons = [
+      TvSeason(id: 1, seasonNumber: 1, name: 'Season 1', episodes: seasonEpisodes(1)),
+      TvSeason(id: 2, seasonNumber: 2, name: 'Season 2', episodes: seasonEpisodes(2)),
+      TvSeason(id: 3, seasonNumber: 3, name: 'Season 3', episodes: seasonEpisodes(3)),
+    ];
+
+    final mockRepo = MockWatchingRepository(
+      items: {'tv-30': fullShowDetails},
+      seasonsMap: {'tv-30': threeSeasons},
+    );
+    final prefs = await SharedPreferences.getInstance();
+
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
+
+    // Add the show to Watching using the lightweight item (seasonsCount ==
+    // null), matching how it actually arrives from Discover/search/trending.
+    container.read(mediaProvider.notifier).addToWatchingList(lightweightShow);
+
+    // Mark every Season 1 episode watched.
+    container.read(mediaProvider.notifier).toggleEpisodeWatched(
+          showId: lightweightShow.id,
+          seasonNumber: 1,
+          episodeNumber: 1,
+          showItem: lightweightShow,
+          totalEpisodeCount: 6,
+        );
+    container.read(mediaProvider.notifier).toggleEpisodeWatched(
+          showId: lightweightShow.id,
+          seasonNumber: 1,
+          episodeNumber: 2,
+          showItem: lightweightShow,
+          totalEpisodeCount: 6,
+        );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: HomeScreen(enableAnimation: false),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Done'), findsNothing);
+    expect(find.textContaining('S2 · E1'), findsWidgets);
+  });
+
   testWidgets('HomeScreen hides Next Episode banner when no TV show is in watchingList', (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(
       items: {'tv-20': testTvShow},
