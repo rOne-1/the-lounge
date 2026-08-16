@@ -125,7 +125,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
     final accColor = context.ambianceColors.acc; // For Movies
-    final dotColor = item.type == MediaType.movie ? accColor : (context.ambianceColors.statusWatched); // For TV
+    final dotColor = item.type == MediaType.movie ? accColor : AppStatusColors.watched; // For TV
 
     return OpenContainer(
       transitionDuration: AppPhysics.houseSpringDuration,

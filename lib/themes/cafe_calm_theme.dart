@@ -13,18 +13,10 @@ const Color _ccAcc = Color(0xFFD4A373); // Rich caramel accent for interactive e
 const Color _ccPh = Color.fromRGBO(203, 182, 154, 0.07);
 const Color _ccPill = Color.fromRGBO(203, 182, 154, 0.08);
 
-// Status colors selected to contrast clearly against the brown palette
-const Color _ccStatusWatchlist = Color(0xFFD4A373); // Caramel
-const Color _ccStatusSave = Color(0xFFE07A5F); // Terracotta
-const Color _ccStatusWatching = Color(0xFF81B29A); // Sage Green
-const Color _ccStatusWatched = Color(0xFF3D5A80); // Muted Blue
-const Color _ccStatusOnHold = Color(0xFFF2CC8F); // Warm Yellow
-const Color _ccStatusDropped = Color(0xFFE63946); // Soft Red
 
 const Color _ccGlow1 = Color(0xFFCBB69A);
 const Color _ccGlow2 = Color(0xFF7B5A44);
 
-const Color _ccStatusSkip = Color(0xFF8C7A68);
 const Color _ccStarRating = Color(0xFFE8B04B);
 const Color _ccSurfaceHighlight = Color.fromRGBO(255, 244, 230, 0.08);
 const Color _ccNavBarBg = Color.fromRGBO(30, 26, 23, 0.75);
@@ -57,13 +49,6 @@ final AmbianceColors ccAmbianceColors = AmbianceColors(
   acc: _ccAcc,
   ph: _ccPh,
   pill: _ccPill,
-  statusWatchlist: _ccStatusWatchlist,
-  statusSave: _ccStatusSave,
-  statusWatching: _ccStatusWatching,
-  statusWatched: _ccStatusWatched,
-  statusOnHold: _ccStatusOnHold,
-  statusDropped: _ccStatusDropped,
-  statusSkip: _ccStatusSkip,
   starRating: _ccStarRating,
   surfaceHighlight: _ccSurfaceHighlight,
   navBarBg: _ccNavBarBg,

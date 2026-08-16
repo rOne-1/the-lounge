@@ -10,6 +10,11 @@ import 'package:the_lounge/themes/violet_dusk_theme.dart';
 
 // Tests the AmbianceColors instances directly (not through AppTheme.themeData)
 // so this stays independent of google_fonts asset loading in the test sandbox.
+//
+// Note: status* tokens (statusWatchlist, statusSkip, etc.) used to live here
+// as theme-adaptive AmbianceColors fields, but per the TH-STATE locked
+// design decision they've moved to the theme-*independent*
+// lib/constants/app_status_colors.dart -- see status_colors_test.dart.
 void main() {
   final allAmbianceColors = <String, AmbianceColors>{
     'Screening Room': srAmbianceColors,
@@ -24,7 +29,6 @@ void main() {
     for (final entry in allAmbianceColors.entries) {
       test('${entry.key} populates all new semantic tokens with non-transparent values', () {
         final colors = entry.value;
-        expect(colors.statusSkip.a, greaterThan(0));
         expect(colors.starRating.a, greaterThan(0));
         expect(colors.surfaceHighlight.a, greaterThan(0));
         expect(colors.navBarBg.a, greaterThan(0));
@@ -33,24 +37,12 @@ void main() {
         expect(colors.success.a, greaterThan(0));
       });
     }
-
-    test('statusSkip is distinct from the four persisted status hues in every theme', () {
-      for (final colors in allAmbianceColors.values) {
-        final persistedStatuses = {
-          colors.statusWatchlist,
-          colors.statusSave,
-          colors.statusWatched,
-        };
-        expect(persistedStatuses.contains(colors.statusSkip), isFalse);
-      }
-    });
   });
 
   group('AmbianceColors.lerp interpolates new semantic tokens smoothly', () {
     test('lerp at t=0.5 produces valid intermediate colors without assertion errors', () {
       final result = srAmbianceColors.lerp(rrAmbianceColors, 0.5) as AmbianceColors;
 
-      expect(result.statusSkip, isA<Color>());
       expect(result.starRating, isA<Color>());
       expect(result.surfaceHighlight, isA<Color>());
       expect(result.navBarBg, isA<Color>());
@@ -63,8 +55,6 @@ void main() {
       final atStart = srAmbianceColors.lerp(rrAmbianceColors, 0.0) as AmbianceColors;
       final atEnd = srAmbianceColors.lerp(rrAmbianceColors, 1.0) as AmbianceColors;
 
-      expect(atStart.statusSkip, equals(srAmbianceColors.statusSkip));
-      expect(atEnd.statusSkip, equals(rrAmbianceColors.statusSkip));
       expect(atStart.danger, equals(srAmbianceColors.danger));
       expect(atEnd.danger, equals(rrAmbianceColors.danger));
     });
@@ -73,7 +63,6 @@ void main() {
       final updated = srAmbianceColors.copyWith(danger: const Color(0xFF123456)) as AmbianceColors;
 
       expect(updated.danger, equals(const Color(0xFF123456)));
-      expect(updated.statusSkip, equals(srAmbianceColors.statusSkip));
       expect(updated.starRating, equals(srAmbianceColors.starRating));
     });
   });

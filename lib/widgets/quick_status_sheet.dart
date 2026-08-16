@@ -55,27 +55,27 @@ class QuickStatusSheet extends ConsumerWidget {
     if (inWatching) {
       activeStatusLabel = 'Watching';
       activeStatusIcon = Icons.play_circle_fill_rounded;
-      activeBadgeColor = context.ambianceColors.statusWatching;
+      activeBadgeColor = AppStatusColors.watching;
     } else if (inWatchlist) {
       activeStatusLabel = 'Watchlist';
       activeStatusIcon = Icons.bookmark_rounded;
-      activeBadgeColor = context.ambianceColors.statusWatchlist;
+      activeBadgeColor = AppStatusColors.watchlist;
     } else if (inSaved) {
       activeStatusLabel = 'Saved';
       activeStatusIcon = Icons.archive_rounded;
-      activeBadgeColor = context.ambianceColors.statusSave;
+      activeBadgeColor = AppStatusColors.save;
     } else if (inWatched) {
       activeStatusLabel = 'Watched';
       activeStatusIcon = Icons.check_circle_rounded;
-      activeBadgeColor = context.ambianceColors.statusWatched;
+      activeBadgeColor = AppStatusColors.watched;
     } else if (inOnHold) {
       activeStatusLabel = 'On-Hold';
       activeStatusIcon = Icons.pause_circle_filled_rounded;
-      activeBadgeColor = context.ambianceColors.statusOnHold;
+      activeBadgeColor = AppStatusColors.onHold;
     } else if (inDropped) {
       activeStatusLabel = 'Dropped';
       activeStatusIcon = Icons.remove_circle_rounded;
-      activeBadgeColor = context.ambianceColors.statusDropped;
+      activeBadgeColor = AppStatusColors.dropped;
     }
 
     final yearStr = item.releaseOrAirDate?.year != null
@@ -240,7 +240,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.bookmark_rounded
                     : Icons.bookmark_outline_rounded,
                 isActive: inWatchlist,
-                activeColor: context.ambianceColors.statusWatchlist,
+                activeColor: AppStatusColors.watchlist,
                 onTap: () {
                   mediaNotifier.toggleWatchlist(item);
                   Navigator.of(context).pop();
@@ -250,7 +250,7 @@ class QuickStatusSheet extends ConsumerWidget {
                 label: 'Saved',
                 icon: inSaved ? Icons.archive_rounded : Icons.archive_outlined,
                 isActive: inSaved,
-                activeColor: context.ambianceColors.statusSave,
+                activeColor: AppStatusColors.save,
                 onTap: () {
                   mediaNotifier.toggleMaybe(item);
                   Navigator.of(context).pop();
@@ -262,7 +262,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.play_circle_fill_rounded
                     : Icons.play_circle_outline_rounded,
                 isActive: inWatching,
-                activeColor: context.ambianceColors.statusWatching,
+                activeColor: AppStatusColors.watching,
                 onTap: () {
                   mediaNotifier.toggleWatching(item);
                   Navigator.of(context).pop();
@@ -274,7 +274,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.pause_circle_filled_rounded
                     : Icons.pause_circle_outline_rounded,
                 isActive: inOnHold,
-                activeColor: context.ambianceColors.statusOnHold,
+                activeColor: AppStatusColors.onHold,
                 onTap: () {
                   mediaNotifier.toggleOnHold(item);
                   Navigator.of(context).pop();
@@ -286,7 +286,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.remove_circle_rounded
                     : Icons.remove_circle_outline_rounded,
                 isActive: inDropped,
-                activeColor: context.ambianceColors.statusDropped,
+                activeColor: AppStatusColors.dropped,
                 onTap: () {
                   mediaNotifier.toggleDropped(item);
                   Navigator.of(context).pop();
@@ -298,7 +298,7 @@ class QuickStatusSheet extends ConsumerWidget {
                     ? Icons.check_circle_rounded
                     : Icons.check_circle_outline_rounded,
                 isActive: inWatched,
-                activeColor: context.ambianceColors.statusWatched,
+                activeColor: AppStatusColors.watched,
                 onTap: () {
                   if (inWatched) {
                     mediaNotifier.removeFromWatchedList(item.id);

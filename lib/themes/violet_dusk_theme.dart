@@ -6,15 +6,8 @@ import 'typography.dart';
 const Color _vdBase = Color(0xFF1B0B22);
 const Color _vdCard = Color(0xFF502D55);
 const Color _vdInk = Color(0xFFF8F4E9);
-const Color _vdStatusWatchlist = Color(0xFF935073);
-const Color _vdStatusSave = Color(0xFFF6DBC0);
-const Color _vdStatusWatched = Color(0xFF7E9BB5);
-const Color _vdStatusOnHold = Color(0xFFD4B07B);
-const Color _vdStatusDropped = Color(0xFFC57B8A);
 const Color _vdGlow1 = Color(0xFF935073);
 const Color _vdGlow2 = Color(0xFFF6DBC0);
-const Color _vdStatusWatching = Color(0xFF62A87C);
-const Color _vdStatusSkip = Color(0xFF7D6E85);
 const Color _vdStarRating = Color(0xFFE8B04B);
 const Color _vdSurfaceHighlight = Color.fromRGBO(248, 244, 233, 0.08);
 const Color _vdNavBarBg = Color.fromRGBO(27, 11, 34, 0.75);
@@ -44,16 +37,9 @@ final AmbianceColors vdAmbianceColors = AmbianceColors(
   lineRgba: const Color.fromRGBO(248, 244, 233, 0.16),
   ink: _vdInk,
   sub: const Color.fromRGBO(248, 244, 233, 0.55),
-  acc: _vdStatusWatchlist,
+  acc: _vdGlow1,
   ph: const Color.fromRGBO(248, 244, 233, 0.07),
   pill: const Color.fromRGBO(248, 244, 233, 0.08),
-  statusWatchlist: _vdStatusWatchlist,
-  statusSave: _vdStatusSave,
-  statusWatching: _vdStatusWatching,
-  statusWatched: _vdStatusWatched,
-  statusOnHold: _vdStatusOnHold,
-  statusDropped: _vdStatusDropped,
-  statusSkip: _vdStatusSkip,
   starRating: _vdStarRating,
   surfaceHighlight: _vdSurfaceHighlight,
   navBarBg: _vdNavBarBg,
@@ -64,7 +50,7 @@ final AmbianceColors vdAmbianceColors = AmbianceColors(
   glow2: _vdGlow2,
   background: violetDuskBackground(),
   primaryButtonDecoration: BoxDecoration(
-    color: _vdStatusWatchlist,
+    color: _vdGlow1,
     borderRadius: BorderRadius.circular(999),
   ),
   isDark: true,
@@ -79,9 +65,9 @@ final AppTheme violetDuskTheme = AppTheme(
   themeData: ThemeData(
     brightness: Brightness.dark,
     scaffoldBackgroundColor: _vdBase,
-    primaryColor: _vdStatusWatchlist,
+    primaryColor: _vdGlow1,
     colorScheme: const ColorScheme.dark(
-      primary: _vdStatusWatchlist,
+      primary: _vdGlow1,
       surface: _vdBase,
       onPrimary: Color(0xFF1A140C),
       onSurface: _vdInk,

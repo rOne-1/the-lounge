@@ -1135,17 +1135,17 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final inDropped = mediaState.droppedList.containsKey(item.id);
 
     final saveColor =
-        context.ambianceColors.statusSave;
+        AppStatusColors.save;
     final watchColor =
-        context.ambianceColors.statusWatchlist;
+        AppStatusColors.watchlist;
     final watchingColor =
-        context.ambianceColors.statusWatching;
+        AppStatusColors.watching;
     final watchedColor =
-        context.ambianceColors.statusWatched;
+        AppStatusColors.watched;
     final onHoldColor =
-        context.ambianceColors.statusOnHold;
+        AppStatusColors.onHold;
     final droppedColor =
-        context.ambianceColors.statusDropped;
+        AppStatusColors.dropped;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

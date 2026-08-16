@@ -919,7 +919,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
             padding: const EdgeInsets.all(14),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: context.ambianceColors.statusSave.withValues(alpha: 0.42),
+              color: AppStatusColors.save.withValues(alpha: 0.42),
             ),
             boxShadow: [
               BoxShadow(
@@ -937,7 +937,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                     color: phColor,
                     borderRadius: BorderRadius.circular(9),
                     border: Border.all(
-                      color: context.ambianceColors.statusSave.withValues(alpha: 0.33),
+                      color: AppStatusColors.save.withValues(alpha: 0.33),
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -959,7 +959,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.1,
-                          color: context.ambianceColors.statusSave,
+                          color: AppStatusColors.save,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -995,7 +995,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                     children: [
                       Icon(
                         Icons.calendar_today_outlined,
-                        color: context.ambianceColors.statusSave,
+                        color: AppStatusColors.save,
                         size: 22,
                       ),
                       const SizedBox(height: 4),
@@ -1004,7 +1004,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                         style: AppThemes.safeGeist(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: context.ambianceColors.statusSave,
+                          color: AppStatusColors.save,
                         ),
                       ),
                     ],

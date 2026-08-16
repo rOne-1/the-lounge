@@ -13,17 +13,10 @@ const Color _srAcc = Color(0xFFCBA86A);
 const Color _srPh = Color.fromRGBO(239, 230, 216, 0.07);
 const Color _srPill = Color.fromRGBO(239, 230, 216, 0.08);
 
-const Color _srStatusWatchlist = Color(0xFFCBA86A);
-const Color _srStatusSave = Color(0xFFD69784);
-const Color _srStatusWatching = Color(0xFF62A87C);
-const Color _srStatusWatched = Color(0xFF7E9BB5);
-const Color _srStatusOnHold = Color(0xFFD6A24D);
-const Color _srStatusDropped = Color(0xFFC76464);
 
 const Color _srGlow1 = Color(0xFFCBA86A);
 const Color _srGlow2 = Color(0xFFD69784);
 
-const Color _srStatusSkip = Color(0xFF8A7F6E);
 const Color _srStarRating = Color(0xFFE3B23C);
 const Color _srSurfaceHighlight = Color.fromRGBO(255, 244, 230, 0.08);
 const Color _srNavBarBg = Color.fromRGBO(23, 19, 16, 0.72);
@@ -56,13 +49,6 @@ final AmbianceColors srAmbianceColors = AmbianceColors(
   acc: _srAcc,
   ph: _srPh,
   pill: _srPill,
-  statusWatchlist: _srStatusWatchlist,
-  statusSave: _srStatusSave,
-  statusWatching: _srStatusWatching,
-  statusWatched: _srStatusWatched,
-  statusOnHold: _srStatusOnHold,
-  statusDropped: _srStatusDropped,
-  statusSkip: _srStatusSkip,
   starRating: _srStarRating,
   surfaceHighlight: _srSurfaceHighlight,
   navBarBg: _srNavBarBg,

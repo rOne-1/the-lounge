@@ -16,17 +16,6 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
   final Color ph;
   final Color pill;
 
-  final Color statusWatchlist;
-  final Color statusSave;
-  final Color statusWatching;
-  final Color statusWatched;
-  final Color statusOnHold;
-  final Color statusDropped;
-
-  /// Skip/"not now" gesture — deliberately muted and low-signal, distinct
-  /// from the four persisted status hues (Discover left-swipe, etc.).
-  final Color statusSkip;
-
   /// IMDb/TMDB-style star rating accent, harmonized per theme palette.
   final Color starRating;
 
@@ -63,13 +52,6 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     required this.acc,
     required this.ph,
     required this.pill,
-    required this.statusWatchlist,
-    required this.statusSave,
-    required this.statusWatching,
-    required this.statusWatched,
-    required this.statusOnHold,
-    required this.statusDropped,
-    required this.statusSkip,
     required this.starRating,
     required this.surfaceHighlight,
     required this.navBarBg,
@@ -94,13 +76,6 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     Color? acc,
     Color? ph,
     Color? pill,
-    Color? statusWatchlist,
-    Color? statusSave,
-    Color? statusWatching,
-    Color? statusWatched,
-    Color? statusOnHold,
-    Color? statusDropped,
-    Color? statusSkip,
     Color? starRating,
     Color? surfaceHighlight,
     Color? navBarBg,
@@ -123,13 +98,6 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       acc: acc ?? this.acc,
       ph: ph ?? this.ph,
       pill: pill ?? this.pill,
-      statusWatchlist: statusWatchlist ?? this.statusWatchlist,
-      statusSave: statusSave ?? this.statusSave,
-      statusWatching: statusWatching ?? this.statusWatching,
-      statusWatched: statusWatched ?? this.statusWatched,
-      statusOnHold: statusOnHold ?? this.statusOnHold,
-      statusDropped: statusDropped ?? this.statusDropped,
-      statusSkip: statusSkip ?? this.statusSkip,
       starRating: starRating ?? this.starRating,
       surfaceHighlight: surfaceHighlight ?? this.surfaceHighlight,
       navBarBg: navBarBg ?? this.navBarBg,
@@ -157,13 +125,6 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       acc: Color.lerp(acc, other.acc, t)!,
       ph: Color.lerp(ph, other.ph, t)!,
       pill: Color.lerp(pill, other.pill, t)!,
-      statusWatchlist: Color.lerp(statusWatchlist, other.statusWatchlist, t)!,
-      statusSave: Color.lerp(statusSave, other.statusSave, t)!,
-      statusWatching: Color.lerp(statusWatching, other.statusWatching, t)!,
-      statusWatched: Color.lerp(statusWatched, other.statusWatched, t)!,
-      statusOnHold: Color.lerp(statusOnHold, other.statusOnHold, t)!,
-      statusDropped: Color.lerp(statusDropped, other.statusDropped, t)!,
-      statusSkip: Color.lerp(statusSkip, other.statusSkip, t)!,
       starRating: Color.lerp(starRating, other.starRating, t)!,
       surfaceHighlight: Color.lerp(surfaceHighlight, other.surfaceHighlight, t)!,
       navBarBg: Color.lerp(navBarBg, other.navBarBg, t)!,

@@ -325,8 +325,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       button: _buildActionButton(
                         icon: Icons.star_border,
                         activeIcon: Icons.star,
-                        color: context.ambianceColors.statusSave,
-                        borderColor: context.ambianceColors.statusSave.withValues(alpha: 0.55),
+                        color: AppStatusColors.save,
+                        borderColor: AppStatusColors.save.withValues(alpha: 0.55),
                         direction: 'Right',
                         onTap: () => _triggerSwipe('Right'),
                         isDark: isDark,
@@ -349,8 +349,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       label: '↑ Watched',
                       button: _buildActionButton(
                         icon: Icons.check,
-                        color: context.ambianceColors.statusWatched,
-                        borderColor: context.ambianceColors.statusWatched.withValues(alpha: 0.55),
+                        color: AppStatusColors.watched,
+                        borderColor: AppStatusColors.watched.withValues(alpha: 0.55),
                         direction: 'Up',
                         onTap: () => _triggerSwipe('Up'),
                         isDark: isDark,
@@ -586,8 +586,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           icon: Icons.arrow_forward,
                           title: 'Swipe right — Save for later',
                           subtitle: 'A "maybe" bookmark → lands in your Maybe pile',
-                          color: context.ambianceColors.statusSave,
-                          bgColor: context.ambianceColors.statusSave.withValues(alpha: 0.16),
+                          color: AppStatusColors.save,
+                          bgColor: AppStatusColors.save.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -595,8 +595,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           icon: Icons.arrow_downward,
                           title: 'Swipe down — Add to watchlist',
                           subtitle: 'A committed pick you intend to watch',
-                          color: context.ambianceColors.statusWatchlist,
-                          bgColor: context.ambianceColors.statusWatchlist.withValues(alpha: 0.16),
+                          color: AppStatusColors.watchlist,
+                          bgColor: AppStatusColors.watchlist.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -604,8 +604,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           icon: Icons.arrow_upward,
                           title: 'Swipe up — Already watched',
                           subtitle: 'Logs to Watched history',
-                          color: context.ambianceColors.statusWatched,
-                          bgColor: context.ambianceColors.statusWatched.withValues(alpha: 0.16),
+                          color: AppStatusColors.watched,
+                          bgColor: AppStatusColors.watched.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -929,19 +929,19 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
       hintOpacity = 1.0;
       switch (activeDirection) {
         case 'Left':
-          activeColor = context.ambianceColors.statusSkip;
+          activeColor = AppStatusColors.skip;
           activeAlignment = Alignment.centerLeft;
           break;
         case 'Right':
-          activeColor = context.ambianceColors.statusSave;
+          activeColor = AppStatusColors.save;
           activeAlignment = Alignment.centerRight;
           break;
         case 'Up':
-          activeColor = context.ambianceColors.statusWatched;
+          activeColor = AppStatusColors.watched;
           activeAlignment = Alignment.topCenter;
           break;
         case 'Down':
-          activeColor = context.ambianceColors.statusWatchlist;
+          activeColor = AppStatusColors.watchlist;
           activeAlignment = Alignment.bottomCenter;
           break;
       }
@@ -949,21 +949,21 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
       if (isHorizontalDominant) {
         if (_dragOffset.dx < 0) {
           activeDirection = 'Left';
-          activeColor = context.ambianceColors.statusSkip;
+          activeColor = AppStatusColors.skip;
           activeAlignment = Alignment.centerLeft;
         } else if (_dragOffset.dx > 0) {
           activeDirection = 'Right';
-          activeColor = context.ambianceColors.statusSave; // Saved / Maybe
+          activeColor = AppStatusColors.save; // Saved / Maybe
           activeAlignment = Alignment.centerRight;
         }
       } else {
         if (_dragOffset.dy < 0) {
           activeDirection = 'Up';
-          activeColor = context.ambianceColors.statusWatched;
+          activeColor = AppStatusColors.watched;
           activeAlignment = Alignment.topCenter;
         } else if (_dragOffset.dy > 0) {
           activeDirection = 'Down';
-          activeColor = context.ambianceColors.statusWatchlist;
+          activeColor = AppStatusColors.watchlist;
           activeAlignment = Alignment.bottomCenter;
         }
       }

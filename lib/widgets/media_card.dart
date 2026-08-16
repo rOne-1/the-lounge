@@ -68,7 +68,7 @@ class MediaCard extends ConsumerWidget {
     final surfaceHighlight = context.ambianceColors.surfaceHighlight;
 
     final mediaState = ref.watch(mediaProvider);
-    final statusInfo = showStatusIndicator ? _resolveStatus(context, mediaState) : null;
+    final statusInfo = showStatusIndicator ? _resolveStatus(mediaState) : null;
 
     final posterWidget = OpenContainer(
       transitionDuration: AppPhysics.houseSpringDuration,
@@ -183,19 +183,18 @@ class MediaCard extends ConsumerWidget {
     );
   }
 
-  _StatusInfo? _resolveStatus(BuildContext context, MediaState mediaState) {
-    final ambiance = context.ambianceColors;
+  _StatusInfo? _resolveStatus(MediaState mediaState) {
     if (mediaState.watchingList.containsKey(item.id)) {
-      return _StatusInfo(Icons.play_circle_fill_rounded, ambiance.statusWatching);
+      return _StatusInfo(Icons.play_circle_fill_rounded, AppStatusColors.watching);
     }
     if (mediaState.watchlist.containsKey(item.id)) {
-      return _StatusInfo(Icons.bookmark_rounded, ambiance.statusWatchlist);
+      return _StatusInfo(Icons.bookmark_rounded, AppStatusColors.watchlist);
     }
     if (mediaState.maybeList.containsKey(item.id)) {
-      return _StatusInfo(Icons.archive_rounded, ambiance.statusSave);
+      return _StatusInfo(Icons.archive_rounded, AppStatusColors.save);
     }
     if (mediaState.watchedList.containsKey(item.id)) {
-      return _StatusInfo(Icons.check_circle_rounded, ambiance.statusWatched);
+      return _StatusInfo(Icons.check_circle_rounded, AppStatusColors.watched);
     }
     return null;
   }

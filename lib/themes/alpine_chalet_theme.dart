@@ -13,17 +13,10 @@ const Color _acAcc = Color(0xFFB85C38); // Ember / Hearth Warmth
 const Color _acPh = Color.fromRGBO(245, 243, 233, 0.07);
 const Color _acPill = Color.fromRGBO(245, 243, 233, 0.08);
 
-const Color _acStatusWatchlist = Color(0xFFB85C38); // Ember
-const Color _acStatusSave = Color(0xFFE24E1B); // Hearth
-const Color _acStatusWatching = Color(0xFF4A6B58); // Pine Light
-const Color _acStatusWatched = Color(0xFF4A525A); // Slate
-const Color _acStatusOnHold = Color(0xFFD87A56); // Ember Light
-const Color _acStatusDropped = Color(0xFF8A3D22); // Dark Timber
 
 const Color _acGlow1 = Color(0xFFB85C38);
 const Color _acGlow2 = Color(0xFFE24E1B);
 
-const Color _acStatusSkip = Color(0xFF6B7A70);
 const Color _acStarRating = Color(0xFFE0A94A);
 const Color _acSurfaceHighlight = Color.fromRGBO(245, 243, 233, 0.08);
 const Color _acNavBarBg = Color.fromRGBO(26, 42, 33, 0.75);
@@ -56,13 +49,6 @@ final AmbianceColors acAmbianceColors = AmbianceColors(
   acc: _acAcc,
   ph: _acPh,
   pill: _acPill,
-  statusWatchlist: _acStatusWatchlist,
-  statusSave: _acStatusSave,
-  statusWatching: _acStatusWatching,
-  statusWatched: _acStatusWatched,
-  statusOnHold: _acStatusOnHold,
-  statusDropped: _acStatusDropped,
-  statusSkip: _acStatusSkip,
   starRating: _acStarRating,
   surfaceHighlight: _acSurfaceHighlight,
   navBarBg: _acNavBarBg,
