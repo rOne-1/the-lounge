@@ -203,6 +203,37 @@ void main() {
 
     // Verify AnimatedSwitcher exists for Continue Watching & Trending sections
     expect(find.byType(AnimatedSwitcher), findsAtLeastNWidgets(2));
+
+    // E3/TF-25: "On The Air" TV carousel removed.
+    expect(find.text('On The Air'), findsNothing);
+  });
+
+  testWidgets('E3/TF-25: movies mode keeps the "Upcoming" rail', (WidgetTester tester) async {
+    final trending = createMockItems(2, 'Trending', MediaType.movie);
+    final mockRepo = MockTestRepository(
+      trendingMovies: trending,
+      popularMovies: [],
+      trendingTvShows: [],
+    );
+
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(body: HomeScreen(enableAnimation: false)),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Upcoming'), findsOneWidget);
   });
 
   group('E12: Your Watchlist rail', () {

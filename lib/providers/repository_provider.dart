@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import 'media_provider.dart';
+import '../repositories/anime_filtered_movie_repository.dart';
 import '../repositories/mock_movie_repository.dart';
 import '../repositories/movie_repository.dart';
 import '../repositories/tmdb_movie_repository.dart';
@@ -112,6 +113,9 @@ final movieRepositoryProvider = Provider<MovieRepository>((ref) {
   final apiService = ref.watch(tmdbApiServiceProvider);
   final isRelease = ref.watch(isReleaseBuildProvider);
 
+  // E3/TF-7-a: strict anime exclusion, wrapped around whichever concrete
+  // repository is chosen below so every current and future call site gets
+  // it for free (see AnimeFilteredMovieRepository's own doc comment).
   if (!apiService.hasToken) {
     if (isRelease) {
       developer.log(
@@ -120,21 +124,22 @@ final movieRepositoryProvider = Provider<MovieRepository>((ref) {
         'app will show a configuration-error state instead.',
         name: 'RepositoryProvider',
       );
-      return TmdbMovieRepository(apiService: apiService);
+      return AnimeFilteredMovieRepository(TmdbMovieRepository(apiService: apiService));
     }
     developer.log(
       'TMDB_READ_ACCESS_TOKEN not found or default placeholder used. Falling back to MockMovieRepository.',
       name: 'RepositoryProvider',
     );
-    return MockMovieRepository();
+    return AnimeFilteredMovieRepository(MockMovieRepository());
   }
 
-  return TmdbMovieRepository(apiService: apiService);
+  return AnimeFilteredMovieRepository(TmdbMovieRepository(apiService: apiService));
 });
 
 /// Provider indicating whether the app is currently running in mock repository mode.
 final isUsingMockRepositoryProvider = Provider<bool>((ref) {
-  final repo = ref.watch(movieRepositoryProvider);
+  final wrapped = ref.watch(movieRepositoryProvider);
+  final repo = wrapped is AnimeFilteredMovieRepository ? wrapped.inner : wrapped;
   if (repo is MockMovieRepository) return true;
   if (repo is TmdbMovieRepository) return !repo.isConfigured;
   return false;

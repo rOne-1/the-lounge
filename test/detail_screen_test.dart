@@ -660,9 +660,9 @@ void main() {
       expect(find.text('Networks'), findsOneWidget);
       expect(find.text('HBO Max'), findsOneWidget);
 
-      // Production companies
-      expect(find.text('Production Companies'), findsOneWidget);
-      expect(find.text('Warner Bros. Pictures'), findsOneWidget);
+      // E3/TF-18: production companies removed from the detail page.
+      expect(find.text('Production Companies'), findsNothing);
+      expect(find.text('Warner Bros. Pictures'), findsNothing);
 
       // IMDb button
       expect(find.text('View on IMDb'), findsOneWidget);

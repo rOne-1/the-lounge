@@ -1,12 +1,20 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
+import 'package:the_lounge/repositories/anime_filtered_movie_repository.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
+import 'package:the_lounge/repositories/movie_repository.dart';
 import 'package:the_lounge/repositories/tmdb_movie_repository.dart';
 import 'package:the_lounge/services/tmdb_api_service.dart';
 
 void main() {
   group('B6: movieRepositoryProvider build-mode gating', () {
+    // E3/TF-7-a wraps whichever concrete repository is chosen in
+    // AnimeFilteredMovieRepository -- unwrap it to inspect the real
+    // underlying repository these tests actually care about.
+    MovieRepository unwrap(MovieRepository repo) =>
+        repo is AnimeFilteredMovieRepository ? repo.inner : repo;
+
     test('debug build + no token falls back to MockMovieRepository', () {
       final container = ProviderContainer(overrides: [
         tmdbApiServiceProvider.overrideWithValue(TmdbApiService(token: null)),
@@ -16,7 +24,8 @@ void main() {
 
       final repo = container.read(movieRepositoryProvider);
 
-      expect(repo, isA<MockMovieRepository>());
+      expect(repo, isA<AnimeFilteredMovieRepository>());
+      expect(unwrap(repo), isA<MockMovieRepository>());
       expect(container.read(isUsingMockRepositoryProvider), isTrue);
       expect(container.read(shouldShowConfigurationErrorProvider), isFalse);
     });
@@ -30,7 +39,7 @@ void main() {
       ]);
       addTearDown(container.dispose);
 
-      final repo = container.read(movieRepositoryProvider);
+      final repo = unwrap(container.read(movieRepositoryProvider));
 
       expect(repo, isA<TmdbMovieRepository>());
       expect(repo, isNot(isA<MockMovieRepository>()));
@@ -60,7 +69,7 @@ void main() {
       ]);
       addTearDown(container.dispose);
 
-      final repo = container.read(movieRepositoryProvider);
+      final repo = unwrap(container.read(movieRepositoryProvider));
 
       expect(repo, isA<TmdbMovieRepository>());
       expect((repo as TmdbMovieRepository).isConfigured, isTrue);
@@ -77,7 +86,7 @@ void main() {
       ]);
       addTearDown(container.dispose);
 
-      final repo = container.read(movieRepositoryProvider);
+      final repo = unwrap(container.read(movieRepositoryProvider));
 
       expect(repo, isA<TmdbMovieRepository>());
       expect((repo as TmdbMovieRepository).isConfigured, isTrue);

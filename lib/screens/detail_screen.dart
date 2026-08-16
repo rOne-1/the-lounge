@@ -222,7 +222,6 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       const SizedBox(height: 22),
                       _buildKeywordChips(context, ref, item, isDark),
                       _buildNetworksSection(item, isDark),
-                      _buildProductionCompaniesSection(item, isDark),
                       _buildWatchProvidersSection(context, ref, item, isDark),
                     ],
                   )
@@ -335,7 +334,6 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       const SizedBox(height: 24),
                       _buildKeywordChips(context, ref, item, isDark),
                       _buildNetworksSection(item, isDark),
-                      _buildProductionCompaniesSection(item, isDark),
                       _buildWatchProvidersSection(context, ref, item, isDark),
                     ],
                   )
@@ -1097,73 +1095,6 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   ],
                   Text(
                     net.name,
-                    style: AppThemes.safeGeist(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: inkColor,
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }).toList(),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-
-  Widget _buildProductionCompaniesSection(MediaItem item, bool isDark) {
-    if (item.productionCompanies == null || item.productionCompanies!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final inkColor = context.ambianceColors.ink;
-    final subColor = context.ambianceColors.sub;
-    final phColor = context.ambianceColors.ph;
-    final lineRgba = context.ambianceColors.lineRgba;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Production Companies',
-          style: AppThemes.safeGeist(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: inkColor,
-          ),
-        ),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: item.productionCompanies!.map((pc) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                color: phColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: lineRgba),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (pc.logoUrl != null && pc.logoUrl!.isNotEmpty) ...[
-                    Image.network(
-                      pc.logoUrl!,
-                      height: 16,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(Icons.business, size: 16, color: subColor),
-                    ),
-                    const SizedBox(width: 8),
-                  ] else ...[
-                    Icon(Icons.business, size: 16, color: subColor),
-                    const SizedBox(width: 8),
-                  ],
-                  Text(
-                    pc.name,
                     style: AppThemes.safeGeist(
                       fontSize: 12,
                       fontWeight: FontWeight.w500,

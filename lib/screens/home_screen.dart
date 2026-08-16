@@ -23,7 +23,9 @@ class DeduplicatedHomeRails {
   final AsyncValue<List<MediaItem>> trendingAsync;
   final AsyncValue<List<MediaItem>> topRatedDeduplicated;
   final AsyncValue<List<MediaItem>> rail4Deduplicated;
-  final AsyncValue<List<MediaItem>> rail5Deduplicated;
+  // E3/TF-25: "On The Air" (the TV-mode content of this rail slot) is
+  // removed -- null in TV mode. Movies mode keeps "Upcoming" here.
+  final AsyncValue<List<MediaItem>>? rail5Deduplicated;
 
   const DeduplicatedHomeRails({
     required this.isMovies,
@@ -41,7 +43,7 @@ class HomeRailsInput {
   final AsyncValue<List<MediaItem>> trendingAsync;
   final AsyncValue<List<MediaItem>> topRatedAsync;
   final AsyncValue<List<MediaItem>> rail4Async;
-  final AsyncValue<List<MediaItem>> rail5Async;
+  final AsyncValue<List<MediaItem>>? rail5Async;
 
   const HomeRailsInput({
     required this.isMovies,
@@ -102,7 +104,7 @@ final deduplicatedHomeRailsProvider = Provider.autoDispose
 
   final topRatedDeduplicated = input.topRatedAsync.whenData(deduplicateRailList);
   final rail4Deduplicated = input.rail4Async.whenData(deduplicateRailList);
-  final rail5Deduplicated = input.rail5Async.whenData(deduplicateRailList);
+  final rail5Deduplicated = input.rail5Async?.whenData(deduplicateRailList);
 
   return DeduplicatedHomeRails(
     isMovies: input.isMovies,
@@ -133,9 +135,10 @@ class HomeScreen extends ConsumerWidget {
     final rail4Async = isMovies
         ? ref.watch(nowPlayingMoviesProvider)
         : ref.watch(airingTodayTvShowsProvider);
-    final rail5Async = isMovies
-        ? ref.watch(upcomingMoviesProvider)
-        : ref.watch(onTheAirTvShowsProvider);
+    // E3/TF-25: "On The Air" TV carousel removed -- movies mode keeps
+    // "Upcoming" in this rail slot, TV mode no longer fetches or renders
+    // anything here.
+    final rail5Async = isMovies ? ref.watch(upcomingMoviesProvider) : null;
 
     final popularAsync = ref.watch(popularMoviesProvider);
     final mediaState = ref.watch(mediaProvider);
@@ -466,25 +469,25 @@ class HomeScreen extends ConsumerWidget {
               },
             ),
 
-            // RAIL 5: Upcoming (Movies) / On The Air (TV)
-            MediaRail(
-              title: isMovies ? 'Upcoming' : 'On The Air',
-              itemsAsync: rail5Deduplicated,
-              isDark: isDark,
-              onSeeAll: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => MediaListScreen(
-                      title: isMovies ? 'Upcoming Movies' : 'On The Air',
-                      itemsProvider: isMovies
-                          ? upcomingMoviesProvider
-                          : onTheAirTvShowsProvider,
+            // RAIL 5: Upcoming (Movies only -- E3/TF-25 removed the TV-mode
+            // "On The Air" carousel that used to share this slot).
+            if (isMovies && rail5Deduplicated != null)
+              MediaRail(
+                title: 'Upcoming',
+                itemsAsync: rail5Deduplicated,
+                isDark: isDark,
+                onSeeAll: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => MediaListScreen(
+                        title: 'Upcoming Movies',
+                        itemsProvider: upcomingMoviesProvider,
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
 
             // Discover Invitation
             const SizedBox(height: 22),
