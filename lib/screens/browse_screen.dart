@@ -11,6 +11,8 @@ import '../utils/scroll_chrome_tracker.dart';
 import '../utils/weighted_rating.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/fallback_widgets.dart';
+import '../widgets/lounge_dropdown.dart';
+import '../widgets/lounge_slider.dart';
 import '../widgets/media_card.dart';
 import '../widgets/person_search_autocomplete.dart';
 import '../widgets/pressable_scale.dart';
@@ -1450,7 +1452,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                       }
                     },
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
@@ -1533,47 +1536,16 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
               Builder(
                 builder: (context) {
                   final isRegionActive = filterParams.watchRegion != null && filterParams.watchRegion!.isNotEmpty;
-                  final accColor = context.ambianceColors.acc;
-                  return DropdownButtonFormField<String>(
-                    initialValue: filterParams.watchRegion,
-                    dropdownColor: context.ambianceColors.card,
-                    style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      filled: true,
-                      fillColor: isRegionActive ? accColor.withAlpha(35) : pillColor,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: isRegionActive ? accColor : lineRgba,
-                          width: isRegionActive ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: accColor,
-                        ),
-                      ),
-                    ),
-                    hint: Text(
-                      'Select Region (Default: US)',
-                      style: AppThemes.safeGeist(fontSize: 13, color: subColor),
-                    ),
+                  return LoungeDropdown<String>(
+                    value: filterParams.watchRegion,
+                    isActive: isRegionActive,
+                    hintText: 'Select Region (Default: US)',
                     items: [
-                      DropdownMenuItem<String>(
-                        value: null,
-                        child: Text('Any Region',
-                            style: AppThemes.safeGeist(color: subColor)),
-                      ),
+                      const LoungeDropdownItem<String>(value: null, label: 'Any Region'),
                       ..._regions.map(
-                        (r) => DropdownMenuItem<String>(
+                        (r) => LoungeDropdownItem<String>(
                           value: r['code'],
-                          child: Text('${r['name']} (${r['code']})',
-                              style: AppThemes.safeGeist(color: inkColor)),
+                          label: '${r['name']} (${r['code']})',
                         ),
                       ),
                     ],
@@ -1610,7 +1582,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                       );
                     },
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
@@ -1643,7 +1616,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         );
                       },
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                        duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
@@ -1706,13 +1680,11 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   ),
                 ],
               ),
-              Slider(
+              LoungeSlider(
                 value: filterParams.minRating ?? 0.0,
                 min: 0.0,
                 max: 10.0,
                 divisions: 20,
-                activeColor: context.ambianceColors.acc,
-                inactiveColor: lineRgba,
                 onChanged: (val) {
                   filterNotifier
                       .setMinRating(val == 0.0 ? null : (val * 10).round() / 10);
@@ -1743,7 +1715,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   return PressableScale(
                     onTap: () => filterNotifier.setMinVoteCount(vc),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
@@ -1782,55 +1755,17 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
               Builder(
                 builder: (context) {
                   final isSortActive = filterParams.sortBy != 'popularity.desc';
-                  final accColor = context.ambianceColors.acc;
-                  return DropdownButtonFormField<String>(
-                    initialValue: filterParams.sortBy,
-                    dropdownColor: context.ambianceColors.card,
-                    style: AppThemes.safeGeist(fontSize: 13, color: inkColor),
-                    decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      filled: true,
-                      fillColor: isSortActive ? accColor.withAlpha(35) : pillColor,
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: isSortActive ? accColor : lineRgba,
-                          width: isSortActive ? 1.5 : 1.0,
-                        ),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: BorderSide(
-                          color: accColor,
-                        ),
-                      ),
-                    ),
+                  return LoungeDropdown<String>(
+                    value: filterParams.sortBy,
+                    isActive: isSortActive,
                     items: [
-                      DropdownMenuItem(
-                        value: 'popularity.desc',
-                        child: Text('Most Popular',
-                            style: AppThemes.safeGeist(color: inkColor)),
+                      const LoungeDropdownItem(value: 'popularity.desc', label: 'Most Popular'),
+                      const LoungeDropdownItem(value: 'vote_average.desc', label: 'Highest Rated'),
+                      LoungeDropdownItem(
+                        value: isMovies ? 'primary_release_date.desc' : 'first_air_date.desc',
+                        label: 'Release Date (Newest)',
                       ),
-                      DropdownMenuItem(
-                        value: 'vote_average.desc',
-                        child: Text('Highest Rated',
-                            style: AppThemes.safeGeist(color: inkColor)),
-                      ),
-                      DropdownMenuItem(
-                        value: isMovies
-                            ? 'primary_release_date.desc'
-                            : 'first_air_date.desc',
-                        child: Text('Release Date (Newest)',
-                            style: AppThemes.safeGeist(color: inkColor)),
-                      ),
-                      DropdownMenuItem(
-                        value: 'revenue.desc',
-                        child: Text('Highest Revenue',
-                            style: AppThemes.safeGeist(color: inkColor)),
-                      ),
+                      const LoungeDropdownItem(value: 'revenue.desc', label: 'Highest Revenue'),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -1874,7 +1809,7 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   ),
                 ],
               ),
-              RangeSlider(
+              LoungeRangeSlider(
                 values: RangeValues(
                   (filterParams.minRuntime ?? 0).toDouble(),
                   (filterParams.maxRuntime ?? 240).toDouble(),
@@ -1882,8 +1817,6 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                 min: 0.0,
                 max: 240.0,
                 divisions: 24,
-                activeColor: context.ambianceColors.acc,
-                inactiveColor: lineRgba,
                 onChanged: (values) {
                   final minR = values.start == 0.0 ? null : values.start.toInt();
                   final maxR = values.end == 240.0 ? null : values.end.toInt();
@@ -1910,7 +1843,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                   PressableScale(
                     onTap: () => filterNotifier.setOriginalLanguage(null),
                     child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 6,
@@ -1939,7 +1873,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                       onTap: () =>
                           filterNotifier.setOriginalLanguage(lang['code']),
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                        duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
@@ -2001,7 +1936,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                     return PressableScale(
                       onTap: () => filterNotifier.setTvStatus(status),
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                        duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
@@ -2049,7 +1985,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                         );
                       },
                       child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 150),
+                        duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
@@ -2082,7 +2019,8 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
                           );
                         },
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
+                          duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 12,
                             vertical: 6,

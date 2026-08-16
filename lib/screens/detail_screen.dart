@@ -8,6 +8,7 @@ import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import '../widgets/trailer_player.dart';
 import '../widgets/fallback_widgets.dart';
+import '../widgets/lounge_dropdown.dart';
 import '../widgets/lounge_toast.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/status_pulse_ring.dart';
@@ -1785,40 +1786,25 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 color: inkColor,
               ),
             ),
-            PressableScale(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
-                decoration: BoxDecoration(
-                  color: phColor,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: lineRgba),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: currentCountry,
-                    dropdownColor: context.ambianceColors.card,
-                    icon: Icon(Icons.arrow_drop_down, color: subColor, size: 20),
-                    isDense: true,
-                    style: AppThemes.safeGeist(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: inkColor,
-                    ),
-                    onChanged: (String? newCountry) {
-                      if (newCountry != null) {
-                        notifier.setWatchProvidersCountry(newCountry);
-                      }
-                    },
-                    items: availableRegions
-                        .map<DropdownMenuItem<String>>((region) {
-                      final code = region['code'] ?? 'US';
-                      return DropdownMenuItem<String>(
-                        value: code,
-                        child: Text(code),
-                      );
-                    }).toList(),
-                  ),
-                ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              decoration: BoxDecoration(
+                color: phColor,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: lineRgba),
+              ),
+              child: LoungeDropdown<String>(
+                value: currentCountry,
+                dense: true,
+                onChanged: (newCountry) {
+                  if (newCountry != null) {
+                    notifier.setWatchProvidersCountry(newCountry);
+                  }
+                },
+                items: availableRegions.map<LoungeDropdownItem<String>>((region) {
+                  final code = region['code'] ?? 'US';
+                  return LoungeDropdownItem<String>(value: code, label: code);
+                }).toList(),
               ),
             ),
           ],
