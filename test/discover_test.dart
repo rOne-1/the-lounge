@@ -727,6 +727,64 @@ void main() {
     expect(mediaState.watchlist.containsKey('2'), isFalse); // Movie 2 undone
   });
 
+  testWidgets(
+      'DISC-1: undoing a swipe restores the card fully visible, not stuck off-screen',
+      (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    final mockRepo = TestRepository();
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(navigationProvider.notifier).setTab(AppTab.discover);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: ShellScreen(enableAnimation: false),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    if (find.text('Got it — start swiping').evaluate().isNotEmpty) {
+      await tester.tap(find.text('Got it — start swiping'));
+      await tester.pumpAndSettle();
+    } else {
+      await tester.tapAt(const Offset(100, 100));
+      await tester.pumpAndSettle();
+    }
+
+    final topLeftBeforeSwipe = tester.getTopLeft(find.text('Movie 1'));
+
+    // Skip (left swipe) via the action button, which triggers the same
+    // flyOff()/_onSwipe() path as a real drag-release.
+    await tester.tap(find.byIcon(Icons.close).last);
+    await tester.pumpAndSettle();
+    expect(find.text('Movie 1'), findsNothing);
+
+    // Undo through the floating navigation capsule (NAV-3).
+    await tester.tap(find.byKey(const ValueKey('floating_nav_capsule')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.undo));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Movie 1'), findsOneWidget);
+    // The restored card must render back at (roughly) its original resting
+    // position, not still translated off-screen from its fly-off animation
+    // -- a stale GlobalKey/State reuse would leave _dragOffset parked at
+    // the fly-off distance instead of resetting to zero.
+    final topLeftAfterUndo = tester.getTopLeft(find.text('Movie 1'));
+    expect((topLeftAfterUndo - topLeftBeforeSwipe).distance, lessThan(5));
+  });
+
   test(
       'TF-2: importBackupJson refreshes discover pool and evicts imported titles',
       () async {

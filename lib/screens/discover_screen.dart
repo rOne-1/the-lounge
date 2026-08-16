@@ -772,7 +772,21 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
         final elapsed = _motionController.lastElapsedDuration != null
             ? _motionController.lastElapsedDuration!.inMicroseconds / 1000000.0
             : 0.0;
-        final newOffset = _currentSimulation!.dxOffset(elapsed);
+        var newOffset = _currentSimulation!.dxOffset(elapsed);
+        // DISC-1: settling toward rest (a released drag, or a re-entering
+        // undone card flying back in from off-screen) target Offset.zero.
+        // The underdamped house spring only satisfies SpringSimulation's
+        // own sub-pixel isDone() tolerance after a very long tail relative
+        // to how far it started -- for a normal small drag release that's
+        // imperceptible, but the undo re-entry starts a full screen width
+        // off-screen, so that tail could leave the card visibly parked
+        // far from its resting position for an extended stretch. Snap the
+        // last visually-imperceptible fraction instead of waiting on the
+        // simulation to fully converge.
+        if (!_isFlyingOff && newOffset.distance < 1.0) {
+          newOffset = Offset.zero;
+          _motionController.stop();
+        }
         setState(() {
           _dragOffset = newOffset;
           _angle = _dragOffset.dx / 300 * (math.pi / 8);
