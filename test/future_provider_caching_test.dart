@@ -8,6 +8,7 @@ import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
+import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
@@ -177,11 +178,20 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
+      // NAV-3: the Movies/TV toggle no longer lives inside HomeScreen itself
+      // (it moved to the floating navigation capsule, shell-level) -- drive
+      // the underlying media-type state directly via the container instead,
+      // which is what this test actually cares about verifying.
+      final container = ProviderContainer(
+        overrides: [
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            movieRepositoryProvider.overrideWithValue(mockRepo),
-          ],
+        UncontrolledProviderScope(
+          container: container,
           child: const MaterialApp(
             home: Scaffold(
               body: HomeScreen(enableAnimation: false),
@@ -195,15 +205,15 @@ void main() {
       expect(find.text('Test Movie 1'), findsWidgets);
       expect(find.byType(CircularProgressIndicator), findsNothing);
 
-      // Tap TV toggle
-      await tester.tap(find.text('TV'));
+      // Switch to TV
+      container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
       await tester.pumpAndSettle();
 
       expect(find.text('Test TV 1'), findsWidgets);
       expect(find.byType(CircularProgressIndicator), findsNothing);
 
-      // Switch back to Movies toggle
-      await tester.tap(find.text('Movies'));
+      // Switch back to Movies
+      container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.movies);
       await tester.pump(); // Frame of rebuild
 
       // Cached data should render immediately without progress indicator

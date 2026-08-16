@@ -9,7 +9,6 @@ import 'detail_screen.dart';
 import '../constants.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/pressable_scale.dart';
-import '../widgets/segmented_toggle.dart';
 import '../widgets/quick_status_sheet.dart';
 
 class CalendarScreen extends ConsumerStatefulWidget {
@@ -68,38 +67,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final isLarge = MediaQuery.of(context).size.width >= 600;
 
     if (grouped.isEmpty) {
-      return Column(
-        children: [
-          if (!isLarge) ...[
-            Padding(
-              padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: SegmentedMediaTypeToggle(
-                  activeType: navState.activeMediaType,
-                  onChanged: (type) =>
-                      ref.read(navigationProvider.notifier).setMediaType(type),
-                  isDark: isDark,
-                ),
-              ),
-            ),
-          ],
-          Expanded(
-            child: AtmosphericEmptyState(
-              icon: Icons.calendar_month_outlined,
-              title: isMovies ? 'No upcoming movie premieres' : 'No upcoming TV episodes',
-              message: 'Releases for anything you\'ve watchlisted will show up here.',
-              ctaLabel: 'Discover Titles',
-              onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
-            ),
-          ),
-        ],
+      return AtmosphericEmptyState(
+        icon: Icons.calendar_month_outlined,
+        title: isMovies ? 'No upcoming movie premieres' : 'No upcoming TV episodes',
+        message: 'Releases for anything you\'ve watchlisted will show up here.',
+        ctaLabel: 'Discover Titles',
+        onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
       );
     }
 
     final sortedDates = grouped.keys.toList()..sort();
-
-    final itemCount = sortedDates.length + (!isLarge ? 1 : 0);
 
     return ListView.builder(
       padding: EdgeInsets.fromLTRB(
@@ -107,24 +84,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           isLarge ? 4.0 : 12.0,
           isLarge ? 24.0 : 18.0,
           18.0 + MediaQuery.of(context).padding.bottom),
-      itemCount: itemCount,
+      itemCount: sortedDates.length,
       itemBuilder: (context, index) {
-        if (!isLarge && index == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12.0),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: SegmentedMediaTypeToggle(
-                activeType: navState.activeMediaType,
-                onChanged: (type) =>
-                    ref.read(navigationProvider.notifier).setMediaType(type),
-                isDark: isDark,
-              ),
-            ),
-          );
-        }
-
-        final dateIndex = !isLarge ? index - 1 : index;
+        final dateIndex = index;
         final date = sortedDates[dateIndex];
         final items = grouped[date]!;
         final isToday = date.difference(DateTime.now()).inDays == 0;

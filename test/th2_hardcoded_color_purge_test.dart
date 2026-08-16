@@ -43,7 +43,7 @@ void main() {
         // Title/overview text sits on the deck card's own permanent dark
         // photographic backdrop regardless of app ambiance — legible by
         // design in every theme, not an ambiance-color violation.
-        "color: const Color.fromRGBO(255, 255, 255, 0.8)));",
+        'color: const Color.fromRGBO(255, 255, 255, 0.8)',
         'color: const Color.fromRGBO(255, 255, 255, 0.72)), maxLines: 2, overflow: TextOverflow.ellipsis),',
       ],
       'lib/screens/shell_screen.dart': [],

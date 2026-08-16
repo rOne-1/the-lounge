@@ -10,7 +10,6 @@ import 'media_list_screen.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/fallback_widgets.dart';
-import '../widgets/segmented_toggle.dart';
 import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/ambient_glow.dart';
@@ -269,19 +268,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            if (!isLarge) ...[
-              const SizedBox(height: 16),
-              // Movie / TV Toggle
-              SegmentedMediaTypeToggle(
-                activeType: navState.activeMediaType,
-                onChanged: (type) => ref
-                    .read(navigationProvider.notifier)
-                    .setMediaType(type),
-                isDark: isDark,
-              ),
-              const SizedBox(height: 22),
-            ] else
-              const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
             // RAIL 1: Pick For Me (Movies) or Continue Watching (TV)
             if (isMovies) ...[

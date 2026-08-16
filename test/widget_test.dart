@@ -72,6 +72,10 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    // NAV-3: the movie/TV toggle now lives inside the floating navigation
+    // capsule's expanded state, not always on screen.
+    await tester.tap(find.byKey(const ValueKey('floating_nav_capsule')));
+    await tester.pumpAndSettle();
     expect(find.text('Movies'), findsWidgets);
   });
 
@@ -155,6 +159,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ConfigurationErrorScreen), findsNothing);
+      // NAV-3: the movie/TV toggle now lives inside the floating navigation
+      // capsule's expanded state, not always on screen.
+      await tester.tap(find.byKey(const ValueKey('floating_nav_capsule')));
+      await tester.pumpAndSettle();
       expect(find.text('Movies'), findsWidgets);
     });
   });

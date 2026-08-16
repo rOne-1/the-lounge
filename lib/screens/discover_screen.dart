@@ -7,7 +7,6 @@ import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import '../widgets/fallback_widgets.dart';
-import '../widgets/segmented_toggle.dart';
 import '../widgets/pressable_scale.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'detail_screen.dart';
@@ -143,31 +142,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       children: [
         Column(
           children: [
-            // Top bar: toggle + legend key
+            // Top bar: legend key (media toggle now lives in the floating
+            // navigation capsule, NAV-3).
             Padding(
               padding: EdgeInsets.fromLTRB(
                   isLarge ? 24 : 18, isLarge ? 0 : 2, isLarge ? 24 : 18, 10),
               child: Row(
-                mainAxisAlignment: isLarge
-                    ? MainAxisAlignment.end
-                    : MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  if (!isLarge)
-                    Consumer(
-                      builder: (context, ref, child) {
-                        final navState = ref.watch(navigationProvider);
-                        return SegmentedMediaTypeToggle(
-                          activeType: navState.activeMediaType,
-                          onChanged: (type) => ref
-                              .read(navigationProvider.notifier)
-                              .setMediaType(type),
-                          isDark: isDark,
-                          height: 28,
-                          segmentWidth: 58,
-                          fontSize: 11.5,
-                        );
-                      },
-                    ),
                   PressableScale(
                     onTap: () => setState(() => _showLegend = true),
                     child: Row(
@@ -1170,12 +1152,18 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
                         child: Text('★ ${widget.item.rating}', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onPrimary)),
                       ),
                       const SizedBox(width: 8),
-                      Builder(builder: (context) {
-                        final yearStr = widget.item.releaseDate != null ? widget.item.releaseDate!.year.toString() : '';
-                        final genreStr = widget.item.genres.isNotEmpty ? widget.item.genres.take(2).join(', ') : '';
-                        final metaText = [if (yearStr.isNotEmpty) yearStr, if (genreStr.isNotEmpty) genreStr].join(' · ');
-                        return Text(metaText.isNotEmpty ? metaText : 'Discover', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: const Color.fromRGBO(255, 255, 255, 0.8)));
-                      }),
+                      Flexible(
+                        child: Builder(builder: (context) {
+                          final yearStr = widget.item.releaseDate != null ? widget.item.releaseDate!.year.toString() : '';
+                          final genreStr = widget.item.genres.isNotEmpty ? widget.item.genres.take(2).join(', ') : '';
+                          final metaText = [if (yearStr.isNotEmpty) yearStr, if (genreStr.isNotEmpty) genreStr].join(' · ');
+                          return Text(
+                            metaText.isNotEmpty ? metaText : 'Discover',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: const Color.fromRGBO(255, 255, 255, 0.8)),
+                          );
+                        }),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 6),

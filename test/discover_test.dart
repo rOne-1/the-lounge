@@ -656,16 +656,35 @@ void main() {
     // Verify Movie 1 is displayed
     expect(find.text('Movie 1'), findsOneWidget);
 
+    final capsuleFinder = find.byKey(const ValueKey('floating_nav_capsule'));
+    Future<void> openCapsule() async {
+      await tester.tap(capsuleFinder);
+      await tester.pumpAndSettle();
+    }
+
+    Future<void> closeCapsule() async {
+      // NAV-3: expanding the capsule covers the screen with a dismiss
+      // barrier, so it must be explicitly collapsed again before the
+      // underlying Discover card's own swipe controls are reachable.
+      // Tapping the capsule's own center (rather than outside it) would
+      // land on an inner control (e.g. the media-type toggle) and get
+      // consumed by that nested GestureDetector instead of collapsing it.
+      await tester.tapAt(const Offset(20, 20));
+      await tester.pumpAndSettle();
+    }
+
     // Simulate Left swipe (Skip)
     await tester.tap(find.byIcon(Icons.close).last);
     await tester.pumpAndSettle();
 
     // Verify no SnackBar is shown (we removed it)
     expect(find.text('Skipped "Movie 1"'), findsNothing);
-    
-    // Find the undo button on the top bar
+
+    // Undo now lives in the floating navigation capsule's expanded utility
+    // row (NAV-3), not a persistent top-bar button.
+    await openCapsule();
     expect(find.byIcon(Icons.undo), findsOneWidget);
-    
+
     // Movie 1 should be gone, Movie 2 displayed
     expect(find.text('Movie 1'), findsNothing);
     expect(find.text('Movie 2'), findsOneWidget);
@@ -682,17 +701,22 @@ void main() {
     expect(skippedState.containsKey('1'), isFalse);
     expect(skippedState.containsKey('movie_1'), isFalse); // Assert on prefixed id as well
 
+    await closeCapsule();
+
     // Second swipe invalidates first swipe
     await tester.tap(find.byIcon(Icons.star_border).last); // Right swipe (Save for later)
     await tester.pumpAndSettle();
 
+    await openCapsule();
     expect(find.byIcon(Icons.undo), findsOneWidget);
-    
+    await closeCapsule();
+
     await tester.tap(find.byIcon(Icons.bookmark_border).last); // Down swipe (Watchlist)
     await tester.pumpAndSettle();
 
+    await openCapsule();
     expect(find.byIcon(Icons.undo), findsOneWidget);
-    
+
     // Tap Undo (should only undo Movie 2)
     await tester.tap(find.byIcon(Icons.undo));
     await tester.pumpAndSettle();
