@@ -1077,38 +1077,52 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           spacing: 8,
           runSpacing: 8,
           children: item.networks!.map((net) {
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                color: phColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: lineRgba),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (net.logoUrl != null && net.logoUrl!.isNotEmpty) ...[
-                    Image.network(
-                      net.logoUrl!,
-                      height: 16,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(Icons.tv, size: 16, color: subColor),
+            // DATA-2: network pills were previously inert Containers.
+            // Tapping one now filters Browse by that network, matching the
+            // existing person/cast-crew navigation pattern.
+            return PressableScale(
+              onTap: () {
+                ref.read(discoverFilterProvider.notifier).setTvNetwork(
+                      tvNetworkId: net.id,
+                      tvNetworkName: net.name,
+                    );
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BrowseScreen()),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: phColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: lineRgba),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (net.logoUrl != null && net.logoUrl!.isNotEmpty) ...[
+                      Image.network(
+                        net.logoUrl!,
+                        height: 16,
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) =>
+                            Icon(Icons.tv, size: 16, color: subColor),
+                      ),
+                      const SizedBox(width: 8),
+                    ] else ...[
+                      Icon(Icons.tv, size: 16, color: subColor),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      net.name,
+                      style: AppThemes.safeGeist(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: inkColor,
+                      ),
                     ),
-                    const SizedBox(width: 8),
-                  ] else ...[
-                    Icon(Icons.tv, size: 16, color: subColor),
-                    const SizedBox(width: 8),
                   ],
-                  Text(
-                    net.name,
-                    style: AppThemes.safeGeist(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                      color: inkColor,
-                    ),
-                  ),
-                ],
+                ),
               ),
             );
           }).toList(),
