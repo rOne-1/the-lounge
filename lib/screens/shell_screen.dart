@@ -4,6 +4,7 @@ import '../providers/navigation_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../widgets/noise_texture_overlay.dart';
 import '../widgets/floating_navigation_capsule.dart';
+import '../widgets/whats_new_dialog.dart';
 import '../constants.dart';
 import 'home_screen.dart';
 import 'discover_screen.dart';
@@ -58,6 +59,7 @@ class ShellScreen extends ConsumerWidget {
                   child: AppNoiseTexture(),
                 ),
                 FloatingNavigationCapsule(enableAnimation: enableAnimation),
+                WhatsNewGate(enableAnimation: enableAnimation),
               ],
             ),
           ),
