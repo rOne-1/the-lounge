@@ -851,7 +851,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             personId: pId,
             personName: pName,
           );
-      ref.read(navigationProvider.notifier).setTab(AppTab.search);
+      // NAV-2: BrowseScreen is pushed as a sub-route on top of wherever the
+      // user actually came from -- mutating the root navigationProvider tab
+      // here used to silently strand them on the Search tab after popping
+      // back out, even if they arrived from Home/Discover/etc.
       Navigator.of(context).push(
         MaterialPageRoute(builder: (_) => const BrowseScreen()),
       );
@@ -1532,7 +1535,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                         personId: pId,
                         personName: pName,
                       );
-                  ref.read(navigationProvider.notifier).setTab(AppTab.search);
+                  // NAV-2: see navigateToPerson's comment above -- do not
+                  // mutate the root tab for a pushed sub-route.
                   Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const BrowseScreen()),
                   );
