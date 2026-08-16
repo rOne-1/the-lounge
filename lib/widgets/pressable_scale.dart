@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../constants.dart';
 
 class PressableScale extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
   final VoidCallback? onLongPress;
   final double scaleAmount;
-  final Duration duration;
+  final Duration pressDuration;
+  final Duration releaseDuration;
   final Curve curve;
   final bool enabled;
+  final bool hapticFeedback;
   final HitTestBehavior behavior;
 
   const PressableScale({
@@ -16,9 +20,11 @@ class PressableScale extends StatefulWidget {
     this.onTap,
     this.onLongPress,
     this.scaleAmount = 0.96,
-    this.duration = const Duration(milliseconds: 100),
-    this.curve = Curves.easeOutCubic,
+    this.pressDuration = const Duration(milliseconds: 120),
+    this.releaseDuration = AppPhysics.houseSpringDuration,
+    this.curve = AppPhysics.houseSpringCurve,
     this.enabled = true,
+    this.hapticFeedback = false,
     this.behavior = HitTestBehavior.translucent,
   });
 
@@ -31,6 +37,9 @@ class _PressableScaleState extends State<PressableScale> {
 
   void _handleTapDown(TapDownDetails details) {
     if (!widget.enabled) return;
+    if (widget.hapticFeedback) {
+      HapticFeedback.selectionClick();
+    }
     setState(() {
       _isPressed = true;
     });
@@ -61,7 +70,10 @@ class _PressableScaleState extends State<PressableScale> {
       onLongPress: widget.enabled ? widget.onLongPress : null,
       child: AnimatedScale(
         scale: _isPressed && widget.enabled ? widget.scaleAmount : 1.0,
-        duration: widget.duration,
+        // Immediate on the way down, house-spring snap-back on release —
+        // the same damped spring curve, just played over a shorter window
+        // while compressing so the tap reads as instant rather than mushy.
+        duration: _isPressed ? widget.pressDuration : widget.releaseDuration,
         curve: widget.curve,
         child: widget.child,
       ),
