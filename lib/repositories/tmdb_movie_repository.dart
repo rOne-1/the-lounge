@@ -393,24 +393,42 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final now = DateTime.now();
+      final todayStr =
+          '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
       Future<List<MediaItem>> fetchFilteredPage(int p) async {
-        final key = cacheService
-            .generateKey('/movie/upcoming', {'page': p, 'include_adult': false});
+        // DATA-1: TMDB's /movie/upcoming is a narrow regional theatrical
+        // window (titles in theatres within the next 2-4 weeks, bounded by
+        // the endpoint's own dates.minimum/maximum) -- long-range
+        // anticipated blockbusters (e.g. a sequel releasing 6+ months out)
+        // are excluded server-side, not just filtered out client-side, so
+        // no amount of client-side date filtering or page-widening on that
+        // endpoint could ever surface them. /discover/movie with an
+        // explicit primary_release_date.gte instead genuinely includes
+        // them, sorted by popularity/anticipation.
+        final key = cacheService.generateKey('/discover/movie', {
+          'page': p,
+          'include_adult': false,
+          'sort_by': 'popularity.desc',
+          'primary_release_date.gte': todayStr,
+        });
         Map<String, dynamic>? res = await cacheService.get(key);
         if (res == null) {
-          res = await apiService.getUpcomingMovies(page: p);
+          res = await apiService.discoverMovies(
+            page: p,
+            sortBy: 'popularity.desc',
+            extraParams: {
+              'primary_release_date.gte': todayStr,
+              'vote_count.gte': 0,
+            },
+          );
           await cacheService.put(key, res);
         }
         final results =
             (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
-        // TF-22: TMDB's /movie/upcoming can include titles already released
-        // (region/date-window quirks) — filter those out client-side.
-        // Confirmed live (not hypothetical): a full real page can come back
-        // with every title already released, decades-old catalog entries
-        // included -- filtering client-side but returning that page
-        // unfiltered as a "better than nothing" fallback actively misleads
-        // (an "Upcoming" rail showing 1990s films), so this never does that.
+        // Belt-and-suspenders: the server-side date filter already excludes
+        // released titles, but keep the client-side release-date check too
+        // (guards against cached/stale entries, same as before).
         return results
             .map((item) => _mapJsonToMediaItem(item, overrideType: MediaType.movie))
             .where((item) =>

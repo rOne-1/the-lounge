@@ -435,7 +435,7 @@ void main() {
           now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
 
       final mockClient = MockClient((request) async {
-        if (request.url.path.contains('/movie/upcoming')) {
+        if (request.url.path.contains('/discover/movie')) {
           return http.Response(
               jsonEncode({
                 'page': 1,
@@ -485,7 +485,7 @@ void main() {
           now.add(const Duration(days: 30)).toIso8601String().split('T').first;
 
       final mockClient = MockClient((request) async {
-        if (request.url.path.contains('/movie/upcoming')) {
+        if (request.url.path.contains('/discover/movie')) {
           final page = request.url.queryParameters['page'];
           if (page == '2') {
             return http.Response(
@@ -523,6 +523,46 @@ void main() {
     });
 
     test(
+        'DATA-1: getUpcomingMovies queries /discover/movie with primary_release_date.gte '
+        'so long-range anticipated blockbusters outside the narrow /movie/upcoming '
+        'theatrical window are surfaced', () async {
+      final now = DateTime.now();
+      final farFutureDate =
+          now.add(const Duration(days: 220)).toIso8601String().split('T').first;
+
+      Uri? capturedUri;
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/discover/movie')) {
+          capturedUri = request.url;
+          return http.Response(
+              jsonEncode({
+                'page': 1,
+                'results': [
+                  {
+                    'id': 99,
+                    'title': 'Anticipated Sequel (6+ months out)',
+                    'release_date': farFutureDate,
+                  },
+                ]
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final upcoming = await repo.getUpcomingMovies();
+
+      expect(upcoming.map((m) => m.title), contains('Anticipated Sequel (6+ months out)'));
+      expect(capturedUri, isNotNull);
+      expect(capturedUri!.path, contains('/discover/movie'));
+      expect(capturedUri!.queryParameters['sort_by'], equals('popularity.desc'));
+      expect(capturedUri!.queryParameters.containsKey('primary_release_date.gte'), isTrue);
+    });
+
+    test(
         'TF-22 regression: returns empty rather than raw already-released data '
         'when every nearby page is entirely already-released', () async {
       final now = DateTime.now();
@@ -530,7 +570,7 @@ void main() {
           now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
 
       final mockClient = MockClient((request) async {
-        if (request.url.path.contains('/movie/upcoming')) {
+        if (request.url.path.contains('/discover/movie')) {
           final page = request.url.queryParameters['page'] ?? '1';
           return http.Response(
               jsonEncode({
