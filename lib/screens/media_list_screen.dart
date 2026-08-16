@@ -1,16 +1,14 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/media_item.dart';
 import '../constants.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/fallback_widgets.dart';
+import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
-import '../widgets/quick_status_sheet.dart';
-import 'detail_screen.dart';
 
 typedef RailFullListScreen = MediaListScreen;
 
@@ -101,9 +99,9 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.ambianceColors.isDark;
     final inkColor = context.ambianceColors.ink;
     final subColor = context.ambianceColors.sub;
-    final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
     final bgColor = context.ambianceColors.base;
     final pillColor = context.ambianceColors.pill;
@@ -201,79 +199,11 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                       itemCount: displayItems.length,
                       itemBuilder: (context, index) {
                         final item = displayItems[index];
-                        return PressableScale(
-                          child: OpenContainer(
-                            transitionDuration: AppPhysics.houseSpringDuration,
-                            closedElevation: 0,
-                            openElevation: 0,
-                            closedColor: Colors.transparent,
-                            openColor: bgColor,
-                            middleColor: Colors.transparent,
-                            closedShape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            closedBuilder: (context, openContainer) {
-                              return GestureDetector(
-                                onTap: openContainer,
-                                onLongPress: () => showQuickStatusSheet(context, ref, item),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: phColor,
-                                    border: Border.all(color: lineRgba),
-                                    borderRadius: BorderRadius.circular(12),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: context.ambianceColors.surfaceHighlight,
-                                        offset: const Offset(0, 1),
-                                        blurStyle: BlurStyle.inner,
-                                      ),
-                                    ],
-                                  ),
-                                  clipBehavior: Clip.antiAlias,
-                                  child: Stack(
-                                    fit: StackFit.expand,
-                                    children: [
-                                      MediaImage(
-                                        item: item,
-                                        fit: BoxFit.cover,
-                                      ),
-                                      if (item.rating > 0)
-                                        Positioned(
-                                          top: 6,
-                                          right: 6,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                                horizontal: 6, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: context.ambianceColors.scrim,
-                                              borderRadius: BorderRadius.circular(6),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                Icon(Icons.star,
-                                                    size: 10, color: context.ambianceColors.starRating),
-                                                const SizedBox(width: 3),
-                                                Text(
-                                                  item.rating.toStringAsFixed(1),
-                                                  style: AppThemes.safeGeist(
-                                                    fontSize: 10,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.white,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
-                            openBuilder: (context, _) =>
-                                DetailScreen(id: item.prefixedId),
-                          ),
+                        return MediaCard(
+                          key: ValueKey(item.prefixedId),
+                          item: item,
+                          isDark: isDark,
+                          borderRadius: 12,
                         ).animate().fade(duration: 250.ms).slideY(
                               begin: 0.1,
                               end: 0,
