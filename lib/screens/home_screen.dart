@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/media_provider.dart';
@@ -12,6 +11,7 @@ import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/segmented_toggle.dart';
+import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/ambient_glow.dart';
 import '../widgets/quick_status_sheet.dart';
@@ -333,9 +333,7 @@ class HomeScreen extends ConsumerWidget {
                             final item = rail1Items[index];
                             return Padding(
                               padding: const EdgeInsets.only(right: 12.0),
-                              child: PressableScale(
-                                child: TvContinueWatchingCard(item: item, isDark: isDark),
-                              ),
+                              child: TvContinueWatchingCard(item: item, isDark: isDark),
                             ).animate().fade(duration: 250.ms).slideY(
                                 begin: 0.1,
                                 end: 0,
@@ -580,235 +578,74 @@ class TvContinueWatchingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final subColor = context.ambianceColors.sub;
-    final inkColor = context.ambianceColors.ink;
-    final phColor = context.ambianceColors.ph;
-    final lineRgba = context.ambianceColors.lineRgba;
     final accColor = context.ambianceColors.acc;
-
     final seasonsAsync = ref.watch(tvShowSeasonsProvider(item));
+    final seasons = seasonsAsync.value ?? [];
+    final nextEp = ref.read(mediaProvider.notifier).getNextUnwatchedEpisode(
+          showId: item.id,
+          seasons: seasons,
+        );
 
-    return OpenContainer(
-      transitionDuration: AppPhysics.houseSpringDuration,
-      closedElevation: 0,
-      openElevation: 0,
-      closedColor: Colors.transparent,
-      openColor: context.ambianceColors.base,
-      middleColor: Colors.transparent,
-      closedShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      closedBuilder: (context, openContainer) {
-        final seasons = seasonsAsync.value ?? [];
-        final nextEp = ref.read(mediaProvider.notifier).getNextUnwatchedEpisode(
-              showId: item.id,
-              seasons: seasons,
-            );
+    final String subtitle;
+    final String badgeText;
+    if (nextEp != null) {
+      subtitle = 'Next: S${nextEp.seasonNumber} E${nextEp.episodeNumber} · ${nextEp.name}';
+      badgeText = 'S${nextEp.seasonNumber} · E${nextEp.episodeNumber}';
+    } else {
+      subtitle = 'All episodes watched';
+      badgeText = 'Done';
+    }
 
-        final String subtitle;
-        final String badgeText;
-        if (nextEp != null) {
-          subtitle = 'Next: S${nextEp.seasonNumber} E${nextEp.episodeNumber} · ${nextEp.name}';
-          badgeText = 'S${nextEp.seasonNumber} · E${nextEp.episodeNumber}';
-        } else {
-          subtitle = 'All episodes watched';
-          badgeText = 'Done';
-        }
-
-        return GestureDetector(
-          onTap: openContainer,
-          onLongPress: () => showQuickStatusSheet(context, ref, item),
-          child: SizedBox(
-            width: 140,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 85,
-                  decoration: BoxDecoration(
-                    color: phColor,
-                    border: Border.all(color: lineRgba),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: context.ambianceColors.surfaceHighlight,
-                        blurRadius: 0,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 1),
-                        blurStyle: BlurStyle.inner,
-                      )
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      MediaImage(
-                        item: item,
-                        fit: BoxFit.cover,
-                        showFallbackTitle: false,
-                      ),
-                      Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: context.ambianceColors.scrim,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            badgeText,
-                            style: AppThemes.safeGeist(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          height: 3,
-                          color: context.ambianceColors.scrim.withValues(
-                            alpha: context.ambianceColors.scrim.a * 0.3,
-                          ),
-                          alignment: Alignment.centerLeft,
-                          child: FractionallySizedBox(
-                            widthFactor: nextEp != null ? 0.4 : 1.0,
-                            child: Container(color: accColor),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+    return MediaCard(
+      item: item,
+      isDark: isDark,
+      width: 140,
+      height: 85,
+      showTitle: true,
+      showSubtitle: true,
+      customSubtitle: subtitle,
+      // The episode badge already occupies the top-left corner this card
+      // would otherwise use for a watch-status indicator.
+      showStatusIndicator: false,
+      badge: Stack(
+        children: [
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+              decoration: BoxDecoration(
+                color: context.ambianceColors.scrim,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                badgeText,
+                style: AppThemes.safeGeist(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  item.title,
-                  style: AppThemes.safeGeist(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: inkColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppThemes.safeGeist(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: subColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+              ),
             ),
           ),
-        );
-      },
-      openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-    );
-  }
-}
-
-class MovieWatchlistCard extends ConsumerWidget {
-  final MediaItem item;
-  final bool isDark;
-
-  const MovieWatchlistCard({
-    super.key,
-    required this.item,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final subColor = context.ambianceColors.sub;
-    final inkColor = context.ambianceColors.ink;
-    final phColor = context.ambianceColors.ph;
-    final lineRgba = context.ambianceColors.lineRgba;
-
-    final genreLabel = item.genres.isNotEmpty ? item.genres.first : 'Movie';
-    final runtimeLabel = item.runtime != null ? '${item.runtime} min' : 'Up Next';
-
-    return OpenContainer(
-      transitionDuration: AppPhysics.houseSpringDuration,
-      closedElevation: 0,
-      openElevation: 0,
-      closedColor: Colors.transparent,
-      openColor: context.ambianceColors.base,
-      middleColor: Colors.transparent,
-      closedShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      closedBuilder: (context, openContainer) {
-        return GestureDetector(
-          onTap: openContainer,
-          onLongPress: () => showQuickStatusSheet(context, ref, item),
-          child: SizedBox(
-            width: 132,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  height: 82.5,
-                  decoration: BoxDecoration(
-                    color: phColor,
-                    border: Border.all(color: lineRgba),
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: context.ambianceColors.surfaceHighlight,
-                        blurRadius: 0,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 1),
-                        blurStyle: BlurStyle.inner,
-                      )
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: MediaImage(
-                    item: item,
-                    fit: BoxFit.cover,
-                    showFallbackTitle: false,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  item.title,
-                  style: AppThemes.safeGeist(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: inkColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '$genreLabel · $runtimeLabel',
-                  style: AppThemes.safeGeist(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                    color: subColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              height: 3,
+              color: context.ambianceColors.scrim.withValues(
+                alpha: context.ambianceColors.scrim.a * 0.3,
+              ),
+              alignment: Alignment.centerLeft,
+              child: FractionallySizedBox(
+                widthFactor: nextEp != null ? 0.4 : 1.0,
+                child: Container(color: accColor),
+              ),
             ),
           ),
-        );
-      },
-      openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+        ],
+      ),
     );
   }
 }
@@ -831,8 +668,6 @@ class MediaRail extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final subColor = context.ambianceColors.sub;
     final inkColor = context.ambianceColors.ink;
-    final phColor = context.ambianceColors.ph;
-    final lineRgba = context.ambianceColors.lineRgba;
 
     // Hide the whole rail -- header, "See all", everything -- once data has
     // genuinely resolved empty, rather than leaving the header floating
@@ -893,46 +728,12 @@ class MediaRail extends ConsumerWidget {
                     final item = items[index];
                     return Padding(
                       padding: const EdgeInsets.only(right: 12),
-                      child: PressableScale(
-                        child: OpenContainer(
-                          transitionDuration: AppPhysics.houseSpringDuration,
-                          closedElevation: 0,
-                          openElevation: 0,
-                          closedColor: Colors.transparent,
-                          openColor: context.ambianceColors.base,
-                          middleColor: Colors.transparent,
-                          closedShape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          closedBuilder: (context, openContainer) {
-                            return GestureDetector(
-                              onTap: openContainer,
-                              onLongPress: () => showQuickStatusSheet(context, ref, item),
-                              child: Container(
-                                width: 96,
-                                height: 144,
-                                decoration: BoxDecoration(
-                                  color: phColor,
-                                  border: Border.all(color: lineRgba),
-                                  borderRadius: BorderRadius.circular(11),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: context.ambianceColors.surfaceHighlight,
-                                      offset: const Offset(0, 1),
-                                      blurStyle: BlurStyle.inner,
-                                    ),
-                                  ],
-                                ),
-                                clipBehavior: Clip.antiAlias,
-                                child: MediaImage(
-                                  item: item,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            );
-                          },
-                          openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-                        ),
+                      child: MediaCard(
+                        key: ValueKey(item.prefixedId),
+                        item: item,
+                        isDark: isDark,
+                        width: 96,
+                        height: 144,
                       ),
                     ).animate().fade(duration: 250.ms).slideY(
                           begin: 0.1,
