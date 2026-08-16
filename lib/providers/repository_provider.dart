@@ -1,14 +1,17 @@
+import 'dart:async' show unawaited;
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart' show kReleaseMode;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
+import 'ambiance_provider.dart';
 import 'media_provider.dart';
 import '../repositories/anime_filtered_movie_repository.dart';
 import '../repositories/mock_movie_repository.dart';
 import '../repositories/movie_repository.dart';
 import '../repositories/tmdb_movie_repository.dart';
+import '../services/episode_skeleton_cache_service.dart';
 import '../services/tmdb_api_service.dart';
 
 /// Provider for [TmdbApiService] using environment token if available.
@@ -219,6 +222,14 @@ final tvSeasonDetailsProvider =
   return repo.getTvSeasonDetails(arg.tvId, arg.seasonNumber);
 });
 
+/// E4/CO-8: lightweight offline episode-skeleton cache. See
+/// EpisodeSkeletonCacheService's doc comment for why this is a separate
+/// store from the generic TmdbLocalCacheService.
+final episodeSkeletonCacheServiceProvider =
+    Provider<EpisodeSkeletonCacheService>((ref) {
+  return EpisodeSkeletonCacheService(prefs: ref.watch(sharedPreferencesProvider));
+});
+
 final tvShowSeasonsProvider =
     FutureProvider.family<List<TvSeason>, MediaItem>((ref, item) async {
   final repo = ref.watch(movieRepositoryProvider);
@@ -230,7 +241,33 @@ final tvShowSeasonsProvider =
       seasons.add(season);
     }
   }
-  if (seasons.isNotEmpty) return seasons;
+
+  final mediaState = ref.read(mediaProvider);
+  final isTracked = mediaState.watchingList.containsKey(item.id) ||
+      mediaState.onHoldList.containsKey(item.id) ||
+      mediaState.droppedList.containsKey(item.id);
+  final skeletonService = ref.watch(episodeSkeletonCacheServiceProvider);
+
+  if (seasons.isNotEmpty) {
+    // E4/CO-8: refresh the offline skeleton whenever real season data is
+    // fetched online, for shows the user is actually tracking -- so a
+    // specific episode can still be marked watched later without
+    // connectivity, using the real per-season structure rather than the
+    // single-season guess below.
+    if (isTracked) {
+      unawaited(skeletonService.saveSkeleton(item.id, seasons));
+    }
+    return seasons;
+  }
+
+  // Real fetch came back empty (most commonly: offline). Fall back to a
+  // previously-saved skeleton before the cruder single-season synthesis.
+  if (isTracked) {
+    final skeleton = skeletonService.getSkeleton(item.id);
+    if (skeleton != null && skeleton.isNotEmpty) {
+      return skeleton;
+    }
+  }
 
   final epTitles = item.episodesList;
   final epCount = epTitles?.length ?? item.episodesCount ?? 10;

@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/home_screen.dart';
 import 'package:the_lounge/screens/your_space_screen.dart';
+import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -83,6 +85,7 @@ class MockWatchingRepository extends MockMovieRepository {
 void main() {
   setUp(() {
     GoogleFonts.config.allowRuntimeFetching = false;
+    SharedPreferences.setMockInitialValues({});
   });
 
   final testMovie = MediaItem(
@@ -131,10 +134,12 @@ void main() {
 
   testWidgets('YourSpaceScreen has tabs: Watchlist, Saved, In Progress, Watched', (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(items: {'movie-10': testMovie, 'tv-20': testTvShow});
+    final prefs = await SharedPreferences.getInstance();
 
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
     addTearDown(container.dispose);
@@ -173,10 +178,12 @@ void main() {
       items: {'tv-20': testTvShow},
       seasonsMap: {'tv-20': testSeasons},
     );
+    final prefs = await SharedPreferences.getInstance();
 
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
     addTearDown(container.dispose);
@@ -221,10 +228,12 @@ void main() {
       items: {'tv-20': testTvShow},
       seasonsMap: {'tv-20': testSeasons},
     );
+    final prefs = await SharedPreferences.getInstance();
 
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
     addTearDown(container.dispose);
