@@ -7,6 +7,7 @@ import '../providers/ambiance_provider.dart';
 import '../constants.dart';
 import '../utils/export_helper.dart';
 import '../widgets/animated_segmented_control.dart';
+import '../widgets/lounge_dialog.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -229,58 +230,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                                 bool shouldImport = true;
                                 if (hasLocalData && context.mounted) {
-                                  shouldImport = await showDialog<bool>(
-                                    context: context,
-                                    builder: (context) => AlertDialog(
-                                      backgroundColor: cardBg,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(16),
-                                        side: BorderSide(
-                                          color: context.ambianceColors.lineRgba,
-                                        ),
+                                  shouldImport = await LoungeDialog.show<bool>(
+                                    context,
+                                    title: 'Overwrite current data?',
+                                    message: 'This will replace all your current watchlists, watch history, and settings. Are you sure you want to overwrite?',
+                                    actions: [
+                                      LoungeDialogAction(
+                                        key: const ValueKey('cancel_overwrite_button'),
+                                        label: 'Cancel',
+                                        onPressed: () => Navigator.of(context).pop(false),
                                       ),
-                                      title: Text(
-                                        'Overwrite current data?',
-                                        style: AppThemes.safeGeist(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.w600,
-                                          color: inkColor,
-                                        ),
+                                      LoungeDialogAction(
+                                        key: const ValueKey('confirm_overwrite_button'),
+                                        label: 'Overwrite',
+                                        style: LoungeDialogActionStyle.primary,
+                                        onPressed: () => Navigator.of(context).pop(true),
                                       ),
-                                      content: Text(
-                                        'This will replace all your current watchlists, watch history, and settings. Are you sure you want to overwrite?',
-                                        style: AppThemes.safeGeist(
-                                          fontSize: 14,
-                                          color: subColor,
-                                        ),
-                                      ),
-                                      actions: [
-                                        TextButton(
-                                          key: const ValueKey('cancel_overwrite_button'),
-                                          onPressed: () => Navigator.of(context).pop(false),
-                                          child: Text(
-                                            'Cancel',
-                                            style: AppThemes.safeGeist(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: subColor,
-                                            ),
-                                          ),
-                                        ),
-                                        TextButton(
-                                          key: const ValueKey('confirm_overwrite_button'),
-                                          onPressed: () => Navigator.of(context).pop(true),
-                                          child: Text(
-                                            'Overwrite',
-                                            style: AppThemes.safeGeist(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w600,
-                                              color: accColor,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                    ],
                                   ) ?? false;
                                 }
 
@@ -336,70 +302,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               style: AppThemes.safeGeist(fontSize: 12, color: subColor),
                             ),
                             onTap: () async {
-                              final shouldReset = await showDialog<bool>(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  backgroundColor: cardBg,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(16),
-                                    side: BorderSide(
-                                      color: context.ambianceColors.lineRgba,
-                                    ),
+                              final shouldReset = await LoungeDialog.show<bool>(
+                                context,
+                                title: 'Reset everything?',
+                                message: 'This will delete all your local data, including watchlists and history. This action cannot be undone.',
+                                actions: [
+                                  LoungeDialogAction(
+                                    label: 'Cancel',
+                                    onPressed: () => Navigator.of(context).pop(false),
                                   ),
-                                  title: Text(
-                                    'Reset everything?',
-                                    style: AppThemes.safeGeist(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w600,
-                                      color: inkColor,
-                                    ),
+                                  LoungeDialogAction(
+                                    label: 'Export Backup',
+                                    onPressed: () async {
+                                      final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
+                                      await saveJsonFile(jsonString, 'the_lounge_backup.json');
+                                    },
                                   ),
-                                  content: Text(
-                                    'This will delete all your local data, including watchlists and history. This action cannot be undone.',
-                                    style: AppThemes.safeGeist(
-                                      fontSize: 14,
-                                      color: subColor,
-                                    ),
+                                  LoungeDialogAction(
+                                    label: 'Reset Everything',
+                                    style: LoungeDialogActionStyle.destructive,
+                                    onPressed: () => Navigator.of(context).pop(true),
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(false),
-                                      child: Text(
-                                        'Cancel',
-                                        style: AppThemes.safeGeist(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: subColor,
-                                        ),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () async {
-                                        final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
-                                        await saveJsonFile(jsonString, 'the_lounge_backup.json');
-                                      },
-                                      child: Text(
-                                        'Export Backup',
-                                        style: AppThemes.safeGeist(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: inkColor,
-                                        ),
-                                      ),
-                                    ),
-                                    TextButton(
-                                      onPressed: () => Navigator.of(context).pop(true),
-                                      child: Text(
-                                        'Reset Everything',
-                                        style: AppThemes.safeGeist(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.redAccent,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                ],
                               ) ?? false;
 
                               if (shouldReset && context.mounted) {

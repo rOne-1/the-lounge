@@ -16,6 +16,7 @@ import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/reading_room_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/widgets/animated_segmented_control.dart';
+import 'package:the_lounge/widgets/lounge_dialog.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 
@@ -245,7 +246,7 @@ void main() {
     await tester.tap(importBtn);
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(LoungeDialog), findsNothing);
     expect(container.read(mediaProvider).watchlist.containsKey('movie_imported'), isTrue);
     expect(container.read(mediaProvider).watchProvidersCountry, equals('CA'));
     expect(container.read(ambianceProvider), equals(readingRoomTheme));
@@ -304,7 +305,7 @@ void main() {
     await tester.tap(importBtn);
     await tester.pumpAndSettle();
 
-    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.byType(LoungeDialog), findsOneWidget);
     expect(find.text('Overwrite current data?'), findsOneWidget);
     expect(find.text('This will replace all your current watchlists, watch history, and settings. Are you sure you want to overwrite?'), findsOneWidget);
 
