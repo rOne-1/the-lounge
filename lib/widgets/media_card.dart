@@ -3,11 +3,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
+import '../providers/media_provider.dart';
 import '../screens/detail_screen.dart';
 import 'media_image.dart';
+import 'pressable_scale.dart';
 import 'quick_status_sheet.dart';
+import 'status_pulse_ring.dart';
 
-/// Reusable media card component with long-press quick-save support.
+/// The single canonical media poster card used across Home, Browse, Your
+/// Space, Calendar, Media List, and Collection. Consolidates the gesture
+/// handling (tap-to-open, long-press quick-status), the house-spring press
+/// physics, the theme-token bevel/rating/status treatment, and the optional
+/// title/subtitle caption into one implementation so no screen reinvents it.
 class MediaCard extends ConsumerWidget {
   final MediaItem item;
   final double? width;
@@ -19,8 +26,20 @@ class MediaCard extends ConsumerWidget {
   final bool showTitle;
   final bool showSubtitle;
   final String? customSubtitle;
+
+  /// An additional overlay drawn on top of the poster (e.g. a season pill,
+  /// an air-date badge) — composed alongside, not instead of, the
+  /// standardized rating badge and status indicator below.
   final Widget? badge;
   final BoxFit fit;
+
+  /// Shows the ★ rating badge (ambiance.starRating) when the item has a
+  /// rating. Disable for contexts that already surface rating elsewhere.
+  final bool showRatingBadge;
+
+  /// Shows the current watch-status indicator (watchlist/saved/watching/
+  /// watched), pulse-highlighted via [StatusPulseRing] when it changes.
+  final bool showStatusIndicator;
 
   const MediaCard({
     super.key,
@@ -36,6 +55,8 @@ class MediaCard extends ConsumerWidget {
     this.customSubtitle,
     this.badge,
     this.fit = BoxFit.cover,
+    this.showRatingBadge = true,
+    this.showStatusIndicator = true,
   });
 
   @override
@@ -44,6 +65,10 @@ class MediaCard extends ConsumerWidget {
     final inkColor = context.ambianceColors.ink;
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
+    final surfaceHighlight = context.ambianceColors.surfaceHighlight;
+
+    final mediaState = ref.watch(mediaProvider);
+    final statusInfo = showStatusIndicator ? _resolveStatus(context, mediaState) : null;
 
     final posterWidget = OpenContainer(
       transitionDuration: AppPhysics.houseSpringDuration,
@@ -56,7 +81,7 @@ class MediaCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       closedBuilder: (context, openContainer) {
-        return GestureDetector(
+        return PressableScale(
           onTap: onTap ?? openContainer,
           onLongPress: onLongPress ?? () => showQuickStatusSheet(context, ref, item),
           child: Container(
@@ -68,9 +93,7 @@ class MediaCard extends ConsumerWidget {
               border: Border.all(color: lineRgba),
               boxShadow: [
                 BoxShadow(
-                  color: isDark
-                      ? const Color.fromRGBO(255, 255, 255, 0.05)
-                      : const Color.fromRGBO(255, 255, 255, 0.4),
+                  color: surfaceHighlight,
                   blurRadius: 0,
                   spreadRadius: 0,
                   offset: const Offset(0, 1),
@@ -85,7 +108,25 @@ class MediaCard extends ConsumerWidget {
                 MediaImage(
                   item: item,
                   fit: fit,
+                  showFallbackTitle: !showTitle,
                 ),
+                if (showRatingBadge && item.rating > 0)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: _RatingBadge(rating: item.rating),
+                  ),
+                if (statusInfo != null)
+                  Positioned(
+                    top: 6,
+                    left: 6,
+                    child: StatusPulseRing(
+                      isSelected: true,
+                      accentColor: statusInfo.color,
+                      borderRadius: 8,
+                      child: _StatusChip(icon: statusInfo.icon, color: statusInfo.color),
+                    ),
+                  ),
                 if (badge != null) badge!,
               ],
             ),
@@ -137,6 +178,80 @@ class MediaCard extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  _StatusInfo? _resolveStatus(BuildContext context, MediaState mediaState) {
+    final ambiance = context.ambianceColors;
+    if (mediaState.watchingList.containsKey(item.id)) {
+      return _StatusInfo(Icons.play_circle_fill_rounded, ambiance.statusWatching);
+    }
+    if (mediaState.watchlist.containsKey(item.id)) {
+      return _StatusInfo(Icons.bookmark_rounded, ambiance.statusWatchlist);
+    }
+    if (mediaState.maybeList.containsKey(item.id)) {
+      return _StatusInfo(Icons.archive_rounded, ambiance.statusSave);
+    }
+    if (mediaState.watchedList.containsKey(item.id)) {
+      return _StatusInfo(Icons.check_circle_rounded, ambiance.statusWatched);
+    }
+    return null;
+  }
+}
+
+class _StatusInfo {
+  final IconData icon;
+  final Color color;
+  const _StatusInfo(this.icon, this.color);
+}
+
+class _StatusChip extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+
+  const _StatusChip({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: context.ambianceColors.scrim,
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, size: 12, color: color),
+    );
+  }
+}
+
+class _RatingBadge extends StatelessWidget {
+  final double rating;
+
+  const _RatingBadge({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: context.ambianceColors.scrim,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.star, size: 10, color: context.ambianceColors.starRating),
+          const SizedBox(width: 3),
+          Text(
+            rating.toStringAsFixed(1),
+            style: AppThemes.safeGeist(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+            ),
+          ),
         ],
       ),
     );

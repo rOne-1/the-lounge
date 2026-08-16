@@ -12,6 +12,7 @@ import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/widgets/pressable_scale.dart';
+import 'package:the_lounge/widgets/status_pulse_ring.dart';
 import 'package:the_lounge/widgets/trailer_player.dart';
 
 class MockDetailRepository extends MockMovieRepository {
