@@ -144,6 +144,12 @@ class HomeScreen extends ConsumerWidget {
     final rail1Items = mediaState.watchingList.values
         .where((m) => m.type == activeType)
         .toList();
+    // E12: same source and ordering as YourSpaceScreen's own Watchlist tab
+    // (insertion order, no re-sort) so "See all" doesn't reorder things
+    // relative to what was just shown in the carousel.
+    final watchlistItems = mediaState.watchlist.values
+        .where((m) => m.type == activeType)
+        .toList();
 
     final railsInput = HomeRailsInput(
       isMovies: isMovies,
@@ -370,6 +376,17 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
             ],
+
+            // RAIL 1B: Your Watchlist (E12/TF-17) -- local data, not TMDB,
+            // wrapped in AsyncValue.data so it can reuse MediaRail (including
+            // its empty-state hide-the-whole-rail behavior).
+            MediaRail(
+              title: 'Your Watchlist',
+              itemsAsync: AsyncValue.data(watchlistItems),
+              isDark: isDark,
+              onSeeAll: () =>
+                  ref.read(navigationProvider.notifier).setTab(AppTab.yourSpace),
+            ),
 
             // RAIL 2: Trending This Week
             MediaRail(
