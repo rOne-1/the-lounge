@@ -315,6 +315,56 @@ void main() {
     expect(find.textContaining('S2 · E1'), findsWidgets);
   });
 
+  testWidgets(
+      'LAYOUT-1: Continue Watching rail and Next Episode banner render without overflow at a narrow (360px) viewport',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(360, 800);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockRepo = MockWatchingRepository(
+      items: {'tv-20': testTvShow},
+      seasonsMap: {'tv-20': testSeasons},
+    );
+    final prefs = await SharedPreferences.getInstance();
+
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
+    container.read(mediaProvider.notifier).toggleEpisodeWatched(
+          showId: testTvShow.id,
+          seasonNumber: 1,
+          episodeNumber: 1,
+          showItem: testTvShow,
+          totalEpisodeCount: 2,
+        );
+
+    // A RenderFlex overflow throws a FlutterError during layout, which
+    // pumpWidget/pump surface as a test failure -- no explicit assertion
+    // needed beyond successfully pumping and settling.
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: HomeScreen(enableAnimation: false),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Continue watching'), findsOneWidget);
+    expect(find.text('NEXT EPISODE'), findsOneWidget);
+  });
+
   testWidgets('HomeScreen hides Next Episode banner when no TV show is in watchingList', (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(
       items: {'tv-20': testTvShow},

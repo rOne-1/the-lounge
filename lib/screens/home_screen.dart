@@ -227,31 +227,38 @@ class HomeScreen extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      greeting().toUpperCase(),
-                      style: AppThemes.safeGeist(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        letterSpacing: 1.9,
-                        color: subColor,
+                // LAYOUT-1: an unconstrained Column let the 30px Bodoni Moda
+                // greeting overflow past the search button on narrow
+                // viewports -- Expanded gives it a real width to wrap
+                // within.
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        greeting().toUpperCase(),
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 1.9,
+                          color: subColor,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      'What are we\nwatching?',
-                      style: GoogleFonts.bodoniModa(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        color: inkColor,
-                        height: 1.05,
+                      const SizedBox(height: 5),
+                      Text(
+                        'What are we\nwatching?',
+                        style: GoogleFonts.bodoniModa(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          color: inkColor,
+                          height: 1.05,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 12),
                 PressableScale(
                   onTap: () => ref
                       .read(navigationProvider.notifier)
@@ -311,7 +318,10 @@ class HomeScreen extends ConsumerWidget {
                 switchOutCurve: AppPhysics.houseSpringCurve,
                 child: SizedBox(
                   key: ValueKey('continue_watching_${isMovies}_${rail1Items.length}'),
-                  height: 140,
+                  // LAYOUT-1: 140px cramped the 85px TvContinueWatchingCard
+                  // against its own title/subtitle text with almost no
+                  // breathing room.
+                  height: 160,
                   child: rail1Items.isNotEmpty
                       ? ListView.builder(
                           scrollDirection: Axis.horizontal,
@@ -825,7 +835,10 @@ class _NextEpisodeBannerCarouselState
       children: [
         const SizedBox(height: 22),
         SizedBox(
-          height: 116,
+          // LAYOUT-1: 28px padding + 84px still image left only ~4px of
+          // slack against the card's own text column, clipping subtitles
+          // and episode badges on real content.
+          height: 134,
           child: PageView.builder(
             controller: _pageController,
             itemCount: validShows.length,
