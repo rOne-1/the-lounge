@@ -21,34 +21,45 @@ class ShellScreen extends ConsumerWidget {
     final navigationState = ref.watch(navigationProvider);
     final ambiance = ref.watch(ambianceProvider);
 
-    // IA-1/NAV-3: fixed chrome (top bar, bottom nav bar, per-screen media
-    // toggles) is gone -- ShellScreen now reserves zero screen space for
-    // navigation. The FloatingNavigationCapsule is the sole nav surface,
-    // drawn as a free-floating overlay on top of full-bleed content.
-    return SizedBox.expand(
-      child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
-        decoration: context.ambianceColors.background,
-        child: AnimatedTheme(
+    // NAV-1: the last back press before exiting the app must return to
+    // Home first, not terminate immediately from Discover/Browse/YourSpace/
+    // Calendar. canPop is only true once already on Home, so the OS
+    // pop/back gesture is intercepted everywhere else and redirected.
+    return PopScope(
+      canPop: navigationState.currentTab == AppTab.home,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        ref.read(navigationProvider.notifier).setTab(AppTab.home);
+      },
+      // IA-1/NAV-3: fixed chrome (top bar, bottom nav bar, per-screen media
+      // toggles) is gone -- ShellScreen now reserves zero screen space for
+      // navigation. The FloatingNavigationCapsule is the sole nav surface,
+      // drawn as a free-floating overlay on top of full-bleed content.
+      child: SizedBox.expand(
+        child: AnimatedContainer(
           duration: AppPhysics.houseSpringDuration,
           curve: AppPhysics.houseSpringCurve,
-          data: ambiance.themeData,
-          child: Stack(
-            children: [
-              Scaffold(
-                backgroundColor: Colors.transparent,
-                extendBody: true,
-                body: SafeArea(
-                  bottom: false,
-                  child: _buildBody(navigationState.currentTab),
+          decoration: context.ambianceColors.background,
+          child: AnimatedTheme(
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            data: ambiance.themeData,
+            child: Stack(
+              children: [
+                Scaffold(
+                  backgroundColor: Colors.transparent,
+                  extendBody: true,
+                  body: SafeArea(
+                    bottom: false,
+                    child: _buildBody(navigationState.currentTab),
+                  ),
                 ),
-              ),
-              const Positioned.fill(
-                child: AppNoiseTexture(),
-              ),
-              FloatingNavigationCapsule(enableAnimation: enableAnimation),
-            ],
+                const Positioned.fill(
+                  child: AppNoiseTexture(),
+                ),
+                FloatingNavigationCapsule(enableAnimation: enableAnimation),
+              ],
+            ),
           ),
         ),
       ),
