@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
+import 'drag_to_dismiss_sheet.dart';
 import 'media_image.dart';
 
 /// Helper function to open the [QuickStatusSheet] bottom sheet modal.
@@ -15,8 +16,12 @@ Future<void> showQuickStatusSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.transparent,
-    barrierColor: Colors.black.withValues(alpha: 0.6),
-    builder: (context) => QuickStatusSheet(item: item),
+    barrierColor: context.ambianceColors.scrim,
+    builder: (context) => DragToDismissSheet(
+      isDark: context.ambianceColors.isDark,
+      onDismiss: () => Navigator.of(context).pop(),
+      child: QuickStatusSheet(item: item),
+    ),
   );
 }
 

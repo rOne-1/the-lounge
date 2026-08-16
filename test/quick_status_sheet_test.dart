@@ -6,6 +6,7 @@ import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/widgets/quick_status_sheet.dart';
+import 'package:the_lounge/widgets/drag_to_dismiss_sheet.dart';
 import 'package:the_lounge/widgets/media_card.dart';
 
 void main() {
@@ -67,6 +68,41 @@ void main() {
       expect(find.text('On-Hold'), findsOneWidget);
       expect(find.text('Dropped'), findsOneWidget);
       expect(find.text('Watched'), findsOneWidget);
+    });
+
+    testWidgets('is wrapped in DragToDismissSheet and a fling-down dismisses it (DS-3)', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Consumer(
+                  builder: (context, ref, child) {
+                    return ElevatedButton(
+                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      child: const Text('Open Sheet'),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(DragToDismissSheet), findsOneWidget);
+      expect(find.byType(QuickStatusSheet), findsOneWidget);
+
+      await tester.fling(find.byType(QuickStatusSheet), const Offset(0, 300), 1000);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(QuickStatusSheet), findsNothing);
     });
 
     testWidgets('tapping status option updates provider state and active badge', (WidgetTester tester) async {
