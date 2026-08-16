@@ -8,6 +8,7 @@ import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import '../widgets/trailer_player.dart';
 import '../widgets/fallback_widgets.dart';
+import '../widgets/lounge_toast.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/status_pulse_ring.dart';
 import '../constants.dart';
@@ -1196,12 +1197,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   watchedColor,
                   () {
                     if (isUnreleased) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content:
-                              Text('This title has not been released yet.'),
-                        ),
-                      );
+                      LoungeToast.show(context, 'This title has not been released yet.');
                       return;
                     }
                     notifier.toggleWatched(item, seasons: seasons);
@@ -2302,13 +2298,7 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                   child: PressableScale(
                                     onTap: isEpisodeUnaired
                                         ? () {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              const SnackBar(
-                                                content: Text(
-                                                    'This episode has not aired yet.'),
-                                              ),
-                                            );
+                                            LoungeToast.show(context, 'This episode has not aired yet.');
                                           }
                                         : () {
                                             final totalEpisodes = widget

@@ -13,6 +13,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'detail_screen.dart';
 
 import '../widgets/drag_to_dismiss_sheet.dart';
+import '../widgets/lounge_toast.dart';
 import '../widgets/quick_status_sheet.dart';
 
 class DiscoverScreen extends ConsumerStatefulWidget {
@@ -61,9 +62,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       notifier.addToWatchlist(item);
     } else if (direction == 'Up') {
       if (_isUnreleased(item)) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('This title has not been released yet.')),
-        );
+        LoungeToast.show(context, 'This title has not been released yet.');
         return;
       }
       notifier.addToWatchedList(item);

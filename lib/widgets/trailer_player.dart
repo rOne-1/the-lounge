@@ -6,6 +6,7 @@ import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/media_item.dart';
 import 'fallback_widgets.dart';
+import 'lounge_toast.dart';
 import 'pressable_scale.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/media_provider.dart';
@@ -112,18 +113,12 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
   void _showUnavailableFeedback() {
     if (!mounted) return;
     final videoId = _effectiveVideoId;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text("Trailer playback isn't available for this title"),
-        action: videoId != null && videoId.isNotEmpty
-            ? SnackBarAction(
-                label: 'WATCH ON YOUTUBE',
-                onPressed: () => _launchYouTubeUrl(videoId),
-              )
-            : null,
-        duration: const Duration(seconds: 4),
-      ),
+    LoungeToast.show(
+      context,
+      "Trailer playback isn't available for this title",
+      duration: const Duration(seconds: 4),
+      actionLabel: videoId != null && videoId.isNotEmpty ? 'WATCH ON YOUTUBE' : null,
+      onAction: videoId != null && videoId.isNotEmpty ? () => _launchYouTubeUrl(videoId) : null,
     );
   }
 
@@ -146,9 +141,7 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
             : 'This title is not available for playback right now.',
         onAddWatchlist: () {
           ref.read(mediaProvider.notifier).addToWatchlist(widget.item);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Added to Watchlist')),
-          );
+          LoungeToast.show(context, 'Added to Watchlist', type: ToastType.success);
         },
         onWatchOnYouTube: videoId != null && videoId.isNotEmpty
             ? () => _launchYouTubeUrl(videoId)
@@ -218,9 +211,7 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
         title: _effectiveTitle,
         onAddWatchlist: () {
           ref.read(mediaProvider.notifier).addToWatchlist(widget.item);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Added to Watchlist')),
-          );
+          LoungeToast.show(context, 'Added to Watchlist', type: ToastType.success);
         },
       );
     }

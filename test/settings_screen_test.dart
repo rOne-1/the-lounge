@@ -178,6 +178,10 @@ void main() {
     expect(decoded['version'], equals(1));
     expect(decoded['watchlist']['movie_1']['title'], equals('Inception'));
     expect(find.text('Backup exported successfully.'), findsOneWidget);
+
+    // Let the LoungeToast's auto-dismiss timer fire before teardown.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Share Backup triggers SharePlatform serialization', (WidgetTester tester) async {
@@ -251,6 +255,10 @@ void main() {
     expect(container.read(mediaProvider).watchProvidersCountry, equals('CA'));
     expect(container.read(ambianceProvider), equals(readingRoomTheme));
     expect(find.text('Backup imported successfully.'), findsOneWidget);
+
+    // Let the LoungeToast's auto-dismiss timer fire before teardown.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Import Backup with existing local data prompts for overwrite confirmation', (WidgetTester tester) async {
@@ -326,6 +334,10 @@ void main() {
     expect(container.read(mediaProvider).watchlist.containsKey('existing_movie'), isFalse);
     expect(container.read(mediaProvider).watchlist.containsKey('new_movie'), isTrue);
     expect(find.text('Backup imported successfully.'), findsOneWidget);
+
+    // Let the LoungeToast's auto-dismiss timer fire before teardown.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Reset Account prompts for confirmation and clears data (E8)', (WidgetTester tester) async {
@@ -364,6 +376,10 @@ void main() {
 
     expect(container.read(mediaProvider).watchlist, isEmpty);
     expect(find.text('Account reset successfully.'), findsOneWidget);
+
+    // Let the LoungeToast's auto-dismiss timer fire before teardown.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 
   test('clearAllData refreshes the discover pool exclusion snapshot (B5)', () async {
@@ -433,6 +449,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Exporting your backup…'), findsNothing);
     expect(find.text('Backup exported successfully.'), findsOneWidget);
+
+    // Let the LoungeToast's auto-dismiss timer fire before teardown.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('Import Backup with malformed/unsupported file shows error message', (WidgetTester tester) async {
@@ -457,6 +477,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Import failed: Invalid backup file format.'), findsOneWidget);
+
+    // Let the LoungeToast's auto-dismiss timer fire before teardown.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 }
 

@@ -8,6 +8,7 @@ import '../constants.dart';
 import '../utils/export_helper.dart';
 import '../widgets/animated_segmented_control.dart';
 import '../widgets/lounge_dialog.dart';
+import '../widgets/lounge_toast.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -143,21 +144,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   () => saveJsonFile(jsonString, 'the_lounge_backup.json'),
                                 );
                                 if (success && context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Backup exported successfully.', style: AppThemes.safeGeist(color: Colors.white)),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
+                                  LoungeToast.show(context, 'Backup exported successfully.', type: ToastType.success);
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Export failed: $e', style: AppThemes.safeGeist(color: Colors.white)),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  LoungeToast.show(context, 'Export failed: $e', type: ToastType.danger);
                                 }
                               }
                             },
@@ -187,12 +178,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 );
                               } catch (e) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Share failed: $e', style: AppThemes.safeGeist(color: Colors.white)),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  LoungeToast.show(context, 'Share failed: $e', type: ToastType.danger);
                                 }
                               }
                             },
@@ -257,30 +243,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   );
                                   if (context.mounted) {
                                     if (success) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Backup imported successfully.', style: AppThemes.safeGeist(color: Colors.white)),
-                                          backgroundColor: Colors.green,
-                                        ),
-                                      );
+                                      LoungeToast.show(context, 'Backup imported successfully.', type: ToastType.success);
                                     } else {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                          content: Text('Import failed: Invalid backup file format.', style: AppThemes.safeGeist(color: Colors.white)),
-                                          backgroundColor: Colors.red,
-                                        ),
-                                      );
+                                      LoungeToast.show(context, 'Import failed: Invalid backup file format.', type: ToastType.danger);
                                     }
                                   }
                                 }
                               } catch (e) {
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Import failed: $e', style: AppThemes.safeGeist(color: Colors.white)),
-                                      backgroundColor: Colors.red,
-                                    ),
-                                  );
+                                  LoungeToast.show(context, 'Import failed: $e', type: ToastType.danger);
                                 }
                               }
                             },
@@ -332,12 +303,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   () => ref.read(mediaProvider.notifier).clearAllData(),
                                 );
                                 if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('Account reset successfully.', style: AppThemes.safeGeist(color: Colors.white)),
-                                      backgroundColor: Colors.green,
-                                    ),
-                                  );
+                                  LoungeToast.show(context, 'Account reset successfully.', type: ToastType.success);
                                 }
                               }
                             },

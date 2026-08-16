@@ -312,7 +312,8 @@ void main() {
 
       expect(find.text("Trailer playback isn't available for this title"), findsOneWidget);
 
-      ScaffoldMessenger.of(tester.element(find.byType(Scaffold))).clearSnackBars();
+      // Let the LoungeToast's auto-dismiss timer (4s) fire and settle.
+      await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
       debugDefaultTargetPlatformOverride = null;
     });

@@ -98,9 +98,8 @@ void main() {
         findsOneWidget,
       );
 
-      // Dismiss snackbars and wait for all animations/timers to complete
-      ScaffoldMessenger.of(tester.element(find.byType(Scaffold)))
-          .clearSnackBars();
+      // Let the LoungeToast's auto-dismiss timer (4s) fire and settle.
+      await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
 
       debugDefaultTargetPlatformOverride = null;
@@ -136,9 +135,8 @@ void main() {
         findsOneWidget,
       );
 
-      // Dismiss snackbars and wait for all animations/timers to complete
-      ScaffoldMessenger.of(tester.element(find.byType(Scaffold)))
-          .clearSnackBars();
+      // Let the LoungeToast's auto-dismiss timer (4s) fire and settle.
+      await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
 
       debugDefaultTargetPlatformOverride = null;
