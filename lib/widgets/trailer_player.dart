@@ -1,15 +1,58 @@
 import 'dart:async';
+import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/media_item.dart';
 import 'fallback_widgets.dart';
+import 'lounge_slider.dart';
 import 'lounge_toast.dart';
 import 'pressable_scale.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/media_provider.dart';
+
+/// A frosted-glass circular icon button for the trailer player's overlay
+/// chrome. The player stays black/white cinema chrome regardless of app
+/// ambiance (matching real-world video player convention), but the frosted
+/// glass + PressableScale physics keep it feeling native to the app.
+class _GlassIconButton extends StatelessWidget {
+  final IconData icon;
+  final double size;
+  final double iconSize;
+  final VoidCallback? onPressed;
+
+  const _GlassIconButton({
+    required this.icon,
+    required this.onPressed,
+    this.size = 44,
+    this.iconSize = 22,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PressableScale(
+      onTap: onPressed,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            width: size,
+            height: size,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            ),
+            child: Icon(icon, color: Colors.white, size: iconSize),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 class TrailerPlayer extends ConsumerStatefulWidget {
   final MediaItem item;
@@ -164,21 +207,19 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
                 padding: const EdgeInsets.symmetric(horizontal: 8),
                 child: Row(
                   children: [
-                    PressableScale(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
+                    _GlassIconButton(
+                      icon: Icons.arrow_back,
+                      onPressed: () => Navigator.of(context).pop(),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                     Expanded(
                       child: Text(
                         _effectiveTitle,
-                        style: const TextStyle(
+                        style: GoogleFonts.bodoniModa(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 17,
                           fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -230,9 +271,10 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
         else
           Container(color: Colors.black),
         Center(
-          child: IconButton(
-            iconSize: 64,
-            icon: const Icon(Icons.play_circle_fill, color: Colors.white),
+          child: _GlassIconButton(
+            icon: Icons.play_circle_fill,
+            size: 72,
+            iconSize: 40,
             onPressed: _showUnavailableFeedback,
           ),
         ),
@@ -242,18 +284,18 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
           right: 20,
           child: Row(
             children: [
-              IconButton(
-                icon: const Icon(Icons.play_arrow, color: Colors.white),
+              _GlassIconButton(
+                icon: Icons.play_arrow,
                 onPressed: _showUnavailableFeedback,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 10),
               Text(
                 _formatDuration(_sliderValue),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Slider(
+                child: LoungeSlider(
                   value: _sliderValue,
                   onChanged: (val) {
                     setState(() {
@@ -264,10 +306,10 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text('2:30', style: TextStyle(color: Colors.white)),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.fullscreen, color: Colors.white),
+              const Text('2:30', style: TextStyle(color: Colors.white, fontSize: 12)),
+              const SizedBox(width: 10),
+              _GlassIconButton(
+                icon: Icons.fullscreen,
                 onPressed: _showUnavailableFeedback,
               ),
             ],
