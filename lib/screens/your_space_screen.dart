@@ -25,6 +25,17 @@ class YourSpaceScreen extends ConsumerStatefulWidget {
 class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
   InProgressSubFilter _inProgressFilter = InProgressSubFilter.watching;
 
+  // E7: single control to collapse/expand every collection group in the
+  // Watched tab at once. Controllers are created lazily per group key and
+  // persist across rebuilds (state, not local to _buildWatchedTabContent)
+  // so they stay attached to the same ExpansionTile.
+  final Map<String, ExpansibleController> _watchedTileControllers = {};
+  bool _watchedAllCollapsed = false;
+
+  ExpansibleController _watchedTileController(String key) {
+    return _watchedTileControllers.putIfAbsent(key, () => ExpansibleController());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -413,6 +424,17 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     final accColor = context.ambianceColors.acc;
     final lineRgba = context.ambianceColors.lineRgba;
     final cardBg = context.ambianceColors.card;
+    final pillColor = context.ambianceColors.pill;
+
+    // E7: keys for whatever groups are actually rendered THIS build -- the
+    // collapse-all button closes over this list, so it only ever acts on
+    // controllers for groups that genuinely exist right now, never a stale
+    // controller left over from a group that's since disappeared (e.g. the
+    // last item in a collection got un-watched).
+    final watchedGroupKeys = [
+      for (final colName in groupedByCollection.keys) 'watched_col_$colName',
+      if (standaloneItems.isNotEmpty) 'watched_standalone',
+    ];
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
@@ -424,13 +446,70 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppThemes.safeGeist(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: inkColor,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                title,
+                style: AppThemes.safeGeist(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+              if (watchedGroupKeys.length > 1)
+                PressableScale(
+                  onTap: () {
+                    final collapseAll = !_watchedAllCollapsed;
+                    for (final key in watchedGroupKeys) {
+                      final controller = _watchedTileController(key);
+                      if (collapseAll) {
+                        controller.collapse();
+                      } else {
+                        controller.expand();
+                      }
+                    }
+                    setState(() => _watchedAllCollapsed = collapseAll);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: pillColor,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: lineRgba),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AnimatedSwitcher(
+                          duration: AppPhysics.houseSpringDuration,
+                          switchInCurve: AppPhysics.houseSpringCurve,
+                          switchOutCurve: Curves.easeOut,
+                          transitionBuilder: (child, animation) =>
+                              ScaleTransition(scale: animation, child: child),
+                          child: Icon(
+                            _watchedAllCollapsed
+                                ? Icons.unfold_more
+                                : Icons.unfold_less,
+                            key: ValueKey(_watchedAllCollapsed),
+                            size: 15,
+                            color: accColor,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          _watchedAllCollapsed ? 'Expand All' : 'Collapse All',
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: accColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 12),
           ...groupedByCollection.entries.map((entry) {
@@ -450,6 +529,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                   data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
                     key: PageStorageKey<String>('watched_col_$colName'),
+                    controller: _watchedTileController('watched_col_$colName'),
                     initiallyExpanded: true,
                     iconColor: accColor,
                     collapsedIconColor: subColor,
@@ -508,6 +588,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                   data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
                     key: const PageStorageKey<String>('watched_standalone'),
+                    controller: _watchedTileController('watched_standalone'),
                     initiallyExpanded: true,
                     iconColor: accColor,
                     collapsedIconColor: subColor,
