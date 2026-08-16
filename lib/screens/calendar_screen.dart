@@ -163,22 +163,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final accColor = context.ambianceColors.acc; // For Movies
     final dotColor = item.type == MediaType.movie ? accColor : (context.ambianceColors.statusWatched); // For TV
 
-    return PressableScale(
-      child: OpenContainer(
-        transitionDuration: AppPhysics.houseSpringDuration,
-        closedElevation: 0,
-        openElevation: 0,
-        closedColor: Colors.transparent,
-        openColor: context.ambianceColors.base,
-        middleColor: Colors.transparent,
-        closedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        closedBuilder: (context, openContainer) {
-          return GestureDetector(
-            onTap: openContainer,
-            onLongPress: () => showQuickStatusSheet(context, ref, item),
-            child: Container(
+    return OpenContainer(
+      transitionDuration: AppPhysics.houseSpringDuration,
+      closedElevation: 0,
+      openElevation: 0,
+      closedColor: Colors.transparent,
+      openColor: context.ambianceColors.base,
+      middleColor: Colors.transparent,
+      closedShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      closedBuilder: (context, openContainer) {
+        return PressableScale(
+          onTap: openContainer,
+          onLongPress: () => showQuickStatusSheet(context, ref, item),
+          child: Container(
               margin: const EdgeInsets.only(bottom: 8.0),
               padding: const EdgeInsets.all(14.0),
               decoration: BoxDecoration(
@@ -186,7 +185,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: lineRgba),
                 boxShadow: [
-                  BoxShadow(color: isDark ? const Color.fromRGBO(255, 255, 255, 0.05) : const Color.fromRGBO(255, 255, 255, 0.4), blurRadius: 0, spreadRadius: 0, offset: const Offset(0, 1), blurStyle: BlurStyle.inner)
+                  BoxShadow(color: context.ambianceColors.surfaceHighlight, blurRadius: 0, spreadRadius: 0, offset: const Offset(0, 1), blurStyle: BlurStyle.inner)
                 ],
               ),
               child: Row(
@@ -221,11 +220,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           );
         },
         openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-      ),
-    ).animate().fade(duration: 250.ms).slideY(
-        begin: 0.1,
-        end: 0,
-        delay: (index.clamp(0, 5) * 40).ms);
+    ).animate(key: ValueKey(item.prefixedId))
+        .fade(duration: 250.ms)
+        .slideY(
+          begin: 0.1,
+          end: 0,
+          delay: (index.clamp(0, 5) * 40).ms,
+        );
   }
 
   String _monthName(int month) {
