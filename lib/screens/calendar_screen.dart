@@ -192,8 +192,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               child: Row(
                 children: [
                   AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
+                    duration: AppPhysics.houseSpringDuration,
+                    curve: AppPhysics.houseSpringCurve,
                     width: 8, height: 8,
                     decoration: BoxDecoration(
                       color: dotColor,

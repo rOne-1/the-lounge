@@ -64,8 +64,8 @@ class AnimatedSegmentedControl<T> extends StatelessWidget {
                     alignment: Alignment.center,
                     color: Colors.transparent,
                     child: AnimatedDefaultTextStyle(
-                      duration: const Duration(milliseconds: 200),
-                      curve: Curves.easeOut,
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
                       style: AppThemes.safeGeist(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,

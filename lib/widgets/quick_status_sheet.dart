@@ -344,7 +344,8 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         splashColor: context.ambianceColors.acc.withValues(alpha: 0.2),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             color: bgColor,
