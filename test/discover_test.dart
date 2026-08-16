@@ -767,8 +767,24 @@ void main() {
         .importBackupJson(backupJson);
     expect(importResult, isTrue);
 
-    // Allow the async loadPool triggered inside importBackupJson to finish.
-    await Future<void>.delayed(const Duration(milliseconds: 500));
+    // importBackupJson refreshes BOTH discover decks fire-and-forget
+    // (deliberately not awaited in production, so import itself stays
+    // fast -- see the `try { ...; ... } catch (_) {}` block with no
+    // `await` in importBackupJson). A test-isolation bug here (notepad
+    // item 18): this test previously only waited a flat delay and never
+    // touched discoverTvDeckProvider directly, so its own fire-and-forget
+    // loadPool could still be in flight -- using its Ref -- when
+    // addTearDown disposed the container, throwing "Ref used after
+    // dispose" when run standalone (masked in full-file runs by
+    // incidental timing from earlier tests). Explicitly (re-)awaiting
+    // both notifiers' loadPool here is idempotent and guarantees nothing
+    // is left in flight before this test function returns.
+    await singleRepoContainer
+        .read(discoverMoviesDeckProvider.notifier)
+        .loadPool(isReload: false);
+    await singleRepoContainer
+        .read(discoverTvDeckProvider.notifier)
+        .loadPool(isReload: false);
 
     // Step 5: movie_1 must no longer appear in the discover pool.
     final poolAfter =
