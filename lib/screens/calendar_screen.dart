@@ -7,6 +7,7 @@ import '../providers/repository_provider.dart';
 import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
+import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/segmented_toggle.dart';
 import '../widgets/quick_status_sheet.dart';
@@ -84,11 +85,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             ),
           ],
           Expanded(
-            child: Center(
-              child: Text(
-                isMovies ? 'No upcoming movie premieres.' : 'No upcoming TV episodes.',
-                style: AppThemes.safeGeist(color: subColor),
-              ),
+            child: AtmosphericEmptyState(
+              icon: Icons.calendar_month_outlined,
+              title: isMovies ? 'No upcoming movie premieres' : 'No upcoming TV episodes',
+              message: 'Releases for anything you\'ve watchlisted will show up here.',
+              ctaLabel: 'Discover Titles',
+              onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
             ),
           ),
         ],

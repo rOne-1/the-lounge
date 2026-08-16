@@ -6,6 +6,7 @@ import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import '../constants.dart';
+import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/segmented_toggle.dart';
@@ -219,7 +220,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
           ),
         ),
         Expanded(
-          child: _buildGrid(context, items, isDark, subColor),
+          child: _buildGrid(context, items, isDark, subColor, emptyLabel: 'Your $title is empty'),
         ),
       ],
     );
@@ -271,7 +272,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
           ),
         ),
         Expanded(
-          child: _buildGrid(context, items, isDark, subColor),
+          child: _buildGrid(context, items, isDark, subColor, emptyLabel: 'Nothing in progress'),
         ),
       ],
     );
@@ -324,9 +325,15 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     );
   }
 
-  Widget _buildGrid(BuildContext context, List<MediaItem> items, bool isDark, Color subColor) {
+  Widget _buildGrid(BuildContext context, List<MediaItem> items, bool isDark, Color subColor, {String emptyLabel = 'Nothing here yet'}) {
     if (items.isEmpty) {
-      return Center(child: Text('Nothing here yet.', style: AppThemes.safeGeist(fontSize: 14, color: subColor)));
+      return AtmosphericEmptyState(
+        icon: Icons.movie_creation_outlined,
+        title: emptyLabel,
+        message: 'Titles you save here will show up in this list.',
+        ctaLabel: 'Discover Titles',
+        onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
+      );
     }
 
     final isLarge = MediaQuery.of(context).size.width >= 600;
@@ -365,11 +372,12 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     required Color inkColor,
   }) {
     if (items.isEmpty) {
-      return Center(
-        child: Text(
-          'Nothing here yet.',
-          style: AppThemes.safeGeist(fontSize: 14, color: subColor),
-        ),
+      return AtmosphericEmptyState(
+        icon: Icons.check_circle_outline_rounded,
+        title: 'Nothing watched yet',
+        message: 'Titles you mark as watched will show up here.',
+        ctaLabel: 'Discover Titles',
+        onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
       );
     }
 

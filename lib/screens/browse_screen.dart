@@ -9,6 +9,7 @@ import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
 import '../utils/scroll_chrome_tracker.dart';
 import '../utils/weighted_rating.dart';
+import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/lounge_dropdown.dart';
@@ -856,7 +857,6 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
 
   Widget _buildSearchModeBody(bool isDark, bool isMovies) {
     final inkColor = context.ambianceColors.ink;
-    final subColor = context.ambianceColors.sub;
     final filterParams = ref.watch(discoverFilterProvider);
 
     if (_isSearching) {
@@ -879,54 +879,46 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
         _applyClientFilters(rawResults, filterParams, isMovies);
 
     if (filteredResults.isEmpty) {
-      return Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.search_off, size: 64, color: subColor),
-              const SizedBox(height: 16),
-              Text(
-                'No results found for "$_searchQuery"',
-                textAlign: TextAlign.center,
+      return AtmosphericEmptyState(
+        icon: Icons.search_off_rounded,
+        title: 'No results found for "$_searchQuery"',
+        message: 'Check spelling or try searching for another title or actor.',
+        actions: [
+          PressableScale(
+            onTap: () {
+              _searchController.clear();
+              _onSearchChanged('');
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+              decoration: context.ambianceColors.primaryButtonDecoration,
+              child: Text(
+                'Clear search',
                 style: AppThemes.safeGeist(
-                  color: inkColor,
-                  fontSize: 16,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Check spelling or try searching for another title or actor.',
-                textAlign: TextAlign.center,
-                style: AppThemes.safeGeist(color: subColor, fontSize: 13),
-              ),
-              const SizedBox(height: 20),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                alignment: WrapAlignment.center,
-                children: [
-                  FilledButton.icon(
-                    onPressed: () {
-                      _searchController.clear();
-                      _onSearchChanged('');
-                    },
-                    icon: const Icon(Icons.clear),
-                    label: const Text('Clear search'),
-                  ),
-                  if (filterParams.hasActiveFilters)
-                    OutlinedButton.icon(
-                      onPressed: _resetAllFilters,
-                      icon: const Icon(Icons.filter_alt_off),
-                      label: const Text('Reset All Filters'),
-                    ),
-                ],
-              ),
-            ],
+            ),
           ),
-        ),
+          if (filterParams.hasActiveFilters)
+            PressableScale(
+              onTap: _resetAllFilters,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                decoration: BoxDecoration(
+                  color: context.ambianceColors.pill,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: context.ambianceColors.lineRgba),
+                ),
+                child: Text(
+                  'Reset All Filters',
+                  style: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600, color: inkColor),
+                ),
+              ),
+            ),
+        ],
       );
     }
 
