@@ -9,6 +9,8 @@ import '../utils/export_helper.dart';
 import '../widgets/animated_segmented_control.dart';
 import '../widgets/lounge_dialog.dart';
 import '../widgets/lounge_toast.dart';
+import 'package:sentry_flutter/sentry_flutter.dart';
+import '../services/api_call_tracker.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -357,6 +359,86 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                             ),
                           ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // E6: session-only API call/error counters + crash
+                    // reporting mode, for testers to glance at without
+                    // needing Sentry dashboard access.
+                    _buildSectionHeader('Debug', subColor),
+                    _buildCard(
+                      context,
+                      cardBg,
+                      isDark,
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: ListenableBuilder(
+                          listenable: ApiCallTracker.instance,
+                          builder: (context, _) {
+                            final tracker = ApiCallTracker.instance;
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'TMDB calls this session',
+                                      style: AppThemes.safeGeist(fontSize: 13, color: subColor),
+                                    ),
+                                    Text(
+                                      '${tracker.totalCalls}',
+                                      style: AppThemes.safeGeist(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: inkColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Failed calls',
+                                      style: AppThemes.safeGeist(fontSize: 13, color: subColor),
+                                    ),
+                                    Text(
+                                      '${tracker.failedCalls}',
+                                      style: AppThemes.safeGeist(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: tracker.failedCalls > 0
+                                            ? context.ambianceColors.danger
+                                            : inkColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Crash reporting',
+                                      style: AppThemes.safeGeist(fontSize: 13, color: subColor),
+                                    ),
+                                    Text(
+                                      Sentry.isEnabled ? 'Active' : 'Local logging only',
+                                      style: AppThemes.safeGeist(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: inkColor,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
                         ),
                       ),
                     ),

@@ -19,6 +19,7 @@ import 'package:the_lounge/widgets/animated_segmented_control.dart';
 import 'package:the_lounge/widgets/lounge_dialog.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
+import 'package:the_lounge/services/api_call_tracker.dart';
 
 class MockFilePickerPlatform extends FilePickerPlatform {
   String? savePath;
@@ -94,6 +95,7 @@ void main() {
     SharePlatform.instance = mockSharePlatform;
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
+    ApiCallTracker.instance.reset();
   });
 
   ProviderContainer createContainer() {
@@ -142,6 +144,32 @@ void main() {
     expect(container.read(ambianceProvider), equals(readingRoomTheme));
 
     
+  });
+
+  testWidgets('E6: Debug section shows live TMDB call/failure counts', (WidgetTester tester) async {
+    final container = createContainer();
+    addTearDown(container.dispose);
+    addTearDown(ApiCallTracker.instance.reset);
+
+    await tester.pumpWidget(createSettingsScreen(container));
+    await tester.pumpAndSettle();
+
+    // The Debug section sits at the bottom of the ListView, below the
+    // default viewport + cache extent in the test surface.
+    await tester.scrollUntilVisible(find.text('DEBUG'), 300);
+    await tester.pumpAndSettle();
+
+    expect(find.text('DEBUG'), findsOneWidget);
+    expect(find.text('TMDB calls this session'), findsOneWidget);
+    expect(find.text('0'), findsWidgets);
+
+    ApiCallTracker.instance.recordCall();
+    ApiCallTracker.instance.recordCall();
+    ApiCallTracker.instance.recordFailure();
+    await tester.pump();
+
+    expect(find.text('2'), findsOneWidget);
+    expect(find.text('1'), findsOneWidget);
   });
 
   testWidgets('Export Backup triggers file picker serialization and saves file', (WidgetTester tester) async {

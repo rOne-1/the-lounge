@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/discover_filter_params.dart';
+import 'api_call_tracker.dart';
 
 
 /// Container for search results filtered client-side into title matches vs person filmographies.
@@ -75,14 +76,22 @@ class TmdbApiService {
       queryParameters: stringParams.isNotEmpty ? stringParams : null,
     );
 
-    final response = await _client.get(uri, headers: _headers);
+    // E6: every TMDB request funnels through this single method, making it
+    // the one place to track total calls/failures for the session.
+    ApiCallTracker.instance.recordCall();
+    try {
+      final response = await _client.get(uri, headers: _headers);
 
-    if (response.statusCode >= 200 && response.statusCode < 300) {
-      return jsonDecode(response.body) as Map<String, dynamic>;
-    } else {
-      throw Exception(
-        'TMDB API Request Failed [$path]: Status ${response.statusCode} - ${response.body}',
-      );
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        return jsonDecode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception(
+          'TMDB API Request Failed [$path]: Status ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      ApiCallTracker.instance.recordFailure();
+      rethrow;
     }
   }
 
