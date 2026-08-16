@@ -372,8 +372,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 
   Widget _buildRatingBadge(MediaItem item, bool isDark) {
-    final accColor = context.ambianceColors.acc;
-    final textColor = Theme.of(context).colorScheme.onPrimary;
+    // starRating is tuned gold/amber in every theme, so black text reads
+    // reliably across all 6 — mirrors the IMDb badge's own black-on-gold text.
+    const textColor = Colors.black;
 
     final String ratingStr;
     if (item.voteCount != null && item.voteCount! > 0) {
@@ -385,7 +386,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: accColor,
+        color: context.ambianceColors.starRating,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
@@ -730,12 +731,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors: [
-                      isDark
-                          ? const Color(0xD9000000)
-                          : const Color(0xB3000000),
-                      isDark
-                          ? const Color(0x80000000)
-                          : const Color(0x66000000),
+                      context.ambianceColors.scrim,
+                      context.ambianceColors.scrim.withValues(
+                        alpha: context.ambianceColors.scrim.a * 0.6,
+                      ),
                     ],
                     begin: Alignment.centerLeft,
                     end: Alignment.centerRight,
@@ -1270,7 +1269,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         curve: AppPhysics.houseSpringCurve,
         height: 44,
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF100C0A) : const Color(0xFFE7DDC9),
+          color: context.ambianceColors.card2,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: borderColor),
         ),
@@ -1317,7 +1316,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF2C2419) : const Color(0xFFF0E5D8),
+          color: context.ambianceColors.card2,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: context.ambianceColors.lineRgba,
@@ -1412,7 +1411,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               )
             : context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(12)))
         : BoxDecoration(
-            color: isDark ? const Color(0xFF100C0A) : const Color(0xFFE7DDC9),
+            color: context.ambianceColors.card2,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: borderColor),
           );
@@ -1668,7 +1667,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                                       padding: const EdgeInsets.symmetric(
                                           horizontal: 6, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xCC000000),
+                                        color: context.ambianceColors.scrim,
                                         borderRadius: BorderRadius.circular(4),
                                       ),
                                       child: Text(

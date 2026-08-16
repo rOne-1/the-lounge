@@ -31,20 +31,27 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _scaleAnimation;
   Timer? _timer;
   bool _navigated = false;
+  bool _systemChromeApplied = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_systemChromeApplied) return;
+    _systemChromeApplied = true;
+    SystemChrome.setSystemUIOverlayStyle(
+      SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: context.ambianceColors.base,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+    );
+  }
 
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.light,
-        statusBarBrightness: Brightness.dark,
-        systemNavigationBarColor: Color(0xFF161312),
-        systemNavigationBarIconBrightness: Brightness.light,
-      ),
-    );
-
     final shouldAnimate = widget.enableAnimation ?? true;
 
     _controller = AnimationController(

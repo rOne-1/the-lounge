@@ -9,18 +9,21 @@ import 'providers/ambiance_provider.dart';
 import 'providers/repository_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/crash_reporting_service.dart';
+import 'themes/screening_room_theme.dart';
 import 'widgets/fallback_widgets.dart';
 
 void main() async {
   final stopwatch = Stopwatch()..start();
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Best-effort default before the persisted ambiance resolves (post-runApp);
+  // SplashScreen re-applies the real resolved ambiance's color immediately after.
   SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
+    SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
       statusBarBrightness: Brightness.dark,
-      systemNavigationBarColor: Color(0xFF161312),
+      systemNavigationBarColor: srAmbianceColors.base,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );

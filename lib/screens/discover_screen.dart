@@ -469,7 +469,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     bool isWatchlist = false,
   }) {
     final isActive = _activeSwipeDirection == 'Down' || isWatchlist;
-    final glowColor = isDark ? accColor : const Color(0xFFB0512B);
+    final glowColor = accColor;
 
     return AnimatedScale(
       scale: isActive ? 1.12 : 1.0,
@@ -514,7 +514,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     
     // Instead of using hardcoded sheetBgColors, we can reuse base and card colors
     final sheetBgColors = [context.ambianceColors.base, context.ambianceColors.card];
-    final innerShadowColor = isDark ? const Color.fromRGBO(255, 255, 255, 0.08) : const Color.fromRGBO(255, 255, 255, 0.6);
+    final innerShadowColor = context.ambianceColors.surfaceHighlight;
     final btnTextColor = Theme.of(context).colorScheme.onPrimary;
 
     return IgnorePointer(
@@ -948,19 +948,19 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
       hintOpacity = 1.0;
       switch (activeDirection) {
         case 'Left':
-          activeColor = const Color(0xFFF43F5E);
+          activeColor = context.ambianceColors.statusSkip;
           activeAlignment = Alignment.centerLeft;
           break;
         case 'Right':
-          activeColor = const Color(0xFFA855F7);
+          activeColor = context.ambianceColors.statusSave;
           activeAlignment = Alignment.centerRight;
           break;
         case 'Up':
-          activeColor = const Color(0xFF4CAF50);
+          activeColor = context.ambianceColors.statusWatched;
           activeAlignment = Alignment.topCenter;
           break;
         case 'Down':
-          activeColor = const Color(0xFFFFB300);
+          activeColor = context.ambianceColors.statusWatchlist;
           activeAlignment = Alignment.bottomCenter;
           break;
       }
@@ -968,21 +968,21 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
       if (isHorizontalDominant) {
         if (_dragOffset.dx < 0) {
           activeDirection = 'Left';
-          activeColor = const Color(0xFFF43F5E); // Rose = Skip
+          activeColor = context.ambianceColors.statusSkip;
           activeAlignment = Alignment.centerLeft;
         } else if (_dragOffset.dx > 0) {
           activeDirection = 'Right';
-          activeColor = const Color(0xFFA855F7); // Purple = Saved / Maybe
+          activeColor = context.ambianceColors.statusSave; // Saved / Maybe
           activeAlignment = Alignment.centerRight;
         }
       } else {
         if (_dragOffset.dy < 0) {
           activeDirection = 'Up';
-          activeColor = const Color(0xFF4CAF50); // Green = Watched
+          activeColor = context.ambianceColors.statusWatched;
           activeAlignment = Alignment.topCenter;
         } else if (_dragOffset.dy > 0) {
           activeDirection = 'Down';
-          activeColor = const Color(0xFFFFB300); // Amber = Watchlist
+          activeColor = context.ambianceColors.statusWatchlist;
           activeAlignment = Alignment.bottomCenter;
         }
       }
@@ -1009,9 +1009,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
                   spreadRadius: -6,
                 ),
           BoxShadow(
-            color: widget.isDark
-                ? const Color.fromRGBO(255, 255, 255, 0.06)
-                : const Color.fromRGBO(255, 255, 255, 0.5),
+            color: context.ambianceColors.surfaceHighlight,
             blurRadius: 0,
             spreadRadius: 0,
             offset: const Offset(0, 1),
@@ -1158,7 +1156,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, widget.isDark ? const Color.fromRGBO(0, 0, 0, 0.82) : const Color.fromRGBO(50, 30, 15, 0.78)],
+                  colors: [Colors.transparent, context.ambianceColors.scrim],
                 )
               ),
               child: Column(
@@ -1186,7 +1184,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
                   const SizedBox(height: 5),
                   Text(widget.item.overview, style: AppThemes.safeGeist(fontSize: 12, height: 1.45, color: const Color.fromRGBO(255, 255, 255, 0.72)), maxLines: 2, overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
-                  Text('Tap for full details ↗', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: widget.isDark ? widget.accColor : const Color(0xFFF0C9A0))),
+                  Text('Tap for full details ↗', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: widget.accColor)),
                 ],
               ),
             ),

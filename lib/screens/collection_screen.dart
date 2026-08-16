@@ -265,16 +265,14 @@ class CollectionScreen extends ConsumerWidget {
                                             padding: const EdgeInsets.symmetric(
                                                 horizontal: 6, vertical: 2),
                                             decoration: BoxDecoration(
-                                              color: isDark
-                                                  ? const Color.fromRGBO(0, 0, 0, 0.65)
-                                                  : const Color.fromRGBO(44, 32, 22, 0.75),
+                                              color: context.ambianceColors.scrim,
                                               borderRadius: BorderRadius.circular(6),
                                             ),
                                             child: Row(
                                               mainAxisSize: MainAxisSize.min,
                                               children: [
-                                                const Icon(Icons.star,
-                                                    size: 10, color: Color(0xFFFFB800)),
+                                                Icon(Icons.star,
+                                                    size: 10, color: context.ambianceColors.starRating),
                                                 const SizedBox(width: 3),
                                                 Text(
                                                   item.rating.toStringAsFixed(1),

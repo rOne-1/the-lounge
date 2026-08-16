@@ -192,9 +192,7 @@ class ShellScreen extends ConsumerWidget {
                       curve: AppPhysics.houseSpringCurve,
                       height: 66,
                       decoration: BoxDecoration(
-                        color: isDark
-                            ? const Color.fromRGBO(12, 9, 7, 0.82)
-                            : const Color.fromRGBO(240, 232, 216, 0.86),
+                        color: Theme.of(context).extension<AmbianceColors>()!.navBarBg,
                         border: Border.all(
                           color: Theme.of(context).extension<AmbianceColors>()!.lineRgba,
                         ),
@@ -230,9 +228,7 @@ class ShellScreen extends ConsumerWidget {
           curve: AppPhysics.houseSpringCurve,
           width: 80,
           decoration: BoxDecoration(
-            color: isDark
-                ? const Color.fromRGBO(12, 9, 7, 0.82)
-                : const Color.fromRGBO(240, 232, 216, 0.86),
+            color: context.ambianceColors.navBarBg,
             border: Border(
               right: BorderSide(
                 color: Theme.of(context).extension<AmbianceColors>()!.lineRgba,

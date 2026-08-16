@@ -500,9 +500,7 @@ class HomeScreen extends ConsumerWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: isDark
-                      ? const Color.fromRGBO(255, 255, 255, 0.1)
-                      : const Color.fromRGBO(255, 255, 255, 0.5),
+                  color: context.ambianceColors.surfaceHighlight,
                   offset: const Offset(0, 1),
                   blurStyle: BlurStyle.inner,
                 )
@@ -516,7 +514,7 @@ class HomeScreen extends ConsumerWidget {
                       fontSize: 21,
                       fontWeight: FontWeight.w600,
                       fontStyle: FontStyle.italic,
-                      color: isDark ? inkColor : const Color(0xFF7A3418),
+                      color: isDark ? inkColor : context.ambianceColors.acc,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -633,9 +631,7 @@ class TvContinueWatchingCard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark
-                            ? const Color.fromRGBO(255, 255, 255, 0.05)
-                            : const Color.fromRGBO(255, 255, 255, 0.5),
+                        color: context.ambianceColors.surfaceHighlight,
                         blurRadius: 0,
                         spreadRadius: 0,
                         offset: const Offset(0, 1),
@@ -659,9 +655,7 @@ class TvContinueWatchingCard extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 7, vertical: 3),
                           decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color.fromRGBO(0, 0, 0, 0.65)
-                                : const Color.fromRGBO(44, 32, 22, 0.75),
+                            color: context.ambianceColors.scrim,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -680,9 +674,9 @@ class TvContinueWatchingCard extends ConsumerWidget {
                         bottom: 0,
                         child: Container(
                           height: 3,
-                          color: isDark
-                              ? const Color.fromRGBO(0, 0, 0, 0.4)
-                              : const Color.fromRGBO(44, 32, 22, 0.18),
+                          color: context.ambianceColors.scrim.withValues(
+                            alpha: context.ambianceColors.scrim.a * 0.3,
+                          ),
                           alignment: Alignment.centerLeft,
                           child: FractionallySizedBox(
                             widthFactor: nextEp != null ? 0.4 : 1.0,
@@ -772,9 +766,7 @@ class MovieWatchlistCard extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark
-                            ? const Color.fromRGBO(255, 255, 255, 0.05)
-                            : const Color.fromRGBO(255, 255, 255, 0.5),
+                        color: context.ambianceColors.surfaceHighlight,
                         blurRadius: 0,
                         spreadRadius: 0,
                         offset: const Offset(0, 1),
@@ -925,9 +917,7 @@ class MediaRail extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(11),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: isDark
-                                          ? const Color.fromRGBO(255, 255, 255, 0.05)
-                                          : const Color.fromRGBO(255, 255, 255, 0.5),
+                                      color: context.ambianceColors.surfaceHighlight,
                                       offset: const Offset(0, 1),
                                       blurStyle: BlurStyle.inner,
                                     ),
@@ -1141,15 +1131,11 @@ class NextEpisodeBannerCard extends ConsumerWidget {
             padding: const EdgeInsets.all(14),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark
-                  ? const Color.fromRGBO(214, 151, 132, 0.42)
-                  : const Color.fromRGBO(167, 106, 80, 0.42),
+              color: context.ambianceColors.statusSave.withValues(alpha: 0.42),
             ),
             boxShadow: [
               BoxShadow(
-                color: isDark
-                    ? const Color.fromRGBO(255, 255, 255, 0.08)
-                    : const Color.fromRGBO(255, 255, 255, 0.5),
+                color: context.ambianceColors.surfaceHighlight,
                 offset: const Offset(0, 1),
                 blurStyle: BlurStyle.inner,
               )
@@ -1163,9 +1149,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                     color: phColor,
                     borderRadius: BorderRadius.circular(9),
                     border: Border.all(
-                      color: isDark
-                          ? const Color.fromRGBO(214, 151, 132, 0.32)
-                          : const Color.fromRGBO(167, 106, 80, 0.34),
+                      color: context.ambianceColors.statusSave.withValues(alpha: 0.33),
                     ),
                   ),
                   clipBehavior: Clip.antiAlias,
@@ -1187,9 +1171,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                           letterSpacing: 1.1,
-                          color: isDark
-                              ? const Color(0xFFE0A894)
-                              : const Color(0xFFA76A50),
+                          color: context.ambianceColors.statusSave,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -1225,9 +1207,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                     children: [
                       Icon(
                         Icons.calendar_today_outlined,
-                        color: isDark
-                            ? const Color(0xFFE0A894)
-                            : const Color(0xFFA76A50),
+                        color: context.ambianceColors.statusSave,
                         size: 22,
                       ),
                       const SizedBox(height: 4),
@@ -1236,9 +1216,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                         style: AppThemes.safeGeist(
                           fontSize: 9,
                           fontWeight: FontWeight.w600,
-                          color: isDark
-                              ? const Color(0xFFE0A894)
-                              : const Color(0xFFA76A50),
+                          color: context.ambianceColors.statusSave,
                         ),
                       ),
                     ],
