@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
@@ -1092,7 +1093,24 @@ class MediaNotifier extends Notifier<MediaState> {
           _setTvShowStatus(item.id, currentItem, target);
         }
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      // Notepad item 2: this failure previously vanished with zero trace --
+      // the optimistic "all episodes watched" placement from
+      // addToWatchedList's fallback branch is left uncorrected until the
+      // next refreshWatchedShowsIfDue pass (up to 30 days later), which is
+      // the real, deliberately-scoped-out fix (would need a retry/backoff
+      // scheduler or blocking the UI on the season fetch -- a bigger UX
+      // change, see item 1). Logging at least makes the failure
+      // diagnosable (via a future Sentry integration once E6 lands, or the
+      // dev console today) instead of disappearing silently.
+      developer.log(
+        'Failed to enrich watched status for TV show ${item.id} -- optimistic '
+        'placement stays uncorrected until the next monthly refresh.',
+        name: 'MediaNotifier._enrichWatchedTvShow',
+        error: e,
+        stackTrace: stack,
+      );
+    }
   }
 
   Future<void> _enrichSingleEpisodeWatched(
