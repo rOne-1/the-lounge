@@ -956,7 +956,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final lineRgba = context.ambianceColors.lineRgba;
 
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
+      duration: AppPhysics.houseSpringDuration,
+      switchInCurve: AppPhysics.houseSpringCurve,
+      switchOutCurve: Curves.easeOut,
       child: items.isEmpty
           ? const SizedBox.shrink(key: ValueKey('similar_titles_empty'))
           : Column(

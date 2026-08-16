@@ -319,9 +319,9 @@ class HomeScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                switchInCurve: Curves.easeInOutCubic,
-                switchOutCurve: Curves.easeInOutCubic,
+                duration: AppPhysics.houseSpringDuration,
+                switchInCurve: AppPhysics.houseSpringCurve,
+                switchOutCurve: AppPhysics.houseSpringCurve,
                 child: SizedBox(
                   key: ValueKey('continue_watching_${isMovies}_${rail1Items.length}'),
                   height: 140,
@@ -876,9 +876,9 @@ class MediaRail extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         AnimatedSwitcher(
-          duration: const Duration(milliseconds: 250),
-          switchInCurve: Curves.easeInOutCubic,
-          switchOutCurve: Curves.easeInOutCubic,
+          duration: AppPhysics.houseSpringDuration,
+          switchInCurve: AppPhysics.houseSpringCurve,
+          switchOutCurve: Curves.easeOut,
           child: SizedBox(
             key: ValueKey('${title}_${itemsAsync.isLoading}'),
             height: 144,

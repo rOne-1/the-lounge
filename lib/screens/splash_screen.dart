@@ -61,13 +61,13 @@ class _SplashScreenState extends State<SplashScreen>
 
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeIn,
+      curve: AppPhysics.houseSpringCurve,
     );
 
     _scaleAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: Curves.easeOutCubic,
+        curve: AppPhysics.houseSpringCurve,
       ),
     );
 
@@ -99,7 +99,7 @@ class _SplashScreenState extends State<SplashScreen>
           );
         },
         transitionDuration: (widget.enableAnimation ?? true)
-            ? const Duration(milliseconds: 350)
+            ? AppPhysics.houseSpringDuration
             : Duration.zero,
       ),
     );
