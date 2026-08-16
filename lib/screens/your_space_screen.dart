@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
-import 'detail_screen.dart';
 import '../constants.dart';
-import '../widgets/fallback_widgets.dart';
+import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
-import '../widgets/quick_status_sheet.dart';
 import '../widgets/segmented_toggle.dart';
 
 enum InProgressSubFilter { watching, onHold, dropped }
@@ -332,8 +329,6 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
       return Center(child: Text('Nothing here yet.', style: AppThemes.safeGeist(fontSize: 14, color: subColor)));
     }
 
-    final phColor = context.ambianceColors.ph;
-    final lineRgba = context.ambianceColors.lineRgba;
     final isLarge = MediaQuery.of(context).size.width >= 600;
 
     return GridView.builder(
@@ -348,40 +343,11 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return PressableScale(
-          child: OpenContainer(
-            transitionDuration: AppPhysics.houseSpringDuration,
-            closedElevation: 0,
-            openElevation: 0,
-            closedColor: Colors.transparent,
-            openColor: context.ambianceColors.base,
-            middleColor: Colors.transparent,
-            closedShape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(11),
-            ),
-            closedBuilder: (context, openContainer) {
-              return GestureDetector(
-                onTap: openContainer,
-                onLongPress: () => showQuickStatusSheet(context, ref, item),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: phColor,
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: lineRgba),
-                    boxShadow: [
-                      BoxShadow(color: isDark ? const Color.fromRGBO(255, 255, 255, 0.05) : const Color.fromRGBO(255, 255, 255, 0.4), blurRadius: 0, spreadRadius: 0, offset: const Offset(0, 1), blurStyle: BlurStyle.inner)
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: MediaImage(
-                    item: item,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              );
-            },
-            openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-          ),
+        return MediaCard(
+          key: ValueKey(item.prefixedId),
+          item: item,
+          isDark: isDark,
+          borderRadius: 11,
         ).animate().fade(duration: 250.ms).slideY(
             begin: 0.1,
             end: 0,
@@ -637,9 +603,6 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
   }
 
   Widget _buildSubGrid(BuildContext context, List<MediaItem> items, bool isDark, String keySuffix) {
-    final phColor = context.ambianceColors.ph;
-    final lineRgba = context.ambianceColors.lineRgba;
-
     return GridView.builder(
       key: PageStorageKey<String>('watched_grid_$keySuffix'),
       shrinkWrap: true,
@@ -653,48 +616,11 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
-        return PressableScale(
-          child: OpenContainer(
-            transitionDuration: AppPhysics.houseSpringDuration,
-            closedElevation: 0,
-            openElevation: 0,
-            closedColor: Colors.transparent,
-            openColor: context.ambianceColors.base,
-            middleColor: Colors.transparent,
-            closedShape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(11),
-            ),
-            closedBuilder: (context, openContainer) {
-              return GestureDetector(
-                onTap: openContainer,
-                onLongPress: () => showQuickStatusSheet(context, ref, item),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: phColor,
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: lineRgba),
-                    boxShadow: [
-                      BoxShadow(
-                        color: isDark
-                            ? const Color.fromRGBO(255, 255, 255, 0.05)
-                            : const Color.fromRGBO(255, 255, 255, 0.4),
-                        blurRadius: 0,
-                        spreadRadius: 0,
-                        offset: const Offset(0, 1),
-                        blurStyle: BlurStyle.inner,
-                      ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: MediaImage(
-                    item: item,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-              );
-            },
-            openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-          ),
+        return MediaCard(
+          key: ValueKey(item.prefixedId),
+          item: item,
+          isDark: isDark,
+          borderRadius: 11,
         ).animate().fade(duration: 250.ms).slideY(
               begin: 0.1,
               end: 0,
