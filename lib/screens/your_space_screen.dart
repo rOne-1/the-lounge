@@ -10,6 +10,7 @@ import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/segmented_toggle.dart';
+import 'settings_screen.dart';
 
 enum InProgressSubFilter { watching, onHold, dropped }
 
@@ -100,18 +101,40 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
                     ),
                   ),
                 ),
-                // Large/desktop layout already gets a global toggle from
-                // ShellScreen's top bar (see _buildTopBarToggle) -- Home,
-                // Discover, and Calendar all gate their own embedded toggle
-                // behind `!isLarge` for the same reason; this one was
-                // missing that gate, causing a second toggle to render here.
-                if (!isLarge)
-                  SegmentedMediaTypeToggle(
-                    activeType: navState.activeMediaType,
-                    onChanged: (type) =>
-                        ref.read(navigationProvider.notifier).setMediaType(type),
-                    isDark: isDark,
-                  ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Large/desktop layout already gets a global toggle from
+                    // ShellScreen's top bar (see _buildTopBarToggle) -- Home,
+                    // Discover, and Calendar all gate their own embedded toggle
+                    // behind `!isLarge` for the same reason; this one was
+                    // missing that gate, causing a second toggle to render here.
+                    if (!isLarge) ...[
+                      SegmentedMediaTypeToggle(
+                        activeType: navState.activeMediaType,
+                        onChanged: (type) =>
+                            ref.read(navigationProvider.notifier).setMediaType(type),
+                        isDark: isDark,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    // IA-1: a direct, always-available Settings entry point
+                    // in Your Space, alongside (not instead of) the shell's
+                    // own auto-hiding top-bar gear icon -- per the triage's
+                    // locked recommendation, Option 1 + Option 3.
+                    PressableScale(
+                      key: const ValueKey('your_space_settings_button'),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                      ),
+                      child: Icon(
+                        Icons.settings_outlined,
+                        color: context.ambianceColors.sub,
+                        size: 22,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
