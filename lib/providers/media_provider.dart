@@ -243,6 +243,34 @@ class MediaNotifier extends Notifier<MediaState> {
     }
   }
 
+  /// Notepad item 15: keeps the Discover deck pools in sync with mutations
+  /// from OUTSIDE Discover itself (Detail screen buttons, Browse's Quick
+  /// Status Sheet), not just Discover's own swipe-triggered popCard(). Cheap
+  /// local removal, no network re-fetch -- see
+  /// DiscoverDeckNotifier.removeFromPoolIfPresent.
+  ///
+  /// Deliberately gated on `ref.exists(...)`: reading a NotifierProvider's
+  /// `.notifier` for the very first time triggers its build(), and
+  /// DiscoverDeckNotifier.build() unconditionally kicks off its own
+  /// Future.microtask(loadPool) auto-load as a side effect. If Discover was
+  /// never opened this session there's no already-loaded pool to keep in
+  /// sync anyway -- but forcing that build (and its uncontrollable
+  /// background fetch) here would run it in every caller of the six
+  /// addTo*List methods regardless, including plain unit tests with no
+  /// idea Discover exists, leaving that auto-load dangling past their
+  /// ProviderContainer's disposal. Only touch the deck providers if they're
+  /// already built.
+  void _excludeFromDiscoverPools(String itemId) {
+    try {
+      if (ref.exists(discoverMoviesDeckProvider)) {
+        ref.read(discoverMoviesDeckProvider.notifier).removeFromPoolIfPresent(itemId);
+      }
+      if (ref.exists(discoverTvDeckProvider)) {
+        ref.read(discoverTvDeckProvider.notifier).removeFromPoolIfPresent(itemId);
+      }
+    } catch (_) {}
+  }
+
   void addToWatchlist(MediaItem item) {
     if (state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
@@ -275,6 +303,7 @@ class MediaNotifier extends Notifier<MediaState> {
       onHoldList: newOnHoldList,
     );
     _saveToPrefs();
+    _excludeFromDiscoverPools(item.id);
   }
 
   void removeFromWatchlist(String id) {
@@ -327,6 +356,7 @@ class MediaNotifier extends Notifier<MediaState> {
       onHoldList: newOnHoldList,
     );
     _saveToPrefs();
+    _excludeFromDiscoverPools(item.id);
   }
 
   void removeFromMaybeList(String id) {
@@ -381,6 +411,7 @@ class MediaNotifier extends Notifier<MediaState> {
       onHoldList: newOnHoldList,
     );
     _saveToPrefs();
+    _excludeFromDiscoverPools(item.id);
   }
 
   void removeFromWatchingList(String id) {
@@ -586,6 +617,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchedEpisodes: newWatchedEpisodes,
     );
     _saveToPrefs();
+    _excludeFromDiscoverPools(item.id);
 
     if (item.type == MediaType.movie && item.belongsToCollection == null) {
       _enrichWatchedItemCollection(item.id);
@@ -677,6 +709,7 @@ class MediaNotifier extends Notifier<MediaState> {
       onHoldList: newOnHoldList,
     );
     _saveToPrefs();
+    _excludeFromDiscoverPools(item.id);
   }
 
   void removeFromDroppedList(String id) {
@@ -731,6 +764,7 @@ class MediaNotifier extends Notifier<MediaState> {
       onHoldList: newOnHoldList,
     );
     _saveToPrefs();
+    _excludeFromDiscoverPools(item.id);
   }
 
   void removeFromOnHoldList(String id) {
@@ -1605,9 +1639,41 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
     }
   }
 
+  /// Removes [itemId] from the in-memory pool if present, without a network
+  /// re-fetch. Used when a title gets marked Watchlisted/Saved/Watched/etc.
+  /// from OUTSIDE Discover (Detail screen buttons, Browse's Quick Status
+  /// Sheet) while it's sitting in an already-loaded pool -- mirrors
+  /// [popCard]'s local removal for Discover-triggered swipes, closing the
+  /// staleness gap notepad item 15 flagged (loadPool's own exclusion set
+  /// already covers these six status lists; this just keeps an
+  /// already-loaded pool in sync without waiting for the next reload).
+  void removeFromPoolIfPresent(String itemId) {
+    if (state.pool.isEmpty) return;
+    final cleanId = itemId.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
+    final nextPool = state.pool
+        .where((item) =>
+            item.id != itemId &&
+            item.prefixedId != itemId &&
+            item.id != cleanId)
+        .toList();
+    if (nextPool.length != state.pool.length) {
+      state = state.copyWith(pool: nextPool);
+    }
+  }
+
   void popCard(MediaItem item, String direction) {
     if (state.pool.isNotEmpty) {
-      final nextPool = List<MediaItem>.from(state.pool)..removeAt(0);
+      // Removes by identity, not index 0: _onSwipe (discover_screen.dart)
+      // calls MediaNotifier's status-mutation methods (addToWatchlist etc.)
+      // BEFORE calling popCard for the same swipe, and those now also
+      // evict the item from this pool via _excludeFromDiscoverPools
+      // (notepad item 15). Assuming the swiped card is still at index 0
+      // would then wrongly evict whatever card is next in line instead --
+      // removing by identity is a harmless no-op if it's already gone, and
+      // still correct in the normal case where nothing removed it first.
+      final nextPool = state.pool
+          .where((i) => i.id != item.id && i.prefixedId != item.id)
+          .toList();
       state = state.copyWith(
         pool: nextPool,
         lastSwipe: SwipeRecord(item: item, direction: direction),
