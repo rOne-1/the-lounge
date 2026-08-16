@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:animations/animations.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../constants.dart';
@@ -12,10 +11,9 @@ import '../utils/scroll_chrome_tracker.dart';
 import '../utils/weighted_rating.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/fallback_widgets.dart';
+import '../widgets/media_card.dart';
 import '../widgets/person_search_autocomplete.dart';
 import '../widgets/pressable_scale.dart';
-import '../widgets/quick_status_sheet.dart';
-import 'detail_screen.dart';
 
 int? getGenreIdForName(String name) {
   final lower = name.toLowerCase().trim();
@@ -1087,48 +1085,17 @@ class _BrowseScreenState extends ConsumerState<BrowseScreen> {
   }
 
   Widget _buildGridCard(MediaItem item, bool isDark) {
-    final phColor = context.ambianceColors.ph;
-    final lineRgba = context.ambianceColors.lineRgba;
-
     // Keyed by item identity so Flutter re-associates each grid cell (and
     // its OpenContainer/PressableScale animation state) with the same
     // title across rebuilds, instead of reusing whatever widget happens to
     // sit at the same index -- without this, any legitimate list-order
     // change (a real re-sort, not just the Load More bug fixed alongside
     // this) could visually misattribute transition state between cards.
-    return PressableScale(
+    return MediaCard(
       key: ValueKey(item.prefixedId),
-      child: OpenContainer(
-        transitionDuration: AppPhysics.houseSpringDuration,
-        closedElevation: 0,
-        openElevation: 0,
-        closedColor: Colors.transparent,
-        openColor: context.ambianceColors.base,
-        middleColor: Colors.transparent,
-        closedShape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        closedBuilder: (context, openContainer) {
-          return InkWell(
-            onTap: openContainer,
-            onLongPress: () => showQuickStatusSheet(context, ref, item),
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: phColor,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: lineRgba),
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: MediaImage(
-                item: item,
-                fit: BoxFit.cover,
-              ),
-            ),
-          );
-        },
-        openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-      ),
+      item: item,
+      isDark: isDark,
+      borderRadius: 8,
     );
   }
 
