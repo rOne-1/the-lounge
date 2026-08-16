@@ -1138,133 +1138,138 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     MediaItem item,
     bool isDark,
   ) {
-    final mediaState = ref.watch(mediaProvider);
-    final notifier = ref.read(mediaProvider.notifier);
+    // PERF-1: ref.watch(mediaProvider) here used to register against the
+    // whole DetailScreen Element (this method is just a plain function
+    // call within _DetailScreenState.build(), not its own widget), so
+    // toggling watch status on ANY item anywhere in the app rebuilt this
+    // entire 2000+ line screen -- cast strip, trailers, similar titles,
+    // hero, all of it. Wrapping the watch in its own Consumer scopes the
+    // rebuild to just this action-buttons subtree.
+    return Consumer(
+      builder: (context, ref, child) {
+        final mediaState = ref.watch(mediaProvider);
+        final notifier = ref.read(mediaProvider.notifier);
 
-    final inWatchlist = mediaState.watchlist.containsKey(item.id);
-    final inSaved = mediaState.maybeList.containsKey(item.id);
-    final inWatching = mediaState.watchingList.containsKey(item.id);
-    final inWatched = mediaState.watchedList.containsKey(item.id);
-    final inOnHold = mediaState.onHoldList.containsKey(item.id);
-    final inDropped = mediaState.droppedList.containsKey(item.id);
+        final inWatchlist = mediaState.watchlist.containsKey(item.id);
+        final inSaved = mediaState.maybeList.containsKey(item.id);
+        final inWatching = mediaState.watchingList.containsKey(item.id);
+        final inWatched = mediaState.watchedList.containsKey(item.id);
+        final inOnHold = mediaState.onHoldList.containsKey(item.id);
+        final inDropped = mediaState.droppedList.containsKey(item.id);
 
-    final saveColor =
-        AppStatusColors.save;
-    final watchColor =
-        AppStatusColors.watchlist;
-    final watchingColor =
-        AppStatusColors.watching;
-    final watchedColor =
-        AppStatusColors.watched;
-    final onHoldColor =
-        AppStatusColors.onHold;
-    final droppedColor =
-        AppStatusColors.dropped;
+        final saveColor = AppStatusColors.save;
+        final watchColor = AppStatusColors.watchlist;
+        final watchingColor = AppStatusColors.watching;
+        final watchedColor = AppStatusColors.watched;
+        final onHoldColor = AppStatusColors.onHold;
+        final droppedColor = AppStatusColors.dropped;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _buildStatusToggle(
-                'Saved',
-                inSaved,
-                saveColor,
-                () => notifier.toggleMaybe(item),
-                isDark,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatusToggle(
+                    'Saved',
+                    inSaved,
+                    saveColor,
+                    () => notifier.toggleMaybe(item),
+                    isDark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildStatusToggle(
+                    'Watchlist',
+                    inWatchlist,
+                    watchColor,
+                    () => notifier.toggleWatchlist(item),
+                    isDark,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildStatusToggle(
-                'Watchlist',
-                inWatchlist,
-                watchColor,
-                () => notifier.toggleWatchlist(item),
-                isDark,
-              ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatusToggle(
+                    'Watching',
+                    inWatching,
+                    watchingColor,
+                    () => notifier.toggleWatching(item),
+                    isDark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: () {
+                    final isUnreleased = (item.releaseDate != null &&
+                            item.releaseDate!.isAfter(DateTime.now())) ||
+                        (item.status != null &&
+                            (item.status!.toLowerCase() == 'unreleased' ||
+                                item.status!.toLowerCase() == 'in production' ||
+                                item.status!.toLowerCase() == 'planned'));
+                    final seasons = ref.watch(tvShowSeasonsProvider(item)).value;
+                    return _buildStatusToggle(
+                      'Watched',
+                      inWatched,
+                      watchedColor,
+                      () {
+                        if (isUnreleased) {
+                          LoungeToast.show(context, 'This title has not been released yet.');
+                          return;
+                        }
+                        notifier.toggleWatched(item, seasons: seasons);
+                      },
+                      isDark,
+                      isDisabled: isUnreleased,
+                    );
+                  }(),
+                ),
+              ],
             ),
+            const SizedBox(height: 8),
+            // Secondary status bar (On-Hold & Dropped options)
+            Row(
+              children: [
+                Expanded(
+                  child: _buildStatusToggle(
+                    'On-Hold',
+                    inOnHold,
+                    onHoldColor,
+                    () => notifier.toggleOnHold(item),
+                    isDark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildStatusToggle(
+                    'Dropped',
+                    inDropped,
+                    droppedColor,
+                    () => notifier.toggleDropped(item),
+                    isDark,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildWatchTrailerButton(context, item, isDark),
+                ),
+              ],
+            ),
+            if (item.imdbId != null && item.imdbId!.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              _buildImdbButton(item, isDark),
+            ],
           ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatusToggle(
-                'Watching',
-                inWatching,
-                watchingColor,
-                () => notifier.toggleWatching(item),
-                isDark,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: () {
-                final isUnreleased = (item.releaseDate != null &&
-                        item.releaseDate!.isAfter(DateTime.now())) ||
-                    (item.status != null &&
-                        (item.status!.toLowerCase() == 'unreleased' ||
-                            item.status!.toLowerCase() == 'in production' ||
-                            item.status!.toLowerCase() == 'planned'));
-                final seasons = ref.watch(tvShowSeasonsProvider(item)).value;
-                return _buildStatusToggle(
-                  'Watched',
-                  inWatched,
-                  watchedColor,
-                  () {
-                    if (isUnreleased) {
-                      LoungeToast.show(context, 'This title has not been released yet.');
-                      return;
-                    }
-                    notifier.toggleWatched(item, seasons: seasons);
-                  },
-                  isDark,
-                  isDisabled: isUnreleased,
-                );
-              }(),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // Secondary status bar (On-Hold & Dropped options)
-        Row(
-          children: [
-            Expanded(
-              child: _buildStatusToggle(
-                'On-Hold',
-                inOnHold,
-                onHoldColor,
-                () => notifier.toggleOnHold(item),
-                isDark,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _buildStatusToggle(
-                'Dropped',
-                inDropped,
-                droppedColor,
-                () => notifier.toggleDropped(item),
-                isDark,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            Expanded(
-              child: _buildWatchTrailerButton(context, item, isDark),
-            ),
-          ],
-        ),
-        if (item.imdbId != null && item.imdbId!.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _buildImdbButton(item, isDark),
-        ],
-      ],
+        );
+      },
     );
   }
 
@@ -1747,6 +1752,23 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 
   Widget _buildWatchProvidersSection(
+    BuildContext context,
+    WidgetRef ref,
+    MediaItem item,
+    bool isDark,
+  ) {
+    // PERF-1: see _buildActionButtons' comment -- same reasoning, this
+    // watches the broad mediaProvider (for watchProvidersCountry) and
+    // watchProviderRegionsProvider, so it gets its own Consumer scope
+    // instead of forcing a whole-DetailScreen rebuild.
+    return Consumer(
+      builder: (context, ref, child) {
+        return _buildWatchProvidersContent(context, ref, item, isDark);
+      },
+    );
+  }
+
+  Widget _buildWatchProvidersContent(
     BuildContext context,
     WidgetRef ref,
     MediaItem item,
