@@ -156,7 +156,8 @@ void main() {
       posterUrl: 'https://example.com/poster.jpg',
     );
 
-    testWidgets('memCacheWidth/Height scale with bounded constraints x devicePixelRatio',
+    testWidgets(
+        'memCacheWidth scales with bounded constraints x devicePixelRatio, memCacheHeight stays null (IMAGE-1)',
         (WidgetTester tester) async {
       tester.view.devicePixelRatio = 2.0;
       addTearDown(() => tester.view.resetDevicePixelRatio());
@@ -176,10 +177,17 @@ void main() {
 
       final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
       expect(image.memCacheWidth, equals(220)); // 110 * 2.0
-      expect(image.memCacheHeight, equals(310)); // 155 * 2.0
+      // IMAGE-1: passing both memCacheWidth and memCacheHeight forces the
+      // decoder to resample into that exact box regardless of the source
+      // image's real aspect ratio (this is exactly what distorted cast
+      // avatars into a square). Only the bounded-width dimension is
+      // auto-derived; height is left null so the decoder preserves the
+      // source aspect ratio.
+      expect(image.memCacheHeight, isNull);
     });
 
-    testWidgets('a different card size on the same devicePixelRatio produces a different decode size',
+    testWidgets(
+        'a square container (e.g. a circular cast avatar) still only derives width, never both (IMAGE-1)',
         (WidgetTester tester) async {
       tester.view.devicePixelRatio = 3.0;
       addTearDown(() => tester.view.resetDevicePixelRatio());
@@ -199,7 +207,7 @@ void main() {
 
       final image = tester.widget<CachedNetworkImage>(find.byType(CachedNetworkImage));
       expect(image.memCacheWidth, equals(180)); // 60 * 3.0
-      expect(image.memCacheHeight, equals(180));
+      expect(image.memCacheHeight, isNull);
     });
 
     testWidgets('explicit memCacheWidth/Height overrides the auto-computed size',

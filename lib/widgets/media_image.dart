@@ -157,14 +157,32 @@ class MediaImage extends StatelessWidget {
       imageContent = LayoutBuilder(
         builder: (context, constraints) {
           final dpr = MediaQuery.of(context).devicePixelRatio;
-          final resolvedWidth = memCacheWidth ??
-              (constraints.hasBoundedWidth
-                  ? (constraints.maxWidth * dpr).round()
-                  : (useDetailPoster ? 700 : 200));
-          final resolvedHeight = memCacheHeight ??
-              (constraints.hasBoundedHeight
-                  ? (constraints.maxHeight * dpr).round()
-                  : null);
+
+          int? resolvedWidth;
+          int? resolvedHeight;
+          if (memCacheWidth != null || memCacheHeight != null) {
+            // Caller explicitly overrode one or both dimensions (e.g. a
+            // hero banner with a deliberately fixed size) -- respect that
+            // as given.
+            resolvedWidth = memCacheWidth;
+            resolvedHeight = memCacheHeight;
+          } else if (constraints.hasBoundedWidth) {
+            // IMAGE-1: only ever derive ONE dimension from the box
+            // constraints, not both. Passing both memCacheWidth and
+            // memCacheHeight tells CachedNetworkImage's underlying
+            // ResizeImage to force-decode into that exact W x H box
+            // regardless of the source image's real aspect ratio --
+            // fine for posters (2:3, matches most card shapes) but it
+            // squished portrait cast photos into whatever square/non-2:3
+            // box their container happened to have (e.g. circular
+            // avatars). Deriving width only lets the decoder preserve
+            // the source aspect ratio and BoxFit handle the crop.
+            resolvedWidth = (constraints.maxWidth * dpr).round();
+          } else if (constraints.hasBoundedHeight) {
+            resolvedHeight = (constraints.maxHeight * dpr).round();
+          } else {
+            resolvedWidth = useDetailPoster ? 700 : 200;
+          }
 
           return CachedNetworkImage(
             imageUrl: effectiveUrl,
