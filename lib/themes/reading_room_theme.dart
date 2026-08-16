@@ -24,6 +24,14 @@ const Color _rrStatusDropped = Color(0xFFB55D5D);
 const Color _rrGlow1 = Color(0xFFA76A50);
 const Color _rrGlow2 = Color(0xFFB0512B);
 
+const Color _rrStatusSkip = Color(0xFF9C8E7A);
+const Color _rrStarRating = Color(0xFFC98A2C);
+const Color _rrSurfaceHighlight = Color.fromRGBO(255, 255, 255, 0.55);
+const Color _rrNavBarBg = Color.fromRGBO(246, 239, 225, 0.78);
+const Color _rrScrim = Color.fromRGBO(0, 0, 0, 0.72);
+const Color _rrDanger = Color(0xFFB3413B);
+const Color _rrSuccess = Color(0xFF2F7A57);
+
 const LinearGradient _rrPrimaryGradient = LinearGradient(
   colors: [_rrAcc, _rrAccGradientEnd],
   begin: Alignment.topLeft,
@@ -61,6 +69,13 @@ final AmbianceColors rrAmbianceColors = AmbianceColors(
   statusWatched: _rrStatusWatched,
   statusOnHold: _rrStatusOnHold,
   statusDropped: _rrStatusDropped,
+  statusSkip: _rrStatusSkip,
+  starRating: _rrStarRating,
+  surfaceHighlight: _rrSurfaceHighlight,
+  navBarBg: _rrNavBarBg,
+  scrim: _rrScrim,
+  danger: _rrDanger,
+  success: _rrSuccess,
   glow1: _rrGlow1,
   glow2: _rrGlow2,
   background: readingRoomBackground(),

@@ -24,6 +24,14 @@ const Color _ccStatusDropped = Color(0xFFE63946); // Soft Red
 const Color _ccGlow1 = Color(0xFFCBB69A);
 const Color _ccGlow2 = Color(0xFF7B5A44);
 
+const Color _ccStatusSkip = Color(0xFF8C7A68);
+const Color _ccStarRating = Color(0xFFE8B04B);
+const Color _ccSurfaceHighlight = Color.fromRGBO(255, 244, 230, 0.08);
+const Color _ccNavBarBg = Color.fromRGBO(30, 26, 23, 0.75);
+const Color _ccScrim = Color.fromRGBO(0, 0, 0, 0.85);
+const Color _ccDanger = Color(0xFFC1272D);
+const Color _ccSuccess = Color(0xFF6FA98C);
+
 BoxDecoration cafeCalmBackground() {
   return const BoxDecoration(
     color: _ccBase,
@@ -55,6 +63,13 @@ final AmbianceColors ccAmbianceColors = AmbianceColors(
   statusWatched: _ccStatusWatched,
   statusOnHold: _ccStatusOnHold,
   statusDropped: _ccStatusDropped,
+  statusSkip: _ccStatusSkip,
+  starRating: _ccStarRating,
+  surfaceHighlight: _ccSurfaceHighlight,
+  navBarBg: _ccNavBarBg,
+  scrim: _ccScrim,
+  danger: _ccDanger,
+  success: _ccSuccess,
   glow1: _ccGlow1,
   glow2: _ccGlow2,
   background: cafeCalmBackground(),

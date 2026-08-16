@@ -23,6 +23,14 @@ const Color _srStatusDropped = Color(0xFFC76464);
 const Color _srGlow1 = Color(0xFFCBA86A);
 const Color _srGlow2 = Color(0xFFD69784);
 
+const Color _srStatusSkip = Color(0xFF8A7F6E);
+const Color _srStarRating = Color(0xFFE3B23C);
+const Color _srSurfaceHighlight = Color.fromRGBO(255, 244, 230, 0.08);
+const Color _srNavBarBg = Color.fromRGBO(23, 19, 16, 0.72);
+const Color _srScrim = Color.fromRGBO(0, 0, 0, 0.85);
+const Color _srDanger = Color(0xFFD9534F);
+const Color _srSuccess = Color(0xFF4C9A6A);
+
 BoxDecoration screeningRoomBackground() {
   return const BoxDecoration(
     color: _srBase,
@@ -54,6 +62,13 @@ final AmbianceColors srAmbianceColors = AmbianceColors(
   statusWatched: _srStatusWatched,
   statusOnHold: _srStatusOnHold,
   statusDropped: _srStatusDropped,
+  statusSkip: _srStatusSkip,
+  starRating: _srStarRating,
+  surfaceHighlight: _srSurfaceHighlight,
+  navBarBg: _srNavBarBg,
+  scrim: _srScrim,
+  danger: _srDanger,
+  success: _srSuccess,
   glow1: _srGlow1,
   glow2: _srGlow2,
   background: screeningRoomBackground(),

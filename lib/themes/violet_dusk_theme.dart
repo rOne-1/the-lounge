@@ -14,6 +14,13 @@ const Color _vdStatusDropped = Color(0xFFC57B8A);
 const Color _vdGlow1 = Color(0xFF935073);
 const Color _vdGlow2 = Color(0xFFF6DBC0);
 const Color _vdStatusWatching = Color(0xFF62A87C);
+const Color _vdStatusSkip = Color(0xFF7D6E85);
+const Color _vdStarRating = Color(0xFFE8B04B);
+const Color _vdSurfaceHighlight = Color.fromRGBO(248, 244, 233, 0.08);
+const Color _vdNavBarBg = Color.fromRGBO(27, 11, 34, 0.75);
+const Color _vdScrim = Color.fromRGBO(0, 0, 0, 0.85);
+const Color _vdDanger = Color(0xFFD1495B);
+const Color _vdSuccess = Color(0xFF3F9A78);
 
 BoxDecoration violetDuskBackground() {
   return const BoxDecoration(
@@ -46,6 +53,13 @@ final AmbianceColors vdAmbianceColors = AmbianceColors(
   statusWatched: _vdStatusWatched,
   statusOnHold: _vdStatusOnHold,
   statusDropped: _vdStatusDropped,
+  statusSkip: _vdStatusSkip,
+  starRating: _vdStarRating,
+  surfaceHighlight: _vdSurfaceHighlight,
+  navBarBg: _vdNavBarBg,
+  scrim: _vdScrim,
+  danger: _vdDanger,
+  success: _vdSuccess,
   glow1: _vdGlow1,
   glow2: _vdGlow2,
   background: violetDuskBackground(),

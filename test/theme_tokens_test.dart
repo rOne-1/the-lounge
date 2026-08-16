@@ -1,0 +1,80 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:the_lounge/themes/ambiance_colors.dart';
+import 'package:the_lounge/themes/screening_room_theme.dart';
+import 'package:the_lounge/themes/reading_room_theme.dart';
+import 'package:the_lounge/themes/midnight_cinema_theme.dart';
+import 'package:the_lounge/themes/cafe_calm_theme.dart';
+import 'package:the_lounge/themes/alpine_chalet_theme.dart';
+import 'package:the_lounge/themes/violet_dusk_theme.dart';
+
+// Tests the AmbianceColors instances directly (not through AppTheme.themeData)
+// so this stays independent of google_fonts asset loading in the test sandbox.
+void main() {
+  final allAmbianceColors = <String, AmbianceColors>{
+    'Screening Room': srAmbianceColors,
+    'Reading Room': rrAmbianceColors,
+    'Midnight Cinema': mcAmbianceColors,
+    'Cafe Calm': ccAmbianceColors,
+    'Alpine Chalet': acAmbianceColors,
+    'Violet Dusk': vdAmbianceColors,
+  };
+
+  group('Semantic token coverage across all 6 themes', () {
+    for (final entry in allAmbianceColors.entries) {
+      test('${entry.key} populates all new semantic tokens with non-transparent values', () {
+        final colors = entry.value;
+        expect(colors.statusSkip.a, greaterThan(0));
+        expect(colors.starRating.a, greaterThan(0));
+        expect(colors.surfaceHighlight.a, greaterThan(0));
+        expect(colors.navBarBg.a, greaterThan(0));
+        expect(colors.scrim.a, greaterThan(0));
+        expect(colors.danger.a, greaterThan(0));
+        expect(colors.success.a, greaterThan(0));
+      });
+    }
+
+    test('statusSkip is distinct from the four persisted status hues in every theme', () {
+      for (final colors in allAmbianceColors.values) {
+        final persistedStatuses = {
+          colors.statusWatchlist,
+          colors.statusSave,
+          colors.statusWatched,
+        };
+        expect(persistedStatuses.contains(colors.statusSkip), isFalse);
+      }
+    });
+  });
+
+  group('AmbianceColors.lerp interpolates new semantic tokens smoothly', () {
+    test('lerp at t=0.5 produces valid intermediate colors without assertion errors', () {
+      final result = srAmbianceColors.lerp(rrAmbianceColors, 0.5) as AmbianceColors;
+
+      expect(result.statusSkip, isA<Color>());
+      expect(result.starRating, isA<Color>());
+      expect(result.surfaceHighlight, isA<Color>());
+      expect(result.navBarBg, isA<Color>());
+      expect(result.scrim, isA<Color>());
+      expect(result.danger, isA<Color>());
+      expect(result.success, isA<Color>());
+    });
+
+    test('lerp at t=0 returns the origin theme, t=1 returns the target theme', () {
+      final atStart = srAmbianceColors.lerp(rrAmbianceColors, 0.0) as AmbianceColors;
+      final atEnd = srAmbianceColors.lerp(rrAmbianceColors, 1.0) as AmbianceColors;
+
+      expect(atStart.statusSkip, equals(srAmbianceColors.statusSkip));
+      expect(atEnd.statusSkip, equals(rrAmbianceColors.statusSkip));
+      expect(atStart.danger, equals(srAmbianceColors.danger));
+      expect(atEnd.danger, equals(rrAmbianceColors.danger));
+    });
+
+    test('copyWith overrides only the targeted new tokens', () {
+      final updated = srAmbianceColors.copyWith(danger: const Color(0xFF123456)) as AmbianceColors;
+
+      expect(updated.danger, equals(const Color(0xFF123456)));
+      expect(updated.statusSkip, equals(srAmbianceColors.statusSkip));
+      expect(updated.starRating, equals(srAmbianceColors.starRating));
+    });
+  });
+}
