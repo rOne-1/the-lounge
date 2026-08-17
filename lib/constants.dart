@@ -3,6 +3,7 @@ import 'themes/typography.dart';
 
 export 'constants/app_physics.dart';
 export 'constants/app_status_colors.dart';
+export 'constants/app_rating_colors.dart';
 export 'themes/ambiance_colors.dart';
 export 'themes/app_theme.dart';
 export 'themes/theme_registry.dart';

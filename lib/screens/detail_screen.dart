@@ -9,9 +9,12 @@ import '../models/media_item.dart';
 import '../widgets/trailer_player.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/lounge_dropdown.dart';
+import '../widgets/lounge_rating_sheet.dart';
+import '../widgets/lounge_rewatch_sheet.dart';
 import '../widgets/lounge_toast.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/status_pulse_ring.dart';
+import '../widgets/watch_history_timeline.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'search_screen.dart';
@@ -204,6 +207,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       isDark: isDark,
                     ),
                     _buildSeasonsSection(context, ref, item, isDark),
+                    _buildWatchHistorySection(context, item, isDark),
                   ],
                 )
                     .animate(delay: 100.ms)
@@ -316,6 +320,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       isDark: isDark,
                     ),
                     _buildSeasonsSection(context, ref, item, isDark),
+                    _buildWatchHistorySection(context, item, isDark),
                   ],
                 )
                     .animate(delay: 100.ms)
@@ -424,6 +429,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
     // Rating badge
     metaPills.add(_buildRatingBadge(item, isDark));
+
+    // PERS-RATE-1: personal rating pill, scoped to its own Consumer so a
+    // rating change doesn't rebuild the whole meta row (PERF-1 pattern).
+    metaPills.add(Consumer(
+      builder: (context, ref, _) => PersonalRatingPill(item: item),
+    ));
 
     // Original Language badge
     final langDisplay = item.originalLanguageDisplay;
@@ -1221,7 +1232,33 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                           LoungeToast.show(context, 'This title has not been released yet.');
                           return;
                         }
+                        // PERS-RATE-1: auto-prompt for a rating the moment a
+                        // title genuinely settles into Watched (not on every
+                        // toggle -- re-read state after the mutation rather
+                        // than trusting the pre-toggle `inWatched` closure,
+                        // since a TV show can land in Watching instead if
+                        // unreleased episodes remain).
+                        final wasWatched =
+                            ref.read(mediaProvider).watchedList.containsKey(item.id);
                         notifier.toggleWatched(item, seasons: seasons);
+                        final isNowWatched =
+                            ref.read(mediaProvider).watchedList.containsKey(item.id);
+                        if (!wasWatched && isNowWatched) {
+                          final hasRating = findPrimaryWatchRecord(
+                                ref.read(mediaProvider).watchHistory,
+                                item.id,
+                                null,
+                              ) !=
+                              null;
+                          if (!hasRating) {
+                            showLoungeRatingSheet(
+                              context,
+                              ref,
+                              item: item,
+                              isAutoPrompt: true,
+                            );
+                          }
+                        }
                       },
                       isDark,
                       isDisabled: isUnreleased,
@@ -1936,6 +1973,63 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     return SeasonsSectionWidget(item: item, isDark: isDark);
   }
 
+  /// PERS-REWATCH-1: "Add Rewatch" action pill (shown once the item has at
+  /// least one logged [WatchRecord]) + the collapsible Watch History
+  /// timeline. Scoped to its own Consumer so history/rating edits don't
+  /// rebuild the whole DetailScreen (PERF-1 pattern).
+  Widget _buildWatchHistorySection(
+    BuildContext context,
+    MediaItem item,
+    bool isDark,
+  ) {
+    return Consumer(
+      builder: (context, ref, _) {
+        final hasHistory = ref.watch(
+          mediaProvider.select(
+            (s) => (s.watchHistory[item.id]?.isNotEmpty ?? false),
+          ),
+        );
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            WatchHistoryTimeline(item: item),
+            if (hasHistory) ...[
+              const SizedBox(height: 12),
+              PressableScale(
+                onTap: () => showLoungeRewatchSheet(context, ref, item: item),
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  decoration: BoxDecoration(
+                    color: context.ambianceColors.card2,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: context.ambianceColors.lineRgba),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.replay_rounded, size: 16, color: context.ambianceColors.ink),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Add Rewatch',
+                        style: AppThemes.safeGeist(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: context.ambianceColors.ink,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
   String _formatDate(DateTime dt) {
     const months = [
       'Jan',
@@ -2174,6 +2268,15 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
             ),
           ),
         const SizedBox(height: 12),
+        // PERS-RATE-1: per-season personal rating pill (rebuilds standalone
+        // via its own Consumer, not the whole season block).
+        Consumer(
+          builder: (context, ref, _) => PersonalRatingPill(
+            item: widget.item,
+            seasonNumber: _selectedSeason,
+          ),
+        ),
+        const SizedBox(height: 12),
         seasonAsync.when(
           data: (seasonData) {
             final List<TvEpisode> allEpisodes;
@@ -2332,16 +2435,52 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                                 ((widget.item.seasonsCount ?? 1) *
                                                     allEpisodes.length);
 
+                                            final showId = widget.item.id;
+                                            final seasonNum = episode.seasonNumber;
+                                            final wasSeasonComplete = ref
+                                                    .read(mediaProvider)
+                                                    .seasonEndDates[showId]
+                                                    ?[seasonNum] !=
+                                                null;
+
                                             ref
                                                 .read(mediaProvider.notifier)
                                                 .toggleEpisodeWatched(
-                                                  showId: widget.item.id,
-                                                  seasonNumber: episode.seasonNumber,
+                                                  showId: showId,
+                                                  seasonNumber: seasonNum,
                                                   episodeNumber: episode.episodeNumber,
                                                   showItem: widget.item,
                                                   totalEpisodeCount: totalEpisodes,
                                                   seasons: allSeasonsAsync.value,
                                                 );
+
+                                            // PERS-RATE-1: auto-prompt the
+                                            // moment this specific season
+                                            // (not necessarily the whole
+                                            // show) newly completes.
+                                            final isNowSeasonComplete = ref
+                                                    .read(mediaProvider)
+                                                    .seasonEndDates[showId]
+                                                    ?[seasonNum] !=
+                                                null;
+                                            if (!wasSeasonComplete &&
+                                                isNowSeasonComplete) {
+                                              final hasRating = findPrimaryWatchRecord(
+                                                    ref.read(mediaProvider).watchHistory,
+                                                    showId,
+                                                    seasonNum,
+                                                  ) !=
+                                                  null;
+                                              if (!hasRating) {
+                                                showLoungeRatingSheet(
+                                                  context,
+                                                  ref,
+                                                  item: widget.item,
+                                                  seasonNumber: seasonNum,
+                                                  isAutoPrompt: true,
+                                                );
+                                              }
+                                            }
                                           },
                                     child: AnimatedContainer(
                                       duration: AppPhysics.houseSpringDuration,

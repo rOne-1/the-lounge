@@ -11,6 +11,7 @@ import '../widgets/lounge_dialog.dart';
 import '../widgets/lounge_toast.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../services/api_call_tracker.dart';
+import 'rate_titles_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -112,6 +113,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             ),
                           ],
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Section 1b: Personalization (PERS-RATE-2). Provisional
+                    // home for the batch rating tool -- Your Space's own
+                    // "Tools" group (PERS-SPACE-1, a later phase) is the
+                    // locked long-term home; kept here rather than touching
+                    // Your Space ahead of that redesign.
+                    _buildSectionHeader('Personalization', subColor),
+                    _buildCard(context,
+                      cardBg,
+                      isDark,
+                      child: ListTile(
+                        key: const ValueKey('rate_titles_button'),
+                        leading: Icon(Icons.star_rounded, color: accColor),
+                        title: Text(
+                          'Rate Titles',
+                          style: AppThemes.safeGeist(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: inkColor,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Quickly rate watched titles you haven\'t rated yet',
+                          style: AppThemes.safeGeist(fontSize: 12, color: subColor),
+                        ),
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(builder: (context) => const RateTitlesScreen()),
+                          );
+                        },
                       ),
                     ),
                     const SizedBox(height: 24),
