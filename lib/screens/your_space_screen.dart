@@ -6,6 +6,7 @@ import '../providers/navigation_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../models/media_item.dart';
 import '../constants.dart';
+import '../widgets/memory_moments_section.dart';
 import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
 import 'folders_screen.dart';
@@ -87,6 +88,7 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
         children: [
           _buildHeader(context, ambiance.displayName, libraryCount),
           const SizedBox(height: 26),
+          const MemoryMomentsSection(),
           _buildGroupHeader('Piles'),
           const SizedBox(height: 10),
           _buildCardGrid([

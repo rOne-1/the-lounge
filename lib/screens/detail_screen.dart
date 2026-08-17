@@ -14,6 +14,7 @@ import '../widgets/lounge_rating_sheet.dart';
 import '../widgets/lounge_rewatch_sheet.dart';
 import '../widgets/lounge_toast.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/seasonal_rating_bar.dart';
 import '../widgets/status_pulse_ring.dart';
 import '../widgets/watch_history_timeline.dart';
 import '../constants.dart';
@@ -208,6 +209,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       isDark: isDark,
                     ),
                     _buildSeasonsSection(context, ref, item, isDark),
+                    SeasonalRatingBar(item: item),
                     _buildWatchHistorySection(context, item, isDark),
                   ],
                 )
@@ -321,6 +323,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       isDark: isDark,
                     ),
                     _buildSeasonsSection(context, ref, item, isDark),
+                    SeasonalRatingBar(item: item),
                     _buildWatchHistorySection(context, item, isDark),
                   ],
                 )
