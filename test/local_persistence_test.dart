@@ -64,6 +64,34 @@ void main() {
       expect(restored.rating, equals(8.7));
       expect(restored.posterUrl, isNull);
     });
+
+    test(
+        'toMinimalJson/fromMinimalJson round-trips genres, originalLanguage, '
+        'releaseOrAirDate, and voteCount', () {
+      // Regression: these 4 fields were previously dropped entirely by
+      // toMinimalJson, so every item silently lost them on the next app
+      // restart -- breaking pile sort-by-release-date (all-null comparisons
+      // are a no-op), sort-by-rating (voteCount-less items all weight to
+      // exactly 0), and group-by-genre/-language (always "Other"/"Unknown").
+      final item = MediaItem(
+        id: 'movie_400',
+        title: 'Round Trip',
+        type: MediaType.movie,
+        rating: 7.4,
+        overview: 'Something with real metadata.',
+        genres: const ['Drama', 'Thriller'],
+        originalLanguage: 'ko',
+        releaseOrAirDate: DateTime(2019, 5, 30),
+        voteCount: 4200,
+      );
+
+      final restored = MediaItem.fromMinimalJson(item.toMinimalJson());
+
+      expect(restored.genres, ['Drama', 'Thriller']);
+      expect(restored.originalLanguage, 'ko');
+      expect(restored.releaseOrAirDate, DateTime(2019, 5, 30));
+      expect(restored.voteCount, 4200);
+    });
   });
 
   group('Local Persistence - Section 2: Persist and Restore 4 Status Maps & Episode Progress', () {

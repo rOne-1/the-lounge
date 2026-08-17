@@ -570,6 +570,16 @@ class MediaItem {
   }
 
   /// Serializes lightweight snapshot of [MediaItem] for local persistence.
+  ///
+  /// Bugfix: previously omitted `genres`/`originalLanguage`/
+  /// `releaseOrAirDate`/`voteCount` entirely, so every item silently lost
+  /// this data on the next app restart (this is the format all 6 status
+  /// piles persist through) -- breaking pile sort-by-release-date (every
+  /// restored item compares as null-vs-null, a no-op), sort-by-rating's
+  /// vote-count weighting, and group-by-genre/-language (restored items
+  /// always landed in "Other"/"Unknown"). Invisible in a single unbroken
+  /// session since fresh MediaItem objects still carry full data in memory;
+  /// only surfaces once state round-trips through SharedPreferences.
   Map<String, dynamic> toMinimalJson() {
     return {
       'id': id,
@@ -577,6 +587,10 @@ class MediaItem {
       'type': type.name,
       'posterUrl': posterUrl,
       'rating': rating,
+      'genres': genres,
+      'originalLanguage': originalLanguage,
+      'releaseOrAirDate': releaseOrAirDate?.toIso8601String(),
+      'voteCount': voteCount,
       if (belongsToCollection != null) ...{
         'collectionId': belongsToCollection!.id,
         'collectionName': belongsToCollection!.name,
@@ -603,6 +617,15 @@ class MediaItem {
       col = MediaCollection(id: colId ?? 0, name: colName);
     }
 
+    final genresJson = json['genres'];
+    final genresList = genresJson is List
+        ? genresJson.whereType<String>().toList()
+        : const <String>[];
+
+    final releaseDateStr = json['releaseOrAirDate'] as String?;
+    final releaseDate =
+        releaseDateStr != null ? DateTime.tryParse(releaseDateStr) : null;
+
     return MediaItem(
       id: json['id'] as String? ?? '',
       title: json['title'] as String? ?? '',
@@ -610,7 +633,10 @@ class MediaItem {
       rating: ratingVal,
       posterUrl: json['posterUrl'] as String?,
       overview: '',
-      genres: const [],
+      genres: genresList,
+      originalLanguage: json['originalLanguage'] as String?,
+      releaseOrAirDate: releaseDate,
+      voteCount: (json['voteCount'] as num?)?.toInt(),
       belongsToCollection: col,
     );
   }
