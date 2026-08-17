@@ -12,6 +12,7 @@ import '../widgets/lounge_toast.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../services/api_call_tracker.dart';
 import 'rate_titles_screen.dart';
+import 'folders_screen.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -117,8 +118,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     ),
                     const SizedBox(height: 24),
 
-                    // Section 1b: Personalization (PERS-RATE-2). Provisional
-                    // home for the batch rating tool -- Your Space's own
+                    // Section 1b: Personalization (PERS-RATE-2, PERS-FOLDERS-1).
+                    // Provisional home for these tools -- Your Space's own
                     // "Tools" group (PERS-SPACE-1, a later phase) is the
                     // locked long-term home; kept here rather than touching
                     // Your Space ahead of that redesign.
@@ -126,26 +127,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     _buildCard(context,
                       cardBg,
                       isDark,
-                      child: ListTile(
-                        key: const ValueKey('rate_titles_button'),
-                        leading: Icon(Icons.star_rounded, color: accColor),
-                        title: Text(
-                          'Rate Titles',
-                          style: AppThemes.safeGeist(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: inkColor,
+                      child: Column(
+                        children: [
+                          ListTile(
+                            key: const ValueKey('rate_titles_button'),
+                            leading: Icon(Icons.star_rounded, color: accColor),
+                            title: Text(
+                              'Rate Titles',
+                              style: AppThemes.safeGeist(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: inkColor,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Quickly rate watched titles you haven\'t rated yet',
+                              style: AppThemes.safeGeist(fontSize: 12, color: subColor),
+                            ),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (context) => const RateTitlesScreen()),
+                              );
+                            },
                           ),
-                        ),
-                        subtitle: Text(
-                          'Quickly rate watched titles you haven\'t rated yet',
-                          style: AppThemes.safeGeist(fontSize: 12, color: subColor),
-                        ),
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const RateTitlesScreen()),
-                          );
-                        },
+                          Divider(color: context.ambianceColors.lineRgba, height: 1),
+                          ListTile(
+                            key: const ValueKey('folders_button'),
+                            leading: Icon(Icons.folder_outlined, color: accColor),
+                            title: Text(
+                              'Folders',
+                              style: AppThemes.safeGeist(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: inkColor,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Curated playlists, independent of watch status',
+                              style: AppThemes.safeGeist(fontSize: 12, color: subColor),
+                            ),
+                            onTap: () {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(builder: (context) => const FoldersScreen()),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),

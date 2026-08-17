@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
 import '../models/discover_filter_params.dart';
 import '../models/watch_record.dart';
+import '../models/user_folder.dart';
 import 'ambiance_provider.dart';
 import '../themes/theme_registry.dart';
 import '../constants.dart';
@@ -13,6 +15,7 @@ import 'repository_provider.dart';
 export 'repository_provider.dart';
 export '../models/personal_rating.dart';
 export '../models/watch_record.dart';
+export '../models/user_folder.dart';
 
 class MediaState {
   final Map<String, MediaItem> watchlist;
@@ -39,6 +42,9 @@ class MediaState {
   final Map<String, Map<int, DateTime>> seasonStartDates;
   final Map<String, Map<int, DateTime>> seasonEndDates;
 
+  /// PERS-FOLDERS-1: status-independent custom folders, keyed by folder ID.
+  final Map<String, UserFolder> customFolders;
+
   const MediaState({
     this.watchlist = const {},
     this.maybeList = const {},
@@ -53,6 +59,7 @@ class MediaState {
     this.endDates = const {},
     this.seasonStartDates = const {},
     this.seasonEndDates = const {},
+    this.customFolders = const {},
   });
 
   MediaState copyWith({
@@ -69,6 +76,7 @@ class MediaState {
     Map<String, DateTime>? endDates,
     Map<String, Map<int, DateTime>>? seasonStartDates,
     Map<String, Map<int, DateTime>>? seasonEndDates,
+    Map<String, UserFolder>? customFolders,
   }) {
     return MediaState(
       watchlist: watchlist ?? this.watchlist,
@@ -85,6 +93,7 @@ class MediaState {
       endDates: endDates ?? this.endDates,
       seasonStartDates: seasonStartDates ?? this.seasonStartDates,
       seasonEndDates: seasonEndDates ?? this.seasonEndDates,
+      customFolders: customFolders ?? this.customFolders,
     );
   }
 }
@@ -104,6 +113,7 @@ class MediaNotifier extends Notifier<MediaState> {
   static const _endDatesKey = 'the_lounge_end_dates';
   static const _seasonStartDatesKey = 'the_lounge_season_start_dates';
   static const _seasonEndDatesKey = 'the_lounge_season_end_dates';
+  static const _customFoldersKey = 'the_lounge_custom_folders';
 
   @override
   MediaState build() {
@@ -120,6 +130,7 @@ class MediaNotifier extends Notifier<MediaState> {
     Map<String, DateTime> endDates = const {};
     Map<String, Map<int, DateTime>> seasonStartDates = const {};
     Map<String, Map<int, DateTime>> seasonEndDates = const {};
+    Map<String, UserFolder> customFolders = const {};
 
     try {
       final prefs = ref.watch(sharedPreferencesProvider);
@@ -139,6 +150,7 @@ class MediaNotifier extends Notifier<MediaState> {
       endDates = _parseDateMap(prefs, _endDatesKey);
       seasonStartDates = _parseSeasonDateMap(prefs, _seasonStartDatesKey);
       seasonEndDates = _parseSeasonDateMap(prefs, _seasonEndDatesKey);
+      customFolders = _parseCustomFolders(prefs, _customFoldersKey);
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
     }
@@ -157,6 +169,7 @@ class MediaNotifier extends Notifier<MediaState> {
       endDates: endDates,
       seasonStartDates: seasonStartDates,
       seasonEndDates: seasonEndDates,
+      customFolders: customFolders,
     );
   }
 
@@ -177,6 +190,7 @@ class MediaNotifier extends Notifier<MediaState> {
       final seasonStartDates =
           _parseSeasonDateMap(prefs, _seasonStartDatesKey);
       final seasonEndDates = _parseSeasonDateMap(prefs, _seasonEndDatesKey);
+      final customFolders = _parseCustomFolders(prefs, _customFoldersKey);
 
       state = state.copyWith(
         watchlist: watchlist,
@@ -191,6 +205,7 @@ class MediaNotifier extends Notifier<MediaState> {
         endDates: endDates,
         seasonStartDates: seasonStartDates,
         seasonEndDates: seasonEndDates,
+        customFolders: customFolders,
       );
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
@@ -258,6 +273,10 @@ class MediaNotifier extends Notifier<MediaState> {
         prefs.setString(
           _seasonEndDatesKey,
           jsonEncode(_seasonDateMapToJson(state.seasonEndDates)),
+        ),
+        prefs.setString(
+          _customFoldersKey,
+          jsonEncode(_customFoldersToJson(state.customFolders)),
         ),
       ]);
     } catch (_) {
@@ -426,6 +445,35 @@ class MediaNotifier extends Notifier<MediaState> {
           });
           if (seasonMap.isNotEmpty) result[mediaId] = seasonMap;
         }
+      });
+    }
+    return result;
+  }
+
+  Map<String, dynamic> _customFoldersToJson(Map<String, UserFolder> folders) {
+    return folders.map((k, v) => MapEntry(k, v.toJson()));
+  }
+
+  Map<String, UserFolder> _parseCustomFolders(
+      SharedPreferences prefs, String key) {
+    try {
+      final rawJson = prefs.getString(key);
+      if (rawJson == null || rawJson.trim().isEmpty) return {};
+      return _customFoldersFromDynamic(jsonDecode(rawJson));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Map<String, UserFolder> _customFoldersFromDynamic(dynamic decoded) {
+    final Map<String, UserFolder> result = {};
+    if (decoded is Map<String, dynamic>) {
+      decoded.forEach((id, folderJson) {
+        try {
+          if (folderJson is Map<String, dynamic>) {
+            result[id] = UserFolder.fromJson(folderJson);
+          }
+        } catch (_) {}
       });
     }
     return result;
@@ -1434,6 +1482,78 @@ class MediaNotifier extends Notifier<MediaState> {
     _saveToPrefs();
   }
 
+  String _generateFolderId() {
+    final random = Random();
+    return '${DateTime.now().microsecondsSinceEpoch}_${random.nextInt(1 << 32)}';
+  }
+
+  /// PERS-FOLDERS-1: creates a new empty folder and returns its ID.
+  String createFolder(String name) {
+    final id = _generateFolderId();
+    final newFolders = Map<String, UserFolder>.from(state.customFolders);
+    newFolders[id] = UserFolder(
+      id: id,
+      name: name,
+      createdAt: DateTime.now(),
+      mediaIds: const [],
+    );
+    state = state.copyWith(customFolders: newFolders);
+    _saveToPrefs();
+    return id;
+  }
+
+  void renameFolder(String folderId, String newName) {
+    final folder = state.customFolders[folderId];
+    if (folder == null) return;
+    final newFolders = Map<String, UserFolder>.from(state.customFolders);
+    newFolders[folderId] = folder.copyWith(name: newName);
+    state = state.copyWith(customFolders: newFolders);
+    _saveToPrefs();
+  }
+
+  void deleteFolder(String folderId) {
+    if (!state.customFolders.containsKey(folderId)) return;
+    final newFolders = Map<String, UserFolder>.from(state.customFolders)
+      ..remove(folderId);
+    state = state.copyWith(customFolders: newFolders);
+    _saveToPrefs();
+  }
+
+  /// Replaces the folder's media ID ordering wholesale (drag-to-reorder).
+  void reorderFolderItems(String folderId, List<String> newOrder) {
+    final folder = state.customFolders[folderId];
+    if (folder == null) return;
+    final newFolders = Map<String, UserFolder>.from(state.customFolders);
+    newFolders[folderId] = folder.copyWith(mediaIds: newOrder);
+    state = state.copyWith(customFolders: newFolders);
+    _saveToPrefs();
+  }
+
+  /// Adds [mediaId] to [folderId] if not already present. Status-independent
+  /// by construction -- this never reads or touches any of the six status
+  /// piles, so a folder's contents survive status changes, drops, or full
+  /// removal from every pile.
+  void addToFolder(String folderId, String mediaId) {
+    final folder = state.customFolders[folderId];
+    if (folder == null || folder.mediaIds.contains(mediaId)) return;
+    final newFolders = Map<String, UserFolder>.from(state.customFolders);
+    newFolders[folderId] =
+        folder.copyWith(mediaIds: [...folder.mediaIds, mediaId]);
+    state = state.copyWith(customFolders: newFolders);
+    _saveToPrefs();
+  }
+
+  void removeFromFolder(String folderId, String mediaId) {
+    final folder = state.customFolders[folderId];
+    if (folder == null || !folder.mediaIds.contains(mediaId)) return;
+    final newFolders = Map<String, UserFolder>.from(state.customFolders);
+    newFolders[folderId] = folder.copyWith(
+      mediaIds: folder.mediaIds.where((id) => id != mediaId).toList(),
+    );
+    state = state.copyWith(customFolders: newFolders);
+    _saveToPrefs();
+  }
+
   Future<void> setWatchProvidersCountry(String countryCode) async {
     state = state.copyWith(watchProvidersCountry: countryCode);
     try {
@@ -1545,12 +1665,13 @@ class MediaNotifier extends Notifier<MediaState> {
     } catch (_) {}
   }
 
-  /// Backup schema version. Bumped to 2 for PERS-DATA-1/PERS-DATE-1: adds
-  /// `watchHistory` (personal ratings/rewatch log) and the derived
-  /// start/end date maps. `importBackupJson` still accepts version 1
-  /// backups (pre-Personalization Epic) -- they simply come in with these
-  /// fields defaulted to empty, same as a fresh install.
-  static const int _backupSchemaVersion = 2;
+  /// Backup schema version. Bumped to 3 for PERS-FOLDERS-1: adds
+  /// `customFolders`. (Bumped to 2 for PERS-DATA-1/PERS-DATE-1: adds
+  /// `watchHistory` and the derived start/end date maps.) `importBackupJson`
+  /// still accepts version 1 and 2 backups -- fields introduced after a
+  /// given backup's version simply come in defaulted to empty, same as a
+  /// fresh install.
+  static const int _backupSchemaVersion = 3;
 
   String exportBackupJson(String selectedAmbiance) {
     final backup = {
@@ -1569,6 +1690,7 @@ class MediaNotifier extends Notifier<MediaState> {
       'endDates': _dateMapToJson(state.endDates),
       'seasonStartDates': _seasonDateMapToJson(state.seasonStartDates),
       'seasonEndDates': _seasonDateMapToJson(state.seasonEndDates),
+      'customFolders': _customFoldersToJson(state.customFolders),
     };
     return jsonEncode(backup);
   }
@@ -1580,7 +1702,7 @@ class MediaNotifier extends Notifier<MediaState> {
         return false;
       }
       final version = decoded['version'];
-      if (version != 1 && version != _backupSchemaVersion) {
+      if (version != 1 && version != 2 && version != _backupSchemaVersion) {
         return false;
       }
 
@@ -1632,6 +1754,7 @@ class MediaNotifier extends Notifier<MediaState> {
           _seasonDateMapFromDynamic(decoded['seasonStartDates']);
       final seasonEndDates =
           _seasonDateMapFromDynamic(decoded['seasonEndDates']);
+      final customFolders = _customFoldersFromDynamic(decoded['customFolders']);
 
       try {
         final repo = ref.read(movieRepositoryProvider);
@@ -1682,6 +1805,7 @@ class MediaNotifier extends Notifier<MediaState> {
         endDates: endDates,
         seasonStartDates: seasonStartDates,
         seasonEndDates: seasonEndDates,
+        customFolders: customFolders,
       );
 
       await _saveToPrefs();
@@ -1731,6 +1855,7 @@ class MediaNotifier extends Notifier<MediaState> {
         prefs.remove(_endDatesKey),
         prefs.remove(_seasonStartDatesKey),
         prefs.remove(_seasonEndDatesKey),
+        prefs.remove(_customFoldersKey),
       ]);
       ref.read(skippedMediaIdsProvider.notifier).clear();
     } catch (_) {

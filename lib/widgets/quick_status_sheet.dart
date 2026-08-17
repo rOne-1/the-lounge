@@ -4,6 +4,7 @@ import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import 'drag_to_dismiss_sheet.dart';
+import 'lounge_folder_picker_sheet.dart';
 import 'media_image.dart';
 
 /// Helper function to open the [QuickStatusSheet] bottom sheet modal.
@@ -132,6 +133,7 @@ class QuickStatusSheet extends ConsumerWidget {
                   child: MediaImage(
                     item: item,
                     fit: BoxFit.cover,
+                    showFallbackTitle: false,
                   ),
                 ),
               ),
@@ -309,6 +311,44 @@ class QuickStatusSheet extends ConsumerWidget {
                 },
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          // PERS-FOLDERS-1: status-independent, deliberately separate from
+          // the 6 status pills above -- folders are a different axis
+          // (curation, not status) from Watchlist/Saved/etc.
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              key: const ValueKey('quick_status_add_to_folder'),
+              onTap: () {
+                Navigator.of(context).pop();
+                showFolderPickerSheet(context, ref, mediaId: item.id, mediaTitle: item.title);
+              },
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: context.ambianceColors.pill,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: context.ambianceColors.lineRgba),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.folder_outlined, size: 16, color: context.ambianceColors.ink),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Add to Folder',
+                      style: AppThemes.safeGeist(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: context.ambianceColors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),

@@ -149,7 +149,7 @@ class LoungeRatingSheet extends ConsumerWidget {
                 child: SizedBox(
                   width: 44,
                   height: 64,
-                  child: MediaImage(item: item, fit: BoxFit.cover),
+                  child: MediaImage(item: item, fit: BoxFit.cover, showFallbackTitle: false),
                 ),
               ),
               const SizedBox(width: 14),

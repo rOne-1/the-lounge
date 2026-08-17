@@ -9,6 +9,7 @@ import '../models/media_item.dart';
 import '../widgets/trailer_player.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/lounge_dropdown.dart';
+import '../widgets/lounge_folder_picker_sheet.dart';
 import '../widgets/lounge_rating_sheet.dart';
 import '../widgets/lounge_rewatch_sheet.dart';
 import '../widgets/lounge_toast.dart';
@@ -1298,6 +1299,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 Expanded(
                   child: _buildWatchTrailerButton(context, item, isDark),
                 ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildAddToFolderButton(context, ref, item, isDark),
+                ),
               ],
             ),
             if (item.imdbId != null && item.imdbId!.isNotEmpty) ...[
@@ -1347,6 +1352,62 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               const SizedBox(width: 5),
               Text(
                 'Watch trailer',
+                style: AppThemes.safeGeist(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// PERS-FOLDERS-1: opens the status-independent "Add to Folder" picker.
+  Widget _buildAddToFolderButton(
+    BuildContext context,
+    WidgetRef ref,
+    MediaItem item,
+    bool isDark,
+  ) {
+    final inkColor = context.ambianceColors.ink;
+    final accentColor = context.ambianceColors.acc;
+    final borderColor = accentColor.withAlpha(50);
+
+    return PressableScale(
+      key: const ValueKey('add_to_folder_button'),
+      onTap: () => showFolderPickerSheet(
+        context,
+        ref,
+        mediaId: item.id,
+        mediaTitle: item.title,
+      ),
+      child: AnimatedContainer(
+        duration: AppPhysics.houseSpringDuration,
+        curve: AppPhysics.houseSpringCurve,
+        height: 44,
+        decoration: BoxDecoration(
+          color: context.ambianceColors.card2,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor),
+        ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.folder_outlined,
+                size: 16,
+                color: inkColor,
+              ),
+              const SizedBox(width: 5),
+              Text(
+                'Add to Folder',
                 style: AppThemes.safeGeist(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w600,

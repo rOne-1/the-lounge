@@ -113,7 +113,7 @@ class _LoungeRewatchSheetState extends ConsumerState<LoungeRewatchSheet> {
                 child: SizedBox(
                   width: 44,
                   height: 64,
-                  child: MediaImage(item: widget.item, fit: BoxFit.cover),
+                  child: MediaImage(item: widget.item, fit: BoxFit.cover, showFallbackTitle: false),
                 ),
               ),
               const SizedBox(width: 14),
