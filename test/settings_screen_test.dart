@@ -203,7 +203,9 @@ void main() {
 
     final exportedJson = utf8.decode(mockFilePicker.savedBytes!);
     final decoded = jsonDecode(exportedJson);
-    expect(decoded['version'], equals(1));
+    // Bumped to schema version 2 by PERS-DATA-1 (adds watchHistory + the
+    // derived start/end date maps to the backup payload).
+    expect(decoded['version'], equals(2));
     expect(decoded['watchlist']['movie_1']['title'], equals('Inception'));
     expect(find.text('Backup exported successfully.'), findsOneWidget);
 
@@ -487,7 +489,10 @@ void main() {
     final container = createContainer();
     addTearDown(container.dispose);
 
-    final badBackup = '{"version": 2, "watchlist": {}}';
+    // Version 99: still deliberately unsupported now that PERS-DATA-1 bumped
+    // the real schema to version 2 -- version 2 alone is no longer a valid
+    // "malformed/unsupported" fixture.
+    final badBackup = '{"version": 99, "watchlist": {}}';
 
     mockFilePicker.pickResult = FilePickerResult([
       PlatformFile(
