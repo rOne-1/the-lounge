@@ -879,6 +879,18 @@ class MediaNotifier extends Notifier<MediaState> {
     // Defaults to true for movies (no episode concept).
     bool targetIsWatched = true;
 
+    // PERS-RATE-1 bugfix: mirrors _setTvShowStatus's per-season completion
+    // bookkeeping. Populated below only in the `seasons != null` branch --
+    // the `else` branch's optimistic placement is corrected asynchronously
+    // by _enrichWatchedTvShow, which itself finishes by calling
+    // _setTvShowStatus (already covers seasonEndDates correctly). Without
+    // this, a direct Watched toggle when season data happens to already be
+    // loaded (e.g. the Seasons section already fetched it) left
+    // seasonEndDates empty forever -- no season, not even the first, ever
+    // became eligible for its own rating prompt/pill.
+    final newSeasonStartDates = _cloneSeasonDateMap(state.seasonStartDates);
+    final newSeasonEndDates = _cloneSeasonDateMap(state.seasonEndDates);
+
     if (item.type == MediaType.tv) {
       if (seasons != null && seasons.isNotEmpty) {
         final classified = _classifyEpisodes(
@@ -889,6 +901,16 @@ class MediaNotifier extends Notifier<MediaState> {
         targetIsWatched = classified.unreleased.isEmpty &&
             classified.released.isNotEmpty &&
             _hasCompleteSeasonData(seasons, item);
+
+        final seasonNow = DateTime.now();
+        final completedSeasons =
+            _fullyCompletedSeasons(seasons, newWatchedEpisodes[item.id]!);
+        for (final s in completedSeasons) {
+          final seasonStarts = newSeasonStartDates.putIfAbsent(item.id, () => {});
+          seasonStarts.putIfAbsent(s, () => seasonNow);
+          final seasonEnds = newSeasonEndDates.putIfAbsent(item.id, () => {});
+          seasonEnds.putIfAbsent(s, () => seasonNow);
+        }
       } else {
         final epSet = <String>{};
         final now = DateTime.now();
@@ -968,6 +990,8 @@ class MediaNotifier extends Notifier<MediaState> {
       watchedEpisodes: newWatchedEpisodes,
       startDates: newStartDates,
       endDates: newEndDates,
+      seasonStartDates: newSeasonStartDates,
+      seasonEndDates: newSeasonEndDates,
     );
     _saveToPrefs();
     _excludeFromDiscoverPools(item.id);

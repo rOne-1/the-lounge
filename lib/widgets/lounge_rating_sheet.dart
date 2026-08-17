@@ -280,16 +280,34 @@ class _RatingTierRow extends StatelessWidget {
   }
 }
 
-/// PERS-RATE-1: small pill showing the resolved personal rating for
-/// [item]/[seasonNumber], or a quiet "Rate it" invitation once that scope is
-/// eligible (Watched for the overall item; season-complete for a season) but
-/// still unrated. Renders nothing otherwise -- never forces a decision
-/// (SP-4). Tapping opens [LoungeRatingSheet] in manual-edit mode.
+/// PERS-RATE-1: shows the resolved personal rating for [item]/[seasonNumber],
+/// or a "Rate it" invitation once that scope is eligible (Watched for the
+/// overall item; season-complete for a season) but still unrated. Renders
+/// nothing otherwise -- never forces a decision (SP-4). Tapping opens
+/// [LoungeRatingSheet] in manual-edit mode.
+///
+/// [expanded] switches between two presentations sharing the same
+/// eligibility/rating logic:
+/// - `false` (default): a small pill, sized for sitting inline among other
+///   badges -- used for the per-season pill next to the season selector.
+/// - `true`: a full-width, high-contrast banner. Used for the overall-item
+///   rating on `DetailScreen`, which used to live inline in the meta-info
+///   `Wrap` -- that row's content (and thus the pill's position) varies
+///   between movies and TV shows, so the button visibly moved around and
+///   blended in with neutral info badges. A fixed-position, unmistakable
+///   banner (own row, right after the Watched toggle, styled distinctly
+///   from every other action button) fixes both complaints at once.
 class PersonalRatingPill extends ConsumerWidget {
   final MediaItem item;
   final int? seasonNumber;
+  final bool expanded;
 
-  const PersonalRatingPill({super.key, required this.item, this.seasonNumber});
+  const PersonalRatingPill({
+    super.key,
+    required this.item,
+    this.seasonNumber,
+    this.expanded = false,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -309,39 +327,82 @@ class PersonalRatingPill extends ConsumerWidget {
 
     final colors = context.ambianceColors;
     final rating = record?.rating;
-    final tierColor = rating != null ? AppRatingColors.of(rating) : colors.sub;
+    final tierColor = rating != null ? AppRatingColors.of(rating) : colors.acc;
     final label = rating != null ? rating.label : 'Rate it';
+    void onTap() =>
+        showLoungeRatingSheet(context, ref, item: item, seasonNumber: seasonNumber);
 
-    return PressableScale(
-      onTap: () =>
-          showLoungeRatingSheet(context, ref, item: item, seasonNumber: seasonNumber),
-      child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: BoxDecoration(
-          color: rating != null ? tierColor.withValues(alpha: 0.16) : colors.pill,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: rating != null ? tierColor.withValues(alpha: 0.6) : colors.lineRgba,
+    if (!expanded) {
+      return PressableScale(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: rating != null ? tierColor.withValues(alpha: 0.16) : colors.pill,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: rating != null ? tierColor.withValues(alpha: 0.6) : colors.lineRgba,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (rating == null) ...[
+                Icon(Icons.star_outline_rounded, size: 13, color: tierColor),
+                const SizedBox(width: 4),
+              ],
+              Text(
+                label,
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: tierColor,
+                ),
+              ),
+            ],
           ),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (rating == null) ...[
-              Icon(Icons.star_outline_rounded, size: 13, color: tierColor),
-              const SizedBox(width: 4),
-            ],
-            Text(
-              label,
-              style: AppThemes.safeGeist(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: PressableScale(
+        key: const ValueKey('rate_it_banner'),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
+          width: double.infinity,
+          height: 48,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: tierColor.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: tierColor, width: 1.5),
+          ),
+          alignment: Alignment.center,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                rating == null ? Icons.star_outline_rounded : Icons.star_rounded,
+                size: 18,
                 color: tierColor,
               ),
-            ),
-          ],
+              const SizedBox(width: 8),
+              Text(
+                rating == null ? 'Rate it' : 'Your rating: $label',
+                style: AppThemes.safeGeist(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: tierColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

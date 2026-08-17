@@ -155,8 +155,8 @@ void main() {
       expect(history!.first.rating, PersonalRating.loved);
       expect(history.first.isFirstWatch, isTrue);
 
-      // Pill now reflects the rating instead of the "Rate it" invitation.
-      expect(find.text('Loved it'), findsOneWidget);
+      // Banner now reflects the rating instead of the "Rate it" invitation.
+      expect(find.text('Your rating: Loved it'), findsOneWidget);
       expect(find.text('Rate it'), findsNothing);
     });
 
@@ -211,7 +211,7 @@ void main() {
           );
       await tester.pump(const Duration(milliseconds: 500));
 
-      await tapVisible(tester, 'It was okay');
+      await tapVisible(tester, 'Your rating: It was okay');
       await tester.pumpAndSettle();
 
       expect(find.text('Rate Movie'), findsOneWidget);

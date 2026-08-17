@@ -434,12 +434,6 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     // Rating badge
     metaPills.add(_buildRatingBadge(item, isDark));
 
-    // PERS-RATE-1: personal rating pill, scoped to its own Consumer so a
-    // rating change doesn't rebuild the whole meta row (PERF-1 pattern).
-    metaPills.add(Consumer(
-      builder: (context, ref, _) => PersonalRatingPill(item: item),
-    ));
-
     // Original Language badge
     final langDisplay = item.originalLanguageDisplay;
     if (langDisplay != null && langDisplay.isNotEmpty) {
@@ -1270,6 +1264,17 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   }(),
                 ),
               ],
+            ),
+            // PERS-RATE-1: fixed-position, high-contrast rating banner --
+            // was a small pill inline in the meta-info row, whose content
+            // (and thus the button's position) differs between movies and
+            // TV shows; moving it to its own row right after Watched gives
+            // it one consistent, easy-to-spot location for every title.
+            // Own top margin is baked into the pill itself (rather than a
+            // Padding wrapper here) so it contributes zero extra space when
+            // the item isn't Watched yet and the pill renders nothing.
+            Consumer(
+              builder: (context, ref, _) => PersonalRatingPill(item: item, expanded: true),
             ),
             const SizedBox(height: 8),
             // Secondary status bar (On-Hold & Dropped options)

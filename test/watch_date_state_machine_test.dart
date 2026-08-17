@@ -259,6 +259,29 @@ void main() {
       expect(state.seasonStartDates.containsKey(tvShow.id), isFalse);
       expect(state.seasonEndDates.containsKey(tvShow.id), isFalse);
     });
+
+    test(
+        'addToWatchedList (direct Watched toggle) sets seasonEndDate for every '
+        'completed season when season data is already loaded', () {
+      // Regression: DetailScreen's Watched button calls toggleWatched ->
+      // addToWatchedList with whatever `tvShowSeasonsProvider` already has
+      // cached. Previously that branch set watchedEpisodes but never
+      // touched seasonStartDates/seasonEndDates at all -- so no season's
+      // rating pill/prompt ever became eligible after a direct Watched
+      // toggle, unlike the per-episode-toggling path which always worked.
+      final notifier = container.read(mediaProvider.notifier);
+      final season1 = fullyReleasedSeason(1, episodeCount: 2);
+      final season2 = fullyReleasedSeason(2, episodeCount: 2);
+
+      notifier.addToWatchedList(tvShowTwoSeasons, seasons: [season1, season2]);
+
+      final state = container.read(mediaProvider);
+      expect(state.watchedList.containsKey(tvShowTwoSeasons.id), isTrue);
+      expect(state.seasonEndDates[tvShowTwoSeasons.id]?[1], isNotNull);
+      expect(state.seasonEndDates[tvShowTwoSeasons.id]?[2], isNotNull);
+      expect(state.seasonStartDates[tvShowTwoSeasons.id]?[1], isNotNull);
+      expect(state.seasonStartDates[tvShowTwoSeasons.id]?[2], isNotNull);
+    });
   });
 
   group('PERS-DATE-1: persistence', () {
