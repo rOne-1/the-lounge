@@ -1508,7 +1508,12 @@ class MediaNotifier extends Notifier<MediaState> {
 
   String _generateFolderId() {
     final random = Random();
-    return '${DateTime.now().microsecondsSinceEpoch}_${random.nextInt(1 << 32)}';
+    // Web bugfix: `1 << 32` truncates to 0 under dart2js/DDC's JS-backed int
+    // shift semantics (fine on the Dart VM, where int is 64-bit) -- Random's
+    // nextInt then throws "max must be in range 0 < max" on every call,
+    // silently breaking folder creation on web only. `1 << 31` is safely
+    // within Random.nextInt's 0 < max <= 2^32 requirement on every platform.
+    return '${DateTime.now().microsecondsSinceEpoch}_${random.nextInt(1 << 31)}';
   }
 
   /// PERS-FOLDERS-1: creates a new empty folder and returns its ID.
