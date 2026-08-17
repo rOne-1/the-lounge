@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/folders_screen.dart';
 import 'package:the_lounge/screens/folder_detail_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
+import 'package:the_lounge/screens/your_space_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -73,6 +74,44 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Spooky Season'), findsOneWidget);
+      expect(container.read(mediaProvider).customFolders, hasLength(1));
+    });
+
+    testWidgets('creating a folder works via the real Your Space navigation path',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(_TestRepository({movie1.id: movie1})),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: Scaffold(body: YourSpaceScreen())),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final foldersCardFinder = find.text('Custom Folders');
+      await tester.ensureVisible(foldersCardFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(foldersCardFinder);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FoldersScreen), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('create_folder_button')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Via Your Space');
+      await tester.tap(find.text('Create'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Via Your Space'), findsOneWidget);
       expect(container.read(mediaProvider).customFolders, hasLength(1));
     });
 
