@@ -119,6 +119,15 @@ void main() {
     );
   }
 
+  // PERS-FOLDERS-1 added a "Folders" row to the Personalization section,
+  // pushing Data Management's buttons further down the ListView, below the
+  // default test viewport's built/cached range.
+  Future<void> scrollToAndTap(WidgetTester tester, Finder finder) async {
+    await tester.scrollUntilVisible(finder, 300);
+    await tester.pumpAndSettle();
+    await tester.tap(finder);
+  }
+
   testWidgets('SettingsScreen renders correctly in light/dark themes and toggle updates ambianceProvider', (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
@@ -200,7 +209,7 @@ void main() {
     final exportBtn = find.byKey(const ValueKey('export_backup_button'));
     expect(exportBtn, findsOneWidget);
 
-    await tester.tap(exportBtn);
+    await scrollToAndTap(tester, exportBtn);
     await tester.pumpAndSettle();
 
     expect(mockFilePicker.saveFileCalled, isTrue);
@@ -208,9 +217,9 @@ void main() {
 
     final exportedJson = utf8.decode(mockFilePicker.savedBytes!);
     final decoded = jsonDecode(exportedJson);
-    // Bumped to schema version 2 by PERS-DATA-1 (adds watchHistory + the
-    // derived start/end date maps to the backup payload).
-    expect(decoded['version'], equals(2));
+    // Bumped to schema version 3 by PERS-FOLDERS-1 (adds customFolders).
+    // (Bumped to 2 earlier by PERS-DATA-1: watchHistory + start/end dates.)
+    expect(decoded['version'], equals(3));
     expect(decoded['watchlist']['movie_1']['title'], equals('Inception'));
     expect(find.text('Backup exported successfully.'), findsOneWidget);
 
@@ -282,7 +291,7 @@ void main() {
     final importBtn = find.byKey(const ValueKey('import_backup_button'));
     expect(importBtn, findsOneWidget);
 
-    await tester.tap(importBtn);
+    await scrollToAndTap(tester, importBtn);
     await tester.pumpAndSettle();
 
     expect(find.byType(LoungeDialog), findsNothing);
@@ -345,7 +354,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final importBtn = find.byKey(const ValueKey('import_backup_button'));
-    await tester.tap(importBtn);
+    await scrollToAndTap(tester, importBtn);
     await tester.pumpAndSettle();
 
     expect(find.byType(LoungeDialog), findsOneWidget);
@@ -481,7 +490,7 @@ void main() {
     await tester.pumpWidget(createSettingsScreen(container));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('export_backup_button')));
+    await scrollToAndTap(tester, find.byKey(const ValueKey('export_backup_button')));
     await tester.pump();
     expect(find.text('Exporting your backup…'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -516,7 +525,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final importBtn = find.byKey(const ValueKey('import_backup_button'));
-    await tester.tap(importBtn);
+    await scrollToAndTap(tester, importBtn);
     await tester.pumpAndSettle();
 
     expect(find.text('Import failed: Invalid backup file format.'), findsOneWidget);

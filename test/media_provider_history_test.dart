@@ -182,7 +182,7 @@ void main() {
 
     tearDown(() => container.dispose());
 
-    test('export writes schema version 2 with watchHistory and date maps', () {
+    test('export writes watchHistory and date maps', () {
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchedList(movie1);
       notifier.addWatchRecord(
@@ -192,7 +192,9 @@ void main() {
 
       final json = notifier.exportBackupJson('screening_room');
 
-      expect(json, contains('"version":2'));
+      // Schema version itself (bumped again by PERS-FOLDERS-1 in a later
+      // phase, to 3) is covered by settings_screen_test.dart -- this test is
+      // about the PERS-DATA-1/PERS-DATE-1 fields specifically.
       expect(json, contains('watchHistory'));
       expect(json, contains('startDates'));
       expect(json, contains('endDates'));
