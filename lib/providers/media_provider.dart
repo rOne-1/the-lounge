@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
 import '../models/discover_filter_params.dart';
+import '../models/watch_record.dart';
 import 'ambiance_provider.dart';
 import '../themes/theme_registry.dart';
 import '../constants.dart';
 import '../utils/weighted_rating.dart';
 import 'repository_provider.dart';
 export 'repository_provider.dart';
+export '../models/personal_rating.dart';
+export '../models/watch_record.dart';
 
 class MediaState {
   final Map<String, MediaItem> watchlist;
@@ -21,6 +24,21 @@ class MediaState {
   final Map<String, Set<String>> watchedEpisodes; // showId -> set of "S1E1" episode keys
   final String watchProvidersCountry;
 
+  /// PERS-DATA-1: unified per-title watch history log (first watches +
+  /// rewatches), keyed by media ID. Source of truth for personal ratings.
+  final Map<String, List<WatchRecord>> watchHistory;
+
+  /// PERS-DATE-1: auto-derived start/end dates, keyed by media ID.
+  /// `startDates` is immutable once set (never overwritten by automated
+  /// status transitions). `endDates` is only populated once a title
+  /// genuinely qualifies to rest in Watched (see `_setTvShowStatus`).
+  final Map<String, DateTime> startDates;
+  final Map<String, DateTime> endDates;
+
+  /// Per-season start/end dates for TV shows: mediaId -> seasonNumber -> date.
+  final Map<String, Map<int, DateTime>> seasonStartDates;
+  final Map<String, Map<int, DateTime>> seasonEndDates;
+
   const MediaState({
     this.watchlist = const {},
     this.maybeList = const {},
@@ -30,6 +48,11 @@ class MediaState {
     this.onHoldList = const {},
     this.watchedEpisodes = const {},
     this.watchProvidersCountry = 'US',
+    this.watchHistory = const {},
+    this.startDates = const {},
+    this.endDates = const {},
+    this.seasonStartDates = const {},
+    this.seasonEndDates = const {},
   });
 
   MediaState copyWith({
@@ -41,6 +64,11 @@ class MediaState {
     Map<String, MediaItem>? onHoldList,
     Map<String, Set<String>>? watchedEpisodes,
     String? watchProvidersCountry,
+    Map<String, List<WatchRecord>>? watchHistory,
+    Map<String, DateTime>? startDates,
+    Map<String, DateTime>? endDates,
+    Map<String, Map<int, DateTime>>? seasonStartDates,
+    Map<String, Map<int, DateTime>>? seasonEndDates,
   }) {
     return MediaState(
       watchlist: watchlist ?? this.watchlist,
@@ -52,6 +80,11 @@ class MediaState {
       watchedEpisodes: watchedEpisodes ?? this.watchedEpisodes,
       watchProvidersCountry:
           watchProvidersCountry ?? this.watchProvidersCountry,
+      watchHistory: watchHistory ?? this.watchHistory,
+      startDates: startDates ?? this.startDates,
+      endDates: endDates ?? this.endDates,
+      seasonStartDates: seasonStartDates ?? this.seasonStartDates,
+      seasonEndDates: seasonEndDates ?? this.seasonEndDates,
     );
   }
 }
@@ -66,6 +99,11 @@ class MediaNotifier extends Notifier<MediaState> {
   static const _onHoldListKey = 'the_lounge_on_hold_list';
   static const _watchedEpisodesKey = 'the_lounge_watched_episodes';
   static const _lastMonthlyRefreshKey = 'the_lounge_last_monthly_refresh';
+  static const _watchHistoryKey = 'the_lounge_watch_history';
+  static const _startDatesKey = 'the_lounge_start_dates';
+  static const _endDatesKey = 'the_lounge_end_dates';
+  static const _seasonStartDatesKey = 'the_lounge_season_start_dates';
+  static const _seasonEndDatesKey = 'the_lounge_season_end_dates';
 
   @override
   MediaState build() {
@@ -77,6 +115,11 @@ class MediaNotifier extends Notifier<MediaState> {
     Map<String, MediaItem> droppedList = const {};
     Map<String, MediaItem> onHoldList = const {};
     Map<String, Set<String>> watchedEpisodes = const {};
+    Map<String, List<WatchRecord>> watchHistory = const {};
+    Map<String, DateTime> startDates = const {};
+    Map<String, DateTime> endDates = const {};
+    Map<String, Map<int, DateTime>> seasonStartDates = const {};
+    Map<String, Map<int, DateTime>> seasonEndDates = const {};
 
     try {
       final prefs = ref.watch(sharedPreferencesProvider);
@@ -91,6 +134,11 @@ class MediaNotifier extends Notifier<MediaState> {
       droppedList = _parseMediaMap(prefs, _droppedListKey);
       onHoldList = _parseMediaMap(prefs, _onHoldListKey);
       watchedEpisodes = _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
+      watchHistory = _parseWatchHistory(prefs, _watchHistoryKey);
+      startDates = _parseDateMap(prefs, _startDatesKey);
+      endDates = _parseDateMap(prefs, _endDatesKey);
+      seasonStartDates = _parseSeasonDateMap(prefs, _seasonStartDatesKey);
+      seasonEndDates = _parseSeasonDateMap(prefs, _seasonEndDatesKey);
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
     }
@@ -104,6 +152,11 @@ class MediaNotifier extends Notifier<MediaState> {
       droppedList: droppedList,
       onHoldList: onHoldList,
       watchedEpisodes: watchedEpisodes,
+      watchHistory: watchHistory,
+      startDates: startDates,
+      endDates: endDates,
+      seasonStartDates: seasonStartDates,
+      seasonEndDates: seasonEndDates,
     );
   }
 
@@ -118,6 +171,12 @@ class MediaNotifier extends Notifier<MediaState> {
       final onHoldList = _parseMediaMap(prefs, _onHoldListKey);
       final watchedEpisodes =
           _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
+      final watchHistory = _parseWatchHistory(prefs, _watchHistoryKey);
+      final startDates = _parseDateMap(prefs, _startDatesKey);
+      final endDates = _parseDateMap(prefs, _endDatesKey);
+      final seasonStartDates =
+          _parseSeasonDateMap(prefs, _seasonStartDatesKey);
+      final seasonEndDates = _parseSeasonDateMap(prefs, _seasonEndDatesKey);
 
       state = state.copyWith(
         watchlist: watchlist,
@@ -127,6 +186,11 @@ class MediaNotifier extends Notifier<MediaState> {
         droppedList: droppedList,
         onHoldList: onHoldList,
         watchedEpisodes: watchedEpisodes,
+        watchHistory: watchHistory,
+        startDates: startDates,
+        endDates: endDates,
+        seasonStartDates: seasonStartDates,
+        seasonEndDates: seasonEndDates,
       );
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
@@ -174,6 +238,26 @@ class MediaNotifier extends Notifier<MediaState> {
           jsonEncode(
             state.watchedEpisodes.map((k, v) => MapEntry(k, v.toList())),
           ),
+        ),
+        prefs.setString(
+          _watchHistoryKey,
+          jsonEncode(_watchHistoryToJson(state.watchHistory)),
+        ),
+        prefs.setString(
+          _startDatesKey,
+          jsonEncode(_dateMapToJson(state.startDates)),
+        ),
+        prefs.setString(
+          _endDatesKey,
+          jsonEncode(_dateMapToJson(state.endDates)),
+        ),
+        prefs.setString(
+          _seasonStartDatesKey,
+          jsonEncode(_seasonDateMapToJson(state.seasonStartDates)),
+        ),
+        prefs.setString(
+          _seasonEndDatesKey,
+          jsonEncode(_seasonDateMapToJson(state.seasonEndDates)),
         ),
       ]);
     } catch (_) {
@@ -242,6 +326,109 @@ class MediaNotifier extends Notifier<MediaState> {
     } catch (_) {
       return {};
     }
+  }
+
+  Map<String, dynamic> _watchHistoryToJson(
+      Map<String, List<WatchRecord>> history) {
+    return history.map(
+      (k, v) => MapEntry(k, v.map((r) => r.toJson()).toList()),
+    );
+  }
+
+  Map<String, List<WatchRecord>> _parseWatchHistory(
+      SharedPreferences prefs, String key) {
+    try {
+      final rawJson = prefs.getString(key);
+      if (rawJson == null || rawJson.trim().isEmpty) return {};
+      return _watchHistoryFromDynamic(jsonDecode(rawJson));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Map<String, List<WatchRecord>> _watchHistoryFromDynamic(dynamic decoded) {
+    final Map<String, List<WatchRecord>> result = {};
+    if (decoded is Map<String, dynamic>) {
+      decoded.forEach((mediaId, recordsJson) {
+        try {
+          if (recordsJson is List) {
+            final records = recordsJson
+                .whereType<Map<String, dynamic>>()
+                .map((r) => WatchRecord.fromJson(r))
+                .toList();
+            if (records.isNotEmpty) {
+              result[mediaId] = records;
+            }
+          }
+        } catch (_) {}
+      });
+    }
+    return result;
+  }
+
+  Map<String, dynamic> _dateMapToJson(Map<String, DateTime> map) {
+    return map.map((k, v) => MapEntry(k, v.toIso8601String()));
+  }
+
+  Map<String, DateTime> _parseDateMap(SharedPreferences prefs, String key) {
+    try {
+      final rawJson = prefs.getString(key);
+      if (rawJson == null || rawJson.trim().isEmpty) return {};
+      return _dateMapFromDynamic(jsonDecode(rawJson));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Map<String, DateTime> _dateMapFromDynamic(dynamic decoded) {
+    final Map<String, DateTime> result = {};
+    if (decoded is Map<String, dynamic>) {
+      decoded.forEach((mediaId, dateStr) {
+        final parsed = DateTime.tryParse(dateStr?.toString() ?? '');
+        if (parsed != null) result[mediaId] = parsed;
+      });
+    }
+    return result;
+  }
+
+  Map<String, dynamic> _seasonDateMapToJson(
+      Map<String, Map<int, DateTime>> map) {
+    return map.map((mediaId, seasonMap) => MapEntry(
+          mediaId,
+          seasonMap.map(
+              (season, date) => MapEntry(season.toString(), date.toIso8601String())),
+        ));
+  }
+
+  Map<String, Map<int, DateTime>> _parseSeasonDateMap(
+      SharedPreferences prefs, String key) {
+    try {
+      final rawJson = prefs.getString(key);
+      if (rawJson == null || rawJson.trim().isEmpty) return {};
+      return _seasonDateMapFromDynamic(jsonDecode(rawJson));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Map<String, Map<int, DateTime>> _seasonDateMapFromDynamic(dynamic decoded) {
+    final Map<String, Map<int, DateTime>> result = {};
+    if (decoded is Map<String, dynamic>) {
+      decoded.forEach((mediaId, seasonJson) {
+        if (seasonJson is Map<String, dynamic>) {
+          final Map<int, DateTime> seasonMap = {};
+          seasonJson.forEach((seasonStr, dateStr) {
+            final seasonNum = int.tryParse(seasonStr);
+            final parsed = DateTime.tryParse(dateStr?.toString() ?? '');
+            if (seasonNum != null && parsed != null) {
+              seasonMap[seasonNum] = parsed;
+            }
+          });
+          if (seasonMap.isNotEmpty) result[mediaId] = seasonMap;
+        }
+      });
+    }
+    return result;
   }
 
   /// Notepad item 15: keeps the Discover deck pools in sync with mutations
@@ -403,6 +590,9 @@ class MediaNotifier extends Notifier<MediaState> {
     final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
       ..remove(item.id);
 
+    final newStartDates = Map<String, DateTime>.from(state.startDates);
+    newStartDates.putIfAbsent(item.id, () => DateTime.now());
+
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
@@ -410,6 +600,7 @@ class MediaNotifier extends Notifier<MediaState> {
       watchedList: newWatchedList,
       droppedList: newDroppedList,
       onHoldList: newOnHoldList,
+      startDates: newStartDates,
     );
     _saveToPrefs();
     _excludeFromDiscoverPools(item.id);
@@ -486,9 +677,48 @@ class MediaNotifier extends Notifier<MediaState> {
     return seasons.map((s) => s.seasonNumber).toSet().length >= expected;
   }
 
+  /// Which season numbers in [seasons] are both fully released (every
+  /// episode has an air date in the past) and fully watched (every episode
+  /// key present in [watchedSet]) -- the per-season analogue of the overall
+  /// "never rest in Watched while unreleased episodes remain" invariant.
+  Set<int> _fullyCompletedSeasons(
+      List<TvSeason> seasons, Set<String> watchedSet) {
+    final now = DateTime.now();
+    final result = <int>{};
+    for (final season in seasons) {
+      if (season.episodes.isEmpty) continue;
+      final allReleased = season.episodes
+          .every((ep) => ep.airDate != null && !ep.airDate!.isAfter(now));
+      if (!allReleased) continue;
+      final allWatched = season.episodes.every((ep) =>
+          watchedSet.contains('S${season.seasonNumber}E${ep.episodeNumber}'));
+      if (allWatched) result.add(season.seasonNumber);
+    }
+    return result;
+  }
+
   /// Moves a show to exactly one of watched/watching/watchlist, clearing it
   /// from every other status list. Used by the B2 status state machine.
-  void _setTvShowStatus(String id, MediaItem item, String target) {
+  ///
+  /// PERS-DATE-1: also drives the TV date engine here, the one place every
+  /// status-machine transition (manual toggle, per-episode completion,
+  /// monthly refresh, new-season reopening) funnels through.
+  /// - `startDate` is set (if absent) whenever a show settles into Watching
+  ///   or Watched -- and, per the locked immutability invariant, never
+  ///   overwritten once set, even when a later automated transition (e.g. a
+  ///   new season reopening an already-Watched show) revisits this method.
+  /// - `endDate` is only ever populated while the show is genuinely resting
+  ///   in Watched (target == 'watched'); it's cleared whenever the show
+  ///   moves away from Watched (the "airing guard" -- a newly-released
+  ///   season un-qualifies a show from "finished", so its stale completion
+  ///   date shouldn't linger) and recomputed as the latest per-season end
+  ///   date once the show re-qualifies.
+  void _setTvShowStatus(
+    String id,
+    MediaItem item,
+    String target, {
+    List<TvSeason>? seasons,
+  }) {
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
       ..remove(id);
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
@@ -514,6 +744,46 @@ class MediaNotifier extends Notifier<MediaState> {
         break;
     }
 
+    final now = DateTime.now();
+    final newStartDates = Map<String, DateTime>.from(state.startDates);
+    final newEndDates = Map<String, DateTime>.from(state.endDates);
+    final newSeasonStartDates =
+        _cloneSeasonDateMap(state.seasonStartDates);
+    final newSeasonEndDates = _cloneSeasonDateMap(state.seasonEndDates);
+
+    if (target == 'watching' || target == 'watched') {
+      newStartDates.putIfAbsent(id, () => now);
+    }
+
+    // Per-season completion is independent of the show's overall status --
+    // season 1 can genuinely be finished while season 4 is still airing (the
+    // show itself stays 'watching' throughout), so this runs for either
+    // target, not just once the whole show reaches 'watched'.
+    if ((target == 'watching' || target == 'watched') &&
+        seasons != null &&
+        seasons.isNotEmpty) {
+      final watchedSet = state.watchedEpisodes[id] ?? const <String>{};
+      final completedSeasons = _fullyCompletedSeasons(seasons, watchedSet);
+      for (final s in completedSeasons) {
+        final seasonStarts = newSeasonStartDates.putIfAbsent(id, () => {});
+        seasonStarts.putIfAbsent(s, () => now);
+        final seasonEnds = newSeasonEndDates.putIfAbsent(id, () => {});
+        seasonEnds.putIfAbsent(s, () => now);
+      }
+    }
+
+    if (target == 'watched') {
+      final seasonEndValues = newSeasonEndDates[id]?.values;
+      if (seasonEndValues != null && seasonEndValues.isNotEmpty) {
+        newEndDates[id] =
+            seasonEndValues.reduce((a, b) => a.isAfter(b) ? a : b);
+      } else {
+        newEndDates.putIfAbsent(id, () => now);
+      }
+    } else {
+      newEndDates.remove(id);
+    }
+
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
@@ -521,8 +791,17 @@ class MediaNotifier extends Notifier<MediaState> {
       watchedList: newWatchedList,
       droppedList: newDroppedList,
       onHoldList: newOnHoldList,
+      startDates: newStartDates,
+      endDates: newEndDates,
+      seasonStartDates: newSeasonStartDates,
+      seasonEndDates: newSeasonEndDates,
     );
     _saveToPrefs();
+  }
+
+  Map<String, Map<int, DateTime>> _cloneSeasonDateMap(
+      Map<String, Map<int, DateTime>> source) {
+    return source.map((k, v) => MapEntry(k, Map<int, DateTime>.from(v)));
   }
 
   void addToWatchedList(MediaItem item, {List<TvSeason>? seasons}) {
@@ -608,6 +887,29 @@ class MediaNotifier extends Notifier<MediaState> {
       newWatchedList.remove(item.id);
     }
 
+    // PERS-DATE-1: startDate is set (if absent) whenever a title first
+    // settles into Watching or Watched. endDate for movies is an explicit,
+    // single-shot user action (unlike TV's re-openable state machine), so
+    // it's written directly each time rather than left immutable -- if the
+    // user un-marks and re-marks a movie Watched later, the newer date is
+    // the more accurate one. TV endDate here only covers the immediate
+    // completion case (seasons already known to be fully released &
+    // watched); anything still pending real season data is finalized by
+    // _enrichWatchedTvShow/_setTvShowStatus once that data arrives.
+    final now = DateTime.now();
+    final newStartDates = Map<String, DateTime>.from(state.startDates);
+    final newEndDates = Map<String, DateTime>.from(state.endDates);
+    newStartDates.putIfAbsent(item.id, () => now);
+    if (targetIsWatched) {
+      if (item.type == MediaType.movie) {
+        newEndDates[item.id] = now;
+      } else {
+        newEndDates.putIfAbsent(item.id, () => now);
+      }
+    } else {
+      newEndDates.remove(item.id);
+    }
+
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
@@ -616,6 +918,8 @@ class MediaNotifier extends Notifier<MediaState> {
       droppedList: newDroppedList,
       onHoldList: newOnHoldList,
       watchedEpisodes: newWatchedEpisodes,
+      startDates: newStartDates,
+      endDates: newEndDates,
     );
     _saveToPrefs();
     _excludeFromDiscoverPools(item.id);
@@ -660,9 +964,27 @@ class MediaNotifier extends Notifier<MediaState> {
       state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
     )..remove(id);
 
+    // This wipes ALL watch progress for the title (existing behavior, not
+    // just the Watched flag -- see newWatchedEpisodes above), so the derived
+    // start/end dates go with it. `watchHistory` (personal ratings/rewatch
+    // log) is deliberately left untouched: those are user-authored memories,
+    // not status-machine-derived state, and survive status changes.
+    final newStartDates = Map<String, DateTime>.from(state.startDates)
+      ..remove(id);
+    final newEndDates = Map<String, DateTime>.from(state.endDates)
+      ..remove(id);
+    final newSeasonStartDates = _cloneSeasonDateMap(state.seasonStartDates)
+      ..remove(id);
+    final newSeasonEndDates = _cloneSeasonDateMap(state.seasonEndDates)
+      ..remove(id);
+
     state = state.copyWith(
       watchedList: newWatchedList,
       watchedEpisodes: newWatchedEpisodes,
+      startDates: newStartDates,
+      endDates: newEndDates,
+      seasonStartDates: newSeasonStartDates,
+      seasonEndDates: newSeasonEndDates,
     );
     _saveToPrefs();
   }
@@ -834,6 +1156,18 @@ class MediaNotifier extends Notifier<MediaState> {
       currentMap[showId] = showEpisodes;
     }
 
+    // PERS-DATE-1: record the moment this season was first started watching
+    // (per-episode granularity, immutable once set) whenever an episode was
+    // just added -- ahead of _setTvShowStatus below, which only reasons
+    // about whole-season *completion*, not the first watched episode.
+    final newSeasonStartDates = _cloneSeasonDateMap(state.seasonStartDates);
+    final newStartDates = Map<String, DateTime>.from(state.startDates);
+    if (showEpisodes.contains(key)) {
+      newStartDates.putIfAbsent(showId, () => now);
+      final seasonStarts = newSeasonStartDates.putIfAbsent(showId, () => {});
+      seasonStarts.putIfAbsent(seasonNumber, () => now);
+    }
+
     // Prefer real per-season episode data (O1 ground truth) so a show with
     // unreleased episodes never reaches "complete" just because a stale or
     // released-only header count matches the watched count.
@@ -868,12 +1202,16 @@ class MediaNotifier extends Notifier<MediaState> {
         releasedCount > 0 &&
         showEpisodes.length >= releasedCount;
 
-    state = state.copyWith(watchedEpisodes: currentMap);
+    state = state.copyWith(
+      watchedEpisodes: currentMap,
+      startDates: newStartDates,
+      seasonStartDates: newSeasonStartDates,
+    );
 
     if (isFullyReleasedAndWatched) {
-      _setTvShowStatus(showItem.id, showItem, 'watched');
+      _setTvShowStatus(showItem.id, showItem, 'watched', seasons: seasons);
     } else if (showEpisodes.isNotEmpty) {
-      _setTvShowStatus(showItem.id, showItem, 'watching');
+      _setTvShowStatus(showItem.id, showItem, 'watching', seasons: seasons);
     } else {
       final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
         ..remove(showItem.id);
@@ -963,7 +1301,8 @@ class MediaNotifier extends Notifier<MediaState> {
 
     final showItem = state.watchedList[showId]!;
     final isMidAir = newlyReleased.isNotEmpty && classified.unreleased.isNotEmpty;
-    _setTvShowStatus(showId, showItem, isMidAir ? 'watching' : 'watchlist');
+    _setTvShowStatus(showId, showItem, isMidAir ? 'watching' : 'watchlist',
+        seasons: seasons);
   }
 
   /// Monthly refresh trigger (B2/E5): re-checks every Watched TV show for
@@ -1026,6 +1365,14 @@ class MediaNotifier extends Notifier<MediaState> {
     final newWatchedEpisodes = Map<String, Set<String>>.from(
       state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
     )..remove(id);
+    final newStartDates = Map<String, DateTime>.from(state.startDates)
+      ..remove(id);
+    final newEndDates = Map<String, DateTime>.from(state.endDates)
+      ..remove(id);
+    final newSeasonStartDates = _cloneSeasonDateMap(state.seasonStartDates)
+      ..remove(id);
+    final newSeasonEndDates = _cloneSeasonDateMap(state.seasonEndDates)
+      ..remove(id);
 
     state = state.copyWith(
       watchlist: newWatchlist,
@@ -1035,7 +1382,55 @@ class MediaNotifier extends Notifier<MediaState> {
       droppedList: newDroppedList,
       onHoldList: newOnHoldList,
       watchedEpisodes: newWatchedEpisodes,
+      startDates: newStartDates,
+      endDates: newEndDates,
+      seasonStartDates: newSeasonStartDates,
+      seasonEndDates: newSeasonEndDates,
     );
+    _saveToPrefs();
+  }
+
+  /// PERS-DATA-1: appends a new [WatchRecord] (first watch or rewatch) to
+  /// [mediaId]'s history log. `record.recordedAt` is the record's stable
+  /// identity for later `updateWatchRecord`/`deleteWatchRecord` calls.
+  void addWatchRecord(String mediaId, WatchRecord record) {
+    final newHistory = Map<String, List<WatchRecord>>.from(state.watchHistory);
+    final records = List<WatchRecord>.from(newHistory[mediaId] ?? const []);
+    records.add(record);
+    newHistory[mediaId] = records;
+    state = state.copyWith(watchHistory: newHistory);
+    _saveToPrefs();
+  }
+
+  /// Replaces the record identified by [recordedAt] (its immutable,
+  /// system-generated timestamp) with [updated]. No-op if not found.
+  void updateWatchRecord(
+      String mediaId, DateTime recordedAt, WatchRecord updated) {
+    final newHistory = Map<String, List<WatchRecord>>.from(state.watchHistory);
+    final records = newHistory[mediaId];
+    if (records == null) return;
+    final idx = records.indexWhere((r) => r.recordedAt == recordedAt);
+    if (idx == -1) return;
+    final newRecords = List<WatchRecord>.from(records);
+    newRecords[idx] = updated;
+    newHistory[mediaId] = newRecords;
+    state = state.copyWith(watchHistory: newHistory);
+    _saveToPrefs();
+  }
+
+  /// Removes the record identified by [recordedAt] from [mediaId]'s history.
+  void deleteWatchRecord(String mediaId, DateTime recordedAt) {
+    final newHistory = Map<String, List<WatchRecord>>.from(state.watchHistory);
+    final records = newHistory[mediaId];
+    if (records == null) return;
+    final newRecords =
+        records.where((r) => r.recordedAt != recordedAt).toList();
+    if (newRecords.isEmpty) {
+      newHistory.remove(mediaId);
+    } else {
+      newHistory[mediaId] = newRecords;
+    }
+    state = state.copyWith(watchHistory: newHistory);
     _saveToPrefs();
   }
 
@@ -1090,7 +1485,7 @@ class MediaNotifier extends Notifier<MediaState> {
               classified.released.isNotEmpty &&
               _hasCompleteSeasonData(seasons, item);
           final target = shouldBeWatched ? 'watched' : 'watching';
-          _setTvShowStatus(item.id, currentItem, target);
+          _setTvShowStatus(item.id, currentItem, target, seasons: seasons);
         }
       }
     } catch (e, stack) {
@@ -1150,9 +1545,16 @@ class MediaNotifier extends Notifier<MediaState> {
     } catch (_) {}
   }
 
+  /// Backup schema version. Bumped to 2 for PERS-DATA-1/PERS-DATE-1: adds
+  /// `watchHistory` (personal ratings/rewatch log) and the derived
+  /// start/end date maps. `importBackupJson` still accepts version 1
+  /// backups (pre-Personalization Epic) -- they simply come in with these
+  /// fields defaulted to empty, same as a fresh install.
+  static const int _backupSchemaVersion = 2;
+
   String exportBackupJson(String selectedAmbiance) {
     final backup = {
-      'version': 1,
+      'version': _backupSchemaVersion,
       'watchlist': state.watchlist.map((k, v) => MapEntry(k, v.toMinimalJson())),
       'maybeList': state.maybeList.map((k, v) => MapEntry(k, v.toMinimalJson())),
       'watchingList': state.watchingList.map((k, v) => MapEntry(k, v.toMinimalJson())),
@@ -1162,6 +1564,11 @@ class MediaNotifier extends Notifier<MediaState> {
       'watchedEpisodes': state.watchedEpisodes.map((k, v) => MapEntry(k, v.toList())),
       'watchProvidersCountry': state.watchProvidersCountry,
       'selectedAmbiance': selectedAmbiance,
+      'watchHistory': _watchHistoryToJson(state.watchHistory),
+      'startDates': _dateMapToJson(state.startDates),
+      'endDates': _dateMapToJson(state.endDates),
+      'seasonStartDates': _seasonDateMapToJson(state.seasonStartDates),
+      'seasonEndDates': _seasonDateMapToJson(state.seasonEndDates),
     };
     return jsonEncode(backup);
   }
@@ -1173,7 +1580,7 @@ class MediaNotifier extends Notifier<MediaState> {
         return false;
       }
       final version = decoded['version'];
-      if (version != 1) {
+      if (version != 1 && version != _backupSchemaVersion) {
         return false;
       }
 
@@ -1215,7 +1622,17 @@ class MediaNotifier extends Notifier<MediaState> {
       final droppedList = parseMediaMap(decoded['droppedList']);
       final onHoldList = parseMediaMap(decoded['onHoldList']);
       final watchedEpisodes = parseWatchedEpisodes(decoded['watchedEpisodes']);
-      
+
+      // v1 backups (pre-Personalization Epic) simply have no key for these --
+      // the dynamic parsers below all default a missing/non-Map value to {}.
+      final watchHistory = _watchHistoryFromDynamic(decoded['watchHistory']);
+      final startDates = _dateMapFromDynamic(decoded['startDates']);
+      final endDates = _dateMapFromDynamic(decoded['endDates']);
+      final seasonStartDates =
+          _seasonDateMapFromDynamic(decoded['seasonStartDates']);
+      final seasonEndDates =
+          _seasonDateMapFromDynamic(decoded['seasonEndDates']);
+
       try {
         final repo = ref.read(movieRepositoryProvider);
         final now = DateTime.now();
@@ -1260,6 +1677,11 @@ class MediaNotifier extends Notifier<MediaState> {
         onHoldList: onHoldList,
         watchedEpisodes: watchedEpisodes,
         watchProvidersCountry: country,
+        watchHistory: watchHistory,
+        startDates: startDates,
+        endDates: endDates,
+        seasonStartDates: seasonStartDates,
+        seasonEndDates: seasonEndDates,
       );
 
       await _saveToPrefs();
@@ -1304,6 +1726,11 @@ class MediaNotifier extends Notifier<MediaState> {
         prefs.remove(_droppedListKey),
         prefs.remove(_onHoldListKey),
         prefs.remove(_watchedEpisodesKey),
+        prefs.remove(_watchHistoryKey),
+        prefs.remove(_startDatesKey),
+        prefs.remove(_endDatesKey),
+        prefs.remove(_seasonStartDatesKey),
+        prefs.remove(_seasonEndDatesKey),
       ]);
       ref.read(skippedMediaIdsProvider.notifier).clear();
     } catch (_) {
