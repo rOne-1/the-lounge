@@ -4,7 +4,6 @@ enum AppTab {
   home,
   discover,
   search,
-  browse,
   yourSpace,
   calendar,
 }
@@ -62,7 +61,7 @@ final navigationProvider =
   return NavigationNotifier();
 });
 
-class BrowseGenreNotifier extends Notifier<String> {
+class SearchGenreNotifier extends Notifier<String> {
   @override
   String build() => 'All';
 
@@ -71,11 +70,11 @@ class BrowseGenreNotifier extends Notifier<String> {
   }
 }
 
-final browseGenreProvider = NotifierProvider<BrowseGenreNotifier, String>(() {
-  return BrowseGenreNotifier();
+final searchGenreProvider = NotifierProvider<SearchGenreNotifier, String>(() {
+  return SearchGenreNotifier();
 });
 
-class BrowseKeywordNotifier extends Notifier<String?> {
+class SearchKeywordNotifier extends Notifier<String?> {
   @override
   String? build() => null;
 
@@ -88,9 +87,9 @@ class BrowseKeywordNotifier extends Notifier<String?> {
   }
 }
 
-final browseKeywordProvider =
-    NotifierProvider<BrowseKeywordNotifier, String?>(() {
-  return BrowseKeywordNotifier();
+final searchKeywordProvider =
+    NotifierProvider<SearchKeywordNotifier, String?>(() {
+  return SearchKeywordNotifier();
 });
 
 

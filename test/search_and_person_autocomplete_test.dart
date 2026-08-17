@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
-import 'package:the_lounge/screens/browse_screen.dart';
+import 'package:the_lounge/screens/search_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/widgets/person_search_autocomplete.dart';
 
@@ -109,7 +109,7 @@ void main() {
 
     testWidgets(
         'Regression: does not throw when nested inside an ExpansionTile with a '
-        'PageStorageKey (production structure -- browse_screen.dart wraps this '
+        'PageStorageKey (production structure -- search_screen.dart wraps this '
         'in a keyed ExpansionTile, and an unkeyed TextField/ListView inside it '
         'inherits that key as its own PageStorage identity, colliding with the '
         "tile's own stored bool expanded-state)",
@@ -226,8 +226,8 @@ void main() {
     });
   });
 
-  group('BrowseScreen & Discover Integration Tests', () {
-    testWidgets('BrowseScreen displays active filter chip bar when filters exist',
+  group('SearchScreen & Discover Integration Tests', () {
+    testWidgets('SearchScreen displays active filter chip bar when filters exist',
         (WidgetTester tester) async {
       final container = ProviderContainer();
       addTearDown(container.dispose);
@@ -243,7 +243,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: BrowseScreen(),
+            home: SearchScreen(),
           ),
         ),
       );
@@ -271,7 +271,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: BrowseScreen(),
+            home: SearchScreen(),
           ),
         ),
       );
@@ -332,8 +332,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Now on BrowseScreen
-      expect(find.byType(BrowseScreen), findsOneWidget);
+      // Now on SearchScreen
+      expect(find.byType(SearchScreen), findsOneWidget);
       expect(find.text('Keyword: #historical fiction'), findsWidgets);
 
       final filterState = container.read(discoverFilterProvider);
@@ -379,7 +379,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: BrowseScreen(),
+            home: SearchScreen(),
           ),
         ),
       );
@@ -431,7 +431,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: Scaffold(body: BrowseScreen()),
+            home: Scaffold(body: SearchScreen()),
           ),
         ),
       );
@@ -465,7 +465,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: BrowseScreen(),
+            home: SearchScreen(),
           ),
         ),
       );
@@ -510,7 +510,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: BrowseScreen(),
+            home: SearchScreen(),
           ),
         ),
       );

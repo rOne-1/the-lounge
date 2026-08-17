@@ -1,4 +1,4 @@
-// Regression coverage for E1/TF-9: BrowseScreen's compact-layout header
+// Regression coverage for E1/TF-9: SearchScreen's compact-layout header
 // (title/Filters row + search bar + filter-chip bar) should be visible on a
 // fresh load, collapse out of view once the results grid scrolls down past
 // the ScrollChromeTracker threshold, and come back on scrolling up.
@@ -9,7 +9,7 @@ import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
-import 'package:the_lounge/screens/browse_screen.dart';
+import 'package:the_lounge/screens/search_screen.dart';
 
 class _TestRepository extends MockMovieRepository {
   final Map<String, MediaItem> items;
@@ -28,8 +28,8 @@ class _TestRepository extends MockMovieRepository {
 void main() {
   final searchBarFinder = find.text('Search across the catalog');
 
-  Future<ProviderContainer> pumpBrowse(WidgetTester tester) async {
-    // BrowseScreen's compact layout applies below its own 800px breakpoint
+  Future<ProviderContainer> pumpSearch(WidgetTester tester) async {
+    // SearchScreen's compact layout applies below its own 800px breakpoint
     // (isLarge = width > 800); the default test surface (800x600) already
     // sits right at that line, so pin it explicitly to a real phone width
     // rather than relying on the boundary value.
@@ -60,7 +60,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
-          home: BrowseScreen(),
+          home: SearchScreen(),
         ),
       ),
     );
@@ -69,7 +69,7 @@ void main() {
   }
 
   testWidgets('search header is visible on a fresh load', (tester) async {
-    final container = await pumpBrowse(tester);
+    final container = await pumpSearch(tester);
     addTearDown(container.dispose);
 
     expect(searchBarFinder, findsOneWidget);
@@ -77,7 +77,7 @@ void main() {
 
   testWidgets('search header collapses on scroll-down and returns on scroll-up',
       (tester) async {
-    final container = await pumpBrowse(tester);
+    final container = await pumpSearch(tester);
     addTearDown(container.dispose);
 
     expect(searchBarFinder, findsOneWidget);

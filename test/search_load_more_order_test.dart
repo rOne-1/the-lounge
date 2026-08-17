@@ -1,4 +1,4 @@
-// Regression coverage: dev-reported bug -- Browse's "Load More" appended
+// Regression coverage: dev-reported bug -- Search's "Load More" appended
 // new pages to _accumulatedItems correctly, but _applyClientFilters's
 // default-sort branch re-sorted the WHOLE accumulated list by voteCount on
 // every rebuild (since it re-ran on every build, not just once per fetch),
@@ -13,7 +13,7 @@ import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
-import 'package:the_lounge/screens/browse_screen.dart';
+import 'package:the_lounge/screens/search_screen.dart';
 import 'package:the_lounge/widgets/media_image.dart';
 
 class _PagedRepository extends MockMovieRepository {
@@ -77,7 +77,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
-          home: BrowseScreen(),
+          home: SearchScreen(),
         ),
       ),
     );

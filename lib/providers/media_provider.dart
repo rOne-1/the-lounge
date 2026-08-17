@@ -1525,7 +1525,7 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
 
   /// `m` in the weighted-rating formula — how many votes a title needs
   /// before its own average is trusted close to face value. Deliberately
-  /// higher than Browse's filter (see browse_screen.dart) since the deck is
+  /// higher than Search's filter (see search_screen.dart) since the deck is
   /// meant to read as curated, not just "everything above a bar."
   static const double _minVotesForFullWeight = 300.0;
 

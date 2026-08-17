@@ -1,6 +1,6 @@
 // Regression coverage for NAV-2: navigating to a director/cast member's
 // filmography from DetailScreen must not silently mutate the root shell
-// tab. Previously this pushed BrowseScreen as a sub-route AND switched
+// tab. Previously this pushed SearchScreen as a sub-route AND switched
 // navigationProvider to AppTab.search, so popping back out later stranded
 // the user on the Search tab regardless of where they actually started.
 import 'package:flutter/material.dart';
@@ -9,7 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
-import 'package:the_lounge/screens/browse_screen.dart';
+import 'package:the_lounge/screens/search_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
@@ -61,7 +61,7 @@ void main() {
   );
 
   testWidgets(
-      'tapping the director credit pushes BrowseScreen without mutating navigationProvider',
+      'tapping the director credit pushes SearchScreen without mutating navigationProvider',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -96,14 +96,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(BrowseScreen), findsOneWidget);
+    expect(find.byType(SearchScreen), findsOneWidget);
     expect(container.read(navigationProvider).currentTab, AppTab.home);
 
-    Navigator.of(tester.element(find.byType(BrowseScreen))).pop();
+    Navigator.of(tester.element(find.byType(SearchScreen))).pop();
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(BrowseScreen), findsNothing);
+    expect(find.byType(SearchScreen), findsNothing);
     expect(find.byType(DetailScreen), findsOneWidget);
     expect(container.read(navigationProvider).currentTab, AppTab.home);
   });

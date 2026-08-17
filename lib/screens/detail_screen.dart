@@ -14,7 +14,7 @@ import '../widgets/pressable_scale.dart';
 import '../widgets/status_pulse_ring.dart';
 import '../constants.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'browse_screen.dart';
+import 'search_screen.dart';
 import 'collection_screen.dart';
 
 class DetailScreen extends ConsumerStatefulWidget {
@@ -591,8 +591,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       children: item.genres.map((genre) {
         return PressableScale(
           onTap: () {
-            ref.read(browseGenreProvider.notifier).setGenre(genre);
-            ref.read(browseKeywordProvider.notifier).clearKeyword();
+            ref.read(searchGenreProvider.notifier).setGenre(genre);
+            ref.read(searchKeywordProvider.notifier).clearKeyword();
             ref.read(discoverFilterProvider.notifier).setGenre(
                   genreId: getGenreIdForName(genre),
                   genreName: genre,
@@ -602,7 +602,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   keywordName: null,
                 );
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const BrowseScreen()),
+              MaterialPageRoute(builder: (_) => const SearchScreen()),
             );
           },
           child: Container(
@@ -654,8 +654,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           children: item.keywords!.map((kw) {
             return PressableScale(
               onTap: () {
-                ref.read(browseKeywordProvider.notifier).setKeyword(kw.name);
-                ref.read(browseGenreProvider.notifier).setGenre('All');
+                ref.read(searchKeywordProvider.notifier).setKeyword(kw.name);
+                ref.read(searchGenreProvider.notifier).setGenre('All');
                 ref.read(discoverFilterProvider.notifier).setKeyword(
                       keywordId: kw.id,
                       keywordName: kw.name,
@@ -665,7 +665,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       genreName: null,
                     );
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const BrowseScreen()),
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
                 );
               },
               child: Container(
@@ -851,12 +851,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             personId: pId,
             personName: pName,
           );
-      // NAV-2: BrowseScreen is pushed as a sub-route on top of wherever the
+      // NAV-2: SearchScreen is pushed as a sub-route on top of wherever the
       // user actually came from -- mutating the root navigationProvider tab
       // here used to silently strand them on the Search tab after popping
       // back out, even if they arrived from Home/Discover/etc.
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const BrowseScreen()),
+        MaterialPageRoute(builder: (_) => const SearchScreen()),
       );
     }
 
@@ -1078,7 +1078,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           runSpacing: 8,
           children: item.networks!.map((net) {
             // DATA-2: network pills were previously inert Containers.
-            // Tapping one now filters Browse by that network, matching the
+            // Tapping one now filters Search by that network, matching the
             // existing person/cast-crew navigation pattern.
             return PressableScale(
               onTap: () {
@@ -1087,7 +1087,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       tvNetworkName: net.name,
                     );
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const BrowseScreen()),
+                  MaterialPageRoute(builder: (_) => const SearchScreen()),
                 );
               },
               child: Container(
@@ -1557,7 +1557,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   // NAV-2: see navigateToPerson's comment above -- do not
                   // mutate the root tab for a pushed sub-route.
                   Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const BrowseScreen()),
+                    MaterialPageRoute(builder: (_) => const SearchScreen()),
                   );
                 },
                 child: Padding(

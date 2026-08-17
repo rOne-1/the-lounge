@@ -1,14 +1,14 @@
 // Regression coverage for DATA-2: DetailScreen's network pills were
 // previously inert Containers with no onTap handler. Tapping one now
-// filters Browse by that network, using the same discoverFilterProvider
-// wiring already relied on by the Networks accordion in browse_screen.dart.
+// filters Search by that network, using the same discoverFilterProvider
+// wiring already relied on by the Networks accordion in search_screen.dart.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
-import 'package:the_lounge/screens/browse_screen.dart';
+import 'package:the_lounge/screens/search_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -58,7 +58,7 @@ void main() {
     networks: [MediaNetwork(id: 49, name: 'HBO')],
   );
 
-  testWidgets('tapping a network pill filters Browse by that network',
+  testWidgets('tapping a network pill filters Search by that network',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -92,7 +92,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.byType(BrowseScreen), findsOneWidget);
+    expect(find.byType(SearchScreen), findsOneWidget);
     final filterState = container.read(discoverFilterProvider);
     expect(filterState.tvNetworkId, equals(49));
     expect(filterState.tvNetworkName, equals('HBO'));

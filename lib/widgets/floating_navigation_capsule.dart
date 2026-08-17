@@ -370,7 +370,6 @@ class _CollapsedContent extends ConsumerWidget {
       case AppTab.discover:
         return Icons.style_outlined;
       case AppTab.search:
-      case AppTab.browse:
         return Icons.search;
       case AppTab.yourSpace:
         return Icons.bookmark_outline;

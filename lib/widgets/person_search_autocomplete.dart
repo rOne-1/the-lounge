@@ -132,7 +132,7 @@ class _PersonSearchAutocompleteState
         TextField(
           // Without its own key, this field's internal Scrollable inherits
           // the enclosing ExpansionTile's PageStorageKey (see
-          // _buildExpansionSection in browse_screen.dart) as its nearest
+          // _buildExpansionSection in search_screen.dart) as its nearest
           // ancestor identity, and collides with the bool the ExpansionTile
           // itself stores there for its expanded/collapsed state --
           // restoreScrollOffset() then throws trying to read that bool as

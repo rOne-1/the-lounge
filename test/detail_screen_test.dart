@@ -216,7 +216,7 @@ void main() {
       expect(find.text('Amazon Prime'), findsOneWidget);
     });
 
-    testWidgets('tapping a genre chip updates browseGenreProvider and navigates to BrowseScreen',
+    testWidgets('tapping a genre chip updates searchGenreProvider and navigates to SearchScreen',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -253,7 +253,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(container.read(browseGenreProvider), equals('Sci-Fi'));
+      expect(container.read(searchGenreProvider), equals('Sci-Fi'));
     });
 
     testWidgets(
@@ -674,7 +674,7 @@ void main() {
     });
 
     testWidgets(
-        'tapping a keyword chip updates browseKeywordProvider and resets browseGenreProvider',
+        'tapping a keyword chip updates searchKeywordProvider and resets searchGenreProvider',
         (WidgetTester tester) async {
       tester.view.physicalSize = const Size(1000, 2400);
       tester.view.devicePixelRatio = 1.0;
@@ -714,8 +714,8 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(container.read(browseKeywordProvider), equals('dream'));
-      expect(container.read(browseGenreProvider), equals('All'));
+      expect(container.read(searchKeywordProvider), equals('dream'));
+      expect(container.read(searchGenreProvider), equals('All'));
     });
 
     testWidgets('tapping Watch trailer button opens TrailerPlayer',

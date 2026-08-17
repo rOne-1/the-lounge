@@ -8,7 +8,7 @@ import '../widgets/whats_new_dialog.dart';
 import '../constants.dart';
 import 'home_screen.dart';
 import 'discover_screen.dart';
-import 'browse_screen.dart';
+import 'search_screen.dart';
 import 'your_space_screen.dart';
 import 'calendar_screen.dart';
 
@@ -23,7 +23,7 @@ class ShellScreen extends ConsumerWidget {
     final ambiance = ref.watch(ambianceProvider);
 
     // NAV-1: the last back press before exiting the app must return to
-    // Home first, not terminate immediately from Discover/Browse/YourSpace/
+    // Home first, not terminate immediately from Discover/Search/YourSpace/
     // Calendar. canPop is only true once already on Home, so the OS
     // pop/back gesture is intercepted everywhere else and redirected.
     return PopScope(
@@ -75,7 +75,6 @@ class ShellScreen extends ConsumerWidget {
       case AppTab.discover:
         return 1;
       case AppTab.search:
-      case AppTab.browse:
         return 2;
       case AppTab.yourSpace:
         return 3;
@@ -106,7 +105,7 @@ class ShellScreen extends ConsumerWidget {
           enableAnimation: enableAnimation,
         ),
         const DiscoverScreen(key: PageStorageKey(AppTab.discover)),
-        const BrowseScreen(key: PageStorageKey(AppTab.search)),
+        const SearchScreen(key: PageStorageKey(AppTab.search)),
         const YourSpaceScreen(key: PageStorageKey(AppTab.yourSpace)),
         const CalendarScreen(key: PageStorageKey(AppTab.calendar)),
       ],
