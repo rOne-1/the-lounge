@@ -6,7 +6,7 @@ import '../widgets/noise_texture_overlay.dart';
 import '../widgets/floating_navigation_capsule.dart';
 import '../widgets/whats_new_dialog.dart';
 import '../constants.dart';
-import 'home_screen.dart';
+import 'lobby_screen.dart';
 import 'discover_screen.dart';
 import 'search_screen.dart';
 import 'your_space_screen.dart';
@@ -22,15 +22,16 @@ class ShellScreen extends ConsumerWidget {
     final navigationState = ref.watch(navigationProvider);
     final ambiance = ref.watch(ambianceProvider);
 
-    // NAV-1: the last back press before exiting the app must return to
-    // Home first, not terminate immediately from Discover/Search/YourSpace/
-    // Calendar. canPop is only true once already on Home, so the OS
-    // pop/back gesture is intercepted everywhere else and redirected.
+    // NAV-1/PERS-NAV-1: the last back press before exiting the app must
+    // return to Your Space first (the app's navigation anchor), not
+    // terminate immediately from Lobby/Discover/Search/Calendar. canPop is
+    // only true once already on Your Space, so the OS pop/back gesture is
+    // intercepted everywhere else and redirected.
     return PopScope(
-      canPop: navigationState.currentTab == AppTab.home,
+      canPop: navigationState.currentTab == AppTab.yourSpace,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        ref.read(navigationProvider.notifier).setTab(AppTab.home);
+        ref.read(navigationProvider.notifier).setTab(AppTab.yourSpace);
       },
       // IA-1/NAV-3: fixed chrome (top bar, bottom nav bar, per-screen media
       // toggles) is gone -- ShellScreen now reserves zero screen space for
@@ -70,7 +71,7 @@ class ShellScreen extends ConsumerWidget {
 
   int _tabIndex(AppTab tab) {
     switch (tab) {
-      case AppTab.home:
+      case AppTab.lobby:
         return 0;
       case AppTab.discover:
         return 1;
@@ -100,8 +101,8 @@ class ShellScreen extends ConsumerWidget {
     return _PersistentTabView(
       index: index,
       children: [
-        HomeScreen(
-          key: const PageStorageKey(AppTab.home),
+        LobbyScreen(
+          key: const PageStorageKey(AppTab.lobby),
           enableAnimation: enableAnimation,
         ),
         const DiscoverScreen(key: PageStorageKey(AppTab.discover)),

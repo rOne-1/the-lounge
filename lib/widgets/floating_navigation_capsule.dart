@@ -365,8 +365,8 @@ class _CollapsedContent extends ConsumerWidget {
 
   static IconData _iconForTab(AppTab tab) {
     switch (tab) {
-      case AppTab.home:
-        return Icons.home_outlined;
+      case AppTab.lobby:
+        return Icons.theaters_outlined;
       case AppTab.discover:
         return Icons.style_outlined;
       case AppTab.search:
@@ -388,11 +388,14 @@ class _ExpandedContent extends ConsumerWidget {
     required this.onSettings,
   });
 
+  // PERS-NAV-1: Your Space leads the list, reflecting its role as the app's
+  // navigation anchor (default startup tab, and where back-navigation from
+  // every other tab lands).
   static const _destinations = [
-    (AppTab.home, 'Home', Icons.home_outlined),
+    (AppTab.yourSpace, 'Space', Icons.bookmark_outline),
+    (AppTab.lobby, 'Lobby', Icons.theaters_outlined),
     (AppTab.discover, 'Discover', Icons.style_outlined),
     (AppTab.search, 'Search', Icons.search),
-    (AppTab.yourSpace, 'Space', Icons.bookmark_outline),
     (AppTab.calendar, 'Calendar', Icons.calendar_today_outlined),
   ];
 

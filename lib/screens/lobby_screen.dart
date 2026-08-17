@@ -16,7 +16,7 @@ import '../widgets/ambient_glow.dart';
 import '../widgets/quick_status_sheet.dart';
 import '../widgets/pick_for_me_card.dart';
 
-class DeduplicatedHomeRails {
+class DeduplicatedLobbyRails {
   final bool isMovies;
   final List<MediaItem> rail1Items;
   final AsyncValue<List<MediaItem>> trendingAsync;
@@ -26,7 +26,7 @@ class DeduplicatedHomeRails {
   // removed -- null in TV mode. Movies mode keeps "Upcoming" here.
   final AsyncValue<List<MediaItem>>? rail5Deduplicated;
 
-  const DeduplicatedHomeRails({
+  const DeduplicatedLobbyRails({
     required this.isMovies,
     required this.rail1Items,
     required this.trendingAsync,
@@ -36,7 +36,7 @@ class DeduplicatedHomeRails {
   });
 }
 
-class HomeRailsInput {
+class LobbyRailsInput {
   final bool isMovies;
   final List<MediaItem> rail1Items;
   final AsyncValue<List<MediaItem>> trendingAsync;
@@ -44,7 +44,7 @@ class HomeRailsInput {
   final AsyncValue<List<MediaItem>> rail4Async;
   final AsyncValue<List<MediaItem>>? rail5Async;
 
-  const HomeRailsInput({
+  const LobbyRailsInput({
     required this.isMovies,
     required this.rail1Items,
     required this.trendingAsync,
@@ -56,7 +56,7 @@ class HomeRailsInput {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is HomeRailsInput &&
+      other is LobbyRailsInput &&
           runtimeType == other.runtimeType &&
           isMovies == other.isMovies &&
           listEquals(rail1Items, other.rail1Items) &&
@@ -76,8 +76,8 @@ class HomeRailsInput {
       );
 }
 
-final deduplicatedHomeRailsProvider = Provider.autoDispose
-    .family<DeduplicatedHomeRails, HomeRailsInput>((ref, input) {
+final deduplicatedLobbyRailsProvider = Provider.autoDispose
+    .family<DeduplicatedLobbyRails, LobbyRailsInput>((ref, input) {
   final priorSeenIds = <String>{};
   for (final item in input.rail1Items) {
     priorSeenIds.add(item.id);
@@ -105,7 +105,7 @@ final deduplicatedHomeRailsProvider = Provider.autoDispose
   final rail4Deduplicated = input.rail4Async.whenData(deduplicateRailList);
   final rail5Deduplicated = input.rail5Async?.whenData(deduplicateRailList);
 
-  return DeduplicatedHomeRails(
+  return DeduplicatedLobbyRails(
     isMovies: input.isMovies,
     rail1Items: input.rail1Items,
     trendingAsync: input.trendingAsync,
@@ -115,10 +115,10 @@ final deduplicatedHomeRailsProvider = Provider.autoDispose
   );
 });
 
-class HomeScreen extends ConsumerWidget {
+class LobbyScreen extends ConsumerWidget {
   final bool? enableAnimation;
 
-  const HomeScreen({super.key, this.enableAnimation});
+  const LobbyScreen({super.key, this.enableAnimation});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -153,7 +153,7 @@ class HomeScreen extends ConsumerWidget {
         .where((m) => m.type == activeType)
         .toList();
 
-    final railsInput = HomeRailsInput(
+    final railsInput = LobbyRailsInput(
       isMovies: isMovies,
       rail1Items: rail1Items,
       trendingAsync: trendingAsync,
@@ -162,10 +162,10 @@ class HomeScreen extends ConsumerWidget {
       rail5Async: rail5Async,
     );
 
-    final homeRails = ref.watch(deduplicatedHomeRailsProvider(railsInput));
-    final topRatedDeduplicated = homeRails.topRatedDeduplicated;
-    final rail4Deduplicated = homeRails.rail4Deduplicated;
-    final rail5Deduplicated = homeRails.rail5Deduplicated;
+    final lobbyRails = ref.watch(deduplicatedLobbyRailsProvider(railsInput));
+    final topRatedDeduplicated = lobbyRails.topRatedDeduplicated;
+    final rail4Deduplicated = lobbyRails.rail4Deduplicated;
+    final rail5Deduplicated = lobbyRails.rail5Deduplicated;
 
 
     String greeting() {

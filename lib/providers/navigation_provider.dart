@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum AppTab {
-  home,
+  lobby,
   discover,
   search,
   yourSpace,
@@ -17,8 +17,11 @@ class NavigationState {
   final AppTab currentTab;
   final MediaTypeToggle activeMediaType;
 
+  // PERS-NAV-1: Your Space is the app's default startup destination and
+  // navigation anchor (see ShellScreen's PopScope and
+  // FloatingNavigationCapsule's destination ordering).
   const NavigationState({
-    this.currentTab = AppTab.home,
+    this.currentTab = AppTab.yourSpace,
     this.activeMediaType = MediaTypeToggle.movies,
   });
 
