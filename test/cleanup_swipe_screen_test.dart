@@ -24,6 +24,15 @@ MediaItem _movie(int i) => MediaItem(
       genres: const ['Drama'],
     );
 
+MediaItem _tvShow(int i) => MediaItem(
+      id: 'tv-$i',
+      title: 'Show $i',
+      type: MediaType.tv,
+      rating: 7.0,
+      overview: 'Overview $i',
+      genres: const ['Drama'],
+    );
+
 void main() {
   setUp(() {
     GoogleFonts.config.allowRuntimeFetching = false;
@@ -103,6 +112,32 @@ void main() {
 
       expect(find.text('All cleaned up!'), findsOneWidget);
       expect(find.text('You reviewed 1 title.'), findsOneWidget);
+    });
+
+    testWidgets('only queues Saved titles matching the active Movies/TV toggle', (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(_InstantRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.read(mediaProvider.notifier).addToMaybeList(_movie(0));
+      container.read(mediaProvider.notifier).addToMaybeList(_tvShow(0));
+      // Default activeMediaType is movies -- no explicit override needed.
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CleanupSwipeScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Movie 0'), findsOneWidget);
+      expect(find.text('Show 0'), findsNothing);
     });
   });
 

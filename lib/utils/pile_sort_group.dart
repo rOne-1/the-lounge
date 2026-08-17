@@ -16,7 +16,8 @@ enum PileSortOption {
 enum PileGroupOption {
   none('None'),
   genre('Genre'),
-  ratingBand('Rating Band');
+  ratingBand('Rating Band'),
+  language('Language');
 
   final String label;
   const PileGroupOption(this.label);
@@ -93,6 +94,20 @@ Map<String, List<MediaItem>> groupByRatingBand(List<MediaItem> items) {
   final Map<String, List<MediaItem>> result = {};
   for (final item in items) {
     result.putIfAbsent(bandFor(item.rating), () => []).add(item);
+  }
+  return result;
+}
+
+/// Groups by [MediaItem.originalLanguageDisplay] (e.g. "English", "Korean"),
+/// the same display string already shown in the language meta badge and
+/// used by the language filter elsewhere in the app. Titles with no known
+/// language land in "Unknown".
+Map<String, List<MediaItem>> groupByLanguage(List<MediaItem> items) {
+  final Map<String, List<MediaItem>> result = {};
+  for (final item in items) {
+    final display = item.originalLanguageDisplay;
+    final key = (display == null || display.isEmpty) ? 'Unknown' : display;
+    result.putIfAbsent(key, () => []).add(item);
   }
   return result;
 }

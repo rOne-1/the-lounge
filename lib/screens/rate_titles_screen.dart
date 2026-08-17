@@ -3,13 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../widgets/lounge_rating_sheet.dart';
 import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
 
 /// PERS-RATE-2: all watched titles that have no overall personal rating yet.
-List<MediaItem> unratedWatchedTitles(MediaState state) {
+/// [typeFilter], when given, scopes the queue to just that media type --
+/// mirrors the Movies/TV toggle every Piles screen already respects, which
+/// the Tools screens previously ignored entirely.
+List<MediaItem> unratedWatchedTitles(MediaState state, {MediaType? typeFilter}) {
   return state.watchedList.values
+      .where((item) => typeFilter == null || item.type == typeFilter)
       .where((item) => findPrimaryWatchRecord(state.watchHistory, item.id, null) == null)
       .toList();
 }
@@ -27,11 +32,15 @@ class RateTitlesScreen extends ConsumerStatefulWidget {
 
 class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
   late List<MediaItem> _queue;
+  late MediaType _activeType;
 
   @override
   void initState() {
     super.initState();
-    _queue = unratedWatchedTitles(ref.read(mediaProvider));
+    _activeType = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies
+        ? MediaType.movie
+        : MediaType.tv;
+    _queue = unratedWatchedTitles(ref.read(mediaProvider), typeFilter: _activeType);
   }
 
   void _rate(PersonalRating rating) {
@@ -70,7 +79,10 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
       ),
       body: SafeArea(
         child: _queue.isEmpty
-            ? _EmptyState(onDone: () => Navigator.of(context).pop())
+            ? _EmptyState(
+                activeType: _activeType,
+                onDone: () => Navigator.of(context).pop(),
+              )
             : Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
@@ -309,13 +321,15 @@ class _RatingTierGrid extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
+  final MediaType activeType;
   final VoidCallback onDone;
 
-  const _EmptyState({required this.onDone});
+  const _EmptyState({required this.activeType, required this.onDone});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
+    final typeLabel = activeType == MediaType.movie ? 'movies' : 'shows';
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -335,7 +349,7 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'All watched titles are rated.',
+              'All watched $typeLabel are rated.',
               style: AppThemes.safeGeist(fontSize: 13, color: colors.sub),
               textAlign: TextAlign.center,
             ),

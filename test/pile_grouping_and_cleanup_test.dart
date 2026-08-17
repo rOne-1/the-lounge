@@ -88,6 +88,18 @@ void main() {
       expect(grouped['5-6'], [comedy1]);
       expect(grouped['Unrated'], [unrated]);
     });
+
+    test('groupByLanguage buckets by display language, unknowns separately', () {
+      final english = action1.copyWith(originalLanguage: 'en');
+      final korean = action2.copyWith(originalLanguage: 'ko');
+      final alsoEnglish = comedy1.copyWith(originalLanguage: 'en');
+
+      final grouped = groupByLanguage([english, korean, alsoEnglish, unrated]);
+
+      expect(grouped['English'], [english, alsoEnglish]);
+      expect(grouped['Korean'], [korean]);
+      expect(grouped['Unknown'], [unrated]);
+    });
   });
 
   group('PERS-SORT-1: personalRatingSort (Watched pile only)', () {

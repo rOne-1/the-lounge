@@ -86,7 +86,7 @@ void main() {
       await pumpScreen(tester);
 
       expect(find.text("You're all caught up!"), findsOneWidget);
-      expect(find.text('All watched titles are rated.'), findsOneWidget);
+      expect(find.text('All watched movies are rated.'), findsOneWidget);
     });
 
     testWidgets('presents the first unrated watched title with rating tiers and a Skip button',
@@ -117,6 +117,41 @@ void main() {
         expect(find.text(rating.label), findsOneWidget);
       }
       expect(find.text('Skip'), findsOneWidget);
+    });
+
+    testWidgets('only queues unrated watched titles matching the active Movies/TV toggle',
+        (tester) async {
+      final tvShow = MediaItem(
+        id: 'tv-1',
+        title: 'Gamma',
+        type: MediaType.tv,
+        rating: 8.0,
+        overview: 'An unrated show.',
+        genres: const ['Drama'],
+      );
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(_InstantRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.read(mediaProvider.notifier).addToWatchedList(movie1);
+      container.read(mediaProvider.notifier).addToWatchedList(tvShow);
+      // Default activeMediaType is movies -- no explicit override needed.
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: RateTitlesScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1 title left to rate'), findsOneWidget);
+      expect(find.text('Alpha'), findsOneWidget);
     });
 
     testWidgets('tapping a rating tier rates the front card and advances the queue',

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
 
@@ -30,7 +31,18 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
   @override
   void initState() {
     super.initState();
-    _queue = ref.read(mediaProvider).maybeList.values.toList();
+    // PERS-SORT-1: scoped to the active Movies/TV toggle, mirroring every
+    // Piles screen -- previously this pulled the whole Saved pile regardless
+    // of the toggle.
+    final activeType = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies
+        ? MediaType.movie
+        : MediaType.tv;
+    _queue = ref
+        .read(mediaProvider)
+        .maybeList
+        .values
+        .where((item) => item.type == activeType)
+        .toList();
     _startCount = _queue.length;
   }
 

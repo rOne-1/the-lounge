@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
@@ -37,11 +38,20 @@ class _RewatchSummary {
 class RewatchVaultScreen extends ConsumerWidget {
   const RewatchVaultScreen({super.key});
 
-  List<_RewatchSummary> _computeSummaries(MediaState state) {
+  // PERS-SORT-1: scoped to the active Movies/TV toggle, mirroring every
+  // Piles screen -- previously this listed rewatches of both types
+  // regardless of the toggle. A title not found in any of the 6 status
+  // piles (needs an async mediaDetailsProvider fetch to resolve) can't be
+  // type-checked synchronously here -- kept rather than dropped, since
+  // wrongly hiding a real rewatch is worse than occasionally showing one
+  // of the "wrong" type for a beat.
+  List<_RewatchSummary> _computeSummaries(MediaState state, MediaType activeType) {
     final summaries = <_RewatchSummary>[];
     state.watchHistory.forEach((mediaId, records) {
       final rewatches = records.where((r) => !r.isFirstWatch).toList();
       if (rewatches.isEmpty) return;
+      final knownType = _findKnownItem(state, mediaId)?.type;
+      if (knownType != null && knownType != activeType) return;
       final mostRecent = rewatches
           .map((r) => r.date ?? r.recordedAt)
           .reduce((a, b) => a.isAfter(b) ? a : b);
@@ -55,7 +65,10 @@ class RewatchVaultScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.ambianceColors;
     final state = ref.watch(mediaProvider);
-    final summaries = _computeSummaries(state);
+    final activeType = ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
+        ? MediaType.movie
+        : MediaType.tv;
+    final summaries = _computeSummaries(state, activeType);
 
     return Scaffold(
       backgroundColor: colors.base,

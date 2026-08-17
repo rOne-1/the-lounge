@@ -186,9 +186,10 @@ class _PileScreenState extends ConsumerState<PileScreen> {
     final colors = context.ambianceColors;
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
-    final banner = widget.kind == PileKind.saved
-        ? _buildCleanupBanner(context, ref.read(mediaProvider).maybeList.length)
-        : null;
+    // Matches CleanupSwipeScreen's own now-type-scoped queue -- the banner's
+    // count and threshold should describe exactly what tapping it opens.
+    final banner =
+        widget.kind == PileKind.saved ? _buildCleanupBanner(context, items.length) : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -315,14 +316,30 @@ class _PileScreenState extends ConsumerState<PileScreen> {
   }
 
   Widget _buildGroupedGrid(BuildContext context, List<MediaItem> items) {
-    final grouped =
-        _group == PileGroupOption.genre ? groupByGenre(items) : groupByRatingBand(items);
+    final Map<String, List<MediaItem>> grouped;
+    switch (_group) {
+      case PileGroupOption.genre:
+        grouped = groupByGenre(items);
+        break;
+      case PileGroupOption.language:
+        grouped = groupByLanguage(items);
+        break;
+      case PileGroupOption.ratingBand:
+      case PileGroupOption.none:
+        grouped = groupByRatingBand(items);
+        break;
+    }
     final entries = grouped.entries.toList()
       ..sort((a, b) {
         if (_group == PileGroupOption.ratingBand) {
           if (a.key == 'Unrated') return 1;
           if (b.key == 'Unrated') return -1;
           return b.key.compareTo(a.key); // highest band first
+        }
+        if (_group == PileGroupOption.language) {
+          if (a.key == 'Unknown') return 1;
+          if (b.key == 'Unknown') return -1;
+          return a.key.compareTo(b.key); // language alphabetical
         }
         return a.key.compareTo(b.key); // genre alphabetical
       });

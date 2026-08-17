@@ -122,6 +122,51 @@ void main() {
       expect(find.textContaining('Rewatched 1 time'), findsOneWidget);
     });
 
+    testWidgets('only shows rewatches for titles matching the active Movies/TV toggle',
+        (tester) async {
+      final rewatchedShow = MediaItem(
+        id: 'tv-rewatch-1',
+        title: 'Rewatched Show',
+        type: MediaType.tv,
+        rating: 8.5,
+        overview: 'A show worth watching again.',
+        genres: const ['Sci-Fi'],
+      );
+      final container = await pumpVault(tester);
+      // Known synchronously (in a status pile) so the type filter can apply
+      // without waiting on the async mediaDetailsProvider fallback.
+      container.read(mediaProvider.notifier).addToWatchedList(rewatchedMovie);
+      container.read(mediaProvider.notifier).addToWatchedList(rewatchedShow);
+      container.read(mediaProvider.notifier).addWatchRecord(
+            rewatchedMovie.id,
+            WatchRecord(isFirstWatch: true),
+          );
+      container.read(mediaProvider.notifier).addWatchRecord(
+            rewatchedMovie.id,
+            WatchRecord(isFirstWatch: false),
+          );
+      container.read(mediaProvider.notifier).addWatchRecord(
+            rewatchedShow.id,
+            WatchRecord(isFirstWatch: true),
+          );
+      container.read(mediaProvider.notifier).addWatchRecord(
+            rewatchedShow.id,
+            WatchRecord(isFirstWatch: false),
+          );
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: RewatchVaultScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Default activeMediaType is movies -- no explicit override needed.
+      expect(find.text(rewatchedMovie.title), findsOneWidget);
+      expect(find.text(rewatchedShow.title), findsNothing);
+    });
+
     testWidgets('tapping a row navigates to DetailScreen', (tester) async {
       final container = await pumpVault(tester);
       container.read(mediaProvider.notifier).addWatchRecord(
