@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:the_lounge/screens/home_screen.dart';
+import 'package:the_lounge/screens/lobby_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
@@ -98,7 +98,7 @@ void main() {
     );
   }
 
-  testWidgets('HomeScreen displays dynamic greeting, trending carousel, and PickForMe card', (WidgetTester tester) async {
+  testWidgets('LobbyScreen displays dynamic greeting, trending carousel, and PickForMe card', (WidgetTester tester) async {
     final trending = createMockItems(6, 'Trending', MediaType.movie);
     final popular = createMockItems(4, 'Continue', MediaType.movie);
     final mockRepo = MockTestRepository(
@@ -119,7 +119,7 @@ void main() {
         container: container,
         child: const MaterialApp(
           home: Scaffold(
-            body: HomeScreen(enableAnimation: false),
+            body: LobbyScreen(enableAnimation: false),
           ),
         ),
       ),
@@ -163,7 +163,7 @@ void main() {
     expect(find.text('Continue Movie 0'), findsOneWidget);
   });
 
-  testWidgets('HomeScreen contains AnimatedSize, AnimatedCrossFade and AnimatedSwitcher transitions for TV mode', (WidgetTester tester) async {
+  testWidgets('LobbyScreen contains AnimatedSize, AnimatedCrossFade and AnimatedSwitcher transitions for TV mode', (WidgetTester tester) async {
     final trending = createMockItems(6, 'Trending', MediaType.movie);
     final popular = createMockItems(4, 'Continue', MediaType.movie);
     // Non-empty: MediaRail now hides itself entirely (no AnimatedSwitcher)
@@ -189,7 +189,7 @@ void main() {
         container: container,
         child: const MaterialApp(
           home: Scaffold(
-            body: HomeScreen(enableAnimation: false),
+            body: LobbyScreen(enableAnimation: false),
           ),
         ),
       ),
@@ -227,7 +227,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
-          home: Scaffold(body: HomeScreen(enableAnimation: false)),
+          home: Scaffold(body: LobbyScreen(enableAnimation: false)),
         ),
       ),
     );
@@ -259,7 +259,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: Scaffold(body: HomeScreen(enableAnimation: false)),
+            home: Scaffold(body: LobbyScreen(enableAnimation: false)),
           ),
         ),
       );
@@ -303,7 +303,7 @@ void main() {
         UncontrolledProviderScope(
           container: container,
           child: const MaterialApp(
-            home: Scaffold(body: HomeScreen(enableAnimation: false)),
+            home: Scaffold(body: LobbyScreen(enableAnimation: false)),
           ),
         ),
       );

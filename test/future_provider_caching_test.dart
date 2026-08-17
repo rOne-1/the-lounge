@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:the_lounge/screens/home_screen.dart';
+import 'package:the_lounge/screens/lobby_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
@@ -164,7 +164,7 @@ void main() {
     });
 
     testWidgets(
-        'HomeScreen rebuilds caused by media type toggle preserve cached data without loading spinner',
+        'LobbyScreen rebuilds caused by media type toggle preserve cached data without loading spinner',
         (WidgetTester tester) async {
       final mockRepo = CachingTestRepository(
         movies: [testMovie],
@@ -178,7 +178,7 @@ void main() {
         tester.view.resetDevicePixelRatio();
       });
 
-      // NAV-3: the Movies/TV toggle no longer lives inside HomeScreen itself
+      // NAV-3: the Movies/TV toggle no longer lives inside LobbyScreen itself
       // (it moved to the floating navigation capsule, shell-level) -- drive
       // the underlying media-type state directly via the container instead,
       // which is what this test actually cares about verifying.
@@ -194,7 +194,7 @@ void main() {
           container: container,
           child: const MaterialApp(
             home: Scaffold(
-              body: HomeScreen(enableAnimation: false),
+              body: LobbyScreen(enableAnimation: false),
             ),
           ),
         ),

@@ -47,7 +47,7 @@ void main() {
         'color: const Color.fromRGBO(255, 255, 255, 0.72)), maxLines: 2, overflow: TextOverflow.ellipsis),',
       ],
       'lib/screens/shell_screen.dart': [],
-      'lib/screens/home_screen.dart': [],
+      'lib/screens/lobby_screen.dart': [],
       'lib/screens/collection_screen.dart': [
         // Back-button circular chip floating over a backdrop image inverts
         // fully black/white by brightness to stay visible regardless of

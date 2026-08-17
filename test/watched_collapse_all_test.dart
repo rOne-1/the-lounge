@@ -1,14 +1,27 @@
 // Regression coverage for E7: a single control to collapse/expand every
-// collection group in the Watched tab at once, instead of tapping each
+// collection group in the Watched pile at once, instead of tapping each
 // ExpansionTile individually.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:the_lounge/screens/your_space_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:the_lounge/screens/pile_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
+import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
+
+/// standaloneMovie has no belongsToCollection, so addToWatchedList fires
+/// _enrichWatchedItemCollection's fire-and-forget getMediaDetails call --
+/// the default MockMovieRepository simulates 500ms of latency there, which
+/// can leave a pending timer past test teardown. Mirrors the
+/// _InstantEmptyRepository pattern used elsewhere (e.g.
+/// settings_screen_test.dart, rate_titles_screen_test.dart).
+class _InstantRepository extends MockMovieRepository {
+  @override
+  Future<MediaItem?> getMediaDetails(String id) async => null;
+}
 
 void main() {
   setUp(() {
@@ -44,27 +57,30 @@ void main() {
     genres: ['Drama'],
   );
 
-  Future<ProviderContainer> pumpWatchedTab(WidgetTester tester) async {
+  Future<ProviderContainer> pumpWatchedPile(
+    WidgetTester tester,
+    List<MediaItem> items,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(
       overrides: [
-        movieRepositoryProvider.overrideWithValue(MockMovieRepository()),
+        movieRepositoryProvider.overrideWithValue(_InstantRepository()),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
-    container.read(mediaProvider.notifier).addToWatchedList(collectionMovieA);
-    container.read(mediaProvider.notifier).addToWatchedList(collectionMovieB);
-    container.read(mediaProvider.notifier).addToWatchedList(standaloneMovie);
+    for (final item in items) {
+      container.read(mediaProvider.notifier).addToWatchedList(item);
+    }
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
-          home: Scaffold(body: YourSpaceScreen()),
+          home: PileScreen(kind: PileKind.watched),
         ),
       ),
     );
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.text('Watched'));
     await tester.pumpAndSettle();
 
     return container;
@@ -72,7 +88,10 @@ void main() {
 
   testWidgets('Collapse All / Expand All toggles every Watched group at once',
       (tester) async {
-    final container = await pumpWatchedTab(tester);
+    final container = await pumpWatchedPile(
+      tester,
+      [collectionMovieA, collectionMovieB, standaloneMovie],
+    );
     addTearDown(container.dispose);
 
     // Both groups start expanded -- their sub-grids are mounted.
@@ -103,25 +122,8 @@ void main() {
 
   testWidgets('Collapse All button is hidden when there is only one group',
       (tester) async {
-    final container = ProviderContainer(
-      overrides: [
-        movieRepositoryProvider.overrideWithValue(MockMovieRepository()),
-      ],
-    );
+    final container = await pumpWatchedPile(tester, [standaloneMovie]);
     addTearDown(container.dispose);
-    container.read(mediaProvider.notifier).addToWatchedList(standaloneMovie);
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const MaterialApp(
-          home: Scaffold(body: YourSpaceScreen()),
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Watched'));
-    await tester.pumpAndSettle();
 
     expect(find.text('Collapse All'), findsNothing);
     expect(find.text('Expand All'), findsNothing);

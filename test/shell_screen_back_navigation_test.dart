@@ -1,6 +1,7 @@
-// Regression coverage for NAV-1: the last back press/gesture before exiting
-// the app must return to the Home tab first, not terminate immediately, when
-// the user is on any other tab (Discover, Browse, YourSpace, Calendar).
+// Regression coverage for NAV-1/PERS-NAV-1: the last back press/gesture
+// before exiting the app must return to Your Space first (the app's
+// navigation anchor), not terminate immediately, when the user is on any
+// other tab (Lobby, Discover, Browse, Calendar).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -41,7 +42,7 @@ void main() {
   }
 
   testWidgets(
-      'system back on a non-Home tab switches to Home instead of popping the root route',
+      'system back on a non-Your-Space tab switches to Your Space instead of popping the root route',
       (tester) async {
     final container = await pumpShell(tester, AppTab.discover);
     addTearDown(container.dispose);
@@ -54,35 +55,35 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(didPop, isTrue);
-    expect(container.read(navigationProvider).currentTab, AppTab.home);
+    expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
     expect(find.byType(ShellScreen), findsOneWidget);
   });
 
-  testWidgets('system back on Home is allowed to pop the root route', (tester) async {
-    final container = await pumpShell(tester, AppTab.home);
+  testWidgets('system back on Your Space is allowed to pop the root route', (tester) async {
+    final container = await pumpShell(tester, AppTab.yourSpace);
     addTearDown(container.dispose);
 
-    expect(container.read(navigationProvider).currentTab, AppTab.home);
+    expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
 
     // false here means PopScope did not intercept it -- the root route's
     // own single-route Navigator has nothing left to pop to, so the app is
-    // left to fall through to the OS (exit), which is the desired Home
-    // behavior per NAV-1.
+    // left to fall through to the OS (exit), which is the desired
+    // navigation-anchor behavior per PERS-NAV-1.
     final didPop = await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(didPop, isFalse);
   });
 
-  testWidgets('back from YourSpace, Browse, and Calendar all redirect to Home',
+  testWidgets('back from Lobby, Discover, Search, and Calendar all redirect to Your Space',
       (tester) async {
-    for (final tab in [AppTab.yourSpace, AppTab.search, AppTab.calendar]) {
+    for (final tab in [AppTab.lobby, AppTab.discover, AppTab.search, AppTab.calendar]) {
       final container = await pumpShell(tester, tab);
 
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(container.read(navigationProvider).currentTab, AppTab.home);
+      expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
 
       container.dispose();
       await tester.pumpWidget(const SizedBox.shrink());

@@ -9,7 +9,7 @@ import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/screens/calendar_screen.dart';
-import 'package:the_lounge/screens/your_space_screen.dart';
+import 'package:the_lounge/screens/pile_screen.dart';
 import 'package:the_lounge/widgets/atmospheric_empty_state.dart';
 
 /// Returns zero titles from every list endpoint -- MockMovieRepository's
@@ -34,8 +34,8 @@ void main() {
     prefs = await SharedPreferences.getInstance();
   });
 
-  group('YourSpaceScreen empty states (FS-3)', () {
-    testWidgets('Watchlist tab shows AtmosphericEmptyState, CTA navigates to Discover', (tester) async {
+  group('PileScreen empty states (FS-3)', () {
+    testWidgets('Watchlist pile shows AtmosphericEmptyState, CTA navigates to Discover', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -47,7 +47,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: YourSpaceScreen()),
+          child: const MaterialApp(home: PileScreen(kind: PileKind.watchlist)),
         ),
       );
       await tester.pumpAndSettle();
@@ -63,7 +63,7 @@ void main() {
       expect(container.read(navigationProvider).currentTab, equals(AppTab.discover));
     });
 
-    testWidgets('Watched tab shows its own AtmosphericEmptyState copy', (tester) async {
+    testWidgets('Watched pile shows its own AtmosphericEmptyState copy', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -75,12 +75,9 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: YourSpaceScreen()),
+          child: const MaterialApp(home: PileScreen(kind: PileKind.watched)),
         ),
       );
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.text('Watched'));
       await tester.pumpAndSettle();
 
       expect(find.text('Nothing watched yet'), findsOneWidget);

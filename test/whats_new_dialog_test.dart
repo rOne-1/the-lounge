@@ -84,7 +84,7 @@ void main() {
       // runs a continuously-repeating animation, so pumpAndSettle() never
       // terminates -- bounded pumps instead, matching the pattern already
       // established for DetailScreen elsewhere in this suite. Several
-      // short pumps (rather than one long one) so HomeScreen's own
+      // short pumps (rather than one long one) so LobbyScreen's own
       // staggered rail-item entrance animations, which lazily build more
       // items as the sliver's cache extent is reached, get a chance to
       // fully settle too.

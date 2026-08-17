@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:the_lounge/screens/home_screen.dart';
+import 'package:the_lounge/screens/lobby_screen.dart';
 import 'package:the_lounge/screens/your_space_screen.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
@@ -132,7 +132,9 @@ void main() {
     )
   ];
 
-  testWidgets('YourSpaceScreen has tabs: Watchlist, Saved, In Progress, Watched', (WidgetTester tester) async {
+  testWidgets(
+      'YourSpaceScreen shows the 3-group landing page, and the Watching pile card opens its PileScreen',
+      (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(items: {'movie-10': testMovie, 'tv-20': testTvShow});
     final prefs = await SharedPreferences.getInstance();
 
@@ -160,20 +162,24 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Watchlist'), findsAtLeast(1));
-    expect(find.text('Saved'), findsAtLeast(1));
-    expect(find.text('In Progress'), findsAtLeast(1));
-    expect(find.text('Watched'), findsAtLeast(1));
+    // PERS-SPACE-1: 3-group landing page (Piles/Tools/Browse & Discovery),
+    // not the old 4-tab layout.
+    expect(find.text('PILES'), findsOneWidget);
+    expect(find.text('TOOLS'), findsOneWidget);
+    expect(find.text('BROWSE & DISCOVERY'), findsOneWidget);
+    expect(find.text('Watchlist'), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
+    expect(find.text('Watching'), findsOneWidget);
+    expect(find.text('Watched'), findsOneWidget);
 
-    // Tap 'In Progress' tab
-    await tester.tap(find.text('In Progress'));
+    // Tap the "Watching" pile card, which now pushes a standalone PileScreen.
+    await tester.tap(find.text('Watching'));
     await tester.pumpAndSettle();
 
-    // Verify item in watching tab
     expect(find.text('Inception'), findsOneWidget);
   });
 
-  testWidgets('Section 2 & 3: HomeScreen Continue Watching rail strictly uses watchingList & Next Episode Banner shows real data for TV', (WidgetTester tester) async {
+  testWidgets('Section 2 & 3: LobbyScreen Continue Watching rail strictly uses watchingList & Next Episode Banner shows real data for TV', (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(
       items: {'tv-20': testTvShow},
       seasonsMap: {'tv-20': testSeasons},
@@ -205,7 +211,7 @@ void main() {
         container: container,
         child: const MaterialApp(
           home: Scaffold(
-            body: HomeScreen(enableAnimation: false),
+            body: LobbyScreen(enableAnimation: false),
           ),
         ),
       ),
@@ -304,7 +310,7 @@ void main() {
         container: container,
         child: const MaterialApp(
           home: Scaffold(
-            body: HomeScreen(enableAnimation: false),
+            body: LobbyScreen(enableAnimation: false),
           ),
         ),
       ),
@@ -354,7 +360,7 @@ void main() {
         container: container,
         child: const MaterialApp(
           home: Scaffold(
-            body: HomeScreen(enableAnimation: false),
+            body: LobbyScreen(enableAnimation: false),
           ),
         ),
       ),
@@ -365,7 +371,7 @@ void main() {
     expect(find.text('NEXT EPISODE'), findsOneWidget);
   });
 
-  testWidgets('HomeScreen hides Next Episode banner when no TV show is in watchingList', (WidgetTester tester) async {
+  testWidgets('LobbyScreen hides Next Episode banner when no TV show is in watchingList', (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(
       items: {'tv-20': testTvShow},
       seasonsMap: {'tv-20': testSeasons},
@@ -388,7 +394,7 @@ void main() {
         container: container,
         child: const MaterialApp(
           home: Scaffold(
-            body: HomeScreen(enableAnimation: false),
+            body: LobbyScreen(enableAnimation: false),
           ),
         ),
       ),

@@ -9,7 +9,7 @@ import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
-import 'package:the_lounge/screens/home_screen.dart';
+import 'package:the_lounge/screens/lobby_screen.dart';
 import 'package:the_lounge/screens/media_list_screen.dart';
 
 MediaItem _movie(String id, String title) => MediaItem(
@@ -99,7 +99,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
-          home: HomeScreen(enableAnimation: false),
+          home: LobbyScreen(enableAnimation: false),
         ),
       ),
     );

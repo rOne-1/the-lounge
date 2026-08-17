@@ -53,7 +53,7 @@ void main() {
     addTearDown(container.dispose);
 
     expect(capsuleFinder, findsOneWidget);
-    expect(find.byKey(const ValueKey('floating_nav_tab_home')), findsNothing);
+    expect(find.byKey(const ValueKey('floating_nav_tab_lobby')), findsNothing);
     // Old fixed chrome is gone.
     expect(find.byKey(const ValueKey('settings_button')), findsNothing);
   });
@@ -66,7 +66,7 @@ void main() {
     await tester.tap(capsuleFinder);
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('floating_nav_tab_home')), findsOneWidget);
+    expect(find.byKey(const ValueKey('floating_nav_tab_lobby')), findsOneWidget);
     expect(find.byKey(const ValueKey('floating_nav_tab_discover')), findsOneWidget);
     expect(find.byKey(const ValueKey('floating_nav_tab_search')), findsOneWidget);
     expect(find.byKey(const ValueKey('floating_nav_tab_yourSpace')), findsOneWidget);
@@ -89,7 +89,7 @@ void main() {
     expect(container.read(navigationProvider).currentTab, AppTab.discover);
     expect(find.byType(DiscoverScreen), findsOneWidget);
     // Collapsed again after selection.
-    expect(find.byKey(const ValueKey('floating_nav_tab_home')), findsNothing);
+    expect(find.byKey(const ValueKey('floating_nav_tab_lobby')), findsNothing);
   });
 
   testWidgets('tapping outside the expanded capsule collapses it', (tester) async {
@@ -98,13 +98,13 @@ void main() {
 
     await tester.tap(capsuleFinder);
     await tester.pumpAndSettle();
-    expect(find.byKey(const ValueKey('floating_nav_tab_home')), findsOneWidget);
+    expect(find.byKey(const ValueKey('floating_nav_tab_lobby')), findsOneWidget);
 
     // Tap far from the capsule, in empty space.
     await tester.tapAt(const Offset(20, 20));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const ValueKey('floating_nav_tab_home')), findsNothing);
+    expect(find.byKey(const ValueKey('floating_nav_tab_lobby')), findsNothing);
   });
 
   testWidgets('settings shortcut in the expanded capsule opens SettingsScreen',

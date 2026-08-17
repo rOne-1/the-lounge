@@ -12,7 +12,7 @@ import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/tmdb_movie_repository.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
-import 'package:the_lounge/screens/home_screen.dart';
+import 'package:the_lounge/screens/lobby_screen.dart';
 import 'package:the_lounge/screens/search_screen.dart';
 import 'package:the_lounge/services/tmdb_api_service.dart';
 import 'package:the_lounge/widgets/fallback_widgets.dart';
@@ -191,7 +191,7 @@ void main() {
       genres: ['Sci-Fi', 'Action'],
     );
 
-    testWidgets('FullScreenErrorWidget appears on HomeScreen when primary data loading fails',
+    testWidgets('FullScreenErrorWidget appears on LobbyScreen when primary data loading fails',
         (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -200,7 +200,7 @@ void main() {
             popularMoviesProvider.overrideWith((ref) => Future.error(Exception('HTTP 500 Internal Server Error'))),
           ],
           child: const MaterialApp(
-            home: HomeScreen(enableAnimation: false),
+            home: LobbyScreen(enableAnimation: false),
           ),
         ),
       );
@@ -211,7 +211,7 @@ void main() {
       expect(find.text('Try again'), findsOneWidget);
     });
 
-    testWidgets('InlinePartialErrorWidget appears on HomeScreen when single rail fails',
+    testWidgets('InlinePartialErrorWidget appears on LobbyScreen when single rail fails',
         (tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -221,7 +221,7 @@ void main() {
             topRatedMoviesProvider.overrideWith((ref) => Future.value([dummyItem])),
           ],
           child: const MaterialApp(
-            home: HomeScreen(enableAnimation: false),
+            home: LobbyScreen(enableAnimation: false),
           ),
         ),
       );

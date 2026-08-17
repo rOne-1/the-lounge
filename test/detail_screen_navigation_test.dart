@@ -73,8 +73,9 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    // Mounted while the root shell is conceptually on Home.
-    expect(container.read(navigationProvider).currentTab, AppTab.home);
+    // Mounted while the root shell is conceptually on Your Space (the
+    // default startup tab per PERS-NAV-1).
+    expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
 
     // DetailScreen has a continuously-animating backdrop glow, so
     // pumpAndSettle() never terminates here -- matches the bounded-pump
@@ -97,7 +98,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(SearchScreen), findsOneWidget);
-    expect(container.read(navigationProvider).currentTab, AppTab.home);
+    expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
 
     Navigator.of(tester.element(find.byType(SearchScreen))).pop();
     await tester.pump(const Duration(milliseconds: 500));
@@ -105,6 +106,6 @@ void main() {
 
     expect(find.byType(SearchScreen), findsNothing);
     expect(find.byType(DetailScreen), findsOneWidget);
-    expect(container.read(navigationProvider).currentTab, AppTab.home);
+    expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
   });
 }

@@ -119,9 +119,8 @@ void main() {
     );
   }
 
-  // PERS-FOLDERS-1 added a "Folders" row to the Personalization section,
-  // pushing Data Management's buttons further down the ListView, below the
-  // default test viewport's built/cached range.
+  // Scrolls a target into the ListView's built/cached range before tapping
+  // it -- needed for buttons that sit below the default test viewport.
   Future<void> scrollToAndTap(WidgetTester tester, Finder finder) async {
     await tester.scrollUntilVisible(finder, 300);
     await tester.pumpAndSettle();
@@ -148,9 +147,8 @@ void main() {
 
     expect(container.read(ambianceProvider), equals(readingRoomTheme));
 
-    // PERS-RATE-2 added a Personalization section between Ambiance and Data
-    // Management, pushing later sections below the default test viewport's
-    // built/cached range -- scroll to bring them into the tree.
+    // Later sections sit below the default test viewport's built/cached
+    // range -- scroll to bring them into the tree.
     await tester.scrollUntilVisible(find.text('DATA MANAGEMENT'), 300);
     await tester.pumpAndSettle();
     expect(find.text('DATA MANAGEMENT'), findsOneWidget);
@@ -402,8 +400,7 @@ void main() {
     await tester.pumpWidget(createSettingsScreen(container));
     await tester.pumpAndSettle();
 
-    // PERS-RATE-2 added a Personalization section above Data Management,
-    // pushing this button below the default test viewport's built/cached
+    // This button sits below the default test viewport's built/cached
     // range -- scroll it into view before interacting.
     final resetBtn = find.byKey(const ValueKey('reset_account_button'));
     await tester.scrollUntilVisible(resetBtn, 300);
