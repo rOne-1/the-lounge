@@ -130,20 +130,25 @@ void main() {
 
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('AMBIANCE'), findsOneWidget);
-    expect(find.text('DATA MANAGEMENT'), findsOneWidget);
-    expect(find.text('ABOUT'), findsOneWidget);
 
     final switchFinder = find.byType(AnimatedSegmentedControl<AppTheme>);
     expect(switchFinder, findsOneWidget);
-
-    
 
     await tester.tap(find.text('Reading'));
     await tester.pumpAndSettle();
 
     expect(container.read(ambianceProvider), equals(readingRoomTheme));
 
-    
+    // PERS-RATE-2 added a Personalization section between Ambiance and Data
+    // Management, pushing later sections below the default test viewport's
+    // built/cached range -- scroll to bring them into the tree.
+    await tester.scrollUntilVisible(find.text('DATA MANAGEMENT'), 300);
+    await tester.pumpAndSettle();
+    expect(find.text('DATA MANAGEMENT'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('ABOUT'), 300);
+    await tester.pumpAndSettle();
+    expect(find.text('ABOUT'), findsOneWidget);
   });
 
   testWidgets('E6: Debug section shows live TMDB call/failure counts', (WidgetTester tester) async {
@@ -388,7 +393,12 @@ void main() {
     await tester.pumpWidget(createSettingsScreen(container));
     await tester.pumpAndSettle();
 
+    // PERS-RATE-2 added a Personalization section above Data Management,
+    // pushing this button below the default test viewport's built/cached
+    // range -- scroll it into view before interacting.
     final resetBtn = find.byKey(const ValueKey('reset_account_button'));
+    await tester.scrollUntilVisible(resetBtn, 300);
+    await tester.pumpAndSettle();
     await tester.tap(resetBtn);
     await tester.pumpAndSettle();
 
