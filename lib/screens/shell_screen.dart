@@ -86,37 +86,41 @@ class ShellScreen extends ConsumerWidget {
 
   Widget _buildBody(WidgetRef ref, AppTab tab) {
     final index = _tabIndex(tab);
-    const tabs = [
-      AppTab.lobby,
-      AppTab.discover,
-      AppTab.search,
-      AppTab.yourSpace,
-      AppTab.calendar,
-    ];
 
-    void switchTo(int newIndex) {
-      if (newIndex >= 0 && newIndex < tabs.length) {
-        ref.read(navigationProvider.notifier).setTab(tabs[newIndex]);
-      }
+    VoidCallback? onSwipeLeft;
+    VoidCallback? onSwipeRight;
+
+    // HIERARCHICAL SWIPE MODEL:
+    // 1. "Your Space" is the elevated Sanctuary Gateway -- isolated with ZERO swipe navigation.
+    // 2. "Discover" has dedicated 2D card deck gestures -- isolated with ZERO shell swipe interception.
+    // 3. The Browse cycle forms an isolated 4-screen sequence: Lobby <-> Discover <-> Search <-> Calendar.
+    switch (tab) {
+      case AppTab.lobby:
+        onSwipeLeft = () => ref.read(navigationProvider.notifier).setTab(AppTab.discover);
+        onSwipeRight = null;
+        break;
+      case AppTab.discover:
+        onSwipeLeft = null;
+        onSwipeRight = null;
+        break;
+      case AppTab.search:
+        onSwipeLeft = () => ref.read(navigationProvider.notifier).setTab(AppTab.calendar);
+        onSwipeRight = () => ref.read(navigationProvider.notifier).setTab(AppTab.discover);
+        break;
+      case AppTab.calendar:
+        onSwipeLeft = null;
+        onSwipeRight = () => ref.read(navigationProvider.notifier).setTab(AppTab.search);
+        break;
+      case AppTab.yourSpace:
+        onSwipeLeft = null;
+        onSwipeRight = null;
+        break;
     }
-
-    // B3: this used to wrap the IndexedStack in a KeyedSubtree keyed by
-    // `tab`, which changed on every switch. PageTransitionSwitcher treats a
-    // key change as "brand new subtree", so every single bottom-nav tap
-    // destroyed and rebuilt all 5 tabs from scratch -- not just the one
-    // becoming visible. That's what IndexedStack exists to prevent: each
-    // tab's local state (e.g. YourSpaceScreen's selected sub-tab and
-    // in-progress filter) was silently reset to its default on every visit,
-    // which is the root cause behind TF-14's highlight/content desync.
-    // _PersistentTabView below keeps a single stable IndexedStack (never
-    // re-keyed, so children are never torn down) and animates the switch
-    // itself instead of the subtree identity.
-    final isSwipeDeckTab = tabs[index] == AppTab.discover;
 
     return _PersistentTabView(
       index: index,
-      onSwipeLeft: isSwipeDeckTab ? null : () => switchTo(index + 1),
-      onSwipeRight: isSwipeDeckTab ? null : () => switchTo(index - 1),
+      onSwipeLeft: onSwipeLeft,
+      onSwipeRight: onSwipeRight,
       children: [
         LobbyScreen(
           key: const PageStorageKey(AppTab.lobby),

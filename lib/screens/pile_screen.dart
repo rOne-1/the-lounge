@@ -127,6 +127,17 @@ class PileScreen extends ConsumerStatefulWidget {
 }
 
 class _PileScreenState extends ConsumerState<PileScreen> {
+  static const _pileSequence = [
+    PileKind.watching,
+    PileKind.watchlist,
+    PileKind.saved,
+    PileKind.onHold,
+    PileKind.dropped,
+    PileKind.watched,
+  ];
+
+  late PileKind _currentKind;
+
   // PERS-SORT-1: sort/group selection is local to this screen instance
   // (session-only even within a session -- lost on navigating away and
   // back), matching Phase 3's "cheap, fast choice to redo" rationale for
@@ -141,6 +152,31 @@ class _PileScreenState extends ConsumerState<PileScreen> {
   final Map<String, ExpansibleController> _watchedTileControllers = {};
   bool _watchedAllCollapsed = false;
 
+  @override
+  void initState() {
+    super.initState();
+    _currentKind = widget.kind;
+  }
+
+  @override
+  void didUpdateWidget(covariant PileScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.kind != widget.kind) {
+      _currentKind = widget.kind;
+    }
+  }
+
+  void _navigateToAdjacentPile(int delta) {
+    final currentIndex = _pileSequence.indexOf(_currentKind);
+    if (currentIndex == -1) return;
+    final nextIndex = currentIndex + delta;
+    if (nextIndex >= 0 && nextIndex < _pileSequence.length) {
+      setState(() {
+        _currentKind = _pileSequence[nextIndex];
+      });
+    }
+  }
+
   ExpansibleController _watchedTileController(String key) {
     return _watchedTileControllers.putIfAbsent(key, () => ExpansibleController());
   }
@@ -153,7 +189,7 @@ class _PileScreenState extends ConsumerState<PileScreen> {
     final activeType =
         navState.activeMediaType == MediaTypeToggle.movies ? MediaType.movie : MediaType.tv;
 
-    final items = widget.kind
+    final items = _currentKind
         .mapFrom(mediaState)
         .values
         .where((item) => item.type == activeType)
@@ -166,7 +202,7 @@ class _PileScreenState extends ConsumerState<PileScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: colors.ink),
         title: Text(
-          widget.kind.label,
+          _currentKind.label,
           style: AppThemes.safeGeist(
             fontSize: 17,
             fontWeight: FontWeight.w600,
@@ -174,10 +210,23 @@ class _PileScreenState extends ConsumerState<PileScreen> {
           ),
         ),
       ),
-      body: SafeArea(
-        child: widget.kind == PileKind.watched
-            ? _buildWatchedContent(context, items)
-            : _buildStandardContent(context, items),
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onHorizontalDragEnd: (details) {
+          final velocity = details.primaryVelocity ?? 0.0;
+          if (velocity < -300) {
+            // Swipe left -> next pile
+            _navigateToAdjacentPile(1);
+          } else if (velocity > 300) {
+            // Swipe right -> previous pile
+            _navigateToAdjacentPile(-1);
+          }
+        },
+        child: SafeArea(
+          child: _currentKind == PileKind.watched
+              ? _buildWatchedContent(context, items)
+              : _buildStandardContent(context, items),
+        ),
       ),
     );
   }
@@ -189,7 +238,7 @@ class _PileScreenState extends ConsumerState<PileScreen> {
     // Matches CleanupSwipeScreen's own now-type-scoped queue -- the banner's
     // count and threshold should describe exactly what tapping it opens.
     final banner =
-        widget.kind == PileKind.saved ? _buildCleanupBanner(context, items.length) : null;
+        _currentKind == PileKind.saved ? _buildCleanupBanner(context, items.length) : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,9 +248,9 @@ class _PileScreenState extends ConsumerState<PileScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (widget.kind.subtitle != null)
+              if (_currentKind.subtitle != null)
                 Text(
-                  widget.kind.subtitle!,
+                  _currentKind.subtitle!,
                   style: AppThemes.safeGeist(fontSize: 12, color: colors.sub),
                 ),
               if (banner != null) ...[
@@ -220,7 +269,7 @@ class _PileScreenState extends ConsumerState<PileScreen> {
               ? _buildGrid(
                   context,
                   sortPile(items, _sort),
-                  emptyLabel: 'Your ${widget.kind.label} is empty',
+                  emptyLabel: 'Your ${_currentKind.label} is empty',
                 )
               : _buildGroupedGrid(context, items),
         ),
@@ -347,7 +396,7 @@ class _PileScreenState extends ConsumerState<PileScreen> {
     final colors = context.ambianceColors;
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
-    final keyPrefix = widget.kind.name;
+    final keyPrefix = _currentKind.name;
 
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
@@ -364,53 +413,68 @@ class _PileScreenState extends ConsumerState<PileScreen> {
             key: ValueKey('${keyPrefix}_group_${entry.key}'),
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: colors.lineRgba, width: 1.0),
-            ),
-            child: Material(
               color: colors.card,
-              borderRadius: BorderRadius.circular(14),
-              clipBehavior: Clip.antiAlias,
-              child: Theme(
-                data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-                child: ExpansionTile(
-                  initiallyExpanded: true,
-                  iconColor: colors.acc,
-                  collapsedIconColor: colors.sub,
-                  title: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          entry.key,
-                          style: AppThemes.safeGeist(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: colors.ink,
-                          ),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colors.acc.withAlpha(30),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '${groupItems.length}',
-                          style: AppThemes.safeGeist(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: colors.acc,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.lineRgba),
+            ),
+            child: Theme(
+              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              child: ExpansionTile(
+                initiallyExpanded: true,
+                tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                title: Row(
                   children: [
-                    _buildSubGrid(context, groupItems, '${keyPrefix}_${entry.key}'),
+                    Text(
+                      entry.key,
+                      style: AppThemes.safeGeist(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: colors.ink,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: colors.ph,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '${groupItems.length}',
+                        style: AppThemes.safeGeist(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: colors.sub,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 110,
+                        childAspectRatio: 2 / 3,
+                        crossAxisSpacing: 10,
+                        mainAxisSpacing: 10,
+                      ),
+                      itemCount: groupItems.length,
+                      itemBuilder: (context, index) {
+                        final item = groupItems[index];
+                        return MediaCard(
+                          key: ValueKey(item.prefixedId),
+                          item: item,
+                          isDark: colors.isDark,
+                          borderRadius: 10,
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -422,7 +486,7 @@ class _PileScreenState extends ConsumerState<PileScreen> {
   Widget _buildGrid(BuildContext context, List<MediaItem> items, {required String emptyLabel}) {
     final isDark = context.ambianceColors.isDark;
     if (items.isEmpty) {
-      final allPileItems = widget.kind.mapFrom(ref.watch(mediaProvider)).values.toList();
+      final allPileItems = _currentKind.mapFrom(ref.watch(mediaProvider)).values.toList();
       final otherTypeCount = allPileItems.length;
       final activeType = ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
           ? MediaType.movie
@@ -432,7 +496,7 @@ class _PileScreenState extends ConsumerState<PileScreen> {
         final otherTypeName = activeType == MediaType.movie ? 'TV Shows' : 'Movies';
         return AtmosphericEmptyState(
           icon: Icons.swap_horiz_rounded,
-          title: 'No ${activeType == MediaType.movie ? 'movies' : 'TV shows'} in ${widget.kind.label}',
+          title: 'No ${activeType == MediaType.movie ? 'movies' : 'TV shows'} in ${_currentKind.label}',
           message: 'You have $otherTypeCount title${otherTypeCount == 1 ? '' : 's'} under $otherTypeName in this pile.',
           ctaLabel: 'Switch to $otherTypeName',
           onCta: () => ref.read(navigationProvider.notifier).toggleMediaType(),
@@ -482,7 +546,7 @@ class _PileScreenState extends ConsumerState<PileScreen> {
     final colors = context.ambianceColors;
 
     if (items.isEmpty) {
-      final allPileItems = widget.kind.mapFrom(ref.watch(mediaProvider)).values.toList();
+      final allPileItems = _currentKind.mapFrom(ref.watch(mediaProvider)).values.toList();
       final otherTypeCount = allPileItems.length;
       final activeType = ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
           ? MediaType.movie
