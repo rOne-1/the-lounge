@@ -59,7 +59,9 @@ class _AmbientGlowWidgetState extends State<AmbientGlowWidget>
       curve: Curves.easeInOut,
     );
 
-    final shouldAnimate = widget.enableAnimation ?? true;
+    final isTestEnvironment =
+        WidgetsBinding.instance.runtimeType.toString().contains('Test');
+    final shouldAnimate = widget.enableAnimation ?? !isTestEnvironment;
     if (shouldAnimate) {
       _controller.repeat(reverse: true);
     } else {

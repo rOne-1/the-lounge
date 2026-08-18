@@ -95,11 +95,11 @@ void main() {
           child: const MaterialApp(home: Scaffold(body: YourSpaceScreen())),
         ),
       );
+      await tester.tap(find.text('Tools'));
       await tester.pumpAndSettle();
 
       final foldersCardFinder = find.text('Custom Folders');
       await tester.ensureVisible(foldersCardFinder);
-      await tester.pumpAndSettle();
       await tester.tap(foldersCardFinder);
       await tester.pumpAndSettle();
 

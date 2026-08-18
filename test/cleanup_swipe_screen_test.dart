@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/cleanup_swipe_screen.dart';
-import 'package:the_lounge/screens/your_space_screen.dart';
+import 'package:the_lounge/screens/pile_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -159,11 +159,9 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: Scaffold(body: YourSpaceScreen())),
+          child: const MaterialApp(home: Scaffold(body: PileScreen(kind: PileKind.saved))),
         ),
       );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Saved'));
       await tester.pumpAndSettle();
       return container;
     }

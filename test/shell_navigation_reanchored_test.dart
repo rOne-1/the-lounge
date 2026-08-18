@@ -42,9 +42,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
-    // The landing page's own group headers confirm Your Space, not Lobby,
+    // The landing page's own dock card confirms Your Space, not Lobby,
     // is what's actually showing.
-    expect(find.text('PILES'), findsOneWidget);
+    expect(find.text('Archive'), findsOneWidget);
   });
 
   testWidgets(

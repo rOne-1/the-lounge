@@ -162,17 +162,17 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    // PERS-SPACE-1: 3-group landing page (Piles/Tools/Browse & Discovery),
-    // not the old 4-tab layout.
-    expect(find.text('PILES'), findsOneWidget);
-    expect(find.text('TOOLS'), findsOneWidget);
-    expect(find.text('BROWSE & DISCOVERY'), findsOneWidget);
-    expect(find.text('Watchlist'), findsOneWidget);
-    expect(find.text('Saved'), findsOneWidget);
-    expect(find.text('Watching'), findsOneWidget);
-    expect(find.text('Watched'), findsOneWidget);
+    // Sanctuary Gateway: 4-card dock with Archive, Browse, Tools, Settings.
+    expect(find.text('Archive'), findsOneWidget);
+    expect(find.text('Browse'), findsOneWidget);
+    expect(find.text('Tools'), findsOneWidget);
+    expect(find.text('Settings'), findsOneWidget);
 
-    // Tap the "Watching" pile card, which now pushes a standalone PileScreen.
+    // Tap the "Archive" dock card, which opens ArchiveScreen.
+    await tester.tap(find.text('Archive'));
+    await tester.pumpAndSettle();
+
+    // Tap the "Watching" hero card, which pushes PileScreen.
     await tester.tap(find.text('Watching'));
     await tester.pumpAndSettle();
 

@@ -3,27 +3,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../providers/ambiance_provider.dart';
-import '../models/media_item.dart';
 import '../constants.dart';
+import '../widgets/ambient_glow.dart';
+import '../widgets/lounge_doorway_emblem.dart';
 import '../widgets/memory_moments_section.dart';
 import '../widgets/pressable_scale.dart';
-import 'cleanup_swipe_screen.dart';
-import 'folders_screen.dart';
-import 'pile_screen.dart';
-import 'rate_titles_screen.dart';
-import 'rewatch_vault_screen.dart';
+import 'archive_screen.dart';
+import 'tools_screen.dart';
 import 'settings_screen.dart';
 
-/// PERS-SPACE-1: Your Space is the app's primary landing screen -- an
-/// ambient header plus 3 distinct card groups (Piles, Tools, Browse &
-/// Discovery), replacing the former 4-tab layout. Each pile now gets its
-/// own standalone [PileScreen] destination (see that file for why the old
-/// "In Progress" sub-filter was retired), and the Tools/Browse groups
-/// surface destinations that used to live only in Settings or the bottom
-/// nav.
+/// YSR-GATEWAY-1: The Sanctuary Gateway (`The Lounge-selection.png`) - the
+/// elevated landing screen for Your Space. Features the dynamic Day overline,
+/// Bodoni Moda time-of-day greeting, total titles counter, glowing Lounge Doorway
+/// centerpiece emblem, and 4-card quick navigation dock (Archive, Browse -> Lobby,
+/// Tools, Settings).
 class YourSpaceScreen extends ConsumerStatefulWidget {
-  const YourSpaceScreen({super.key});
+  final bool? enableAnimation;
+
+  const YourSpaceScreen({super.key, this.enableAnimation});
 
   @override
   ConsumerState<YourSpaceScreen> createState() => _YourSpaceScreenState();
@@ -34,16 +31,24 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
   void initState() {
     super.initState();
     // B2/E5: monthly new-season/new-episode refresh for Watched shows.
-    // No-ops internally unless 30+ days have passed since the last run.
-    // Lives here (rather than PileScreen) because Your Space -- the app's
-    // default startup destination per PERS-NAV-1 -- is guaranteed to mount
-    // on every app open, whether or not the user ever opens the Watched
-    // pile specifically.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         ref.read(mediaProvider.notifier).refreshWatchedShowsIfDue();
       }
     });
+  }
+
+  String get _weekday {
+    const days = [
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRIDAY',
+      'SATURDAY',
+      'SUNDAY',
+    ];
+    return days[DateTime.now().weekday - 1];
   }
 
   String get _greeting {
@@ -57,17 +62,11 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
   @override
   Widget build(BuildContext context) {
     final mediaState = ref.watch(mediaProvider);
-    final navState = ref.watch(navigationProvider);
-    final ambiance = ref.watch(ambianceProvider);
-    final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
-    final activeType = isMovies ? MediaType.movie : MediaType.tv;
     final colors = context.ambianceColors;
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
 
     int countFor(Map<String, dynamic> itemsMap) => itemsMap.length;
-    int typeFilteredCount(Map<String, MediaItem> itemsMap) =>
-        itemsMap.values.where((item) => item.type == activeType).length;
 
     final libraryCount = countFor(mediaState.watchlist) +
         countFor(mediaState.maybeList) +
@@ -79,138 +78,107 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     return SingleChildScrollView(
       padding: EdgeInsets.fromLTRB(
         paddingHorizontal,
-        12.0,
+        16.0,
         paddingHorizontal,
         100.0 + MediaQuery.of(context).padding.bottom,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          _buildHeader(context, ambiance.displayName, libraryCount),
-          const SizedBox(height: 26),
+          const SizedBox(height: 16),
+          // 1. Header: Day overline, Bodoni greeting, Library count subtitle
+          Text(
+            _weekday,
+            style: AppThemes.safeGeist(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 2.2,
+              color: colors.sub,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _greeting,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.bodoniModa(
+              fontSize: 40,
+              fontWeight: FontWeight.w400,
+              fontStyle: FontStyle.italic,
+              color: colors.ink,
+              letterSpacing: -0.5,
+              height: 1.1,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$libraryCount title${libraryCount == 1 ? '' : 's'} in your space',
+            style: AppThemes.safeGeist(
+              fontSize: 14,
+              color: colors.sub,
+              letterSpacing: 0.1,
+            ),
+          ),
+          const SizedBox(height: 48),
+
+          // 2. Centerpiece: AmbientGlowWidget radiating behind LoungeDoorwayEmblem
+          Center(
+            child: AmbientGlowWidget(
+              enableAnimation: widget.enableAnimation,
+              duration: const Duration(seconds: 15),
+              borderRadius: BorderRadius.circular(100),
+              padding: const EdgeInsets.all(36.0),
+              color1: colors.glow1,
+              color2: colors.glow2,
+              child: const LoungeDoorwayEmblem(size: 132.0),
+            ),
+          ),
+          const SizedBox(height: 52),
+
+          // 3. Navigation Dock (4 Quick Access Cards)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: _DockCard(
+                  icon: Icons.collections_bookmark_rounded,
+                  label: 'Archive',
+                  isActive: true,
+                  onTap: () => _push(context, const ArchiveScreen()),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _DockCard(
+                  icon: Icons.explore_outlined,
+                  label: 'Browse',
+                  onTap: () => _switchTab(AppTab.lobby),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _DockCard(
+                  icon: Icons.tune_rounded,
+                  label: 'Tools',
+                  onTap: () => _push(context, const ToolsScreen()),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _DockCard(
+                  key: const ValueKey('your_space_settings_button'),
+                  icon: Icons.light_mode_outlined,
+                  label: 'Settings',
+                  onTap: () => _push(context, const SettingsScreen()),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 36),
+
+          // 4. Memory Moments Section ("Forgotten Favorites" & "On This Day")
           const MemoryMomentsSection(),
-          _buildGroupHeader('Piles'),
-          const SizedBox(height: 10),
-          _buildCardGrid([
-            _LandingCardData(
-              icon: PileKind.watchlist.icon,
-              label: PileKind.watchlist.label,
-              subtitle: _countLabel(typeFilteredCount(mediaState.watchlist)),
-              accentColor: PileKind.watchlist.statusColor,
-              onTap: () => _openPile(context, PileKind.watchlist),
-            ),
-            _LandingCardData(
-              icon: PileKind.saved.icon,
-              label: PileKind.saved.label,
-              subtitle: _countLabel(typeFilteredCount(mediaState.maybeList)),
-              accentColor: PileKind.saved.statusColor,
-              onTap: () => _openPile(context, PileKind.saved),
-            ),
-            _LandingCardData(
-              icon: PileKind.watching.icon,
-              label: PileKind.watching.label,
-              subtitle: _countLabel(typeFilteredCount(mediaState.watchingList)),
-              accentColor: PileKind.watching.statusColor,
-              onTap: () => _openPile(context, PileKind.watching),
-            ),
-            _LandingCardData(
-              icon: PileKind.onHold.icon,
-              label: PileKind.onHold.label,
-              subtitle: _countLabel(typeFilteredCount(mediaState.onHoldList)),
-              accentColor: PileKind.onHold.statusColor,
-              onTap: () => _openPile(context, PileKind.onHold),
-            ),
-            _LandingCardData(
-              icon: PileKind.dropped.icon,
-              label: PileKind.dropped.label,
-              subtitle: _countLabel(typeFilteredCount(mediaState.droppedList)),
-              accentColor: PileKind.dropped.statusColor,
-              onTap: () => _openPile(context, PileKind.dropped),
-            ),
-            _LandingCardData(
-              icon: PileKind.watched.icon,
-              label: PileKind.watched.label,
-              subtitle: _countLabel(typeFilteredCount(mediaState.watchedList)),
-              accentColor: PileKind.watched.statusColor,
-              onTap: () => _openPile(context, PileKind.watched),
-            ),
-          ]),
-          const SizedBox(height: 26),
-          _buildGroupHeader('Tools'),
-          const SizedBox(height: 10),
-          _buildCardGrid([
-            _LandingCardData(
-              icon: Icons.star_rounded,
-              label: 'Rate Titles',
-              subtitle: 'Batch rating tool',
-              accentColor: colors.acc,
-              onTap: () => _push(context, const RateTitlesScreen()),
-            ),
-            _LandingCardData(
-              icon: Icons.folder_outlined,
-              label: 'Custom Folders',
-              subtitle: 'Curated playlists',
-              accentColor: colors.acc,
-              onTap: () => _push(context, const FoldersScreen()),
-            ),
-            _LandingCardData(
-              icon: Icons.auto_awesome_outlined,
-              label: 'Cleanup Session',
-              subtitle: 'Tidy up Saved',
-              accentColor: colors.acc,
-              onTap: () => _push(context, const CleanupSwipeScreen()),
-            ),
-            _LandingCardData(
-              icon: Icons.replay_circle_filled_outlined,
-              label: 'Rewatch Vault',
-              subtitle: 'Titles you\'ve rewatched',
-              accentColor: colors.acc,
-              onTap: () => _push(context, const RewatchVaultScreen()),
-            ),
-          ]),
-          const SizedBox(height: 26),
-          _buildGroupHeader('Browse & Discovery'),
-          const SizedBox(height: 10),
-          _buildCardGrid([
-            _LandingCardData(
-              icon: Icons.theaters_outlined,
-              label: 'Lobby',
-              subtitle: 'Featured carousels',
-              accentColor: colors.acc,
-              onTap: () => _switchTab(context, AppTab.lobby),
-            ),
-            _LandingCardData(
-              icon: Icons.style_outlined,
-              label: 'Discover',
-              subtitle: 'Swipe through picks',
-              accentColor: colors.acc,
-              onTap: () => _switchTab(context, AppTab.discover),
-            ),
-            _LandingCardData(
-              icon: Icons.search,
-              label: 'Search',
-              subtitle: 'Find any title',
-              accentColor: colors.acc,
-              onTap: () => _switchTab(context, AppTab.search),
-            ),
-            _LandingCardData(
-              icon: Icons.calendar_today_outlined,
-              label: 'Calendar',
-              subtitle: 'Upcoming releases',
-              accentColor: colors.acc,
-              onTap: () => _switchTab(context, AppTab.calendar),
-            ),
-          ]),
         ],
       ),
-    );
-  }
-
-  String _countLabel(int count) => '$count title${count == 1 ? '' : 's'}';
-
-  void _openPile(BuildContext context, PileKind kind) {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => PileScreen(kind: kind)),
     );
   }
 
@@ -220,135 +188,85 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
     );
   }
 
-  void _switchTab(BuildContext context, AppTab tab) {
+  void _switchTab(AppTab tab) {
     ref.read(navigationProvider.notifier).setTab(tab);
   }
-
-  Widget _buildHeader(BuildContext context, String ambianceName, int libraryCount) {
-    final colors = context.ambianceColors;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _greeting,
-                style: GoogleFonts.bodoniModa(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w600,
-                  fontStyle: FontStyle.italic,
-                  color: colors.ink,
-                ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '$ambianceName · $libraryCount title${libraryCount == 1 ? '' : 's'} in your space',
-                style: AppThemes.safeGeist(fontSize: 12.5, color: colors.sub),
-              ),
-            ],
-          ),
-        ),
-        PressableScale(
-          key: const ValueKey('your_space_settings_button'),
-          onTap: () => _push(context, const SettingsScreen()),
-          child: Icon(
-            Icons.settings_outlined,
-            color: colors.sub,
-            size: 22,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGroupHeader(String title) {
-    final colors = context.ambianceColors;
-    return Text(
-      title.toUpperCase(),
-      style: AppThemes.safeGeist(
-        fontSize: 12,
-        fontWeight: FontWeight.w700,
-        color: colors.sub,
-        letterSpacing: 0.8,
-      ),
-    );
-  }
-
-  Widget _buildCardGrid(List<_LandingCardData> cards) {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      // 1.9 overflowed by ~2px at narrow phone widths (412px) once icon +
-      // two text lines + padding are accounted for -- 1.6 gives enough
-      // vertical headroom across device sizes.
-      childAspectRatio: 1.6,
-      children: cards.map((c) => _LandingCard(data: c)).toList(),
-    );
-  }
 }
 
-class _LandingCardData {
+class _DockCard extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String subtitle;
-  final Color accentColor;
+  final bool isActive;
   final VoidCallback onTap;
 
-  const _LandingCardData({
+  const _DockCard({
+    super.key,
     required this.icon,
     required this.label,
-    required this.subtitle,
-    required this.accentColor,
+    this.isActive = false,
     required this.onTap,
   });
-}
-
-class _LandingCard extends StatelessWidget {
-  final _LandingCardData data;
-
-  const _LandingCard({required this.data});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
+    final accent = colors.acc;
+
     return PressableScale(
-      onTap: data.onTap,
+      onTap: onTap,
       child: AnimatedContainer(
         duration: AppPhysics.houseSpringDuration,
         curve: AppPhysics.houseSpringCurve,
-        padding: const EdgeInsets.all(14),
+        height: 94,
+        padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 4.0),
         decoration: BoxDecoration(
           color: colors.card,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: data.accentColor.withValues(alpha: 0.35)),
+          borderRadius: BorderRadius.circular(22.0),
+          border: Border.all(
+            color: isActive
+                ? accent.withValues(alpha: 0.75)
+                : colors.lineRgba,
+            width: isActive ? 1.5 : 1.0,
+          ),
+          boxShadow: isActive
+              ? [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.22),
+                    blurRadius: 16,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : [
+                  BoxShadow(
+                    color: colors.isDark
+                        ? const Color(0x1A000000)
+                        : const Color(0x06000000),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.max,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(data.icon, color: data.accentColor, size: 22),
+            Icon(
+              icon,
+              color: isActive ? accent : colors.sub,
+              size: 24,
+            ),
             const SizedBox(height: 8),
             Text(
-              data.label,
+              label,
               style: AppThemes.safeGeist(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: colors.ink,
+                fontSize: 12.5,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                color: isActive ? colors.ink : colors.sub,
               ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              data.subtitle,
-              style: AppThemes.safeGeist(fontSize: 11, color: colors.sub),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
             ),
           ],
         ),

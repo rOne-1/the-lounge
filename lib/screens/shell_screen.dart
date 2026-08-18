@@ -107,7 +107,10 @@ class ShellScreen extends ConsumerWidget {
         ),
         const DiscoverScreen(key: PageStorageKey(AppTab.discover)),
         const SearchScreen(key: PageStorageKey(AppTab.search)),
-        const YourSpaceScreen(key: PageStorageKey(AppTab.yourSpace)),
+        YourSpaceScreen(
+          key: const PageStorageKey(AppTab.yourSpace),
+          enableAnimation: enableAnimation,
+        ),
         const CalendarScreen(key: PageStorageKey(AppTab.calendar)),
       ],
     );
