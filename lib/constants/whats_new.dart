@@ -2,7 +2,7 @@
 /// the What's New dialog shows once per distinct value of this string
 /// (tracked in SharedPreferences), not once per app version/build number,
 /// so it can be updated independently of pubspec's version field.
-const String kWhatsNewVersion = '0.1.0';
+const String kWhatsNewVersion = '0.2.0';
 
 class WhatsNewSection {
   final String title;
@@ -12,37 +12,42 @@ class WhatsNewSection {
 }
 
 /// Curated, user-facing summary of everything visibly new/fixed since the
-/// previous alpha build testers had (commit 72fb2c5). Plain-language only
+/// previous alpha build testers had (commit b5ce374). Plain-language only
 /// -- no internal ticket IDs, file names, or engineering framing.
 const List<WhatsNewSection> kWhatsNewSections = [
   WhatsNewSection(
     title: 'New',
     items: [
-      'Redesigned navigation: a single floating, draggable capsule replaces the old top bar and bottom tabs, giving your movies and shows the full screen.',
-      'Every card, dialog, toast, slider, and dropdown across the app has been rebuilt with a consistent, luxury screening-room look.',
-      'Ratings now use a weighted formula everywhere they\'re shown or sorted, so a title with a handful of votes can\'t outrank one with tens of thousands.',
-      'Discover: skipped titles now stay skipped for 6 months (or for good after 5 skips), with a once-a-day manual reload for a fresh deck.',
-      'A new "Your Watchlist" carousel on Home.',
-      'Collapse All / Expand All for your Watched collections.',
-      'Network badges on a title\'s detail page are now tappable, filtering Browse by that network.',
-      'Expanded language filter, from 21 languages to 65.',
-      'A quick Settings entry point from Your Space.',
+      'Your Space is now the app\'s home base: a redesigned Sanctuary Gateway landing page with quick access to your Piles, Tools, and Browse & Discovery.',
+      'The old Home tab is now called Lobby.',
+      'New Archive and Tools hubs, restyled to match the rest of the app\'s screening-room look.',
+      'The floating navigation capsule now follows you everywhere -- every screen except the Your Space landing page -- instead of just the old top-level tabs.',
+      'Swipe left or right on blank space in Lobby, Search, or Calendar to move directly between them, with a new depth/parallax motion; Browse, Archive piles, and Tools support the same swipe to move through their sections.',
+      'Rate anything you\'ve watched with a 4-tier personal rating, right from a title\'s page or a new batch Rate Titles tool -- including a rating per season for TV shows.',
+      'New Rewatch Log: quickly log a rewatch with a date picker, and see your full watch history on a title\'s page.',
+      'New Custom Folders: create, rename, reorder, and organize titles into your own folders, independent of Watchlist/Watched/etc.',
+      'New sort and grouping options for Watchlist and Saved, including sorting by your own rating and grouping by language, plus a cleanup tool for trimming an overgrown Saved pile.',
+      'TV show pages now show a seasonal rating bar -- your rating for every season at a glance.',
+      'New "On This Day" and "Forgotten Favorites" sections on Your Space, surfacing titles you finished exactly a year (or more) ago, or loved titles you\'ve never revisited.',
+      'The Rate Titles, Custom Folders, Cleanup, and Rewatch Vault tools now respect the Movies/TV toggle instead of always mixing both.',
+      'New app icon.',
     ],
   ),
   WhatsNewSection(
     title: 'Fixed',
     items: [
-      'Multi-season shows no longer falsely show "Done" after finishing just Season 1.',
-      'The Upcoming Movies rail now shows real, far-out titles, not just ones opening in the next few weeks.',
-      'Cast member photos no longer look stretched.',
-      'Continue Watching and Next Episode cards are no longer cramped.',
-      'Undoing a Discover swipe no longer leaves the card stuck invisible off-screen.',
-      'The back button now returns to Home before exiting the app.',
-      'Tapping a cast or crew member no longer strands you on the wrong tab after backing out.',
-      'Switching bottom-nav tabs no longer resets whatever you were doing on other tabs.',
-      'Browse\'s "Load More" no longer scrambles already-loaded results.',
-      'Fixed crashes and blank cards in Browse\'s Cast & Crew filter.',
-      'Numerous performance and animation-smoothness improvements throughout.',
+      'Tapping a title now opens instantly with its poster and basic info already visible, instead of a blank loading screen.',
+      'Search now shows a loading indicator while results come in.',
+      'Searching by a cast or crew member no longer misses titles where they weren\'t in the main credited cast.',
+      'Restoring a backup with TV shows in it no longer shows an empty list.',
+      'The empty-state "Discover Titles" button now returns you cleanly to Discover instead of leaving a stray screen behind.',
+      'Fixed occasional stuttering when importing a large backup, and repeated failed lookups no longer retry instantly over and over.',
+      'Naming a folder no longer hides the input field behind the on-screen keyboard.',
+      'Fixed a crash when creating a folder on the web version.',
+      'Fixed sort and grouping (Top Rated, Release Date, Genre, Language) silently breaking after restarting the app.',
+      'Fixed the rating banner jumping to a different spot depending on the title.',
+      'Fixed per-season rating prompts only ever appearing for Season 1.',
+      'Fixed a stray yellow underline occasionally appearing under text in dialogs and the navigation capsule.',
     ],
   ),
 ];
