@@ -93,10 +93,10 @@ class ShellScreen extends ConsumerWidget {
     // HIERARCHICAL SWIPE MODEL:
     // 1. "Your Space" is the elevated Sanctuary Gateway -- isolated with ZERO swipe navigation.
     // 2. "Discover" has dedicated 2D card deck gestures -- isolated with ZERO shell swipe interception.
-    // 3. The Browse cycle forms an isolated 4-screen sequence: Lobby <-> Discover <-> Search <-> Calendar.
+    // 3. The Browse cycle forms an isolated 3-screen sequence: Lobby <-> Search <-> Calendar.
     switch (tab) {
       case AppTab.lobby:
-        onSwipeLeft = () => ref.read(navigationProvider.notifier).setTab(AppTab.discover);
+        onSwipeLeft = () => ref.read(navigationProvider.notifier).setTab(AppTab.search);
         onSwipeRight = null;
         break;
       case AppTab.discover:
@@ -105,7 +105,7 @@ class ShellScreen extends ConsumerWidget {
         break;
       case AppTab.search:
         onSwipeLeft = () => ref.read(navigationProvider.notifier).setTab(AppTab.calendar);
-        onSwipeRight = () => ref.read(navigationProvider.notifier).setTab(AppTab.discover);
+        onSwipeRight = () => ref.read(navigationProvider.notifier).setTab(AppTab.lobby);
         break;
       case AppTab.calendar:
         onSwipeLeft = null;
@@ -161,19 +161,14 @@ class _PersistentTabView extends StatefulWidget {
 
 class _PersistentTabViewState extends State<_PersistentTabView>
     with SingleTickerProviderStateMixin {
-  // Snappier than AppPhysics.houseSpringDuration (550ms, tuned for large
-  // one-off transitions like detail-page opens) -- this fires on every
-  // bottom-nav tap, a frequent, lightweight interaction where 550ms would
-  // feel sluggish. The slide still uses the house spring curve (its native
-  // use case per AppPhysics' own doc comment) for motion-language
-  // consistency (SP-2); opacity uses a plain ease curve since the spring's
-  // characteristic overshoot would push it outside FadeTransition's valid
-  // [0, 1] range.
-  static const Duration _duration = Duration(milliseconds: 220);
+  // Tuned for luxury micro-depth & parallax motion (360ms) with house spring curve
+  // settling and easeOutCubic alpha fade.
+  static const Duration _duration = Duration(milliseconds: 360);
 
   late final AnimationController _controller;
   late Animation<double> _fade;
   late Animation<Offset> _slide;
+  late Animation<double> _scale;
 
   @override
   void initState() {
@@ -187,9 +182,12 @@ class _PersistentTabViewState extends State<_PersistentTabView>
   }
 
   void _buildAnimations({required bool reverseDirection}) {
-    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    _scale = Tween<double>(begin: 0.985, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: AppPhysics.houseSpringCurve),
+    );
     _slide = Tween<Offset>(
-      begin: Offset(reverseDirection ? -0.03 : 0.03, 0),
+      begin: Offset(reverseDirection ? -0.05 : 0.05, 0),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: AppPhysics.houseSpringCurve));
   }
@@ -215,11 +213,14 @@ class _PersistentTabViewState extends State<_PersistentTabView>
   Widget build(BuildContext context) {
     final transitionContent = FadeTransition(
       opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: IndexedStack(
-          index: widget.index,
-          children: widget.children,
+      child: ScaleTransition(
+        scale: _scale,
+        child: SlideTransition(
+          position: _slide,
+          child: IndexedStack(
+            index: widget.index,
+            children: widget.children,
+          ),
         ),
       ),
     );

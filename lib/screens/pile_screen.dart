@@ -126,7 +126,8 @@ class PileScreen extends ConsumerStatefulWidget {
   ConsumerState<PileScreen> createState() => _PileScreenState();
 }
 
-class _PileScreenState extends ConsumerState<PileScreen> {
+class _PileScreenState extends ConsumerState<PileScreen>
+    with SingleTickerProviderStateMixin {
   static const _pileSequence = [
     PileKind.watching,
     PileKind.watchlist,
@@ -136,7 +137,13 @@ class _PileScreenState extends ConsumerState<PileScreen> {
     PileKind.watched,
   ];
 
+  static const Duration _duration = Duration(milliseconds: 360);
+
   late PileKind _currentKind;
+  late final AnimationController _transitionController;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+  late Animation<double> _scale;
 
   // PERS-SORT-1: sort/group selection is local to this screen instance
   // (session-only even within a session -- lost on navigating away and
@@ -156,14 +163,43 @@ class _PileScreenState extends ConsumerState<PileScreen> {
   void initState() {
     super.initState();
     _currentKind = widget.kind;
+    _transitionController = AnimationController(
+      vsync: this,
+      duration: _duration,
+      value: 1.0,
+    );
+    _buildAnimations(reverseDirection: false);
+  }
+
+  void _buildAnimations({required bool reverseDirection}) {
+    _fade = CurvedAnimation(parent: _transitionController, curve: Curves.easeOutCubic);
+    _scale = Tween<double>(begin: 0.985, end: 1.0).animate(
+      CurvedAnimation(parent: _transitionController, curve: AppPhysics.houseSpringCurve),
+    );
+    _slide = Tween<Offset>(
+      begin: Offset(reverseDirection ? -0.05 : 0.05, 0),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _transitionController, curve: AppPhysics.houseSpringCurve));
   }
 
   @override
   void didUpdateWidget(covariant PileScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.kind != widget.kind) {
+      final oldIndex = _pileSequence.indexOf(oldWidget.kind);
+      final newIndex = _pileSequence.indexOf(widget.kind);
       _currentKind = widget.kind;
+      _buildAnimations(reverseDirection: newIndex < oldIndex);
+      _transitionController
+        ..value = 0.0
+        ..forward();
     }
+  }
+
+  @override
+  void dispose() {
+    _transitionController.dispose();
+    super.dispose();
   }
 
   void _navigateToAdjacentPile(int delta) {
@@ -174,6 +210,10 @@ class _PileScreenState extends ConsumerState<PileScreen> {
       setState(() {
         _currentKind = _pileSequence[nextIndex];
       });
+      _buildAnimations(reverseDirection: delta < 0);
+      _transitionController
+        ..value = 0.0
+        ..forward();
     }
   }
 
@@ -223,9 +263,18 @@ class _PileScreenState extends ConsumerState<PileScreen> {
           }
         },
         child: SafeArea(
-          child: _currentKind == PileKind.watched
-              ? _buildWatchedContent(context, items)
-              : _buildStandardContent(context, items),
+          child: FadeTransition(
+            opacity: _fade,
+            child: ScaleTransition(
+              scale: _scale,
+              child: SlideTransition(
+                position: _slide,
+                child: _currentKind == PileKind.watched
+                    ? _buildWatchedContent(context, items)
+                    : _buildStandardContent(context, items),
+              ),
+            ),
+          ),
         ),
       ),
     );
