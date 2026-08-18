@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 enum AppTab {
@@ -93,6 +94,68 @@ class SearchKeywordNotifier extends Notifier<String?> {
 final searchKeywordProvider =
     NotifierProvider<SearchKeywordNotifier, String?>(() {
   return SearchKeywordNotifier();
+});
+
+class LoungeRouteObserver extends NavigatorObserver {
+  final void Function(int depth)? onDepthChanged;
+  final List<Route<dynamic>> _history = [];
+
+  LoungeRouteObserver({this.onDepthChanged});
+
+  int get depth => (_history.length - 1).clamp(0, 999);
+
+  void _notify() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      onDepthChanged?.call(depth);
+    });
+  }
+
+  @override
+  void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPush(route, previousRoute);
+    _history.add(route);
+    _notify();
+  }
+
+  @override
+  void didPop(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didPop(route, previousRoute);
+    _history.remove(route);
+    _notify();
+  }
+
+  @override
+  void didRemove(Route<dynamic> route, Route<dynamic>? previousRoute) {
+    super.didRemove(route, previousRoute);
+    _history.remove(route);
+    _notify();
+  }
+
+  @override
+  void didReplace({Route<dynamic>? newRoute, Route<dynamic>? oldRoute}) {
+    super.didReplace(newRoute: newRoute, oldRoute: oldRoute);
+    if (oldRoute != null) _history.remove(oldRoute);
+    if (newRoute != null) _history.add(newRoute);
+    _notify();
+  }
+}
+
+class RouteDepthNotifier extends Notifier<int> {
+  @override
+  int build() => 0;
+
+  void setDepth(int depth) => state = depth;
+}
+
+final routeDepthProvider =
+    NotifierProvider<RouteDepthNotifier, int>(() => RouteDepthNotifier());
+
+final loungeRouteObserverProvider = Provider<LoungeRouteObserver>((ref) {
+  return LoungeRouteObserver(
+    onDepthChanged: (depth) {
+      ref.read(routeDepthProvider.notifier).setDepth(depth);
+    },
+  );
 });
 
 

@@ -163,6 +163,10 @@ class _FloatingNavigationCapsuleState
 
   void _selectTab(AppTab tab) {
     HapticFeedback.selectionClick();
+    final nav = Navigator.of(context, rootNavigator: true);
+    if (nav.canPop()) {
+      nav.popUntil((route) => route.isFirst);
+    }
     ref.read(navigationProvider.notifier).setTab(tab);
     setState(() => _expanded = false);
   }

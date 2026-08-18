@@ -57,6 +57,11 @@ class TestRepository extends MockMovieRepository {
 
 void main() {
   testWidgets('App smoke test', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -72,8 +77,14 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    // NAV-3: the movie/TV toggle now lives inside the floating navigation
-    // capsule's expanded state, not always on screen.
+    // Landing Page (YourSpaceScreen at root) does not show the capsule
+    expect(find.byKey(const ValueKey('floating_nav_capsule')), findsNothing);
+
+    // Tapping Browse from the dock reveals the floating capsule on LobbyScreen
+    await tester.tap(find.text('Browse').first);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('floating_nav_capsule')), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('floating_nav_capsule')));
     await tester.pumpAndSettle();
     expect(find.text('Movies'), findsWidgets);
@@ -141,6 +152,11 @@ void main() {
     testWidgets(
         'shows the normal SplashScreen/shell path when shouldShowConfigurationErrorProvider is false',
         (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(412, 915);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       GoogleFonts.config.allowRuntimeFetching = false;
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -159,8 +175,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ConfigurationErrorScreen), findsNothing);
-      // NAV-3: the movie/TV toggle now lives inside the floating navigation
-      // capsule's expanded state, not always on screen.
+      expect(find.byKey(const ValueKey('floating_nav_capsule')), findsNothing);
+
+      await tester.tap(find.text('Browse').first);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('floating_nav_capsule')), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('floating_nav_capsule')));
       await tester.pumpAndSettle();
       expect(find.text('Movies'), findsWidgets);

@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'constants.dart';
 import 'providers/ambiance_provider.dart';
+import 'providers/navigation_provider.dart';
 import 'providers/repository_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/crash_reporting_service.dart';
 import 'themes/screening_room_theme.dart';
 import 'widgets/fallback_widgets.dart';
+import 'widgets/floating_navigation_capsule.dart';
 
 void main() async {
   final stopwatch = Stopwatch()..start();
@@ -75,22 +77,50 @@ class MyApp extends ConsumerWidget {
     final ambiance = ref.watch(ambianceProvider);
     final shouldShowConfigurationError =
         ref.watch(shouldShowConfigurationErrorProvider);
+    final routeObserver = ref.watch(loungeRouteObserverProvider);
 
     return MaterialApp(
       title: 'The Lounge',
       debugShowCheckedModeBanner: false,
       theme: ambiance.themeData,
+      navigatorObservers: [routeObserver],
       builder: (context, child) {
         return AnimatedTheme(
           duration: AppPhysics.houseSpringDuration,
           curve: AppPhysics.houseSpringCurve,
           data: ambiance.themeData,
-          child: child ?? const SizedBox(),
+          child: Stack(
+            children: [
+              child ?? const SizedBox(),
+              _GlobalCapsuleLayer(
+                enableAnimation: enableAnimation,
+              ),
+            ],
+          ),
         );
       },
       home: shouldShowConfigurationError
           ? const ConfigurationErrorScreen()
           : SplashScreen(enableAnimation: enableAnimation),
     );
+  }
+}
+
+class _GlobalCapsuleLayer extends ConsumerWidget {
+  final bool? enableAnimation;
+
+  const _GlobalCapsuleLayer({this.enableAnimation});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final routeDepth = ref.watch(routeDepthProvider);
+    final shouldShowConfigurationError =
+        ref.watch(shouldShowConfigurationErrorProvider);
+
+    if (routeDepth <= 0 || shouldShowConfigurationError) {
+      return const SizedBox.shrink();
+    }
+
+    return FloatingNavigationCapsule(enableAnimation: enableAnimation);
   }
 }

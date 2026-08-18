@@ -20,7 +20,10 @@ void main() {
 
   final capsuleFinder = find.byKey(const ValueKey('floating_nav_capsule'));
 
-  Future<ProviderContainer> pumpShell(WidgetTester tester) async {
+  Future<ProviderContainer> pumpShell(
+    WidgetTester tester, {
+    AppTab initialTab = AppTab.lobby,
+  }) async {
     tester.view.physicalSize = const Size(412, 915);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -34,6 +37,7 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
+    container.read(navigationProvider.notifier).setTab(initialTab);
 
     await tester.pumpWidget(
       UncontrolledProviderScope(

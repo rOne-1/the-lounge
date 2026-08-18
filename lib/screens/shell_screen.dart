@@ -59,7 +59,8 @@ class ShellScreen extends ConsumerWidget {
                 const Positioned.fill(
                   child: AppNoiseTexture(),
                 ),
-                FloatingNavigationCapsule(enableAnimation: enableAnimation),
+                if (navigationState.currentTab != AppTab.yourSpace)
+                  FloatingNavigationCapsule(enableAnimation: enableAnimation),
                 WhatsNewGate(enableAnimation: enableAnimation),
               ],
             ),
