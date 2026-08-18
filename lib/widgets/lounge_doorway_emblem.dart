@@ -5,7 +5,7 @@ import '../constants.dart';
 /// YSR-COMP-1: Vector & image emblem representing "The Lounge" - an arched
 /// golden doorway opening with a radiant golden light beam. Uses the official
 /// high-resolution asset `assets/icons/doorway_emblem.png` with a procedural
-/// canvas painter fallback. Dynamically theme-aware.
+/// canvas painter fallback. Dynamically theme-aware and decoupled via AmbianceColors.
 class LoungeDoorwayEmblem extends StatelessWidget {
   final double size;
 
@@ -24,7 +24,7 @@ class LoungeDoorwayEmblem extends StatelessWidget {
       width: size,
       height: size,
       decoration: BoxDecoration(
-        color: isDark ? const Color(0x66181412) : const Color(0x33EDE4D8),
+        color: colors.card.withValues(alpha: isDark ? 0.40 : 0.20),
         borderRadius: BorderRadius.circular(size * 0.28),
         border: Border.all(
           color: accent.withValues(alpha: isDark ? 0.35 : 0.45),
@@ -57,6 +57,7 @@ class LoungeDoorwayEmblem extends StatelessWidget {
               painter: _DoorwayPainter(
                 accentColor: accent,
                 inkColor: colors.ink,
+                bgColor: colors.base,
                 isDark: isDark,
               ),
             );
@@ -70,11 +71,13 @@ class LoungeDoorwayEmblem extends StatelessWidget {
 class _DoorwayPainter extends CustomPainter {
   final Color accentColor;
   final Color inkColor;
+  final Color bgColor;
   final bool isDark;
 
   _DoorwayPainter({
     required this.accentColor,
     required this.inkColor,
+    required this.bgColor,
     required this.isDark,
   });
 
@@ -160,8 +163,8 @@ class _DoorwayPainter extends CustomPainter {
 
     final doorPanelFill = Paint()
       ..color = isDark
-          ? const Color(0xDD14110F)
-          : const Color(0xEE3D3732)
+          ? bgColor.withValues(alpha: 0.90)
+          : inkColor.withValues(alpha: 0.80)
       ..style = PaintingStyle.fill;
 
     canvas.drawPath(doorPanelPath, doorPanelFill);
@@ -191,6 +194,7 @@ class _DoorwayPainter extends CustomPainter {
   bool shouldRepaint(covariant _DoorwayPainter oldDelegate) {
     return oldDelegate.accentColor != accentColor ||
         oldDelegate.inkColor != inkColor ||
+        oldDelegate.bgColor != bgColor ||
         oldDelegate.isDark != isDark;
   }
 }

@@ -5,6 +5,7 @@ import 'pressable_scale.dart';
 /// YSR-COMP-3: A full-width hero banner highlighting active viewing ("Watching").
 /// Features a luxury gradient background, 2-line electric blue overline badge,
 /// bold title, live progress subtitle, and a 3-poster depth silhouette stack.
+/// Fully dynamic and theme-isolated via AmbianceColors & AppStatusColors.
 class WatchingHeroCard extends StatelessWidget {
   final int count;
   final VoidCallback onTap;
@@ -28,7 +29,7 @@ class WatchingHeroCard extends StatelessWidget {
         curve: AppPhysics.houseSpringCurve,
         padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF101622) : const Color(0xFFEBF1FA),
+          color: colors.card,
           borderRadius: BorderRadius.circular(24.0),
           border: Border.all(
             color: accentBlue.withValues(alpha: isDark ? 0.35 : 0.45),
@@ -39,12 +40,12 @@ class WatchingHeroCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-                    const Color(0xFF131D2E),
-                    const Color(0xFF0D131E),
+                    Color.alphaBlend(accentBlue.withValues(alpha: 0.16), colors.card),
+                    colors.card,
                   ]
                 : [
-                    const Color(0xFFF0F5FD),
-                    const Color(0xFFE2ECF9),
+                    Color.alphaBlend(accentBlue.withValues(alpha: 0.08), colors.card),
+                    colors.card,
                   ],
           ),
           boxShadow: [
@@ -102,32 +103,34 @@ class WatchingHeroCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 10),
                   Text(
                     'Watching',
                     style: AppThemes.safeGeist(
-                      fontSize: 24,
+                      fontSize: 22,
                       fontWeight: FontWeight.w700,
                       color: colors.ink,
                       letterSpacing: -0.3,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 3),
                   Text(
-                    count == 0
-                        ? 'No titles in progress'
-                        : '$count title${count == 1 ? '' : 's'} in progress',
+                    count == 1 ? '1 title in progress' : '$count titles in progress',
                     style: AppThemes.safeGeist(
                       fontSize: 13.5,
                       color: colors.sub,
+                      letterSpacing: 0.1,
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
-            // Right Visual: 3-poster depth silhouette stack
-            _PosterStackSilhouette(accentColor: accentBlue, isDark: isDark),
+            const SizedBox(width: 12),
+            // Right: 3-Poster Depth Silhouette Stack
+            _PosterStack(
+              accentColor: accentBlue,
+              isDark: isDark,
+            ),
           ],
         ),
       ),
@@ -135,23 +138,26 @@ class WatchingHeroCard extends StatelessWidget {
   }
 }
 
-class _PosterStackSilhouette extends StatelessWidget {
+class _PosterStack extends StatelessWidget {
   final Color accentColor;
   final bool isDark;
 
-  const _PosterStackSilhouette({
+  const _PosterStack({
     required this.accentColor,
     required this.isDark,
   });
 
   @override
   Widget build(BuildContext context) {
-    final posterBg = isDark
-        ? const Color(0xFF1B263B)
-        : const Color(0xFFCBDDF5);
-    final centerBg = isDark
-        ? const Color(0xFF22324E)
-        : const Color(0xFFB8D3F3);
+    final colors = context.ambianceColors;
+    final posterBg = Color.alphaBlend(
+      accentColor.withValues(alpha: isDark ? 0.22 : 0.14),
+      colors.card2,
+    );
+    final centerBg = Color.alphaBlend(
+      accentColor.withValues(alpha: isDark ? 0.38 : 0.26),
+      colors.card2,
+    );
 
     return SizedBox(
       width: 114,
