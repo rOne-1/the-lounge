@@ -37,6 +37,7 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/icons/
 
 dependency_overrides:
   win32: ^5.9.0

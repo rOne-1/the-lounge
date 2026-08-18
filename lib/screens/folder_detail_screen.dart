@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
@@ -83,30 +84,79 @@ class FolderDetailScreen extends ConsumerWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: colors.ink),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12.0),
+          child: Center(
+            child: PressableScale(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colors.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.lineRgba),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.isDark
+                          ? const Color(0x18000000)
+                          : const Color(0x06000000),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.chevron_left_rounded, color: colors.ink, size: 22),
+              ),
+            ),
+          ),
+        ),
         title: Text(
           folder.name,
-          style: AppThemes.safeGeist(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
+          style: GoogleFonts.bodoniModa(
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+            fontStyle: FontStyle.italic,
             color: colors.ink,
           ),
         ),
         actions: [
-          PressableScale(
-            key: const ValueKey('rename_folder_button'),
-            onTap: () => _rename(context, ref, folder.name),
-            child: Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Icon(Icons.edit_outlined, color: colors.ink, size: 20),
+          Padding(
+            padding: const EdgeInsets.only(right: 6.0),
+            child: Center(
+              child: PressableScale(
+                key: const ValueKey('rename_folder_button'),
+                onTap: () => _rename(context, ref, folder.name),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: colors.card,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colors.lineRgba),
+                  ),
+                  child: Icon(Icons.edit_outlined, color: colors.ink, size: 18),
+                ),
+              ),
             ),
           ),
-          PressableScale(
-            key: const ValueKey('delete_folder_button'),
-            onTap: () => _delete(context, ref, folder.name),
-            child: Padding(
-              padding: const EdgeInsets.only(right: 16),
-              child: Icon(Icons.delete_outline_rounded, color: colors.danger, size: 20),
+          Padding(
+            padding: const EdgeInsets.only(right: 14.0),
+            child: Center(
+              child: PressableScale(
+                key: const ValueKey('delete_folder_button'),
+                onTap: () => _delete(context, ref, folder.name),
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: colors.card,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: colors.lineRgba),
+                  ),
+                  child: Icon(Icons.delete_outline_rounded, color: colors.danger, size: 18),
+                ),
+              ),
             ),
           ),
         ],

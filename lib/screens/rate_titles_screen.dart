@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
@@ -67,12 +68,39 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: colors.ink),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 12.0),
+          child: Center(
+            child: PressableScale(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colors.card,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.lineRgba),
+                  boxShadow: [
+                    BoxShadow(
+                      color: colors.isDark
+                          ? const Color(0x18000000)
+                          : const Color(0x06000000),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Icon(Icons.chevron_left_rounded, color: colors.ink, size: 22),
+              ),
+            ),
+          ),
+        ),
         title: Text(
           'Rate Titles',
-          style: AppThemes.safeGeist(
-            fontSize: 17,
-            fontWeight: FontWeight.w600,
+          style: GoogleFonts.bodoniModa(
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+            fontStyle: FontStyle.italic,
             color: colors.ink,
           ),
         ),

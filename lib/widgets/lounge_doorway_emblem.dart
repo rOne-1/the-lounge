@@ -2,15 +2,16 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../constants.dart';
 
-/// YSR-COMP-1: Vector emblem representing "The Lounge" - an arched doorway
-/// opening with a radiant golden light beam rendered on custom canvas.
-/// Dynamically theme-aware, consuming [AmbianceColors].
+/// YSR-COMP-1: Vector & image emblem representing "The Lounge" - an arched
+/// golden doorway opening with a radiant golden light beam. Uses the official
+/// high-resolution asset `assets/icons/doorway_emblem.png` with a procedural
+/// canvas painter fallback. Dynamically theme-aware.
 class LoungeDoorwayEmblem extends StatelessWidget {
   final double size;
 
   const LoungeDoorwayEmblem({
     super.key,
-    this.size = 130.0,
+    this.size = 132.0,
   });
 
   @override
@@ -45,13 +46,21 @@ class LoungeDoorwayEmblem extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(size * 0.28),
-        child: CustomPaint(
-          size: Size(size, size),
-          painter: _DoorwayPainter(
-            accentColor: accent,
-            inkColor: colors.ink,
-            isDark: isDark,
-          ),
+        child: Image.asset(
+          'assets/icons/doorway_emblem.png',
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return CustomPaint(
+              size: Size(size, size),
+              painter: _DoorwayPainter(
+                accentColor: accent,
+                inkColor: colors.ink,
+                isDark: isDark,
+              ),
+            );
+          },
         ),
       ),
     );

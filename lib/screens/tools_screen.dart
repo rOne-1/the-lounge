@@ -10,7 +10,8 @@ import 'rewatch_vault_screen.dart';
 
 /// YSR-HUB-2: The Tools Hub (`tools.png`) - a dedicated 2x2 curation tools
 /// matrix providing access to batch rating, custom folders, cleanup swipe,
-/// and the rewatch vault.
+/// and the rewatch vault. Features luxury gradients, squircle icon badges,
+/// and surface highlights matching the Screening Room design system.
 class ToolsScreen extends ConsumerWidget {
   const ToolsScreen({super.key});
 
@@ -27,7 +28,7 @@ class ToolsScreen extends ConsumerWidget {
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             paddingHorizontal,
-            16.0,
+            14.0,
             paddingHorizontal,
             100.0 + MediaQuery.of(context).padding.bottom,
           ),
@@ -36,7 +37,7 @@ class ToolsScreen extends ConsumerWidget {
             children: [
               // Top Bar with Back Button & Header
               _buildTopBar(context),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
               // 2x2 Tools Grid
               GridView.count(
@@ -94,11 +95,20 @@ class ToolsScreen extends ConsumerWidget {
               color: colors.card,
               shape: BoxShape.circle,
               border: Border.all(color: colors.lineRgba),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.isDark
+                      ? const Color(0x18000000)
+                      : const Color(0x06000000),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(
-              Icons.arrow_back_ios_new_rounded,
+              Icons.chevron_left_rounded,
               color: colors.ink,
-              size: 16,
+              size: 24,
             ),
           ),
         ),
@@ -110,11 +120,11 @@ class ToolsScreen extends ConsumerWidget {
               Text(
                 'Tools',
                 style: GoogleFonts.bodoniModa(
-                  fontSize: 28,
+                  fontSize: 30,
                   fontWeight: FontWeight.w400,
                   fontStyle: FontStyle.italic,
                   color: colors.ink,
-                  letterSpacing: -0.3,
+                  letterSpacing: -0.4,
                 ),
               ),
               const SizedBox(height: 2),
@@ -156,28 +166,47 @@ class _ToolCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
     final accent = colors.acc;
+    final isDark = colors.isDark;
 
     return PressableScale(
       onTap: onTap,
       child: AnimatedContainer(
         duration: AppPhysics.houseSpringDuration,
         curve: AppPhysics.houseSpringCurve,
-        padding: const EdgeInsets.all(18.0),
+        padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: colors.card,
           borderRadius: BorderRadius.circular(22.0),
           border: Border.all(
-            color: accent.withValues(alpha: 0.24),
+            color: accent.withValues(alpha: isDark ? 0.28 : 0.35),
             width: 1.2,
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+                    accent.withValues(alpha: 0.12),
+                    colors.card,
+                  ]
+                : [
+                    accent.withValues(alpha: 0.08),
+                    colors.card,
+                  ],
           ),
           boxShadow: [
             BoxShadow(
-              color: colors.isDark
-                  ? const Color(0x22000000)
-                  : const Color(0x0A000000),
-              blurRadius: 14,
+              color: accent.withValues(alpha: isDark ? 0.08 : 0.04),
+              blurRadius: 16,
               offset: const Offset(0, 4),
             ),
+            if (isDark)
+              BoxShadow(
+                color: colors.surfaceHighlight,
+                blurRadius: 0,
+                offset: const Offset(0, 1),
+                blurStyle: BlurStyle.inner,
+              ),
           ],
         ),
         child: Column(
@@ -185,11 +214,11 @@ class _ToolCard extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Container(
-              width: 40,
-              height: 40,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.16),
-                borderRadius: BorderRadius.circular(12.0),
+                color: accent.withValues(alpha: isDark ? 0.18 : 0.14),
+                borderRadius: BorderRadius.circular(11.0),
                 border: Border.all(
                   color: accent.withValues(alpha: 0.35),
                   width: 1.0,
@@ -198,10 +227,10 @@ class _ToolCard extends StatelessWidget {
               child: Icon(
                 icon,
                 color: accent,
-                size: 21,
+                size: 20,
               ),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -220,7 +249,7 @@ class _ToolCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppThemes.safeGeist(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: colors.sub,
                   ),
                   maxLines: 1,

@@ -211,6 +211,7 @@ class _DockCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
     final accent = colors.acc;
+    final isDark = colors.isDark;
 
     return PressableScale(
       onTap: onTap,
@@ -224,27 +225,54 @@ class _DockCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(22.0),
           border: Border.all(
             color: isActive
-                ? accent.withValues(alpha: 0.75)
+                ? accent.withValues(alpha: isDark ? 0.75 : 0.85)
                 : colors.lineRgba,
             width: isActive ? 1.5 : 1.0,
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isActive
+                ? [
+                    accent.withValues(alpha: isDark ? 0.16 : 0.10),
+                    colors.card,
+                  ]
+                : [
+                    colors.card2.withValues(alpha: 0.8),
+                    colors.card,
+                  ],
           ),
           boxShadow: isActive
               ? [
                   BoxShadow(
-                    color: accent.withValues(alpha: 0.22),
-                    blurRadius: 16,
+                    color: accent.withValues(alpha: isDark ? 0.24 : 0.16),
+                    blurRadius: 18,
                     spreadRadius: 1,
                     offset: const Offset(0, 2),
                   ),
+                  if (isDark)
+                    BoxShadow(
+                      color: colors.surfaceHighlight,
+                      blurRadius: 0,
+                      offset: const Offset(0, 1),
+                      blurStyle: BlurStyle.inner,
+                    ),
                 ]
               : [
                   BoxShadow(
-                    color: colors.isDark
+                    color: isDark
                         ? const Color(0x1A000000)
                         : const Color(0x06000000),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
+                  if (isDark)
+                    BoxShadow(
+                      color: colors.surfaceHighlight,
+                      blurRadius: 0,
+                      offset: const Offset(0, 1),
+                      blurStyle: BlurStyle.inner,
+                    ),
                 ],
         ),
         child: Column(
