@@ -16,7 +16,8 @@ import 'settings_screen.dart';
 /// elevated landing screen for Your Space. Features the dynamic Day overline,
 /// Bodoni Moda time-of-day greeting, total titles counter, glowing Lounge Doorway
 /// centerpiece emblem, and 4-card quick navigation dock (Archive, Browse -> Lobby,
-/// Tools, Settings).
+/// Tools, Settings). Responsive and constrained across small phones, foldables,
+/// tablets, and desktop displays.
 class YourSpaceScreen extends ConsumerStatefulWidget {
   final bool? enableAnimation;
 
@@ -63,8 +64,14 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
   Widget build(BuildContext context) {
     final mediaState = ref.watch(mediaProvider);
     final colors = context.ambianceColors;
-    final isLarge = MediaQuery.of(context).size.width >= 600;
+    final mediaQuery = MediaQuery.of(context);
+    final isLarge = mediaQuery.size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
+    final screenHeight = mediaQuery.size.height;
+
+    // Adaptive vertical rhythm based on viewport height
+    final emblemSpacingTop = screenHeight < 700 ? 32.0 : 48.0;
+    final emblemSpacingBottom = screenHeight < 700 ? 36.0 : 52.0;
 
     int countFor(Map<String, dynamic> itemsMap) => itemsMap.length;
 
@@ -80,104 +87,109 @@ class _YourSpaceScreenState extends ConsumerState<YourSpaceScreen> {
         paddingHorizontal,
         16.0,
         paddingHorizontal,
-        100.0 + MediaQuery.of(context).padding.bottom,
+        100.0 + mediaQuery.padding.bottom,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 16),
-          // 1. Header: Day overline, Bodoni greeting, Library count subtitle
-          Text(
-            _weekday,
-            style: AppThemes.safeGeist(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 2.2,
-              color: colors.sub,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _greeting,
-            textAlign: TextAlign.center,
-            style: GoogleFonts.bodoniModa(
-              fontSize: 40,
-              fontWeight: FontWeight.w400,
-              fontStyle: FontStyle.italic,
-              color: colors.ink,
-              letterSpacing: -0.5,
-              height: 1.1,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '$libraryCount title${libraryCount == 1 ? '' : 's'} in your space',
-            style: AppThemes.safeGeist(
-              fontSize: 14,
-              color: colors.sub,
-              letterSpacing: 0.1,
-            ),
-          ),
-          const SizedBox(height: 48),
-
-          // 2. Centerpiece: AmbientGlowWidget radiating behind LoungeDoorwayEmblem
-          Center(
-            child: AmbientGlowWidget(
-              enableAnimation: widget.enableAnimation,
-              duration: const Duration(seconds: 15),
-              borderRadius: BorderRadius.circular(100),
-              padding: const EdgeInsets.all(36.0),
-              color1: colors.glow1,
-              color2: colors.glow2,
-              child: const LoungeDoorwayEmblem(size: 132.0),
-            ),
-          ),
-          const SizedBox(height: 52),
-
-          // 3. Navigation Dock (4 Quick Access Cards)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 680),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: _DockCard(
-                  icon: Icons.collections_bookmark_rounded,
-                  label: 'Archive',
-                  isActive: true,
-                  onTap: () => _push(context, const ArchiveScreen()),
+              const SizedBox(height: 16),
+              // 1. Header: Day overline, Bodoni greeting, Library count subtitle
+              Text(
+                _weekday,
+                style: AppThemes.safeGeist(
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 2.2,
+                  color: colors.sub,
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _DockCard(
-                  icon: Icons.explore_outlined,
-                  label: 'Browse',
-                  onTap: () => _switchTab(AppTab.lobby),
+              const SizedBox(height: 8),
+              Text(
+                _greeting,
+                textAlign: TextAlign.center,
+                style: GoogleFonts.bodoniModa(
+                  fontSize: 40,
+                  fontWeight: FontWeight.w400,
+                  fontStyle: FontStyle.italic,
+                  color: colors.ink,
+                  letterSpacing: -0.5,
+                  height: 1.1,
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _DockCard(
-                  icon: Icons.tune_rounded,
-                  label: 'Tools',
-                  onTap: () => _push(context, const ToolsScreen()),
+              const SizedBox(height: 8),
+              Text(
+                '$libraryCount title${libraryCount == 1 ? '' : 's'} in your space',
+                style: AppThemes.safeGeist(
+                  fontSize: 14,
+                  color: colors.sub,
+                  letterSpacing: 0.1,
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _DockCard(
-                  key: const ValueKey('your_space_settings_button'),
-                  icon: Icons.light_mode_outlined,
-                  label: 'Settings',
-                  onTap: () => _push(context, const SettingsScreen()),
+              SizedBox(height: emblemSpacingTop),
+
+              // 2. Centerpiece: AmbientGlowWidget radiating behind LoungeDoorwayEmblem
+              Center(
+                child: AmbientGlowWidget(
+                  enableAnimation: widget.enableAnimation,
+                  duration: const Duration(seconds: 15),
+                  borderRadius: BorderRadius.circular(100),
+                  padding: const EdgeInsets.all(36.0),
+                  color1: colors.glow1,
+                  color2: colors.glow2,
+                  child: const LoungeDoorwayEmblem(size: 132.0),
                 ),
               ),
+              SizedBox(height: emblemSpacingBottom),
+
+              // 3. Navigation Dock (4 Quick Access Cards)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: _DockCard(
+                      icon: Icons.collections_bookmark_rounded,
+                      label: 'Archive',
+                      isActive: true,
+                      onTap: () => _push(context, const ArchiveScreen()),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _DockCard(
+                      icon: Icons.explore_outlined,
+                      label: 'Browse',
+                      onTap: () => _switchTab(AppTab.lobby),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _DockCard(
+                      icon: Icons.tune_rounded,
+                      label: 'Tools',
+                      onTap: () => _push(context, const ToolsScreen()),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _DockCard(
+                      key: const ValueKey('your_space_settings_button'),
+                      icon: Icons.light_mode_outlined,
+                      label: 'Settings',
+                      onTap: () => _push(context, const SettingsScreen()),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 36),
+
+              // 4. Memory Moments Section ("Forgotten Favorites" & "On This Day")
+              const MemoryMomentsSection(),
             ],
           ),
-          const SizedBox(height: 36),
-
-          // 4. Memory Moments Section ("Forgotten Favorites" & "On This Day")
-          const MemoryMomentsSection(),
-        ],
+        ),
       ),
     );
   }
@@ -285,16 +297,19 @@ class _DockCard extends StatelessWidget {
               size: 24,
             ),
             const SizedBox(height: 8),
-            Text(
-              label,
-              style: AppThemes.safeGeist(
-                fontSize: 12.5,
-                fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                color: isActive ? colors.ink : colors.sub,
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: AppThemes.safeGeist(
+                  fontSize: 12.5,
+                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
+                  color: isActive ? colors.ink : colors.sub,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.center,
             ),
           ],
         ),

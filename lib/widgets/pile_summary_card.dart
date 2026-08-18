@@ -6,6 +6,7 @@ import 'pressable_scale.dart';
 /// YSR-COMP-3: A 2x2 grid summary card representing a status pile.
 /// Features a status icon badge, a prominent Bodoni Moda italic count numeral,
 /// status-tinted luxury gradient background, and responsive typography.
+/// Fully dynamic and theme-isolated via AmbianceColors & AppStatusColors.
 class PileSummaryCard extends StatelessWidget {
   final String label;
   final String subtitle;
@@ -34,7 +35,7 @@ class PileSummaryCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: AppPhysics.houseSpringDuration,
         curve: AppPhysics.houseSpringCurve,
-        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
+        padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: colors.card,
           borderRadius: BorderRadius.circular(22.0),
@@ -96,14 +97,20 @@ class PileSummaryCard extends StatelessWidget {
                     size: 18,
                   ),
                 ),
-                Text(
-                  '$count',
-                  style: GoogleFonts.bodoniModa(
-                    fontSize: 34,
-                    fontWeight: FontWeight.w400,
-                    fontStyle: FontStyle.italic,
-                    color: statusColor,
-                    height: 0.95,
+                Flexible(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      '$count',
+                      style: GoogleFonts.bodoniModa(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w400,
+                        fontStyle: FontStyle.italic,
+                        color: statusColor,
+                        height: 0.95,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -114,25 +121,33 @@ class PileSummaryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  label,
-                  style: AppThemes.safeGeist(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: colors.ink,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    label,
+                    style: AppThemes.safeGeist(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colors.ink,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppThemes.safeGeist(
-                    fontSize: 12.5,
-                    color: colors.sub,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    subtitle,
+                    style: AppThemes.safeGeist(
+                      fontSize: 12.5,
+                      color: colors.sub,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

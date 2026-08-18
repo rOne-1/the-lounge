@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -9,6 +10,7 @@ import '../utils/export_helper.dart';
 import '../widgets/animated_segmented_control.dart';
 import '../widgets/lounge_dialog.dart';
 import '../widgets/lounge_toast.dart';
+import '../widgets/pressable_scale.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../services/api_call_tracker.dart';
 
@@ -436,6 +438,47 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     ),
                                   ],
                                 ),
+                                if (tracker.failureRecords.isNotEmpty) ...[
+                                  const SizedBox(height: 14),
+                                  PressableScale(
+                                    key: const ValueKey('copy_api_failures_button'),
+                                    onTap: () {
+                                      final jsonStr = tracker.exportFailuresJsonPretty();
+                                      Clipboard.setData(ClipboardData(text: jsonStr));
+                                      LoungeToast.show(
+                                        context,
+                                        'Copied ${tracker.failureRecords.length} API failure log${tracker.failureRecords.length == 1 ? '' : 's'} (JSON)',
+                                      );
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                      decoration: BoxDecoration(
+                                        color: context.ambianceColors.card2.withValues(alpha: 0.6),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: context.ambianceColors.lineRgba),
+                                      ),
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.copy_rounded,
+                                            size: 14,
+                                            color: context.ambianceColors.ink,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Copy API Failures (JSON)',
+                                            style: AppThemes.safeGeist(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: context.ambianceColors.ink,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
                             );
                           },

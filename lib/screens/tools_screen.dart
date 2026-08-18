@@ -12,6 +12,7 @@ import 'rewatch_vault_screen.dart';
 /// matrix providing access to batch rating, custom folders, cleanup swipe,
 /// and the rewatch vault. Features luxury gradients, squircle icon badges,
 /// and surface highlights matching the Screening Room design system.
+/// Fully responsive and width-constrained for multi-device harmony.
 class ToolsScreen extends ConsumerWidget {
   const ToolsScreen({super.key});
 
@@ -32,49 +33,54 @@ class ToolsScreen extends ConsumerWidget {
             paddingHorizontal,
             100.0 + MediaQuery.of(context).padding.bottom,
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Top Bar with Back Button & Header
-              _buildTopBar(context),
-              const SizedBox(height: 24),
-
-              // 2x2 Tools Grid
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.15,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 720),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _ToolCard(
-                    icon: Icons.star_rounded,
-                    title: 'Rate Titles',
-                    subtitle: 'Batch rating tool',
-                    onTap: () => _push(context, const RateTitlesScreen()),
-                  ),
-                  _ToolCard(
-                    icon: Icons.folder_rounded,
-                    title: 'Custom Folders',
-                    subtitle: 'Curated playlists',
-                    onTap: () => _push(context, const FoldersScreen()),
-                  ),
-                  _ToolCard(
-                    icon: Icons.auto_awesome_rounded,
-                    title: 'Cleanup Session',
-                    subtitle: 'Tidy up Saved',
-                    onTap: () => _push(context, const CleanupSwipeScreen()),
-                  ),
-                  _ToolCard(
-                    icon: Icons.replay_rounded,
-                    title: 'Rewatch Vault',
-                    subtitle: 'Titles you\'ve rewatched',
-                    onTap: () => _push(context, const RewatchVaultScreen()),
+                  // Top Bar with Back Button & Header
+                  _buildTopBar(context),
+                  const SizedBox(height: 24),
+
+                  // 2x2 Tools Grid
+                  GridView.count(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisCount: 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    childAspectRatio: 1.15,
+                    children: [
+                      _ToolCard(
+                        icon: Icons.star_rounded,
+                        title: 'Rate Titles',
+                        subtitle: 'Batch rating tool',
+                        onTap: () => _push(context, const RateTitlesScreen()),
+                      ),
+                      _ToolCard(
+                        icon: Icons.folder_rounded,
+                        title: 'Custom Folders',
+                        subtitle: 'Curated playlists',
+                        onTap: () => _push(context, const FoldersScreen()),
+                      ),
+                      _ToolCard(
+                        icon: Icons.auto_awesome_rounded,
+                        title: 'Cleanup Session',
+                        subtitle: 'Tidy up Saved',
+                        onTap: () => _push(context, const CleanupSwipeScreen()),
+                      ),
+                      _ToolCard(
+                        icon: Icons.replay_rounded,
+                        title: 'Rewatch Vault',
+                        subtitle: 'Titles you\'ve rewatched',
+                        onTap: () => _push(context, const RewatchVaultScreen()),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -235,25 +241,33 @@ class _ToolCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  title,
-                  style: AppThemes.safeGeist(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: colors.ink,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    title,
+                    style: AppThemes.safeGeist(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: colors.ink,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  style: AppThemes.safeGeist(
-                    fontSize: 12.5,
-                    color: colors.sub,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    subtitle,
+                    style: AppThemes.safeGeist(
+                      fontSize: 12.5,
+                      color: colors.sub,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),

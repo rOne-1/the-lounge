@@ -5,7 +5,7 @@ import 'pressable_scale.dart';
 /// YSR-COMP-3: A full-width hero banner highlighting active viewing ("Watching").
 /// Features a luxury gradient background, 2-line electric blue overline badge,
 /// bold title, live progress subtitle, and a 3-poster depth silhouette stack.
-/// Fully dynamic and theme-isolated via AmbianceColors & AppStatusColors.
+/// Fully dynamic, responsive, and theme-isolated via AmbianceColors & AppStatusColors.
 class WatchingHeroCard extends StatelessWidget {
   final int count;
   final VoidCallback onTap;
@@ -92,34 +92,48 @@ class WatchingHeroCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
-                      Text(
-                        'CONTINUE WATCHING',
-                        style: AppThemes.safeGeist(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                          color: accentBlue,
-                          letterSpacing: 1.2,
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'CONTINUE WATCHING',
+                            style: AppThemes.safeGeist(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: accentBlue,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    'Watching',
-                    style: AppThemes.safeGeist(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: colors.ink,
-                      letterSpacing: -0.3,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Watching',
+                      style: AppThemes.safeGeist(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                        color: colors.ink,
+                        letterSpacing: -0.3,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 3),
-                  Text(
-                    count == 1 ? '1 title in progress' : '$count titles in progress',
-                    style: AppThemes.safeGeist(
-                      fontSize: 13.5,
-                      color: colors.sub,
-                      letterSpacing: 0.1,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      count == 1 ? '1 title in progress' : '$count titles in progress',
+                      style: AppThemes.safeGeist(
+                        fontSize: 13.5,
+                        color: colors.sub,
+                        letterSpacing: 0.1,
+                      ),
                     ),
                   ),
                 ],

@@ -85,12 +85,27 @@ class TmdbApiService {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return jsonDecode(response.body) as Map<String, dynamic>;
       } else {
+        ApiCallTracker.instance.recordFailure(
+          endpoint: path,
+          uri: uri,
+          statusCode: response.statusCode,
+          error: 'TMDB API Request Failed [$path]: Status ${response.statusCode}',
+          responseBody: response.body,
+          queryParams: queryParameters,
+        );
         throw Exception(
           'TMDB API Request Failed [$path]: Status ${response.statusCode} - ${response.body}',
         );
       }
     } catch (e) {
-      ApiCallTracker.instance.recordFailure();
+      if (e is! Exception || !e.toString().startsWith('Exception: TMDB API Request Failed')) {
+        ApiCallTracker.instance.recordFailure(
+          endpoint: path,
+          uri: uri,
+          error: e,
+          queryParams: queryParameters,
+        );
+      }
       rethrow;
     }
   }
