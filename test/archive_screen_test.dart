@@ -38,7 +38,7 @@ void main() {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
-      expect(find.text('Archive'), findsOneWidget);
+      expect(find.text('Your Collection'), findsOneWidget);
       expect(find.textContaining('6 piles'), findsOneWidget);
 
       expect(find.text('Watching'), findsOneWidget);

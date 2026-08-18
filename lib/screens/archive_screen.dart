@@ -11,10 +11,10 @@ import '../widgets/pressable_scale.dart';
 import '../widgets/watching_hero_card.dart';
 import 'pile_screen.dart';
 
-/// YSR-HUB-1: The Archive Hub (`your collection.png`) - a dedicated visual
-/// overview dashboard across all 6 status piles. Features the Hero Watching
-/// card, a 2x2 main status grid, and a bottom muted Dropped card. Tapping any
-/// card pushes the full-featured [PileScreen].
+/// YSR-HUB-1: The Archive Screen (`your collection.png`) - a dedicated visual
+/// overview dashboard across all 6 status piles ("Your Collection"). Features
+/// the Hero Watching banner with 3-poster depth silhouette, a 2x2 status grid,
+/// and a bottom muted Dropped strip. Tapping any card pushes [PileScreen].
 class ArchiveScreen extends ConsumerWidget {
   const ArchiveScreen({super.key});
 
@@ -52,7 +52,7 @@ class ArchiveScreen extends ConsumerWidget {
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(
             paddingHorizontal,
-            16.0,
+            14.0,
             paddingHorizontal,
             100.0 + MediaQuery.of(context).padding.bottom,
           ),
@@ -61,7 +61,7 @@ class ArchiveScreen extends ConsumerWidget {
             children: [
               // Top Bar with Back Button & Header
               _buildTopBar(context, totalTitles),
-              const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
               // 1. Hero Watching Card
               WatchingHeroCard(
@@ -77,37 +77,37 @@ class ArchiveScreen extends ConsumerWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                childAspectRatio: 1.18,
+                childAspectRatio: 1.16,
                 children: [
                   PileSummaryCard(
                     label: PileKind.watched.label,
-                    subtitle: '$watchedCount title${watchedCount == 1 ? '' : 's'}',
+                    subtitle: 'titles',
                     count: watchedCount,
-                    icon: PileKind.watched.icon,
+                    icon: Icons.check_rounded,
                     statusColor: PileKind.watched.statusColor,
                     onTap: () => _openPile(context, PileKind.watched),
                   ),
                   PileSummaryCard(
                     label: PileKind.watchlist.label,
-                    subtitle: '$watchlistCount title${watchlistCount == 1 ? '' : 's'}',
+                    subtitle: 'titles',
                     count: watchlistCount,
-                    icon: PileKind.watchlist.icon,
+                    icon: Icons.bookmark_rounded,
                     statusColor: PileKind.watchlist.statusColor,
                     onTap: () => _openPile(context, PileKind.watchlist),
                   ),
                   PileSummaryCard(
                     label: PileKind.saved.label,
-                    subtitle: '$savedCount title${savedCount == 1 ? '' : 's'}',
+                    subtitle: 'titles',
                     count: savedCount,
-                    icon: PileKind.saved.icon,
+                    icon: Icons.favorite_rounded,
                     statusColor: PileKind.saved.statusColor,
                     onTap: () => _openPile(context, PileKind.saved),
                   ),
                   PileSummaryCard(
                     label: PileKind.onHold.label,
-                    subtitle: '$onHoldCount title${onHoldCount == 1 ? '' : 's'}',
+                    subtitle: 'titles',
                     count: onHoldCount,
-                    icon: PileKind.onHold.icon,
+                    icon: Icons.pause_rounded,
                     statusColor: PileKind.onHold.statusColor,
                     onTap: () => _openPile(context, PileKind.onHold),
                   ),
@@ -117,14 +117,15 @@ class ArchiveScreen extends ConsumerWidget {
 
               // 3. Dropped Pile Dashed Card
               DashedBorderCard(
-                borderColor: AppStatusColors.dropped.withValues(alpha: 0.35),
-                backgroundColor: colors.card.withValues(alpha: 0.6),
+                borderColor: AppStatusColors.dropped.withValues(alpha: 0.32),
+                backgroundColor: AppStatusColors.dropped.withValues(alpha: 0.06),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 14.0),
                 onTap: () => _openPile(context, PileKind.dropped),
                 child: Row(
                   children: [
                     Container(
-                      width: 34,
-                      height: 34,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
                         color: AppStatusColors.dropped.withValues(alpha: 0.16),
                         shape: BoxShape.circle,
@@ -132,36 +133,31 @@ class ArchiveScreen extends ConsumerWidget {
                       child: const Icon(
                         Icons.remove_circle_outline_rounded,
                         color: AppStatusColors.dropped,
-                        size: 19,
+                        size: 17,
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: 12),
                     Text(
                       'Dropped',
                       style: AppThemes.safeGeist(
-                        fontSize: 15.5,
+                        fontSize: 15.0,
                         fontWeight: FontWeight.w600,
                         color: colors.ink,
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         droppedCount == 0
                             ? 'nothing here — a clean record'
                             : '$droppedCount title${droppedCount == 1 ? '' : 's'}',
                         style: AppThemes.safeGeist(
-                          fontSize: 12.5,
+                          fontSize: 13.0,
                           color: colors.sub,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      color: colors.sub.withValues(alpha: 0.4),
-                      size: 13,
                     ),
                   ],
                 ),
@@ -187,11 +183,20 @@ class ArchiveScreen extends ConsumerWidget {
               color: colors.card,
               shape: BoxShape.circle,
               border: Border.all(color: colors.lineRgba),
+              boxShadow: [
+                BoxShadow(
+                  color: colors.isDark
+                      ? const Color(0x18000000)
+                      : const Color(0x06000000),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Icon(
-              Icons.arrow_back_ios_new_rounded,
+              Icons.chevron_left_rounded,
               color: colors.ink,
-              size: 16,
+              size: 24,
             ),
           ),
         ),
@@ -201,13 +206,13 @@ class ArchiveScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Archive',
+                'Your Collection',
                 style: GoogleFonts.bodoniModa(
-                  fontSize: 28,
+                  fontSize: 30,
                   fontWeight: FontWeight.w400,
                   fontStyle: FontStyle.italic,
                   color: colors.ink,
-                  letterSpacing: -0.3,
+                  letterSpacing: -0.4,
                 ),
               ),
               const SizedBox(height: 2),

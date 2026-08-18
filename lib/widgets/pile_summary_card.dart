@@ -5,7 +5,7 @@ import 'pressable_scale.dart';
 
 /// YSR-COMP-3: A 2x2 grid summary card representing a status pile.
 /// Features a status icon badge, a prominent Bodoni Moda italic count numeral,
-/// and responsive typography consuming [AmbianceColors] and [AppStatusColors].
+/// status-tinted luxury gradient background, and responsive typography.
 class PileSummaryCard extends StatelessWidget {
   final String label;
   final String subtitle;
@@ -27,45 +27,64 @@ class PileSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
+    final isDark = colors.isDark;
 
     return PressableScale(
       onTap: onTap,
       child: AnimatedContainer(
         duration: AppPhysics.houseSpringDuration,
         curve: AppPhysics.houseSpringCurve,
-        padding: const EdgeInsets.all(18.0),
+        padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 16.0),
         decoration: BoxDecoration(
           color: colors.card,
           borderRadius: BorderRadius.circular(22.0),
           border: Border.all(
-            color: statusColor.withValues(alpha: 0.28),
+            color: statusColor.withValues(alpha: isDark ? 0.32 : 0.40),
             width: 1.2,
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: isDark
+                ? [
+                    statusColor.withValues(alpha: 0.12),
+                    colors.card,
+                  ]
+                : [
+                    statusColor.withValues(alpha: 0.08),
+                    colors.card,
+                  ],
           ),
           boxShadow: [
             BoxShadow(
-              color: colors.isDark
-                  ? const Color(0x22000000)
-                  : const Color(0x0A000000),
-              blurRadius: 14,
+              color: statusColor.withValues(alpha: isDark ? 0.08 : 0.04),
+              blurRadius: 16,
               offset: const Offset(0, 4),
             ),
+            if (isDark)
+              BoxShadow(
+                color: colors.surfaceHighlight,
+                blurRadius: 0,
+                offset: const Offset(0, 1),
+                blurStyle: BlurStyle.inner,
+              ),
           ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Top Row: Icon Badge (left) & Large Bodoni Italic Count (right)
+            // Top Row: Icon Squircle Badge (left) & Large Bodoni Italic Count (right)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 38,
-                  height: 38,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.18),
-                    borderRadius: BorderRadius.circular(11.0),
+                    color: statusColor.withValues(alpha: isDark ? 0.18 : 0.14),
+                    borderRadius: BorderRadius.circular(10.0),
                     border: Border.all(
                       color: statusColor.withValues(alpha: 0.35),
                       width: 1.0,
@@ -74,22 +93,22 @@ class PileSummaryCard extends StatelessWidget {
                   child: Icon(
                     icon,
                     color: statusColor,
-                    size: 19,
+                    size: 18,
                   ),
                 ),
                 Text(
                   '$count',
                   style: GoogleFonts.bodoniModa(
-                    fontSize: 32,
+                    fontSize: 34,
                     fontWeight: FontWeight.w400,
                     fontStyle: FontStyle.italic,
                     color: statusColor,
-                    height: 1.0,
+                    height: 0.95,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             // Bottom Column: Label & Subtitle
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -109,7 +128,7 @@ class PileSummaryCard extends StatelessWidget {
                 Text(
                   subtitle,
                   style: AppThemes.safeGeist(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     color: colors.sub,
                   ),
                   maxLines: 1,
