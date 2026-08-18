@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../widgets/noise_texture_overlay.dart';
-import '../widgets/floating_navigation_capsule.dart';
 import '../widgets/whats_new_dialog.dart';
 import '../constants.dart';
 import 'lobby_screen.dart';
@@ -59,8 +58,6 @@ class ShellScreen extends ConsumerWidget {
                 const Positioned.fill(
                   child: AppNoiseTexture(),
                 ),
-                if (navigationState.currentTab != AppTab.yourSpace)
-                  FloatingNavigationCapsule(enableAnimation: enableAnimation),
                 WhatsNewGate(enableAnimation: enableAnimation),
               ],
             ),

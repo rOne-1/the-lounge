@@ -21,7 +21,15 @@ import 'pressable_scale.dart';
 class FloatingNavigationCapsule extends ConsumerStatefulWidget {
   final bool? enableAnimation;
 
-  const FloatingNavigationCapsule({super.key, this.enableAnimation});
+  /// When the capsule is hosted outside the app's Navigator subtree (the
+  /// global overlay in main.dart's MaterialApp.builder -- a Stack sibling
+  /// of the routed Navigator, not a descendant), `Navigator.of(context)`
+  /// has no Navigator ancestor to find. Pass the app's root navigator key
+  /// so navigation still works from there; omitted when the capsule is
+  /// hosted somewhere that already sits inside a real Navigator context.
+  final GlobalKey<NavigatorState>? navigatorKey;
+
+  const FloatingNavigationCapsule({super.key, this.enableAnimation, this.navigatorKey});
 
   @override
   ConsumerState<FloatingNavigationCapsule> createState() =>
@@ -161,9 +169,12 @@ class _FloatingNavigationCapsuleState
     setState(() => _expanded = false);
   }
 
+  NavigatorState get _navigator =>
+      widget.navigatorKey?.currentState ?? Navigator.of(context, rootNavigator: true);
+
   void _selectTab(AppTab tab) {
     HapticFeedback.selectionClick();
-    final nav = Navigator.of(context, rootNavigator: true);
+    final nav = _navigator;
     if (nav.canPop()) {
       nav.popUntil((route) => route.isFirst);
     }
@@ -225,7 +236,7 @@ class _FloatingNavigationCapsuleState
               onSettings: () {
                 HapticFeedback.selectionClick();
                 setState(() => _expanded = false);
-                Navigator.of(context).push(
+                _navigator.push(
                   MaterialPageRoute(builder: (context) => const SettingsScreen()),
                 );
               },

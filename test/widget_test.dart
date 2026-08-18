@@ -10,6 +10,8 @@ import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
+import 'package:the_lounge/screens/archive_screen.dart';
+import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/widgets/fallback_widgets.dart';
 import 'package:the_lounge/widgets/trailer_player.dart';
 
@@ -88,6 +90,52 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('floating_nav_capsule')));
     await tester.pumpAndSettle();
     expect(find.text('Movies'), findsWidgets);
+  });
+
+  testWidgets(
+      'floating nav capsule works for Settings from inside a pushed sub-screen (Archive)',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(412, 915);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    GoogleFonts.config.allowRuntimeFetching = false;
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final mockRepo = TestRepository();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(mockRepo),
+        ],
+        child: const MyApp(enableAnimation: false),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    // Landing page (Your Space, nothing pushed): capsule hidden.
+    expect(find.byKey(const ValueKey('floating_nav_capsule')), findsNothing);
+
+    // Push Archive from Your Space's dock. This is a real Navigator push
+    // while staying on the yourSpace tab (routeDepth > 0, currentTab still
+    // yourSpace) -- the exact shape that exposed the real bug: the capsule
+    // is drawn as a Stack sibling of the app's Navigator (see main.dart's
+    // GlobalCapsuleLayer), not a descendant of it, so it has no reachable
+    // Navigator ancestor unless wired through rootNavigatorKey.
+    await tester.tap(find.text('Archive'));
+    await tester.pumpAndSettle();
+    expect(find.byType(ArchiveScreen), findsOneWidget);
+
+    expect(find.byKey(const ValueKey('floating_nav_capsule')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('floating_nav_capsule')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('floating_nav_settings_button')));
+    await tester.pumpAndSettle();
+    expect(find.byType(SettingsScreen), findsOneWidget);
   });
 
   group('TrailerPlayer timeout fallback tests in widget_test', () {

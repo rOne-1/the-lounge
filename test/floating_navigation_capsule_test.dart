@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:the_lounge/main.dart';
 import 'package:the_lounge/screens/shell_screen.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
@@ -39,11 +40,27 @@ void main() {
     );
     container.read(navigationProvider.notifier).setTab(initialTab);
 
+    // Mirrors MyApp's real tree shape (main.dart): the capsule is hosted via
+    // GlobalCapsuleLayer as a Stack sibling of `child` (the routed
+    // Navigator) inside MaterialApp.builder, not a descendant of it. Pumping
+    // bare ShellScreen as `home` (the old shape of this test) exercised a
+    // capsule instance that no longer exists in production and masked a
+    // real bug where the actual global capsule had no reachable Navigator.
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: ShellScreen(enableAnimation: false),
+        child: MaterialApp(
+          navigatorKey: rootNavigatorKey,
+          navigatorObservers: [container.read(loungeRouteObserverProvider)],
+          home: const ShellScreen(enableAnimation: false),
+          builder: (context, child) {
+            return Stack(
+              children: [
+                child ?? const SizedBox(),
+                const GlobalCapsuleLayer(enableAnimation: false),
+              ],
+            );
+          },
         ),
       ),
     );

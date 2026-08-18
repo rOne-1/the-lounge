@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/screens/shell_screen.dart';
+import 'package:the_lounge/main.dart';
 
 class TestRepository extends MockMovieRepository {
   @override
@@ -636,8 +637,17 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: ShellScreen(enableAnimation: false),
+        child: MaterialApp(
+          navigatorKey: rootNavigatorKey,
+          home: const ShellScreen(enableAnimation: false),
+          builder: (context, child) {
+            return Stack(
+              children: [
+                child ?? const SizedBox(),
+                const GlobalCapsuleLayer(enableAnimation: false),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -747,8 +757,17 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: const MaterialApp(
-          home: ShellScreen(enableAnimation: false),
+        child: MaterialApp(
+          navigatorKey: rootNavigatorKey,
+          home: const ShellScreen(enableAnimation: false),
+          builder: (context, child) {
+            return Stack(
+              children: [
+                child ?? const SizedBox(),
+                const GlobalCapsuleLayer(enableAnimation: false),
+              ],
+            );
+          },
         ),
       ),
     );

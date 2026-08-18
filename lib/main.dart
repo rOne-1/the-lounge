@@ -14,6 +14,13 @@ import 'themes/screening_room_theme.dart';
 import 'widgets/fallback_widgets.dart';
 import 'widgets/floating_navigation_capsule.dart';
 
+/// Shared with [GlobalCapsuleLayer]/[FloatingNavigationCapsule]: the capsule
+/// is drawn in [MyApp]'s `builder` as a Stack sibling of `child` (the actual
+/// routed Navigator), not a descendant of it, so `Navigator.of(context)`
+/// from inside the capsule has no Navigator ancestor to find. This key gives
+/// it a working handle to the real Navigator regardless of tree position.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
+
 void main() async {
   final stopwatch = Stopwatch()..start();
   WidgetsFlutterBinding.ensureInitialized();
@@ -83,6 +90,7 @@ class MyApp extends ConsumerWidget {
       title: 'The Lounge',
       debugShowCheckedModeBanner: false,
       theme: ambiance.themeData,
+      navigatorKey: rootNavigatorKey,
       navigatorObservers: [routeObserver],
       builder: (context, child) {
         return AnimatedTheme(
@@ -92,7 +100,7 @@ class MyApp extends ConsumerWidget {
           child: Stack(
             children: [
               child ?? const SizedBox(),
-              _GlobalCapsuleLayer(
+              GlobalCapsuleLayer(
                 enableAnimation: enableAnimation,
               ),
             ],
@@ -106,21 +114,37 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-class _GlobalCapsuleLayer extends ConsumerWidget {
+/// Hosts the single [FloatingNavigationCapsule] instance for the whole app,
+/// positioned as a Stack sibling of the routed [Navigator] in [MyApp]'s
+/// `builder` so it draws above every pushed screen. Public (not `_`-private)
+/// so widget tests can reconstruct the same builder-sibling tree shape that
+/// production actually uses -- see floating_navigation_capsule_test.dart.
+///
+/// Hidden only when truly sitting at the Your Space landing screen with
+/// nothing pushed on top (`routeDepth <= 0 && currentTab == yourSpace`).
+/// `routeDepth` alone isn't enough: Lobby/Discover/Search/Calendar are tab
+/// switches within ShellScreen's IndexedStack, not Navigator pushes, so they
+/// sit at routeDepth 0 too and still need the capsule shown.
+class GlobalCapsuleLayer extends ConsumerWidget {
   final bool? enableAnimation;
 
-  const _GlobalCapsuleLayer({this.enableAnimation});
+  const GlobalCapsuleLayer({super.key, this.enableAnimation});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final routeDepth = ref.watch(routeDepthProvider);
+    final currentTab = ref.watch(navigationProvider).currentTab;
     final shouldShowConfigurationError =
         ref.watch(shouldShowConfigurationErrorProvider);
 
-    if (routeDepth <= 0 || shouldShowConfigurationError) {
+    if (shouldShowConfigurationError ||
+        (routeDepth <= 0 && currentTab == AppTab.yourSpace)) {
       return const SizedBox.shrink();
     }
 
-    return FloatingNavigationCapsule(enableAnimation: enableAnimation);
+    return FloatingNavigationCapsule(
+      enableAnimation: enableAnimation,
+      navigatorKey: rootNavigatorKey,
+    );
   }
 }
