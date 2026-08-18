@@ -111,10 +111,12 @@ class ShellScreen extends ConsumerWidget {
     // _PersistentTabView below keeps a single stable IndexedStack (never
     // re-keyed, so children are never torn down) and animates the switch
     // itself instead of the subtree identity.
+    final isSwipeDeckTab = tabs[index] == AppTab.discover;
+
     return _PersistentTabView(
       index: index,
-      onSwipeLeft: () => switchTo(index + 1),
-      onSwipeRight: () => switchTo(index - 1),
+      onSwipeLeft: isSwipeDeckTab ? null : () => switchTo(index + 1),
+      onSwipeRight: isSwipeDeckTab ? null : () => switchTo(index - 1),
       children: [
         LobbyScreen(
           key: const PageStorageKey(AppTab.lobby),
@@ -207,6 +209,23 @@ class _PersistentTabViewState extends State<_PersistentTabView>
 
   @override
   Widget build(BuildContext context) {
+    final transitionContent = FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: IndexedStack(
+          index: widget.index,
+          children: widget.children,
+        ),
+      ),
+    );
+
+    // If swipe navigation is disabled for this tab (e.g. Discover screen's 2D swipe deck),
+    // omit the GestureDetector entirely so child gestures are 100% unintercepted.
+    if (widget.onSwipeLeft == null && widget.onSwipeRight == null) {
+      return transitionContent;
+    }
+
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onHorizontalDragEnd: (details) {
@@ -218,16 +237,7 @@ class _PersistentTabViewState extends State<_PersistentTabView>
           widget.onSwipeRight?.call();
         }
       },
-      child: FadeTransition(
-        opacity: _fade,
-        child: SlideTransition(
-          position: _slide,
-          child: IndexedStack(
-            index: widget.index,
-            children: widget.children,
-          ),
-        ),
-      ),
+      child: transitionContent,
     );
   }
 }
