@@ -53,7 +53,7 @@ class ShellScreen extends ConsumerWidget {
                   extendBody: true,
                   body: SafeArea(
                     bottom: false,
-                    child: _buildBody(navigationState.currentTab),
+                    child: _buildBody(ref, navigationState.currentTab),
                   ),
                 ),
                 const Positioned.fill(
@@ -84,8 +84,21 @@ class ShellScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildBody(AppTab tab) {
+  Widget _buildBody(WidgetRef ref, AppTab tab) {
     final index = _tabIndex(tab);
+    const tabs = [
+      AppTab.lobby,
+      AppTab.discover,
+      AppTab.search,
+      AppTab.yourSpace,
+      AppTab.calendar,
+    ];
+
+    void switchTo(int newIndex) {
+      if (newIndex >= 0 && newIndex < tabs.length) {
+        ref.read(navigationProvider.notifier).setTab(tabs[newIndex]);
+      }
+    }
 
     // B3: this used to wrap the IndexedStack in a KeyedSubtree keyed by
     // `tab`, which changed on every switch. PageTransitionSwitcher treats a
@@ -100,6 +113,8 @@ class ShellScreen extends ConsumerWidget {
     // itself instead of the subtree identity.
     return _PersistentTabView(
       index: index,
+      onSwipeLeft: () => switchTo(index + 1),
+      onSwipeRight: () => switchTo(index - 1),
       children: [
         LobbyScreen(
           key: const PageStorageKey(AppTab.lobby),
@@ -124,8 +139,15 @@ class ShellScreen extends ConsumerWidget {
 class _PersistentTabView extends StatefulWidget {
   final int index;
   final List<Widget> children;
+  final VoidCallback? onSwipeLeft;
+  final VoidCallback? onSwipeRight;
 
-  const _PersistentTabView({required this.index, required this.children});
+  const _PersistentTabView({
+    required this.index,
+    required this.children,
+    this.onSwipeLeft,
+    this.onSwipeRight,
+  });
 
   @override
   State<_PersistentTabView> createState() => _PersistentTabViewState();
@@ -185,13 +207,25 @@ class _PersistentTabViewState extends State<_PersistentTabView>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: IndexedStack(
-          index: widget.index,
-          children: widget.children,
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onHorizontalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0.0;
+        // Require a deliberate swipe gesture (velocity > 300 dp/s)
+        if (velocity < -300) {
+          widget.onSwipeLeft?.call();
+        } else if (velocity > 300) {
+          widget.onSwipeRight?.call();
+        }
+      },
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(
+          position: _slide,
+          child: IndexedStack(
+            index: widget.index,
+            children: widget.children,
+          ),
         ),
       ),
     );

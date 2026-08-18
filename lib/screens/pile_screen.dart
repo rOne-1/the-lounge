@@ -422,12 +422,32 @@ class _PileScreenState extends ConsumerState<PileScreen> {
   Widget _buildGrid(BuildContext context, List<MediaItem> items, {required String emptyLabel}) {
     final isDark = context.ambianceColors.isDark;
     if (items.isEmpty) {
+      final allPileItems = widget.kind.mapFrom(ref.watch(mediaProvider)).values.toList();
+      final otherTypeCount = allPileItems.length;
+      final activeType = ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
+          ? MediaType.movie
+          : MediaType.tv;
+
+      if (otherTypeCount > 0) {
+        final otherTypeName = activeType == MediaType.movie ? 'TV Shows' : 'Movies';
+        return AtmosphericEmptyState(
+          icon: Icons.swap_horiz_rounded,
+          title: 'No ${activeType == MediaType.movie ? 'movies' : 'TV shows'} in ${widget.kind.label}',
+          message: 'You have $otherTypeCount title${otherTypeCount == 1 ? '' : 's'} under $otherTypeName in this pile.',
+          ctaLabel: 'Switch to $otherTypeName',
+          onCta: () => ref.read(navigationProvider.notifier).toggleMediaType(),
+        );
+      }
+
       return AtmosphericEmptyState(
         icon: Icons.movie_creation_outlined,
         title: emptyLabel,
         message: 'Titles you save here will show up in this list.',
         ctaLabel: 'Discover Titles',
-        onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
+        onCta: () {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          ref.read(navigationProvider.notifier).setTab(AppTab.discover);
+        },
       );
     }
 
@@ -462,12 +482,32 @@ class _PileScreenState extends ConsumerState<PileScreen> {
     final colors = context.ambianceColors;
 
     if (items.isEmpty) {
+      final allPileItems = widget.kind.mapFrom(ref.watch(mediaProvider)).values.toList();
+      final otherTypeCount = allPileItems.length;
+      final activeType = ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
+          ? MediaType.movie
+          : MediaType.tv;
+
+      if (otherTypeCount > 0) {
+        final otherTypeName = activeType == MediaType.movie ? 'TV Shows' : 'Movies';
+        return AtmosphericEmptyState(
+          icon: Icons.swap_horiz_rounded,
+          title: 'No watched ${activeType == MediaType.movie ? 'movies' : 'TV shows'}',
+          message: 'You have $otherTypeCount watched title${otherTypeCount == 1 ? '' : 's'} under $otherTypeName.',
+          ctaLabel: 'Switch to $otherTypeName',
+          onCta: () => ref.read(navigationProvider.notifier).toggleMediaType(),
+        );
+      }
+
       return AtmosphericEmptyState(
         icon: Icons.check_circle_outline_rounded,
         title: 'Nothing watched yet',
         message: 'Titles you mark as watched will show up here.',
         ctaLabel: 'Discover Titles',
-        onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
+        onCta: () {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+          ref.read(navigationProvider.notifier).setTab(AppTab.discover);
+        },
       );
     }
 

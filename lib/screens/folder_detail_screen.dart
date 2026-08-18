@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/lounge_dialog.dart';
 import '../widgets/lounge_folder_name_sheet.dart';
@@ -167,6 +168,11 @@ class FolderDetailScreen extends ConsumerWidget {
                 icon: Icons.folder_open_outlined,
                 title: 'This folder is empty',
                 message: 'Use "Add to Folder" from any title to start curating this playlist.',
+                ctaLabel: 'Discover Titles',
+                onCta: () {
+                  Navigator.of(context).popUntil((route) => route.isFirst);
+                  ref.read(navigationProvider.notifier).setTab(AppTab.discover);
+                },
               )
             : ReorderableListView.builder(
                 buildDefaultDragHandles: false,

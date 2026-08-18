@@ -26,6 +26,9 @@ class TmdbLocalCacheService {
   /// TTL for Watch Providers: 24 hours
   static const Duration watchProvidersTtl = Duration(hours: 24);
 
+  /// TTL for negative 404 / not found responses: 1 hour
+  static const Duration negativeCacheTtl = Duration(hours: 1);
+
   static const String keyPrefix = 'tmdb_cache_';
 
   final SharedPreferences? _prefs;
@@ -34,11 +37,35 @@ class TmdbLocalCacheService {
   /// In-memory cache for search results (session-only, not saved to persistent disk)
   final Map<String, _CacheRecord> _sessionCache = {};
 
+  /// In-memory negative cache to prevent burst retry loops on 404 / deleted media IDs.
+  final Map<String, DateTime> _negativeCache = {};
+
   TmdbLocalCacheService({
     SharedPreferences? prefs,
     DateTime Function()? clock,
   })  : _prefs = prefs,
         _clock = clock ?? DateTime.now;
+
+  /// Checks whether an endpoint key is currently in the negative (404) cache and unexpired.
+  bool isNegativeCached(String key) {
+    final timestamp = _negativeCache[key];
+    if (timestamp == null) return false;
+    if (isExpired(timestamp, negativeCacheTtl)) {
+      _negativeCache.remove(key);
+      return false;
+    }
+    return true;
+  }
+
+  /// Marks an endpoint key as 404 / not-found to prevent redundant network attempts.
+  void putNegative(String key) {
+    _negativeCache[key] = _clock();
+  }
+
+  /// Clears negative cache for a specific key (e.g. on manual retry).
+  void clearNegative(String key) {
+    _negativeCache.remove(key);
+  }
 
   /// Helper to generate a consistent cache key for an endpoint and query parameters.
   String generateKey(String endpoint, [Map<String, dynamic>? queryParameters]) {

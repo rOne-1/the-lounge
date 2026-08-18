@@ -69,6 +69,7 @@ class TmdbMovieRepository implements MovieRepository {
   final MovieRepository? fallbackRepository;
   final TmdbLocalCacheService cacheService;
   final Map<int, String> _genreMap = Map.of(_defaultGenreMap);
+  final Map<String, Future<dynamic>> _inFlightRequests = {};
   bool _genresLoaded = false;
 
   TmdbMovieRepository({
@@ -79,6 +80,17 @@ class TmdbMovieRepository implements MovieRepository {
 
   /// Returns true if API service is initialized with a valid token.
   bool get isConfigured => apiService.hasToken;
+
+  Future<T> _deduplicated<T>(String key, Future<T> Function() fetcher) {
+    if (_inFlightRequests.containsKey(key)) {
+      return _inFlightRequests[key]! as Future<T>;
+    }
+    final future = fetcher().whenComplete(() {
+      _inFlightRequests.remove(key);
+    });
+    _inFlightRequests[key] = future;
+    return future;
+  }
 
   void _logWarning(String message) {
     developer.log(message, name: 'TmdbMovieRepository', level: 800);
@@ -507,22 +519,32 @@ class TmdbMovieRepository implements MovieRepository {
       }
       return null;
     }
-    try {
-      final cleanId = tvId.replaceFirst(RegExp(r'^(tv_|movie_)'), '');
-      final key = cacheService.generateKey('/tv/$cleanId/season/$seasonNumber');
-      Map<String, dynamic>? res = await cacheService.get(key);
-      if (res == null) {
-        res = await apiService.getTvSeasonDetails(cleanId, seasonNumber);
-        await cacheService.put(key, res);
-      }
-      return _mapJsonToTvSeason(res);
-    } catch (e, stack) {
-      _logError('Failed to fetch TV season details for $tvId S$seasonNumber', e, stack);
-      if (fallbackRepository != null) {
-        return fallbackRepository!.getTvSeasonDetails(tvId, seasonNumber);
-      }
+    final cleanId = tvId.replaceFirst(RegExp(r'^(tv_|movie_)'), '');
+    final key = cacheService.generateKey('/tv/$cleanId/season/$seasonNumber');
+
+    if (cacheService.isNegativeCached(key)) {
       return null;
     }
+
+    return _deduplicated(key, () async {
+      try {
+        Map<String, dynamic>? res = await cacheService.get(key);
+        if (res == null) {
+          res = await apiService.getTvSeasonDetails(cleanId, seasonNumber);
+          await cacheService.put(key, res);
+        }
+        return _mapJsonToTvSeason(res);
+      } catch (e, stack) {
+        if (e.toString().contains('404') || e.toString().contains('Status 404')) {
+          cacheService.putNegative(key);
+        }
+        _logError('Failed to fetch TV season details for $tvId S$seasonNumber', e, stack);
+        if (fallbackRepository != null) {
+          return fallbackRepository!.getTvSeasonDetails(tvId, seasonNumber);
+        }
+        return null;
+      }
+    });
   }
 
   @override
@@ -759,13 +781,26 @@ class TmdbMovieRepository implements MovieRepository {
       // result set. Use the person's real filmography (already built for
       // cast/crew search) as the candidate set instead, for both movies
       // and TV, so the filter actually works in both modes.
-      if (params.personId != null) {
+      int? effectivePersonId = params.personId;
+      if (effectivePersonId == null &&
+          params.personName != null &&
+          params.personName!.trim().isNotEmpty) {
+        try {
+          final res = await apiService.searchPersons(params.personName!.trim());
+          final results = (res['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+          if (results.isNotEmpty && results.first['id'] is num) {
+            effectivePersonId = (results.first['id'] as num).toInt();
+          }
+        } catch (_) {}
+      }
+
+      if (effectivePersonId != null) {
         if (page > 1) {
           // The filmography is fetched whole, not paginated -- nothing
           // further to add on subsequent "Load More" pages.
           return [];
         }
-        final filmography = await getPersonFilmography(params.personId!);
+        final filmography = await getPersonFilmography(effectivePersonId);
         final targetType = isMovies ? MediaType.movie : MediaType.tv;
         return filmography.where((item) => item.type == targetType).toList();
       }

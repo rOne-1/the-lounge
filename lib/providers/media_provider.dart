@@ -1790,13 +1790,31 @@ class MediaNotifier extends Notifier<MediaState> {
         final now = DateTime.now();
         for (final showId in watchedEpisodes.keys.toList()) {
           final epSet = watchedEpisodes[showId]!;
+          // REL-1: Group distinct season numbers for this show first so we fetch each
+          // season at most ONCE, rather than firing a request per episode.
+          final seasonsNeeded = <int>{};
+          for (final epKey in epSet) {
+            final match = RegExp(r'^S(\d+)E(\d+)$').firstMatch(epKey);
+            if (match != null) {
+              seasonsNeeded.add(int.parse(match.group(1)!));
+            }
+          }
+
+          final fetchedSeasons = <int, TvSeason>{};
+          for (final seasonNum in seasonsNeeded) {
+            final season = await repo.getTvSeasonDetails(showId, seasonNum);
+            if (season != null) {
+              fetchedSeasons[seasonNum] = season;
+            }
+          }
+
           final epsToRemove = <String>[];
           for (final epKey in epSet) {
             final match = RegExp(r'^S(\d+)E(\d+)$').firstMatch(epKey);
             if (match != null) {
               final seasonNum = int.parse(match.group(1)!);
               final epNum = int.parse(match.group(2)!);
-              final season = await repo.getTvSeasonDetails(showId, seasonNum);
+              final season = fetchedSeasons[seasonNum];
               if (season != null) {
                 final ep = season.episodes.cast<TvEpisode?>().firstWhere(
                   (e) => e?.episodeNumber == epNum,

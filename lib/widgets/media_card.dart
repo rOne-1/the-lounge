@@ -133,7 +133,7 @@ class MediaCard extends ConsumerWidget {
           ),
         );
       },
-      openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+      openBuilder: (context, _) => DetailScreen(id: item.prefixedId, initialItem: item),
     );
 
     if (!showTitle && !showSubtitle) {

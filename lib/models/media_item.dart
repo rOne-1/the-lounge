@@ -626,17 +626,20 @@ class MediaItem {
     final releaseDate =
         releaseDateStr != null ? DateTime.tryParse(releaseDateStr) : null;
 
+    final rawTitle = json['title'] as String? ?? json['name'] as String? ?? '';
+    final rawPoster = json['posterUrl'] as String? ?? json['poster_path'] as String?;
+
     return MediaItem(
-      id: json['id'] as String? ?? '',
-      title: json['title'] as String? ?? '',
+      id: (json['id']?.toString() ?? ''),
+      title: rawTitle,
       type: mediaType,
       rating: ratingVal,
-      posterUrl: json['posterUrl'] as String?,
-      overview: '',
+      posterUrl: rawPoster,
+      overview: json['overview'] as String? ?? '',
       genres: genresList,
-      originalLanguage: json['originalLanguage'] as String?,
+      originalLanguage: json['originalLanguage'] as String? ?? json['original_language'] as String?,
       releaseOrAirDate: releaseDate,
-      voteCount: (json['voteCount'] as num?)?.toInt(),
+      voteCount: (json['voteCount'] as num? ?? json['vote_count'] as num?)?.toInt(),
       belongsToCollection: col,
     );
   }

@@ -18,6 +18,7 @@ Future<String?> showFolderNamePrompt(
   return showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
+    useSafeArea: true,
     backgroundColor: Colors.transparent,
     barrierColor: colors.scrim,
     builder: (sheetContext) => DragToDismissSheet(
@@ -74,95 +75,106 @@ class _FolderNameSheetContentState extends State<_FolderNameSheetContent> {
   @override
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
-    return Container(
-      decoration: BoxDecoration(
-        color: colors.base,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border.all(color: colors.lineRgba, width: 1),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(0, 0, 0, 0.6),
-            blurRadius: 20,
-            spreadRadius: 2,
-            offset: Offset(0, -4),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 4,
-        bottom: MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom + 20,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            widget.sheetTitle,
-            style: AppThemes.safeGeist(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-              color: colors.ink,
+    final viewInsets = MediaQuery.viewInsetsOf(context);
+    final padding = MediaQuery.paddingOf(context);
+
+    return AnimatedPadding(
+      padding: EdgeInsets.only(bottom: viewInsets.bottom),
+      duration: const Duration(milliseconds: 200),
+      curve: AppPhysics.houseSpringCurve,
+      child: Container(
+        decoration: BoxDecoration(
+          color: colors.base,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          border: Border.all(color: colors.lineRgba, width: 1),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(0, 0, 0, 0.6),
+              blurRadius: 20,
+              spreadRadius: 2,
+              offset: Offset(0, -4),
             ),
-          ),
-          const SizedBox(height: 16),
-          LoungeTextField(
-            controller: _controller,
-            hintText: 'Folder name',
-            focusNode: _focusNode,
-            onSubmitted: (_) => _submit(),
-          ),
-          const SizedBox(height: 16),
-          Row(
+          ],
+        ),
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 12,
+          bottom: padding.bottom + 20,
+        ),
+        child: SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: PressableScale(
-                  onTap: () => Navigator.of(context).pop(),
-                  child: Container(
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: colors.card2,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: colors.lineRgba),
-                    ),
-                    child: Text(
-                      'Cancel',
-                      style: AppThemes.safeGeist(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: colors.sub,
-                      ),
-                    ),
-                  ),
+              Text(
+                widget.sheetTitle,
+                style: AppThemes.safeGeist(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: colors.ink,
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: PressableScale(
-                  onTap: _submit,
-                  child: Container(
-                    height: 44,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: colors.acc,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      widget.confirmLabel,
-                      style: AppThemes.safeGeist(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: colors.isDark ? Colors.black : Colors.white,
+              const SizedBox(height: 16),
+              LoungeTextField(
+                controller: _controller,
+                hintText: 'Folder name',
+                focusNode: _focusNode,
+                onSubmitted: (_) => _submit(),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: PressableScale(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: colors.card2,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: colors.lineRgba),
+                        ),
+                        child: Text(
+                          'Cancel',
+                          style: AppThemes.safeGeist(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colors.sub,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: PressableScale(
+                      onTap: _submit,
+                      child: Container(
+                        height: 44,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: colors.acc,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          widget.confirmLabel,
+                          style: AppThemes.safeGeist(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: colors.isDark ? Colors.black : Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }

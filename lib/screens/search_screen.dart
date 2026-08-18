@@ -459,15 +459,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         if (item.originalLanguage != params.originalLanguage) return false;
       }
 
-      // 8. Person filter. Items from a bulk TMDB discover-list response never
-      // carry cast/director data (that requires a separate per-title credits
-      // call TMDB's discover endpoint doesn't make) -- only items enriched
-      // with full details do. When an item has no credit data to check at
-      // all, trust the upstream filter (server-side with_people, already
-      // applied in discoverMediaProvider) rather than reject a false
-      // negative -- otherwise every credit-less item fails this check and
-      // Discover-mode browsing by cast/crew returns nothing.
-      if (params.personName != null && params.personName!.isNotEmpty) {
+      // 8. Person filter. When searching by a specific person ID (e.g. tapping
+      // an actor/director in DetailScreen or picking from autocomplete), the
+      // candidate pool is already their real TMDB filmography. Trust the
+      // upstream person credits endpoint completely rather than matching on
+      // item.cast (which only stores the top-5 billed actors and falsely
+      // rejects valid filmography entries where the actor is billed 6th or lower).
+      if (params.personId == null &&
+          params.personName != null &&
+          params.personName!.isNotEmpty) {
         final hasCreditData =
             item.cast.isNotEmpty || (item.director?.isNotEmpty ?? false);
         if (hasCreditData) {
@@ -655,7 +655,19 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 onChanged: _onSearchChanged,
               ),
             ),
-            if (_searchQuery.isNotEmpty)
+            if (_isSearching)
+              Padding(
+                padding: const EdgeInsets.only(right: 2.0),
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(context.ambianceColors.acc),
+                  ),
+                ),
+              )
+            else if (_searchQuery.isNotEmpty)
               PressableScale(
                 onTap: () {
                   _searchController.clear();

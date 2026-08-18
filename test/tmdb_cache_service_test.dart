@@ -262,5 +262,38 @@ void main() {
       expect(search2.first.title, equals('Inception'));
       expect(searchCallCount, equals(1)); // Served from session cache!
     });
+
+    test('Negative 404 cache prevents burst loops on missing media IDs', () async {
+      int apiCallCount = 0;
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/tv/999999/season/1')) {
+          apiCallCount++;
+          return http.Response(
+            jsonEncode({'status_code': 34, 'status_message': 'The resource you requested could not be found.'}),
+            404,
+          );
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final apiService = TmdbApiService(token: 'valid_token', client: mockClient);
+      final cacheService = TmdbLocalCacheService(prefs: prefs);
+      final repository = TmdbMovieRepository(
+        apiService: apiService,
+        cacheService: cacheService,
+      );
+
+      // First call fails with 404 and is cached in negative cache
+      final season1 = await repository.getTvSeasonDetails('tv_999999', 1);
+      expect(season1, isNull);
+      expect(apiCallCount, equals(1));
+
+      // Subsequent 5 calls hit negative cache immediately without firing network requests
+      for (int i = 0; i < 5; i++) {
+        final seasonRetry = await repository.getTvSeasonDetails('tv_999999', 1);
+        expect(seasonRetry, isNull);
+      }
+      expect(apiCallCount, equals(1)); // No additional network calls!
+    });
   });
 }
