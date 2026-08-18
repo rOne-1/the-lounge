@@ -275,10 +275,12 @@ class _CapsuleBody extends ConsumerWidget {
       clipBehavior: Clip.antiAlias,
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: AnimatedSwitcher(
-          duration: AppPhysics.houseSpringDuration,
-          switchInCurve: AppPhysics.houseSpringCurve,
-          switchOutCurve: Curves.easeOut,
+        child: Material(
+          type: MaterialType.transparency,
+          child: AnimatedSwitcher(
+            duration: AppPhysics.houseSpringDuration,
+            switchInCurve: AppPhysics.houseSpringCurve,
+            switchOutCurve: Curves.easeOut,
           // Each branch is laid out at its own fixed target size via
           // OverflowBox, ignoring the outer AnimatedContainer's currently
           // *animating* width/height constraints -- without this, the
@@ -317,6 +319,7 @@ class _CapsuleBody extends ConsumerWidget {
                     child: _CollapsedContent(enableAnimation: enableAnimation),
                   ),
                 ),
+          ),
         ),
       ),
     );

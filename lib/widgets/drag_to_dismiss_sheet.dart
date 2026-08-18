@@ -104,7 +104,10 @@ class _DragToDismissSheetState extends State<DragToDismissSheet>
                 ),
               ),
             ),
-            widget.child,
+            Material(
+              type: MaterialType.transparency,
+              child: widget.child,
+            ),
           ],
         ),
       ),

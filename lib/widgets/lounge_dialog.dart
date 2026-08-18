@@ -79,51 +79,54 @@ class LoungeDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
-              decoration: BoxDecoration(
-                color: ambiance.card2.withValues(alpha: 0.88),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: ambiance.lineRgba),
-                boxShadow: [
-                  BoxShadow(
-                    color: ambiance.surfaceHighlight,
-                    blurRadius: 0,
-                    offset: const Offset(0, 1),
-                    blurStyle: BlurStyle.inner,
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: GoogleFonts.bodoniModa(
-                      fontSize: 21,
-                      fontWeight: FontWeight.w600,
-                      fontStyle: FontStyle.italic,
-                      color: ambiance.ink,
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
+                decoration: BoxDecoration(
+                  color: ambiance.card2.withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: ambiance.lineRgba),
+                  boxShadow: [
+                    BoxShadow(
+                      color: ambiance.surfaceHighlight,
+                      blurRadius: 0,
+                      offset: const Offset(0, 1),
+                      blurStyle: BlurStyle.inner,
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    message,
-                    style: AppThemes.safeGeist(
-                      fontSize: 14,
-                      height: 1.4,
-                      color: ambiance.sub,
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: GoogleFonts.bodoniModa(
+                        fontSize: 21,
+                        fontWeight: FontWeight.w600,
+                        fontStyle: FontStyle.italic,
+                        color: ambiance.ink,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 22),
-                  Wrap(
-                    alignment: WrapAlignment.end,
-                    spacing: 10,
-                    runSpacing: 8,
-                    children: actions.map((action) => _LoungeDialogActionButton(action: action)).toList(),
-                  ),
-                ],
+                    const SizedBox(height: 10),
+                    Text(
+                      message,
+                      style: AppThemes.safeGeist(
+                        fontSize: 14,
+                        height: 1.4,
+                        color: ambiance.sub,
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    Wrap(
+                      alignment: WrapAlignment.end,
+                      spacing: 10,
+                      runSpacing: 8,
+                      children: actions.map((action) => _LoungeDialogActionButton(action: action)).toList(),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
