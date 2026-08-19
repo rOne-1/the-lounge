@@ -1,6 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import 'frosted_glass_surface.dart';
 import 'pressable_scale.dart';
 
 class LoungeDropdownItem<T> {
@@ -238,50 +238,34 @@ class _LoungePopoverState<T> extends State<_LoungePopover<T>> with SingleTickerP
             alignment: Alignment.topCenter,
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxHeight: 280),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(14),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: ambiance.card2.withValues(alpha: 0.92),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: ambiance.acc.withValues(alpha: 0.35)),
-                      boxShadow: [
-                        BoxShadow(
-                          color: ambiance.surfaceHighlight,
-                          blurRadius: 0,
-                          offset: const Offset(0, 1),
-                          blurStyle: BlurStyle.inner,
-                        ),
-                      ],
-                    ),
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      padding: const EdgeInsets.symmetric(vertical: 6),
-                      itemCount: widget.items.length,
-                      itemBuilder: (context, index) {
-                        final item = widget.items[index];
-                        final isSelected = item.value == widget.selected;
-                        return PressableScale(
-                          onTap: () => widget.onSelected(item.value),
-                          child: Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                            color: isSelected ? ambiance.acc.withValues(alpha: 0.12) : Colors.transparent,
-                            child: Text(
-                              item.label,
-                              style: AppThemes.safeGeist(
-                                fontSize: 13,
-                                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                                color: isSelected ? ambiance.acc : ambiance.ink,
-                              ),
-                            ),
+              child: FrostedGlassSurface(
+                borderRadius: 14,
+                backgroundColor: ambiance.card2.withValues(alpha: 0.92),
+                borderColor: ambiance.acc.withValues(alpha: 0.35),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  itemCount: widget.items.length,
+                  itemBuilder: (context, index) {
+                    final item = widget.items[index];
+                    final isSelected = item.value == widget.selected;
+                    return PressableScale(
+                      onTap: () => widget.onSelected(item.value),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        color: isSelected ? ambiance.acc.withValues(alpha: 0.12) : Colors.transparent,
+                        child: Text(
+                          item.label,
+                          style: AppThemes.safeGeist(
+                            fontSize: 13,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            color: isSelected ? ambiance.acc : ambiance.ink,
                           ),
-                        );
-                      },
-                    ),
-                  ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

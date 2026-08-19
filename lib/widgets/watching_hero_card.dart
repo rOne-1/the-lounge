@@ -195,7 +195,7 @@ class _PosterStack extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: isDark ? const Color(0x66000000) : const Color(0x18000000),
+                  color: colors.scrim.withValues(alpha: isDark ? 0.4 : 0.09),
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),
@@ -221,7 +221,7 @@ class _PosterStack extends StatelessWidget {
                   offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: isDark ? const Color(0x99000000) : const Color(0x22000000),
+                  color: colors.scrim.withValues(alpha: isDark ? 0.6 : 0.13),
                   blurRadius: 8,
                   offset: const Offset(0, 4),
                 ),
@@ -242,7 +242,7 @@ class _PosterStack extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: isDark ? const Color(0x66000000) : const Color(0x18000000),
+                  color: colors.scrim.withValues(alpha: isDark ? 0.4 : 0.09),
                   blurRadius: 6,
                   offset: const Offset(0, 3),
                 ),

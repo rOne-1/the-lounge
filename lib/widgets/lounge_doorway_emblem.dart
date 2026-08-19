@@ -38,7 +38,7 @@ class LoungeDoorwayEmblem extends StatelessWidget {
             offset: const Offset(0, 4),
           ),
           BoxShadow(
-            color: isDark ? const Color(0x99000000) : const Color(0x18000000),
+            color: colors.scrim.withValues(alpha: isDark ? 0.6 : 0.09),
             blurRadius: size * 0.2,
             offset: const Offset(0, 6),
           ),

@@ -1,10 +1,10 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../constants/whats_new.dart';
 import '../providers/ambiance_provider.dart';
+import 'frosted_glass_surface.dart';
 import 'pressable_scale.dart';
 
 /// One-shot "What's New" changelog dialog, shown after an app update so
@@ -47,105 +47,86 @@ class WhatsNewDialog extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 28),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxHeight, maxWidth: 440),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-              child: Material(
-                type: MaterialType.transparency,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: ambiance.card2.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(22),
-                    border: Border.all(color: ambiance.lineRgba),
-                    boxShadow: [
-                      BoxShadow(
-                        color: ambiance.surfaceHighlight,
-                        blurRadius: 0,
-                        offset: const Offset(0, 1),
-                        blurStyle: BlurStyle.inner,
-                      ),
-                    ],
-                  ),
+          child: FrostedGlassSurface(
+            borderRadius: 22,
+            backgroundColor: ambiance.card2.withValues(alpha: 0.9),
+            borderColor: ambiance.lineRgba,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 26, 24, 6),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 26, 24, 6),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "What's New",
-                              style: GoogleFonts.bodoniModa(
-                                fontSize: 24,
-                                fontWeight: FontWeight.w600,
-                                fontStyle: FontStyle.italic,
-                                color: ambiance.ink,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Since your last build',
-                              style: AppThemes.safeGeist(
-                                fontSize: 12.5,
-                                color: ambiance.sub,
-                              ),
-                            ),
-                          ],
+                      Text(
+                        "What's New",
+                        style: GoogleFonts.bodoniModa(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          color: ambiance.ink,
                         ),
                       ),
-                      Flexible(
-                        child: SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              for (final section in kWhatsNewSections) ...[
-                                Text(
-                                  section.title,
-                                  style: AppThemes.safeGeist(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 1.2,
-                                    color: ambiance.acc,
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                for (final item in section.items) _WhatsNewItem(text: item),
-                                const SizedBox(height: 18),
-                              ],
-                            ],
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: PressableScale(
-                            key: const ValueKey('whats_new_dismiss_button'),
-                            onTap: () => Navigator.of(context).maybePop(),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                              decoration: ambiance.primaryButtonDecoration,
-                              child: Text(
-                                'Got it',
-                                style: AppThemes.safeGeist(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                ),
-                              ),
-                            ),
-                          ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Since your last build',
+                        style: AppThemes.safeGeist(
+                          fontSize: 12.5,
+                          color: ambiance.sub,
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
+                Flexible(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final section in kWhatsNewSections) ...[
+                          Text(
+                            section.title,
+                            style: AppThemes.safeGeist(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.2,
+                              color: ambiance.acc,
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          for (final item in section.items) _WhatsNewItem(text: item),
+                          const SizedBox(height: 18),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: PressableScale(
+                      key: const ValueKey('whats_new_dismiss_button'),
+                      onTap: () => Navigator.of(context).maybePop(),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        decoration: ambiance.primaryButtonDecoration,
+                        child: Text(
+                          'Got it',
+                          style: AppThemes.safeGeist(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

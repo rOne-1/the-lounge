@@ -1,6 +1,6 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import 'frosted_glass_surface.dart';
 
 enum ToastType { info, success, danger }
 
@@ -111,64 +111,48 @@ class _LoungeToastWidgetState extends State<_LoungeToastWidget> with SingleTicke
           opacity: _curved,
           child: Material(
             color: Colors.transparent,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(999),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: ambiance.card2.withValues(alpha: 0.9),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: accent.withValues(alpha: 0.4)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: ambiance.surfaceHighlight,
-                        blurRadius: 0,
-                        offset: const Offset(0, 1),
-                        blurStyle: BlurStyle.inner,
-                      ),
-                    ],
+            child: FrostedGlassSurface(
+              borderRadius: 999,
+              backgroundColor: ambiance.card2.withValues(alpha: 0.9),
+              borderColor: accent.withValues(alpha: 0.4),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                  const SizedBox(width: 10),
+                  Flexible(
+                    child: Text(
+                      widget.message,
+                      style: AppThemes.safeGeist(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: ambiance.ink,
                       ),
-                      const SizedBox(width: 10),
-                      Flexible(
-                        child: Text(
-                          widget.message,
-                          style: AppThemes.safeGeist(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: ambiance.ink,
-                          ),
+                    ),
+                  ),
+                  if (widget.actionLabel != null) ...[
+                    const SizedBox(width: 12),
+                    GestureDetector(
+                      onTap: () {
+                        widget.onAction?.call();
+                        _dismiss();
+                      },
+                      child: Text(
+                        widget.actionLabel!,
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: accent,
                         ),
                       ),
-                      if (widget.actionLabel != null) ...[
-                        const SizedBox(width: 12),
-                        GestureDetector(
-                          onTap: () {
-                            widget.onAction?.call();
-                            _dismiss();
-                          },
-                          child: Text(
-                            widget.actionLabel!,
-                            style: AppThemes.safeGeist(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: accent,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),

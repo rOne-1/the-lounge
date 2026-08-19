@@ -1,7 +1,7 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
+import 'frosted_glass_surface.dart';
 import 'pressable_scale.dart';
 
 enum LoungeDialogActionStyle { neutral, primary, destructive }
@@ -75,60 +75,41 @@ class LoungeDialog extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 32),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Material(
-              type: MaterialType.transparency,
-              child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
-                decoration: BoxDecoration(
-                  color: ambiance.card2.withValues(alpha: 0.88),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: ambiance.lineRgba),
-                  boxShadow: [
-                    BoxShadow(
-                      color: ambiance.surfaceHighlight,
-                      blurRadius: 0,
-                      offset: const Offset(0, 1),
-                      blurStyle: BlurStyle.inner,
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: GoogleFonts.bodoniModa(
-                        fontSize: 21,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        color: ambiance.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      message,
-                      style: AppThemes.safeGeist(
-                        fontSize: 14,
-                        height: 1.4,
-                        color: ambiance.sub,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    Wrap(
-                      alignment: WrapAlignment.end,
-                      spacing: 10,
-                      runSpacing: 8,
-                      children: actions.map((action) => _LoungeDialogActionButton(action: action)).toList(),
-                    ),
-                  ],
+        child: FrostedGlassSurface(
+          borderRadius: 20,
+          backgroundColor: ambiance.card2.withValues(alpha: 0.88),
+          borderColor: ambiance.lineRgba,
+          padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: GoogleFonts.bodoniModa(
+                  fontSize: 21,
+                  fontWeight: FontWeight.w600,
+                  fontStyle: FontStyle.italic,
+                  color: ambiance.ink,
                 ),
               ),
-            ),
+              const SizedBox(height: 10),
+              Text(
+                message,
+                style: AppThemes.safeGeist(
+                  fontSize: 14,
+                  height: 1.4,
+                  color: ambiance.sub,
+                ),
+              ),
+              const SizedBox(height: 22),
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 10,
+                runSpacing: 8,
+                children: actions.map((action) => _LoungeDialogActionButton(action: action)).toList(),
+              ),
+            ],
           ),
         ),
       ),
