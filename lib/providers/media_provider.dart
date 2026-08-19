@@ -47,6 +47,19 @@ class MediaState {
   /// PERS-FOLDERS-1: status-independent custom folders, keyed by folder ID.
   final Map<String, UserFolder> customFolders;
 
+  /// ORG-AGG-1: populated only for the Grand Hall (isCommon). Ids present in
+  /// the shelves above only because they were aggregated in from the
+  /// Mezzanine/Private Screening Halls, not because they were natively
+  /// saved while inside the Grand Hall. Read-only from the Grand Hall's UI
+  /// -- editing must happen from the title's actual owning Hall -- and
+  /// excluded when persisting so aggregated titles never get silently
+  /// duplicated into the Grand Hall's own native storage.
+  final Set<String> readOnlyMediaIds;
+
+  /// Maps a read-only aggregated id (see [readOnlyMediaIds]) to the display
+  /// name of the Hall it actually lives in, for UI messaging.
+  final Map<String, String> readOnlySourceHallName;
+
   const MediaState({
     this.watchlist = const {},
     this.maybeList = const {},
@@ -62,6 +75,8 @@ class MediaState {
     this.seasonStartDates = const {},
     this.seasonEndDates = const {},
     this.customFolders = const {},
+    this.readOnlyMediaIds = const {},
+    this.readOnlySourceHallName = const {},
   });
 
   MediaState copyWith({
@@ -79,6 +94,8 @@ class MediaState {
     Map<String, Map<int, DateTime>>? seasonStartDates,
     Map<String, Map<int, DateTime>>? seasonEndDates,
     Map<String, UserFolder>? customFolders,
+    Set<String>? readOnlyMediaIds,
+    Map<String, String>? readOnlySourceHallName,
   }) {
     return MediaState(
       watchlist: watchlist ?? this.watchlist,
@@ -96,6 +113,9 @@ class MediaState {
       seasonStartDates: seasonStartDates ?? this.seasonStartDates,
       seasonEndDates: seasonEndDates ?? this.seasonEndDates,
       customFolders: customFolders ?? this.customFolders,
+      readOnlyMediaIds: readOnlyMediaIds ?? this.readOnlyMediaIds,
+      readOnlySourceHallName:
+          readOnlySourceHallName ?? this.readOnlySourceHallName,
     );
   }
 }
@@ -136,6 +156,180 @@ class MediaNotifier extends Notifier<MediaState> {
     }
   }
 
+  /// ORG-AGG-1: the two non-Grand default Halls that get aggregated into
+  /// the Grand Hall's view (id -> display name, for read-only UI messaging).
+  /// Hardcoded rather than sourced from hall_provider.dart/HallSpace's
+  /// dynamic hall list -- media_provider.dart deliberately does not import
+  /// hall_provider.dart (see outstanding_issues_notepad.md items 32/33 on
+  /// the existing circular-import caution between the two files), and these
+  /// two ids are already load-bearing string literals baked into
+  /// hall_space.dart's own defaultMezzanineHall()/defaultPrivateScreeningHall().
+  static const Map<String, String> _aggregatedHallNames = {
+    'custom_1': 'The Mezzanine Hall',
+    'custom_2': 'The Private Screening Hall',
+  };
+
+  /// Loads and domain-combines (movies+tv+anime) one Hall's own archives,
+  /// without touching aggregation. Shared by the "own" load below and by
+  /// [_aggregateGrandHall] for each of the other Halls it pulls in.
+  ({
+    Map<String, MediaItem> watchlist,
+    Map<String, MediaItem> maybeList,
+    Map<String, MediaItem> watchingList,
+    Map<String, MediaItem> watchedList,
+    Map<String, MediaItem> droppedList,
+    Map<String, MediaItem> onHoldList,
+    Map<String, Set<String>> watchedEpisodes,
+    Map<String, DateTime> startDates,
+    Map<String, DateTime> endDates,
+    Map<String, Map<int, DateTime>> seasonStartDates,
+    Map<String, Map<int, DateTime>> seasonEndDates,
+  }) _loadCombinedDomainArchive(SharedPreferences prefs, String hallId) {
+    final movieKey = HallStorageService.domainStorageKey(hallId, MediumDomain.movies);
+    final tvKey = HallStorageService.domainStorageKey(hallId, MediumDomain.tv);
+    final animeKey = HallStorageService.domainStorageKey(hallId, MediumDomain.anime);
+
+    DomainArchive parseDomain(String? raw) {
+      if (raw == null || raw.isEmpty) return const DomainArchive();
+      try {
+        return DomainArchive.fromJson(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+      } catch (_) {
+        return const DomainArchive();
+      }
+    }
+
+    final movieArchive = parseDomain(prefs.getString(movieKey));
+    final tvArchive = parseDomain(prefs.getString(tvKey));
+    final animeArchive = parseDomain(prefs.getString(animeKey));
+
+    Map<String, MediaItem> combineMaps(Map<String, MediaItem> Function(DomainArchive a) getter) {
+      return {
+        ...getter(movieArchive),
+        ...getter(tvArchive),
+        ...getter(animeArchive),
+      };
+    }
+
+    return (
+      watchlist: combineMaps((a) => a.watchlist),
+      maybeList: combineMaps((a) => a.saved),
+      watchingList: combineMaps((a) => a.watching),
+      watchedList: combineMaps((a) => a.watched),
+      droppedList: combineMaps((a) => a.dropped),
+      onHoldList: combineMaps((a) => a.onHold),
+      watchedEpisodes: <String, Set<String>>{
+        ...movieArchive.watchedEpisodes,
+        ...tvArchive.watchedEpisodes,
+        ...animeArchive.watchedEpisodes,
+      },
+      startDates: <String, DateTime>{
+        ...movieArchive.startDates,
+        ...tvArchive.startDates,
+        ...animeArchive.startDates,
+      },
+      endDates: <String, DateTime>{
+        ...movieArchive.endDates,
+        ...tvArchive.endDates,
+        ...animeArchive.endDates,
+      },
+      seasonStartDates: <String, Map<int, DateTime>>{
+        ...movieArchive.seasonStartDates,
+        ...tvArchive.seasonStartDates,
+        ...animeArchive.seasonStartDates,
+      },
+      seasonEndDates: <String, Map<int, DateTime>>{
+        ...movieArchive.seasonEndDates,
+        ...tvArchive.seasonEndDates,
+        ...animeArchive.seasonEndDates,
+      },
+    );
+  }
+
+  /// ORG-AGG-1: the Grand Hall reads as the union of its own native saves
+  /// plus the Mezzanine and Private Screening Halls' archives (own data
+  /// always wins on an id conflict). Titles pulled in from the other two
+  /// Halls are marked in [MediaState.readOnlyMediaIds] -- the Grand Hall UI
+  /// treats them as view-only (see QuickStatusSheet), and [_saveToPrefs]
+  /// excludes them when persisting so they never get duplicated into the
+  /// Grand Hall's own native storage just because an unrelated save ran
+  /// while they were sitting in the merged state.
+  MediaState _aggregateGrandHall(SharedPreferences prefs, MediaState ownState) {
+    final ownIds = <String>{
+      ...ownState.watchlist.keys,
+      ...ownState.maybeList.keys,
+      ...ownState.watchingList.keys,
+      ...ownState.watchedList.keys,
+      ...ownState.droppedList.keys,
+      ...ownState.onHoldList.keys,
+    };
+
+    final watchlist = Map<String, MediaItem>.of(ownState.watchlist);
+    final maybeList = Map<String, MediaItem>.of(ownState.maybeList);
+    final watchingList = Map<String, MediaItem>.of(ownState.watchingList);
+    final watchedList = Map<String, MediaItem>.of(ownState.watchedList);
+    final droppedList = Map<String, MediaItem>.of(ownState.droppedList);
+    final onHoldList = Map<String, MediaItem>.of(ownState.onHoldList);
+    final watchedEpisodes = Map<String, Set<String>>.of(ownState.watchedEpisodes);
+    final startDates = Map<String, DateTime>.of(ownState.startDates);
+    final endDates = Map<String, DateTime>.of(ownState.endDates);
+    final seasonStartDates = Map<String, Map<int, DateTime>>.of(ownState.seasonStartDates);
+    final seasonEndDates = Map<String, Map<int, DateTime>>.of(ownState.seasonEndDates);
+
+    final readOnlyMediaIds = <String>{};
+    final readOnlySourceHallName = <String, String>{};
+
+    void mergeIn(Map<String, MediaItem> target, Map<String, MediaItem> source, String hallName) {
+      for (final entry in source.entries) {
+        if (target.containsKey(entry.key)) continue; // own data always wins
+        target[entry.key] = entry.value;
+        readOnlyMediaIds.add(entry.key);
+        readOnlySourceHallName.putIfAbsent(entry.key, () => hallName);
+      }
+    }
+
+    for (final other in _aggregatedHallNames.entries) {
+      final combined = _loadCombinedDomainArchive(prefs, other.key);
+      mergeIn(watchlist, combined.watchlist, other.value);
+      mergeIn(maybeList, combined.maybeList, other.value);
+      mergeIn(watchingList, combined.watchingList, other.value);
+      mergeIn(watchedList, combined.watchedList, other.value);
+      mergeIn(droppedList, combined.droppedList, other.value);
+      mergeIn(onHoldList, combined.onHoldList, other.value);
+
+      combined.watchedEpisodes.forEach((id, eps) {
+        if (!ownIds.contains(id)) watchedEpisodes.putIfAbsent(id, () => eps);
+      });
+      combined.startDates.forEach((id, d) {
+        if (!ownIds.contains(id)) startDates.putIfAbsent(id, () => d);
+      });
+      combined.endDates.forEach((id, d) {
+        if (!ownIds.contains(id)) endDates.putIfAbsent(id, () => d);
+      });
+      combined.seasonStartDates.forEach((id, d) {
+        if (!ownIds.contains(id)) seasonStartDates.putIfAbsent(id, () => d);
+      });
+      combined.seasonEndDates.forEach((id, d) {
+        if (!ownIds.contains(id)) seasonEndDates.putIfAbsent(id, () => d);
+      });
+    }
+
+    return ownState.copyWith(
+      watchlist: watchlist,
+      maybeList: maybeList,
+      watchingList: watchingList,
+      watchedList: watchedList,
+      droppedList: droppedList,
+      onHoldList: onHoldList,
+      watchedEpisodes: watchedEpisodes,
+      startDates: startDates,
+      endDates: endDates,
+      seasonStartDates: seasonStartDates,
+      seasonEndDates: seasonEndDates,
+      readOnlyMediaIds: readOnlyMediaIds,
+      readOnlySourceHallName: readOnlySourceHallName,
+    );
+  }
+
   MediaState _loadHallState(SharedPreferences prefs, String hallId, String country) {
     final movieKey = HallStorageService.domainStorageKey(hallId, MediumDomain.movies);
     final tvKey = HallStorageService.domainStorageKey(hallId, MediumDomain.tv);
@@ -148,86 +342,32 @@ class MediaNotifier extends Notifier<MediaState> {
     final rawAnime = prefs.getString(animeKey);
 
     if (rawMovie != null || rawTv != null || rawAnime != null || hallId != 'common') {
-      DomainArchive parseDomain(String? raw) {
-        if (raw == null || raw.isEmpty) return const DomainArchive();
-        try {
-          return DomainArchive.fromJson(Map<String, dynamic>.from(jsonDecode(raw) as Map));
-        } catch (_) {
-          return const DomainArchive();
-        }
-      }
-
-      final movieArchive = parseDomain(rawMovie);
-      final tvArchive = parseDomain(rawTv);
-      final animeArchive = parseDomain(rawAnime);
-
-      Map<String, MediaItem> combineMaps(Map<String, MediaItem> Function(DomainArchive a) getter) {
-        return {
-          ...getter(movieArchive),
-          ...getter(tvArchive),
-          ...getter(animeArchive),
-        };
-      }
-
-      final watchlist = combineMaps((a) => a.watchlist);
-      final maybeList = combineMaps((a) => a.saved);
-      final watchingList = combineMaps((a) => a.watching);
-      final watchedList = combineMaps((a) => a.watched);
-      final droppedList = combineMaps((a) => a.dropped);
-      final onHoldList = combineMaps((a) => a.onHold);
-
-      final episodes = <String, Set<String>>{
-        ...movieArchive.watchedEpisodes,
-        ...tvArchive.watchedEpisodes,
-        ...animeArchive.watchedEpisodes,
-      };
-
-      final startDates = <String, DateTime>{
-        ...movieArchive.startDates,
-        ...tvArchive.startDates,
-        ...animeArchive.startDates,
-      };
-
-      final endDates = <String, DateTime>{
-        ...movieArchive.endDates,
-        ...tvArchive.endDates,
-        ...animeArchive.endDates,
-      };
-
-      final seasonStartDates = <String, Map<int, DateTime>>{
-        ...movieArchive.seasonStartDates,
-        ...tvArchive.seasonStartDates,
-        ...animeArchive.seasonStartDates,
-      };
-
-      final seasonEndDates = <String, Map<int, DateTime>>{
-        ...movieArchive.seasonEndDates,
-        ...tvArchive.seasonEndDates,
-        ...animeArchive.seasonEndDates,
-      };
-
+      final combined = _loadCombinedDomainArchive(prefs, hallId);
       final customFolders = _parseCustomFolders(prefs, foldersKey);
       final watchHistory = _parseWatchHistory(prefs, historyKey);
 
-      return MediaState(
+      final ownState = MediaState(
         watchProvidersCountry: country,
-        watchlist: watchlist,
-        maybeList: maybeList,
-        watchingList: watchingList,
-        watchedList: watchedList,
-        droppedList: droppedList,
-        onHoldList: onHoldList,
-        watchedEpisodes: episodes,
+        watchlist: combined.watchlist,
+        maybeList: combined.maybeList,
+        watchingList: combined.watchingList,
+        watchedList: combined.watchedList,
+        droppedList: combined.droppedList,
+        onHoldList: combined.onHoldList,
+        watchedEpisodes: combined.watchedEpisodes,
         watchHistory: watchHistory,
-        startDates: startDates,
-        endDates: endDates,
-        seasonStartDates: seasonStartDates,
-        seasonEndDates: seasonEndDates,
+        startDates: combined.startDates,
+        endDates: combined.endDates,
+        seasonStartDates: combined.seasonStartDates,
+        seasonEndDates: combined.seasonEndDates,
         customFolders: customFolders,
       );
+      return hallId == 'common' ? _aggregateGrandHall(prefs, ownState) : ownState;
     }
 
-    // Fallback: Legacy un-namespaced keys for the common Hall
+    // Fallback: Legacy un-namespaced keys for the common Hall. This branch
+    // is only ever reached when hallId == 'common' (see the condition
+    // above), so it always aggregates before returning too.
     final watchlist = _parseMediaMap(prefs, _watchlistKey);
     final maybeList = _parseMediaMap(prefs, _maybeListKey);
     final watchingList = _parseMediaMap(prefs, _watchingListKey);
@@ -242,7 +382,7 @@ class MediaNotifier extends Notifier<MediaState> {
     final seasonEndDates = _parseSeasonDateMap(prefs, _seasonEndDatesKey);
     final customFolders = _parseCustomFolders(prefs, _customFoldersKey);
 
-    return MediaState(
+    final ownState = MediaState(
       watchProvidersCountry: country,
       watchlist: watchlist,
       maybeList: maybeList,
@@ -258,6 +398,7 @@ class MediaNotifier extends Notifier<MediaState> {
       seasonEndDates: seasonEndDates,
       customFolders: customFolders,
     );
+    return _aggregateGrandHall(prefs, ownState);
   }
 
   Future<void> loadForHall(String hallId) async {
@@ -286,33 +427,58 @@ class MediaNotifier extends Notifier<MediaState> {
       final prefs = ref.read(sharedPreferencesProvider);
       final activeHallId = _storageService.getActiveHallId(prefs);
 
+      // ORG-AGG-1: state.* may contain titles merged in read-only from the
+      // Mezzanine/Private Screening Halls (see _aggregateGrandHall) when
+      // activeHallId == 'common'. Those must never be written into the
+      // Grand Hall's own native storage -- doing so on every unrelated save
+      // would silently duplicate them there. Strip readOnlyMediaIds before
+      // persisting anything below; this is a no-op for non-common Halls,
+      // where readOnlyMediaIds is always empty.
+      Map<String, V> stripReadOnly<V>(Map<String, V> map) {
+        if (state.readOnlyMediaIds.isEmpty) return map;
+        return Map.fromEntries(
+            map.entries.where((e) => !state.readOnlyMediaIds.contains(e.key)));
+      }
+
+      final watchlist = stripReadOnly(state.watchlist);
+      final maybeList = stripReadOnly(state.maybeList);
+      final watchingList = stripReadOnly(state.watchingList);
+      final watchedList = stripReadOnly(state.watchedList);
+      final droppedList = stripReadOnly(state.droppedList);
+      final onHoldList = stripReadOnly(state.onHoldList);
+      final watchedEpisodes = stripReadOnly(state.watchedEpisodes);
+      final startDates = stripReadOnly(state.startDates);
+      final endDates = stripReadOnly(state.endDates);
+      final seasonStartDates = stripReadOnly(state.seasonStartDates);
+      final seasonEndDates = stripReadOnly(state.seasonEndDates);
+
       Map<String, MediaItem> filterType(Map<String, MediaItem> map, MediaType type) {
         return Map.fromEntries(map.entries.where((e) => e.value.type == type));
       }
 
       final movieArchive = DomainArchive(
-        watchlist: filterType(state.watchlist, MediaType.movie),
-        saved: filterType(state.maybeList, MediaType.movie),
-        watching: filterType(state.watchingList, MediaType.movie),
-        watched: filterType(state.watchedList, MediaType.movie),
-        dropped: filterType(state.droppedList, MediaType.movie),
-        onHold: filterType(state.onHoldList, MediaType.movie),
-        startDates: state.startDates,
-        endDates: state.endDates,
+        watchlist: filterType(watchlist, MediaType.movie),
+        saved: filterType(maybeList, MediaType.movie),
+        watching: filterType(watchingList, MediaType.movie),
+        watched: filterType(watchedList, MediaType.movie),
+        dropped: filterType(droppedList, MediaType.movie),
+        onHold: filterType(onHoldList, MediaType.movie),
+        startDates: startDates,
+        endDates: endDates,
       );
 
       final tvArchive = DomainArchive(
-        watchlist: filterType(state.watchlist, MediaType.tv),
-        saved: filterType(state.maybeList, MediaType.tv),
-        watching: filterType(state.watchingList, MediaType.tv),
-        watched: filterType(state.watchedList, MediaType.tv),
-        dropped: filterType(state.droppedList, MediaType.tv),
-        onHold: filterType(state.onHoldList, MediaType.tv),
-        watchedEpisodes: state.watchedEpisodes,
-        startDates: state.startDates,
-        endDates: state.endDates,
-        seasonStartDates: state.seasonStartDates,
-        seasonEndDates: state.seasonEndDates,
+        watchlist: filterType(watchlist, MediaType.tv),
+        saved: filterType(maybeList, MediaType.tv),
+        watching: filterType(watchingList, MediaType.tv),
+        watched: filterType(watchedList, MediaType.tv),
+        dropped: filterType(droppedList, MediaType.tv),
+        onHold: filterType(onHoldList, MediaType.tv),
+        watchedEpisodes: watchedEpisodes,
+        startDates: startDates,
+        endDates: endDates,
+        seasonStartDates: seasonStartDates,
+        seasonEndDates: seasonEndDates,
       );
 
       final movieKey = HallStorageService.domainStorageKey(activeHallId, MediumDomain.movies);
@@ -326,18 +492,18 @@ class MediaNotifier extends Notifier<MediaState> {
         prefs.setString(foldersKey, jsonEncode(_customFoldersToJson(state.customFolders))),
         prefs.setString(historyKey, jsonEncode(_watchHistoryToJson(state.watchHistory))),
         if (activeHallId == 'common') ...[
-          prefs.setString(_watchlistKey, jsonEncode(state.watchlist.map((k, v) => MapEntry(k, v.toMinimalJson())))),
-          prefs.setString(_maybeListKey, jsonEncode(state.maybeList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
-          prefs.setString(_watchingListKey, jsonEncode(state.watchingList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
-          prefs.setString(_watchedListKey, jsonEncode(state.watchedList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
-          prefs.setString(_droppedListKey, jsonEncode(state.droppedList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
-          prefs.setString(_onHoldListKey, jsonEncode(state.onHoldList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
-          prefs.setString(_watchedEpisodesKey, jsonEncode(state.watchedEpisodes.map((k, v) => MapEntry(k, v.toList())))),
+          prefs.setString(_watchlistKey, jsonEncode(watchlist.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_maybeListKey, jsonEncode(maybeList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_watchingListKey, jsonEncode(watchingList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_watchedListKey, jsonEncode(watchedList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_droppedListKey, jsonEncode(droppedList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_onHoldListKey, jsonEncode(onHoldList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_watchedEpisodesKey, jsonEncode(watchedEpisodes.map((k, v) => MapEntry(k, v.toList())))),
           prefs.setString(_watchHistoryKey, jsonEncode(_watchHistoryToJson(state.watchHistory))),
-          prefs.setString(_startDatesKey, jsonEncode(_dateMapToJson(state.startDates))),
-          prefs.setString(_endDatesKey, jsonEncode(_dateMapToJson(state.endDates))),
-          prefs.setString(_seasonStartDatesKey, jsonEncode(_seasonDateMapToJson(state.seasonStartDates))),
-          prefs.setString(_seasonEndDatesKey, jsonEncode(_seasonDateMapToJson(state.seasonEndDates))),
+          prefs.setString(_startDatesKey, jsonEncode(_dateMapToJson(startDates))),
+          prefs.setString(_endDatesKey, jsonEncode(_dateMapToJson(endDates))),
+          prefs.setString(_seasonStartDatesKey, jsonEncode(_seasonDateMapToJson(seasonStartDates))),
+          prefs.setString(_seasonEndDatesKey, jsonEncode(_seasonDateMapToJson(seasonEndDates))),
           prefs.setString(_customFoldersKey, jsonEncode(_customFoldersToJson(state.customFolders))),
         ],
       ]);

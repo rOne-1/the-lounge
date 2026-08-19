@@ -76,14 +76,36 @@ void main() {
       await hallNotifier.switchHall('common');
       expect(container.read(hallProvider).activeHallId, 'common');
 
-      // Assert Movie A is present in The Grand Hall, and TV Show B is NOT present
+      // Assert Movie A (native) is present. ORG-AGG-1: the Grand Hall is now
+      // an aggregate of the other Halls too, so TV Show B (native to the
+      // Mezzanine Hall) is also visible here -- but marked read-only, not
+      // treated as if it were natively saved in the Grand Hall.
       expect(container.read(mediaProvider).watchlist.containsKey('movie-A'), isTrue);
-      expect(container.read(mediaProvider).watchingList.containsKey('tv-B'), isFalse);
+      expect(container.read(mediaProvider).watchingList.containsKey('tv-B'), isTrue);
+      expect(container.read(mediaProvider).readOnlyMediaIds.contains('tv-B'), isTrue);
+      expect(container.read(mediaProvider).readOnlyMediaIds.contains('movie-A'), isFalse);
+      expect(container.read(mediaProvider).readOnlySourceHallName['tv-B'],
+          'The Mezzanine Hall');
 
-      // Switch back to The Mezzanine Hall: TV Show B is present, Movie A is NOT present
+      // ORG-AGG-1: aggregated titles must never get silently duplicated
+      // into the Grand Hall's own native storage. Trigger an unrelated
+      // native save (adding Movie A again is a no-op mutation, but it still
+      // exercises the real _saveToPrefs path) and confirm the Grand Hall's
+      // own on-disk archive still has no trace of TV Show B.
+      mediaNotifier.addToWatchlist(movieA);
+      final grandMovieRaw = prefs.getString(
+        HallStorageService.domainStorageKey('common', MediumDomain.tv),
+      );
+      expect(grandMovieRaw == null || !grandMovieRaw.contains('tv-B'), isTrue);
+
+      // Switch back to The Mezzanine Hall: TV Show B is present natively,
+      // Movie A (native to the Grand Hall only) is NOT present -- the
+      // Mezzanine Hall itself is not part of any aggregate and stays fully
+      // isolated.
       await hallNotifier.switchHall('custom_1');
       expect(container.read(mediaProvider).watchingList.containsKey('tv-B'), isTrue);
       expect(container.read(mediaProvider).watchlist.containsKey('movie-A'), isFalse);
+      expect(container.read(mediaProvider).readOnlyMediaIds.isEmpty, isTrue);
     });
 
     test('v4 JSON Backup export and import roundtrip across all halls and domains', () async {

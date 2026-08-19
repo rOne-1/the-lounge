@@ -5,6 +5,7 @@ import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'lounge_folder_picker_sheet.dart';
+import 'lounge_toast.dart';
 import 'media_image.dart';
 
 /// Helper function to open the [QuickStatusSheet] bottom sheet modal.
@@ -40,6 +41,28 @@ class QuickStatusSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final mediaState = ref.watch(mediaProvider);
     final mediaNotifier = ref.read(mediaProvider.notifier);
+
+    // ORG-AGG-1: this title was pulled into the Grand Hall's aggregated
+    // view from another Hall, not natively saved here -- status/folder
+    // changes are blocked to avoid silently duplicating it into the Grand
+    // Hall's own storage (see MediaNotifier._saveToPrefs). Open its actual
+    // Hall to edit it there instead.
+    final isReadOnly = mediaState.readOnlyMediaIds.contains(item.id);
+    final readOnlyHallName = mediaState.readOnlySourceHallName[item.id];
+
+    void guardEdit(BuildContext context, VoidCallback action) {
+      if (isReadOnly) {
+        LoungeToast.show(
+          context,
+          readOnlyHallName != null
+              ? 'This title lives in $readOnlyHallName -- open it there to change status.'
+              : 'This title lives in another Hall -- open it there to change status.',
+          type: ToastType.info,
+        );
+        return;
+      }
+      action();
+    }
 
     final inWatchlist = mediaState.watchlist.containsKey(item.id);
     final inSaved = mediaState.maybeList.containsKey(item.id);
@@ -221,6 +244,36 @@ class QuickStatusSheet extends ConsumerWidget {
               ),
             ],
           ),
+          if (isReadOnly) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: context.ambianceColors.pill,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: context.ambianceColors.lineRgba),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lock_outline_rounded, size: 14, color: context.ambianceColors.sub),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      readOnlyHallName != null
+                          ? 'From $readOnlyHallName -- view only here.'
+                          : 'From another Hall -- view only here.',
+                      style: AppThemes.safeGeist(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: context.ambianceColors.sub,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 20),
           Divider(
             color: context.ambianceColors.lineRgba,
@@ -243,20 +296,20 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.bookmark_outline_rounded,
                 isActive: inWatchlist,
                 activeColor: AppStatusColors.watchlist,
-                onTap: () {
+                onTap: () => guardEdit(context, () {
                   mediaNotifier.toggleWatchlist(item);
                   Navigator.of(context).pop();
-                },
+                }),
               ),
               _StatusPill(
                 label: 'Saved',
                 icon: inSaved ? Icons.archive_rounded : Icons.archive_outlined,
                 isActive: inSaved,
                 activeColor: AppStatusColors.save,
-                onTap: () {
+                onTap: () => guardEdit(context, () {
                   mediaNotifier.toggleMaybe(item);
                   Navigator.of(context).pop();
-                },
+                }),
               ),
               _StatusPill(
                 label: 'Watching',
@@ -265,10 +318,10 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.play_circle_outline_rounded,
                 isActive: inWatching,
                 activeColor: AppStatusColors.watching,
-                onTap: () {
+                onTap: () => guardEdit(context, () {
                   mediaNotifier.toggleWatching(item);
                   Navigator.of(context).pop();
-                },
+                }),
               ),
               _StatusPill(
                 label: 'On-Hold',
@@ -277,10 +330,10 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.pause_circle_outline_rounded,
                 isActive: inOnHold,
                 activeColor: AppStatusColors.onHold,
-                onTap: () {
+                onTap: () => guardEdit(context, () {
                   mediaNotifier.toggleOnHold(item);
                   Navigator.of(context).pop();
-                },
+                }),
               ),
               _StatusPill(
                 label: 'Dropped',
@@ -289,10 +342,10 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.remove_circle_outline_rounded,
                 isActive: inDropped,
                 activeColor: AppStatusColors.dropped,
-                onTap: () {
+                onTap: () => guardEdit(context, () {
                   mediaNotifier.toggleDropped(item);
                   Navigator.of(context).pop();
-                },
+                }),
               ),
               _StatusPill(
                 label: 'Watched',
@@ -301,14 +354,14 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.check_circle_outline_rounded,
                 isActive: inWatched,
                 activeColor: AppStatusColors.watched,
-                onTap: () {
+                onTap: () => guardEdit(context, () {
                   if (inWatched) {
                     mediaNotifier.removeFromWatchedList(item.id);
                   } else {
                     mediaNotifier.addToWatchedList(item);
                   }
                   Navigator.of(context).pop();
-                },
+                }),
               ),
             ],
           ),
@@ -320,10 +373,10 @@ class QuickStatusSheet extends ConsumerWidget {
             color: Colors.transparent,
             child: InkWell(
               key: const ValueKey('quick_status_add_to_folder'),
-              onTap: () {
+              onTap: () => guardEdit(context, () {
                 Navigator.of(context).pop();
                 showFolderPickerSheet(context, ref, mediaId: item.id, mediaTitle: item.title);
-              },
+              }),
               borderRadius: BorderRadius.circular(12),
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
