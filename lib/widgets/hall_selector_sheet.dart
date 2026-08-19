@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
+import '../constants/app_languages.dart';
 import '../models/hall_space.dart';
 import '../models/media_item.dart';
 import '../providers/hall_provider.dart';

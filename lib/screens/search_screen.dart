@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../constants.dart';
+import '../constants/app_languages.dart';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import '../providers/hall_provider.dart';
