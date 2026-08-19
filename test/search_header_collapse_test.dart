@@ -73,24 +73,48 @@ void main() {
     addTearDown(container.dispose);
 
     expect(searchBarFinder, findsOneWidget);
+
+    final slideWidget = tester.widget<AnimatedSlide>(find.byType(AnimatedSlide).first);
+    expect(slideWidget.offset, Offset.zero);
+
+    final opacityWidget = tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first);
+    expect(opacityWidget.opacity, 1.0);
   });
 
-  testWidgets('search header collapses on scroll-down and returns on scroll-up',
+  testWidgets(
+      'SEARCH-1 & SEARCH-2: search header slides/fades on scroll without viewport height mutations',
       (tester) async {
     final container = await pumpSearch(tester);
     addTearDown(container.dispose);
 
-    expect(searchBarFinder, findsOneWidget);
-
     final gridFinder = find.byType(GridView).first;
+    final initialGridSize = tester.getSize(gridFinder);
+
+    // Initial state: visible
+    expect(tester.widget<AnimatedSlide>(find.byType(AnimatedSlide).first).offset, Offset.zero);
+    expect(tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first).opacity, 1.0);
+
+    // Drag down to scroll content up (collapse chrome)
     await tester.drag(gridFinder, const Offset(0, -400));
     await tester.pumpAndSettle();
 
-    expect(searchBarFinder, findsNothing);
+    // Chrome collapsed: slide offset -1.0, opacity 0.0
+    expect(tester.widget<AnimatedSlide>(find.byType(AnimatedSlide).first).offset, const Offset(0, -1.0));
+    expect(tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first).opacity, 0.0);
 
+    // Viewport height remains unchanged (zero layout shifts / jitter)
+    final collapsedGridSize = tester.getSize(gridFinder);
+    expect(collapsedGridSize, equals(initialGridSize));
+
+    // Drag up to scroll content down (reveal chrome)
     await tester.drag(gridFinder, const Offset(0, 400));
     await tester.pumpAndSettle();
 
-    expect(searchBarFinder, findsOneWidget);
+    expect(tester.widget<AnimatedSlide>(find.byType(AnimatedSlide).first).offset, Offset.zero);
+    expect(tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first).opacity, 1.0);
+
+    // Viewport height remains unchanged
+    final revealedGridSize = tester.getSize(gridFinder);
+    expect(revealedGridSize, equals(initialGridSize));
   });
 }

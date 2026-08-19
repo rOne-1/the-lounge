@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -717,78 +719,103 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Widget _buildCompactLayout(bool isDark, bool isMovies) {
     final inkColor = context.ambianceColors.ink;
+    final colors = context.ambianceColors;
 
-    return Column(
+    return Stack(
       children: [
-        SafeArea(
-          bottom: false,
-          child: AnimatedSize(
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
-            alignment: Alignment.topCenter,
-            child: AnimatedOpacity(
-              duration: AppPhysics.houseSpringDuration,
-              curve: AppPhysics.houseSpringCurve,
-              opacity: _isChromeVisible ? 1.0 : 0.0,
-              child: _isChromeVisible
-                  ? Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                _headerTitle(isMovies),
-                                style: GoogleFonts.bodoniModa(
-                                  fontSize: 19,
-                                  fontWeight: FontWeight.w600,
-                                  fontStyle: FontStyle.italic,
-                                  color: inkColor,
-                                ),
-                              ),
-                              PressableScale(
-                                onTap: () =>
-                                    _showFilterBottomSheet(context, isDark, isMovies),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 8.0,
-                                    vertical: 12.0,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.filter_list, color: inkColor, size: 20),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'Filters',
-                                        style: AppThemes.safeGeist(
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: inkColor,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        _buildTopSearchBar(isDark),
-                        if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
-                        _buildActiveFilterChipBar(isDark),
-                      ],
-                    )
-                  : const SizedBox(width: double.infinity),
-            ),
-          ),
-        ),
-        Expanded(
+        // 1. Full height underlying scroll body with top padding for overlay header (zero layout jumps)
+        Positioned.fill(
           child: NotificationListener<ScrollNotification>(
             onNotification: _handleScrollNotification,
-            child: _buildBody(isDark, isMovies),
+            child: _buildBody(isDark, isMovies, topPadding: 116.0),
+          ),
+        ),
+
+        // 2. Overlay header with continuous House Spring slide/fade and frosted backdrop
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          child: IgnorePointer(
+            ignoring: !_isChromeVisible,
+            child: AnimatedSlide(
+              offset: _isChromeVisible ? Offset.zero : const Offset(0, -1.0),
+              duration: const Duration(milliseconds: 320),
+              curve: AppPhysics.houseSpringCurve,
+              child: AnimatedOpacity(
+                opacity: _isChromeVisible ? 1.0 : 0.0,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeInOutCubic,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: colors.base.withValues(alpha: isDark ? 0.88 : 0.92),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: colors.lineRgba.withValues(alpha: isDark ? 0.5 : 0.3),
+                      ),
+                    ),
+                  ),
+                  child: ClipRect(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                      child: SafeArea(
+                        bottom: false,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    _headerTitle(isMovies),
+                                    style: GoogleFonts.bodoniModa(
+                                      fontSize: 19,
+                                      fontWeight: FontWeight.w600,
+                                      fontStyle: FontStyle.italic,
+                                      color: inkColor,
+                                    ),
+                                  ),
+                                  PressableScale(
+                                    onTap: () =>
+                                        _showFilterBottomSheet(context, isDark, isMovies),
+                                    child: Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8.0,
+                                        vertical: 12.0,
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.filter_list, color: inkColor, size: 20),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Filters',
+                                            style: AppThemes.safeGeist(
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
+                                              color: inkColor,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            _buildTopSearchBar(isDark),
+                            if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
+                            _buildActiveFilterChipBar(isDark),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       ],
@@ -859,15 +886,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildBody(bool isDark, bool isMovies) {
+  Widget _buildBody(bool isDark, bool isMovies, {double topPadding = 0.0}) {
     if (_searchQuery.isNotEmpty) {
-      return _buildSearchModeBody(isDark, isMovies);
+      return _buildSearchModeBody(isDark, isMovies, topPadding: topPadding);
     } else {
-      return _buildDiscoverModeBody(isDark, isMovies);
+      return _buildDiscoverModeBody(isDark, isMovies, topPadding: topPadding);
     }
   }
 
-  Widget _buildSearchModeBody(bool isDark, bool isMovies) {
+  Widget _buildSearchModeBody(bool isDark, bool isMovies, {double topPadding = 0.0}) {
     final inkColor = context.ambianceColors.ink;
     final filterParams = ref.watch(discoverFilterProvider);
 
@@ -938,7 +965,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       children: [
         Expanded(
           child: GridView.builder(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.fromLTRB(18, topPadding + 14, 18, 18),
             gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
               maxCrossAxisExtent: 140,
               childAspectRatio: 2 / 3,
@@ -956,7 +983,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildDiscoverModeBody(bool isDark, bool isMovies) {
+  Widget _buildDiscoverModeBody(bool isDark, bool isMovies, {double topPadding = 0.0}) {
     final subColor = context.ambianceColors.sub;
     final filterParams = ref.watch(discoverFilterProvider);
 
@@ -1025,7 +1052,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           children: [
             Expanded(
               child: GridView.builder(
-                padding: const EdgeInsets.all(18),
+                padding: EdgeInsets.fromLTRB(18, topPadding + 14, 18, 18),
                 gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                   maxCrossAxisExtent: 140,
                   childAspectRatio: 2 / 3,
