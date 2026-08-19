@@ -128,26 +128,26 @@ class MediaNotifier extends Notifier<MediaState> {
       if (stored != null && stored.isNotEmpty) {
         initialCountry = stored;
       }
-      final activeProfileId = _storageService.getActiveHallId(prefs);
-      return _loadProfileState(prefs, activeProfileId, initialCountry);
+      final activeHallId = _storageService.getActiveHallId(prefs);
+      return _loadHallState(prefs, activeHallId, initialCountry);
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
       return MediaState(watchProvidersCountry: initialCountry);
     }
   }
 
-  MediaState _loadProfileState(SharedPreferences prefs, String profileId, String country) {
-    final movieKey = HallStorageService.domainStorageKey(profileId, MediumDomain.movies);
-    final tvKey = HallStorageService.domainStorageKey(profileId, MediumDomain.tv);
-    final animeKey = HallStorageService.domainStorageKey(profileId, MediumDomain.anime);
-    final foldersKey = HallStorageService.hallFoldersKey(profileId);
-    final historyKey = HallStorageService.hallHistoryKey(profileId);
+  MediaState _loadHallState(SharedPreferences prefs, String hallId, String country) {
+    final movieKey = HallStorageService.domainStorageKey(hallId, MediumDomain.movies);
+    final tvKey = HallStorageService.domainStorageKey(hallId, MediumDomain.tv);
+    final animeKey = HallStorageService.domainStorageKey(hallId, MediumDomain.anime);
+    final foldersKey = HallStorageService.hallFoldersKey(hallId);
+    final historyKey = HallStorageService.hallHistoryKey(hallId);
 
     final rawMovie = prefs.getString(movieKey);
     final rawTv = prefs.getString(tvKey);
     final rawAnime = prefs.getString(animeKey);
 
-    if (rawMovie != null || rawTv != null || rawAnime != null || profileId != 'common') {
+    if (rawMovie != null || rawTv != null || rawAnime != null || hallId != 'common') {
       DomainArchive parseDomain(String? raw) {
         if (raw == null || raw.isEmpty) return const DomainArchive();
         try {
@@ -227,7 +227,7 @@ class MediaNotifier extends Notifier<MediaState> {
       );
     }
 
-    // Fallback: Legacy un-namespaced keys for common profile
+    // Fallback: Legacy un-namespaced keys for the common Hall
     final watchlist = _parseMediaMap(prefs, _watchlistKey);
     final maybeList = _parseMediaMap(prefs, _maybeListKey);
     final watchingList = _parseMediaMap(prefs, _watchingListKey);
@@ -260,22 +260,22 @@ class MediaNotifier extends Notifier<MediaState> {
     );
   }
 
-  Future<void> loadForProfile(String profileId) async {
+  Future<void> loadForHall(String hallId) async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
       final stored = prefs.getString(_watchProvidersCountryKey);
       final country = (stored != null && stored.isNotEmpty) ? stored : 'US';
-      state = _loadProfileState(prefs, profileId, country);
+      state = _loadHallState(prefs, hallId, country);
     } catch (_) {}
   }
 
   Future<void> _loadFromPrefs() async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
-      final activeProfileId = _storageService.getActiveHallId(prefs);
+      final activeHallId = _storageService.getActiveHallId(prefs);
       final stored = prefs.getString(_watchProvidersCountryKey);
       final country = (stored != null && stored.isNotEmpty) ? stored : 'US';
-      state = _loadProfileState(prefs, activeProfileId, country);
+      state = _loadHallState(prefs, activeHallId, country);
     } catch (_) {}
   }
 
@@ -284,7 +284,7 @@ class MediaNotifier extends Notifier<MediaState> {
   Future<void> _saveToPrefs() async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
-      final activeProfileId = _storageService.getActiveHallId(prefs);
+      final activeHallId = _storageService.getActiveHallId(prefs);
 
       Map<String, MediaItem> filterType(Map<String, MediaItem> map, MediaType type) {
         return Map.fromEntries(map.entries.where((e) => e.value.type == type));
@@ -315,17 +315,17 @@ class MediaNotifier extends Notifier<MediaState> {
         seasonEndDates: state.seasonEndDates,
       );
 
-      final movieKey = HallStorageService.domainStorageKey(activeProfileId, MediumDomain.movies);
-      final tvKey = HallStorageService.domainStorageKey(activeProfileId, MediumDomain.tv);
-      final foldersKey = HallStorageService.hallFoldersKey(activeProfileId);
-      final historyKey = HallStorageService.hallHistoryKey(activeProfileId);
+      final movieKey = HallStorageService.domainStorageKey(activeHallId, MediumDomain.movies);
+      final tvKey = HallStorageService.domainStorageKey(activeHallId, MediumDomain.tv);
+      final foldersKey = HallStorageService.hallFoldersKey(activeHallId);
+      final historyKey = HallStorageService.hallHistoryKey(activeHallId);
 
       await Future.wait([
         prefs.setString(movieKey, jsonEncode(movieArchive.toJson())),
         prefs.setString(tvKey, jsonEncode(tvArchive.toJson())),
         prefs.setString(foldersKey, jsonEncode(_customFoldersToJson(state.customFolders))),
         prefs.setString(historyKey, jsonEncode(_watchHistoryToJson(state.watchHistory))),
-        if (activeProfileId == 'common') ...[
+        if (activeHallId == 'common') ...[
           prefs.setString(_watchlistKey, jsonEncode(state.watchlist.map((k, v) => MapEntry(k, v.toMinimalJson())))),
           prefs.setString(_maybeListKey, jsonEncode(state.maybeList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
           prefs.setString(_watchingListKey, jsonEncode(state.watchingList.map((k, v) => MapEntry(k, v.toMinimalJson())))),

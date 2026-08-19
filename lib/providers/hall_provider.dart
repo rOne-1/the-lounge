@@ -84,7 +84,7 @@ class HallNotifier extends Notifier<HallState> {
     state = state.copyWith(activeHallId: targetHall.id);
     try {
       await _storageService.saveActiveHallId(_prefs, targetHall.id);
-      await ref.read(mediaProvider.notifier).loadForProfile(targetHall.id);
+      await ref.read(mediaProvider.notifier).loadForHall(targetHall.id);
     } catch (_) {}
 
     // Discover's deck providers are plain (non-autoDispose) Notifiers that

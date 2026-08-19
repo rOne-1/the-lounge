@@ -17,6 +17,7 @@ import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/lounge_dropdown.dart';
+import '../widgets/lounge_filter_chip.dart';
 import '../widgets/lounge_slider.dart';
 import '../widgets/media_card.dart';
 import '../widgets/person_search_autocomplete.dart';
@@ -1395,24 +1396,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  BoxDecoration _buildFilterChipDecoration({
-    required bool isSelected,
-    required bool isDark,
-    required Color pillColor,
-    required Color lineRgba,
-  }) {
-    final accColor = context.ambianceColors.acc;
-    if (isSelected) {
-      return context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)).copyWith(
-        border: Border.all(color: accColor, width: 1.0),
-      );
-    }
-    return BoxDecoration(
-      color: pillColor,
-      borderRadius: BorderRadius.circular(999),
-      border: Border.all(color: lineRgba, width: 1.0),
-    );
-  }
 
   Widget _buildAccordionFilterPanel(bool isDark, bool isMovies, [WidgetRef? externalRef]) {
     final activeRef = externalRef ?? ref;
@@ -1424,7 +1407,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     // onto the Hall's language and disabling the other options, rather than
     // silently ignoring a selection the user can still see and tap.
     final lockedLanguageCode = activeRef.watch(activeHallSpaceProvider).lockedLanguageCode;
-    final inkColor = context.ambianceColors.ink;
     final subColor = context.ambianceColors.sub;
     final lineRgba = context.ambianceColors.lineRgba;
     final pillColor = context.ambianceColors.pill;
@@ -1481,7 +1463,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           (filterParams.genreName == null ||
                               filterParams.genreName!.isEmpty)) ||
                       filterParams.genreName == genre;
-                  return PressableScale(
+                  return LoungeFilterChip(
+                    label: genre,
+                    isSelected: isSelected,
+                    pillColor: pillColor,
+                    lineRgba: lineRgba,
                     onTap: () {
                       if (genre == 'All') {
                         filterNotifier.setGenre(genreId: null, genreName: null);
@@ -1492,31 +1478,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ref.read(searchGenreProvider.notifier).setGenre(genre);
                       }
                     },
-                    child: AnimatedContainer(
-                      duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: _buildFilterChipDecoration(
-                        isSelected: isSelected,
-                        isDark: isDark,
-                        pillColor: pillColor,
-                        lineRgba: lineRgba,
-                      ),
-                      child: Text(
-                        genre,
-                        style: AppThemes.safeGeist(
-                          fontSize: 12,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w400,
-                          color: isSelected
-                              ? (Theme.of(context).colorScheme.onPrimary)
-                              : inkColor,
-                        ),
-                      ),
-                    ),
                   );
                 }).toList(),
               ),
@@ -1614,7 +1575,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  PressableScale(
+                  LoungeFilterChip(
+                    label: 'Any Provider',
+                    isSelected: filterParams.providerId == null,
+                    pillColor: pillColor,
+                    lineRgba: lineRgba,
                     onTap: () {
                       filterNotifier.setProvider(
                         providerId: null,
@@ -1622,33 +1587,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         watchRegion: filterParams.watchRegion,
                       );
                     },
-                    child: AnimatedContainer(
-                      duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: _buildFilterChipDecoration(
-                        isSelected: filterParams.providerId == null,
-                        isDark: isDark,
-                        pillColor: pillColor,
-                        lineRgba: lineRgba,
-                      ),
-                      child: Text(
-                        'Any Provider',
-                        style: AppThemes.safeGeist(
-                          fontSize: 12,
-                          color: filterParams.providerId == null
-                              ? (Theme.of(context).colorScheme.onPrimary)
-                              : inkColor,
-                        ),
-                      ),
-                    ),
                   ),
                   ..._providers.map((p) {
                     final isSelected = filterParams.providerId == p['id'];
-                    return PressableScale(
+                    return LoungeFilterChip(
+                      label: p['name'] as String,
+                      isSelected: isSelected,
+                      pillColor: pillColor,
+                      lineRgba: lineRgba,
                       onTap: () {
                         filterNotifier.setProvider(
                           providerId: p['id'] as int,
@@ -1656,31 +1602,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           watchRegion: filterParams.watchRegion,
                         );
                       },
-                      child: AnimatedContainer(
-                        duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: _buildFilterChipDecoration(
-                          isSelected: isSelected,
-                          isDark: isDark,
-                          pillColor: pillColor,
-                          lineRgba: lineRgba,
-                        ),
-                        child: Text(
-                          p['name'] as String,
-                          style: AppThemes.safeGeist(
-                            fontSize: 12,
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected
-                                ? (Theme.of(context).colorScheme.onPrimary)
-                                : inkColor,
-                          ),
-                        ),
-                      ),
                     );
                   }),
                 ],
@@ -1753,33 +1674,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ].map((vc) {
                   final isSelected = filterParams.minVoteCount == vc;
                   final label = vc == null ? 'Any' : '$vc+';
-                  return PressableScale(
+                  return LoungeFilterChip(
+                    label: label,
+                    isSelected: isSelected,
+                    pillColor: pillColor,
+                    lineRgba: lineRgba,
                     onTap: () => filterNotifier.setMinVoteCount(vc),
-                    child: AnimatedContainer(
-                      duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: _buildFilterChipDecoration(
-                        isSelected: isSelected,
-                        isDark: isDark,
-                        pillColor: pillColor,
-                        lineRgba: lineRgba,
-                      ),
-                      child: Text(
-                        label,
-                        style: AppThemes.safeGeist(
-                          fontSize: 12,
-                          fontWeight:
-                              isSelected ? FontWeight.w600 : FontWeight.w400,
-                          color: isSelected
-                              ? (Theme.of(context).colorScheme.onPrimary)
-                              : inkColor,
-                        ),
-                      ),
-                    ),
                   );
                 }).toList(),
               ),
@@ -1898,69 +1798,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  PressableScale(
+                  LoungeFilterChip(
+                    label: 'Any Language',
+                    isSelected: lockedLanguageCode == null &&
+                        filterParams.originalLanguage == null,
+                    pillColor: pillColor,
+                    lineRgba: lineRgba,
                     onTap: lockedLanguageCode != null
                         ? null
                         : () => filterNotifier.setOriginalLanguage(null),
-                    child: AnimatedContainer(
-                      duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: _buildFilterChipDecoration(
-                        isSelected: lockedLanguageCode == null &&
-                            filterParams.originalLanguage == null,
-                        isDark: isDark,
-                        pillColor: pillColor,
-                        lineRgba: lineRgba,
-                      ),
-                      child: Text(
-                        'Any Language',
-                        style: AppThemes.safeGeist(
-                          fontSize: 12,
-                          color: lockedLanguageCode == null &&
-                                  filterParams.originalLanguage == null
-                              ? (Theme.of(context).colorScheme.onPrimary)
-                              : inkColor,
-                        ),
-                      ),
-                    ),
                   ),
                   ..._languages.map((lang) {
                     final isSelected = lockedLanguageCode != null
                         ? lockedLanguageCode == lang['code']
                         : filterParams.originalLanguage == lang['code'];
-                    return PressableScale(
+                    return LoungeFilterChip(
+                      label: lang['name']!,
+                      isSelected: isSelected,
+                      pillColor: pillColor,
+                      lineRgba: lineRgba,
                       onTap: lockedLanguageCode != null
                           ? null
                           : () => filterNotifier.setOriginalLanguage(lang['code']),
-                      child: AnimatedContainer(
-                        duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: _buildFilterChipDecoration(
-                          isSelected: isSelected,
-                          isDark: isDark,
-                          pillColor: pillColor,
-                          lineRgba: lineRgba,
-                        ),
-                        child: Text(
-                          lang['name']!,
-                          style: AppThemes.safeGeist(
-                            fontSize: 12,
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected
-                                ? (Theme.of(context).colorScheme.onPrimary)
-                                : inkColor,
-                          ),
-                        ),
-                      ),
                     );
                   }),
                 ],
@@ -1997,33 +1856,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ].map((status) {
                     final isSelected = filterParams.tvStatus == status;
                     final label = status ?? 'Any Status';
-                    return PressableScale(
+                    return LoungeFilterChip(
+                      label: label,
+                      isSelected: isSelected,
+                      pillColor: pillColor,
+                      lineRgba: lineRgba,
                       onTap: () => filterNotifier.setTvStatus(status),
-                      child: AnimatedContainer(
-                        duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: _buildFilterChipDecoration(
-                          isSelected: isSelected,
-                          isDark: isDark,
-                          pillColor: pillColor,
-                          lineRgba: lineRgba,
-                        ),
-                        child: Text(
-                          label,
-                          style: AppThemes.safeGeist(
-                            fontSize: 12,
-                            fontWeight:
-                                isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected
-                                ? (Theme.of(context).colorScheme.onPrimary)
-                                : inkColor,
-                          ),
-                        ),
-                      ),
                     );
                   }).toList(),
                 ),
@@ -2041,73 +1879,32 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    PressableScale(
+                    LoungeFilterChip(
+                      label: 'Any Network',
+                      isSelected: filterParams.tvNetworkId == null,
+                      pillColor: pillColor,
+                      lineRgba: lineRgba,
                       onTap: () {
                         filterNotifier.setTvNetwork(
                           tvNetworkId: null,
                           tvNetworkName: null,
                         );
                       },
-                      child: AnimatedContainer(
-                        duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: _buildFilterChipDecoration(
-                          isSelected: filterParams.tvNetworkId == null,
-                          isDark: isDark,
-                          pillColor: pillColor,
-                          lineRgba: lineRgba,
-                        ),
-                        child: Text(
-                          'Any Network',
-                          style: AppThemes.safeGeist(
-                            fontSize: 12,
-                            color: filterParams.tvNetworkId == null
-                                ? (Theme.of(context).colorScheme.onPrimary)
-                                : inkColor,
-                          ),
-                        ),
-                      ),
                     ),
                     ..._tvNetworks.map((net) {
                       final isSelected =
                           filterParams.tvNetworkId == net['id'];
-                      return PressableScale(
+                      return LoungeFilterChip(
+                        label: net['name'] as String,
+                        isSelected: isSelected,
+                        pillColor: pillColor,
+                        lineRgba: lineRgba,
                         onTap: () {
                           filterNotifier.setTvNetwork(
                             tvNetworkId: net['id'] as int,
                             tvNetworkName: net['name'] as String,
                           );
                         },
-                        child: AnimatedContainer(
-                          duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: _buildFilterChipDecoration(
-                            isSelected: isSelected,
-                            isDark: isDark,
-                            pillColor: pillColor,
-                            lineRgba: lineRgba,
-                          ),
-                          child: Text(
-                            net['name'] as String,
-                            style: AppThemes.safeGeist(
-                              fontSize: 12,
-                              fontWeight: isSelected
-                                  ? FontWeight.w600
-                                  : FontWeight.w400,
-                              color: isSelected
-                                  ? (Theme.of(context).colorScheme.onPrimary)
-                                  : inkColor,
-                            ),
-                          ),
-                        ),
                       );
                     }),
                   ],
