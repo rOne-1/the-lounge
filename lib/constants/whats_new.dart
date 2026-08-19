@@ -2,7 +2,7 @@
 /// the What's New dialog shows once per distinct value of this string
 /// (tracked in SharedPreferences), not once per app version/build number,
 /// so it can be updated independently of pubspec's version field.
-const String kWhatsNewVersion = '0.2.0';
+const String kWhatsNewVersion = '0.2.2';
 
 class WhatsNewSection {
   final String title;
@@ -12,42 +12,26 @@ class WhatsNewSection {
 }
 
 /// Curated, user-facing summary of everything visibly new/fixed since the
-/// previous alpha build testers had (commit b5ce374). Plain-language only
-/// -- no internal ticket IDs, file names, or engineering framing.
+/// last version testers actually saw this dialog for ('0.2.0') -- covers
+/// the v0.2.1 nav-capsule fix (never surfaced in-app before) plus
+/// everything new in v0.2.2. Plain-language only -- no internal ticket
+/// IDs, file names, or engineering framing.
 const List<WhatsNewSection> kWhatsNewSections = [
   WhatsNewSection(
     title: 'New',
     items: [
-      'The Lounge is now the app\'s home base: a redesigned Sanctuary Gateway landing page with quick access to your Archive, Tools, and Browse & Discovery.',
-      'The old Home tab is now called Lobby.',
-      'New Archive and Tools hubs, restyled to match the rest of the app\'s screening-room look.',
-      'The floating navigation capsule now follows you everywhere -- every screen except The Lounge landing page -- instead of just the old top-level tabs.',
-      'Swipe left or right on blank space in Lobby, Search, or Calendar to move directly between them, with a new depth/parallax motion; Browse, Archive buckets, and Tools support the same swipe to move through their sections.',
-      'Rate anything you\'ve watched with a 4-tier personal rating, right from a title\'s page or a new batch Rate Titles tool -- including a rating per season for TV shows.',
-      'New Rewatch Log: quickly log a rewatch with a date picker, and see your full watch history on a title\'s page.',
-      'New Custom Folders: create, rename, reorder, and organize titles into your own folders, independent of Watchlist/Watched/etc.',
-      'New sort and grouping options for Watchlist and Saved, including sorting by your own rating and grouping by language, plus a cleanup tool for trimming an overgrown Saved list.',
-      'TV show pages now show a seasonal rating bar -- your rating for every season at a glance.',
-      'New "On This Day" and "Forgotten Favorites" sections on The Lounge, surfacing titles you finished exactly a year (or more) ago, or loved titles you\'ve never revisited.',
-      'The Rate Titles, Custom Folders, Cleanup, and Rewatch Vault tools now respect the Movies/TV toggle instead of always mixing both.',
-      'New app icon.',
+      'Multiple Halls: create separate spaces for different moods or people, each with its own fully separate Watchlist, Watching, Watched, and every other shelf -- switch between them from the floating navigation capsule.',
+      'Each Hall can have its own theme, so switching Halls can also switch your whole look automatically.',
+      'Each Hall can be locked to a single language, so Lobby, Discover, Search, and Calendar only ever show titles in that language while you\'re in it.',
+      'Renamed "Piles" to "Shelves" throughout the app to match the screening-room theme.',
     ],
   ),
   WhatsNewSection(
     title: 'Fixed',
     items: [
-      'Tapping a title now opens instantly with its poster and basic info already visible, instead of a blank loading screen.',
-      'Search now shows a loading indicator while results come in.',
-      'Searching by a cast or crew member no longer misses titles where they weren\'t in the main credited cast.',
-      'Restoring a backup with TV shows in it no longer shows an empty list.',
-      'The empty-state "Discover Titles" button now returns you cleanly to Discover instead of leaving a stray screen behind.',
-      'Fixed occasional stuttering when importing a large backup, and repeated failed lookups no longer retry instantly over and over.',
-      'Naming a folder no longer hides the input field behind the on-screen keyboard.',
-      'Fixed a crash when creating a folder on the web version.',
-      'Fixed sort and grouping (Top Rated, Release Date, Genre, Language) silently breaking after restarting the app.',
-      'Fixed the rating banner jumping to a different spot depending on the title.',
-      'Fixed per-season rating prompts only ever appearing for Season 1.',
-      'Fixed a stray yellow underline occasionally appearing under text in dialogs and the navigation capsule.',
+      'The floating navigation pill\'s Settings button and tab switching now work correctly from inside a pushed screen (Archive, Tools, Settings, Detail, Folders, Rewatch Vault, etc.) -- previously they did nothing at all in that case.',
+      'Switching Halls partway through a Discover deck now refreshes the deck instead of continuing to show the previous Hall\'s picks.',
+      'A language-locked Hall\'s Lobby rails (Now Playing, Upcoming, Trending, etc.) and Calendar agenda no longer show almost nothing -- they now correctly surface titles in the locked language instead of getting lost in a mostly-other-language list.',
     ],
   ),
 ];
