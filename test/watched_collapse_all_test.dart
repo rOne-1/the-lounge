@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:the_lounge/screens/archive_bucket_screen.dart';
+import 'package:the_lounge/screens/archive_shelf_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -57,7 +57,7 @@ void main() {
     genres: ['Drama'],
   );
 
-  Future<ProviderContainer> pumpWatchedPile(
+  Future<ProviderContainer> pumpWatchedShelf(
     WidgetTester tester,
     List<MediaItem> items,
   ) async {
@@ -77,7 +77,7 @@ void main() {
       UncontrolledProviderScope(
         container: container,
         child: const MaterialApp(
-          home: ArchiveBucketScreen(kind: ArchiveBucketKind.watched),
+          home: ArchiveShelfScreen(kind: ArchiveShelfKind.watched),
         ),
       ),
     );
@@ -88,7 +88,7 @@ void main() {
 
   testWidgets('Collapse All / Expand All toggles every Watched group at once',
       (tester) async {
-    final container = await pumpWatchedPile(
+    final container = await pumpWatchedShelf(
       tester,
       [collectionMovieA, collectionMovieB, standaloneMovie],
     );
@@ -122,7 +122,7 @@ void main() {
 
   testWidgets('Collapse All button is hidden when there is only one group',
       (tester) async {
-    final container = await pumpWatchedPile(tester, [standaloneMovie]);
+    final container = await pumpWatchedShelf(tester, [standaloneMovie]);
     addTearDown(container.dispose);
 
     expect(find.text('Collapse All'), findsNothing);
@@ -153,7 +153,7 @@ void main() {
       addedDate: DateTime(2026, 7, 1),
     );
 
-    final container = await pumpWatchedPile(
+    final container = await pumpWatchedShelf(
       tester,
       [olderCollectionMovie, newerCollectionMovie],
     );

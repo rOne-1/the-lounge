@@ -24,7 +24,7 @@ void main() {
         addedDate: DateTime(2026, 5, 20),
       );
 
-      final sorted = sortArchiveBucket([itemOld, itemNew], ArchiveSortOption.lastAdded);
+      final sorted = sortArchiveShelf([itemOld, itemNew], ArchiveSortOption.lastAdded);
       expect(sorted.first.id, '2');
       expect(sorted.last.id, '1');
     });

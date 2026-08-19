@@ -13,34 +13,34 @@ import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
 
-export '../models/hall_space.dart' show ArchiveShelfKind, ArchiveBucketKind;
+export '../models/hall_space.dart' show ArchiveShelfKind;
 
-/// PERS-SPACE-1/PERS-SORT-1 / NAME-1: standalone screen for a single status archive bucket,
-/// every bucket gets the same sort/group suite, respects the global movies/TV toggle,
+/// PERS-SPACE-1/PERS-SORT-1 / NAME-1: standalone screen for a single status archive shelf,
+/// every shelf gets the same sort/group suite, respects the global movies/TV toggle,
 /// and is independently navigable from the Archive hub.
-class ArchiveBucketScreen extends ConsumerStatefulWidget {
-  final ArchiveBucketKind kind;
+class ArchiveShelfScreen extends ConsumerStatefulWidget {
+  final ArchiveShelfKind kind;
 
-  const ArchiveBucketScreen({super.key, required this.kind});
+  const ArchiveShelfScreen({super.key, required this.kind});
 
   @override
-  ConsumerState<ArchiveBucketScreen> createState() => _ArchiveBucketScreenState();
+  ConsumerState<ArchiveShelfScreen> createState() => _ArchiveShelfScreenState();
 }
 
-class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
+class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     with SingleTickerProviderStateMixin {
-  static const _bucketSequence = [
-    ArchiveBucketKind.watching,
-    ArchiveBucketKind.watchlist,
-    ArchiveBucketKind.saved,
-    ArchiveBucketKind.onHold,
-    ArchiveBucketKind.dropped,
-    ArchiveBucketKind.watched,
+  static const _shelfSequence = [
+    ArchiveShelfKind.watching,
+    ArchiveShelfKind.watchlist,
+    ArchiveShelfKind.saved,
+    ArchiveShelfKind.onHold,
+    ArchiveShelfKind.dropped,
+    ArchiveShelfKind.watched,
   ];
 
   static const Duration _duration = Duration(milliseconds: 360);
 
-  late ArchiveBucketKind _currentKind;
+  late ArchiveShelfKind _currentKind;
   late final AnimationController _transitionController;
   late Animation<double> _fade;
   late Animation<Offset> _slide;
@@ -80,11 +80,11 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
   }
 
   @override
-  void didUpdateWidget(covariant ArchiveBucketScreen oldWidget) {
+  void didUpdateWidget(covariant ArchiveShelfScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.kind != widget.kind) {
-      final oldIndex = _bucketSequence.indexOf(oldWidget.kind);
-      final newIndex = _bucketSequence.indexOf(widget.kind);
+      final oldIndex = _shelfSequence.indexOf(oldWidget.kind);
+      final newIndex = _shelfSequence.indexOf(widget.kind);
       _currentKind = widget.kind;
       _buildAnimations(reverseDirection: newIndex < oldIndex);
       _transitionController
@@ -99,13 +99,13 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
     super.dispose();
   }
 
-  void _navigateToAdjacentBucket(int delta) {
-    final currentIndex = _bucketSequence.indexOf(_currentKind);
+  void _navigateToAdjacentShelf(int delta) {
+    final currentIndex = _shelfSequence.indexOf(_currentKind);
     if (currentIndex == -1) return;
     final nextIndex = currentIndex + delta;
-    if (nextIndex >= 0 && nextIndex < _bucketSequence.length) {
+    if (nextIndex >= 0 && nextIndex < _shelfSequence.length) {
       setState(() {
-        _currentKind = _bucketSequence[nextIndex];
+        _currentKind = _shelfSequence[nextIndex];
       });
       _buildAnimations(reverseDirection: delta < 0);
       _transitionController
@@ -152,11 +152,11 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
         onHorizontalDragEnd: (details) {
           final velocity = details.primaryVelocity ?? 0.0;
           if (velocity < -300) {
-            // Swipe left -> next bucket
-            _navigateToAdjacentBucket(1);
+            // Swipe left -> next shelf
+            _navigateToAdjacentShelf(1);
           } else if (velocity > 300) {
-            // Swipe right -> previous bucket
-            _navigateToAdjacentBucket(-1);
+            // Swipe right -> previous shelf
+            _navigateToAdjacentShelf(-1);
           }
         },
         child: SafeArea(
@@ -166,7 +166,7 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
               scale: _scale,
               child: SlideTransition(
                 position: _slide,
-                child: _currentKind == ArchiveBucketKind.watched
+                child: _currentKind == ArchiveShelfKind.watched
                     ? _buildWatchedContent(context, items)
                     : _buildStandardContent(context, items),
               ),
@@ -182,7 +182,7 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
     final banner =
-        _currentKind == ArchiveBucketKind.saved ? _buildCleanupBanner(context, items.length) : null;
+        _currentKind == ArchiveShelfKind.saved ? _buildCleanupBanner(context, items.length) : null;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -212,7 +212,7 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
           child: _group == ArchiveGroupOption.none
               ? _buildGrid(
                   context,
-                  sortArchiveBucket(items, _sort),
+                  sortArchiveShelf(items, _sort),
                   emptyLabel: 'Your ${_currentKind.label} is empty',
                 )
               : _buildGroupedGrid(context, items),
@@ -256,7 +256,7 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
   }
 
   Widget? _buildCleanupBanner(BuildContext context, int savedCount) {
-    if (savedCount <= kPileCleanupThreshold || _cleanupBannerDismissed) return null;
+    if (savedCount <= kArchiveCleanupThreshold || _cleanupBannerDismissed) return null;
 
     final colors = context.ambianceColors;
     return Container(
@@ -348,7 +348,7 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: entries.map((entry) {
-          final groupItems = sortArchiveBucket(entry.value, _sort);
+          final groupItems = sortArchiveShelf(entry.value, _sort);
           return Container(
             key: ValueKey('${keyPrefix}_group_${entry.key}'),
             margin: const EdgeInsets.only(bottom: 12),
@@ -568,12 +568,12 @@ class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
       });
     } else {
       for (final entry in collectionEntries) {
-        final sorted = sortArchiveBucket(entry.value, _sort);
+        final sorted = sortArchiveShelf(entry.value, _sort);
         entry.value
           ..clear()
           ..addAll(sorted);
       }
-      final sortedStandalone = sortArchiveBucket(standaloneItems, _sort);
+      final sortedStandalone = sortArchiveShelf(standaloneItems, _sort);
       standaloneItems
         ..clear()
         ..addAll(sortedStandalone);

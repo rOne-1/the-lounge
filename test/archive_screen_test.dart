@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/archive_screen.dart';
-import 'package:the_lounge/screens/archive_bucket_screen.dart';
+import 'package:the_lounge/screens/archive_shelf_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
@@ -35,7 +35,7 @@ void main() {
   }
 
   group('YSR-HUB-1: ArchiveScreen structure & routing', () {
-    testWidgets('renders top bar and all 6 bucket cards', (tester) async {
+    testWidgets('renders top bar and all 6 shelf cards', (tester) async {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
@@ -50,7 +50,7 @@ void main() {
       expect(find.text('Dropped'), findsOneWidget);
     });
 
-    testWidgets('tapping Watching card pushes ArchiveBucketScreen(kind: watching)', (tester) async {
+    testWidgets('tapping Watching card pushes ArchiveShelfScreen(kind: watching)', (tester) async {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
@@ -59,11 +59,11 @@ void main() {
       await tester.tap(finder);
       await tester.pumpAndSettle();
 
-      final bucketScreen = tester.widget<ArchiveBucketScreen>(find.byType(ArchiveBucketScreen));
-      expect(bucketScreen.kind, ArchiveBucketKind.watching);
+      final shelfScreen = tester.widget<ArchiveShelfScreen>(find.byType(ArchiveShelfScreen));
+      expect(shelfScreen.kind, ArchiveShelfKind.watching);
     });
 
-    testWidgets('tapping Dropped card pushes ArchiveBucketScreen(kind: dropped)', (tester) async {
+    testWidgets('tapping Dropped card pushes ArchiveShelfScreen(kind: dropped)', (tester) async {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
@@ -72,11 +72,11 @@ void main() {
       await tester.tap(finder);
       await tester.pumpAndSettle();
 
-      final bucketScreen = tester.widget<ArchiveBucketScreen>(find.byType(ArchiveBucketScreen));
-      expect(bucketScreen.kind, ArchiveBucketKind.dropped);
+      final shelfScreen = tester.widget<ArchiveShelfScreen>(find.byType(ArchiveShelfScreen));
+      expect(shelfScreen.kind, ArchiveShelfKind.dropped);
     });
 
-    testWidgets('tapping Watched card pushes ArchiveBucketScreen(kind: watched)', (tester) async {
+    testWidgets('tapping Watched card pushes ArchiveShelfScreen(kind: watched)', (tester) async {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
@@ -85,8 +85,8 @@ void main() {
       await tester.tap(finder);
       await tester.pumpAndSettle();
 
-      final bucketScreen = tester.widget<ArchiveBucketScreen>(find.byType(ArchiveBucketScreen));
-      expect(bucketScreen.kind, ArchiveBucketKind.watched);
+      final shelfScreen = tester.widget<ArchiveShelfScreen>(find.byType(ArchiveShelfScreen));
+      expect(shelfScreen.kind, ArchiveShelfKind.watched);
     });
 
     testWidgets('COUNT-1 / COUNT-2: counts react dynamically to Movies vs TV media toggle',

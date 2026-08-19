@@ -10,7 +10,7 @@ import '../widgets/dashed_border_card.dart';
 import '../widgets/archive_summary_card.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/watching_hero_card.dart';
-import 'archive_bucket_screen.dart';
+import 'archive_shelf_screen.dart';
 
 /// YSR-HUB-1 / COUNT-1 / COUNT-2 / NOMEN-2: The Archive Hub - a dedicated screening
 /// hub providing access to all 6 archive shelves (Watching, Watched, Watchlist,
@@ -127,11 +127,11 @@ class ArchiveScreen extends ConsumerWidget {
                   WatchingHeroCard(
                     count: watchingCount,
                     subtitle: watchingSubtitle,
-                    onTap: () => _openBucket(context, ArchiveBucketKind.watching),
+                    onTap: () => _openShelf(context, ArchiveShelfKind.watching),
                   ),
                   const SizedBox(height: 14),
 
-                  // 2. 2x2 Main Buckets Grid (Watched, Watchlist, Saved, On-Hold)
+                  // 2. 2x2 Main Shelves Grid (Watched, Watchlist, Saved, On-Hold)
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -141,48 +141,48 @@ class ArchiveScreen extends ConsumerWidget {
                     childAspectRatio: 1.16,
                     children: [
                       ArchiveSummaryCard(
-                        label: ArchiveBucketKind.watched.label,
+                        label: ArchiveShelfKind.watched.label,
                         subtitle: subtitleFor(watchedCount),
                         count: watchedCount,
                         icon: Icons.check_rounded,
-                        statusColor: ArchiveBucketKind.watched.statusColor,
-                        onTap: () => _openBucket(context, ArchiveBucketKind.watched),
+                        statusColor: ArchiveShelfKind.watched.statusColor,
+                        onTap: () => _openShelf(context, ArchiveShelfKind.watched),
                       ),
                       ArchiveSummaryCard(
-                        label: ArchiveBucketKind.watchlist.label,
+                        label: ArchiveShelfKind.watchlist.label,
                         subtitle: subtitleFor(watchlistCount),
                         count: watchlistCount,
                         icon: Icons.bookmark_rounded,
-                        statusColor: ArchiveBucketKind.watchlist.statusColor,
-                        onTap: () => _openBucket(context, ArchiveBucketKind.watchlist),
+                        statusColor: ArchiveShelfKind.watchlist.statusColor,
+                        onTap: () => _openShelf(context, ArchiveShelfKind.watchlist),
                       ),
                       ArchiveSummaryCard(
-                        label: ArchiveBucketKind.saved.label,
+                        label: ArchiveShelfKind.saved.label,
                         subtitle: subtitleFor(savedCount),
                         count: savedCount,
                         icon: Icons.favorite_rounded,
-                        statusColor: ArchiveBucketKind.saved.statusColor,
-                        onTap: () => _openBucket(context, ArchiveBucketKind.saved),
+                        statusColor: ArchiveShelfKind.saved.statusColor,
+                        onTap: () => _openShelf(context, ArchiveShelfKind.saved),
                       ),
                       ArchiveSummaryCard(
-                        label: ArchiveBucketKind.onHold.label,
+                        label: ArchiveShelfKind.onHold.label,
                         subtitle: subtitleFor(onHoldCount),
                         count: onHoldCount,
                         icon: Icons.pause_rounded,
-                        statusColor: ArchiveBucketKind.onHold.statusColor,
-                        onTap: () => _openBucket(context, ArchiveBucketKind.onHold),
+                        statusColor: ArchiveShelfKind.onHold.statusColor,
+                        onTap: () => _openShelf(context, ArchiveShelfKind.onHold),
                       ),
                     ],
                   ),
                   const SizedBox(height: 14),
 
-                  // 3. Dropped Bucket Card (Full-width dashed card)
+                  // 3. Dropped Shelf Card (Full-width dashed card)
                   DashedBorderCard(
                     borderColor: AppStatusColors.dropped.withValues(alpha: 0.32),
                     backgroundColor: AppStatusColors.dropped.withValues(alpha: 0.06),
                     borderRadius: const BorderRadius.all(Radius.circular(22.0)),
                     padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
-                    onTap: () => _openBucket(context, ArchiveBucketKind.dropped),
+                    onTap: () => _openShelf(context, ArchiveShelfKind.dropped),
                     child: Row(
                       children: [
                         Container(
@@ -302,10 +302,10 @@ class ArchiveScreen extends ConsumerWidget {
     );
   }
 
-  void _openBucket(BuildContext context, ArchiveBucketKind kind) {
+  void _openShelf(BuildContext context, ArchiveShelfKind kind) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => ArchiveBucketScreen(kind: kind),
+        builder: (context) => ArchiveShelfScreen(kind: kind),
       ),
     );
   }

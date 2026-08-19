@@ -8,10 +8,9 @@ import '../providers/navigation_provider.dart';
 import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
 
-/// PERS-SORT-1: the archive bucket size that triggers the (non-blocking, dismissible)
+/// PERS-SORT-1: the archive shelf size that triggers the (non-blocking, dismissible)
 /// cleanup prompt.
 const int kArchiveCleanupThreshold = 50;
-const int kPileCleanupThreshold = kArchiveCleanupThreshold;
 
 /// PERS-SORT-1: the 50-item periodic cleanup swipe tool. Works through the
 /// Saved archive one title at a time: swipe/tap right promotes to Watchlist,
@@ -34,8 +33,8 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
   void initState() {
     super.initState();
     // PERS-SORT-1: scoped to the active Movies/TV toggle, mirroring every
-    // Piles screen -- previously this pulled the whole Saved pile regardless
-    // of the toggle.
+    // archive shelf screen -- previously this pulled the whole Saved shelf
+    // regardless of the toggle.
     final activeType = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies
         ? MediaType.movie
         : MediaType.tv;

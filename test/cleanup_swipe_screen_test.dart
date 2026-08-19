@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/cleanup_swipe_screen.dart';
-import 'package:the_lounge/screens/archive_bucket_screen.dart';
+import 'package:the_lounge/screens/archive_shelf_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -141,8 +141,8 @@ void main() {
     });
   });
 
-  group('PERS-SORT-1: cleanup banner in Saved pile', () {
-    Future<ProviderContainer> pumpSavedPile(WidgetTester tester, {required int savedCount}) async {
+  group('PERS-SORT-1: cleanup banner in Saved shelf', () {
+    Future<ProviderContainer> pumpSavedShelf(WidgetTester tester, {required int savedCount}) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final container = ProviderContainer(
@@ -159,7 +159,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: Scaffold(body: ArchiveBucketScreen(kind: ArchiveBucketKind.saved))),
+          child: const MaterialApp(home: Scaffold(body: ArchiveShelfScreen(kind: ArchiveShelfKind.saved))),
         ),
       );
       await tester.pumpAndSettle();
@@ -167,17 +167,17 @@ void main() {
     }
 
     testWidgets('does not appear at or below the threshold', (tester) async {
-      await pumpSavedPile(tester, savedCount: kPileCleanupThreshold);
+      await pumpSavedShelf(tester, savedCount: kArchiveCleanupThreshold);
       expect(find.byKey(const ValueKey('cleanup_banner_cta')), findsNothing);
     });
 
-    testWidgets('appears once the Saved pile exceeds the threshold', (tester) async {
-      await pumpSavedPile(tester, savedCount: kPileCleanupThreshold + 1);
+    testWidgets('appears once the Saved shelf exceeds the threshold', (tester) async {
+      await pumpSavedShelf(tester, savedCount: kArchiveCleanupThreshold + 1);
       expect(find.byKey(const ValueKey('cleanup_banner_cta')), findsOneWidget);
     });
 
     testWidgets('dismissing the banner hides it for the session', (tester) async {
-      await pumpSavedPile(tester, savedCount: kPileCleanupThreshold + 1);
+      await pumpSavedShelf(tester, savedCount: kArchiveCleanupThreshold + 1);
       expect(find.byKey(const ValueKey('cleanup_banner_cta')), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('cleanup_banner_dismiss')));
@@ -187,7 +187,7 @@ void main() {
     });
 
     testWidgets('tapping "Clean up" opens CleanupSwipeScreen', (tester) async {
-      await pumpSavedPile(tester, savedCount: kPileCleanupThreshold + 1);
+      await pumpSavedShelf(tester, savedCount: kArchiveCleanupThreshold + 1);
 
       await tester.tap(find.byKey(const ValueKey('cleanup_banner_cta')));
       await tester.pumpAndSettle();

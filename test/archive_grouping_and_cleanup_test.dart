@@ -3,7 +3,7 @@ import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/personal_rating.dart';
 import 'package:the_lounge/models/watch_record.dart';
 import 'package:the_lounge/utils/archive_sort_group.dart';
-import 'package:the_lounge/screens/cleanup_swipe_screen.dart' show kPileCleanupThreshold;
+import 'package:the_lounge/screens/cleanup_swipe_screen.dart' show kArchiveCleanupThreshold;
 
 void main() {
   const action1 = MediaItem(
@@ -42,14 +42,14 @@ void main() {
     overview: '',
   );
 
-  group('PERS-SORT-1: sortArchiveBucket', () {
+  group('PERS-SORT-1: sortArchiveShelf', () {
     test('dateAdded reverses insertion order (most-recently-added first)', () {
       final items = [action1, action2, comedy1];
-      expect(sortArchiveBucket(items, ArchiveSortOption.dateAdded), [comedy1, action2, action1]);
+      expect(sortArchiveShelf(items, ArchiveSortOption.dateAdded), [comedy1, action2, action1]);
     });
 
     test('weightedRating sorts descending by weighted rating', () {
-      final sorted = sortArchiveBucket([comedy1, action1, action2], ArchiveSortOption.weightedRating);
+      final sorted = sortArchiveShelf([comedy1, action1, action2], ArchiveSortOption.weightedRating);
       // action1 has the highest raw rating and highest vote count, so it
       // should clearly lead regardless of the exact weighted formula output.
       expect(sorted.first, action1);
@@ -60,7 +60,7 @@ void main() {
       final withDate2 = action2.copyWith(releaseOrAirDate: DateTime(2022, 1, 1));
       final noDate = comedy1.copyWith();
 
-      final sorted = sortArchiveBucket([withDate1, noDate, withDate2], ArchiveSortOption.releaseDate);
+      final sorted = sortArchiveShelf([withDate1, noDate, withDate2], ArchiveSortOption.releaseDate);
 
       expect(sorted, [withDate2, withDate1, noDate]);
     });
@@ -148,8 +148,8 @@ void main() {
   });
 
   group('PERS-SORT-1: cleanup threshold', () {
-    test('kPileCleanupThreshold is 50', () {
-      expect(kPileCleanupThreshold, 50);
+    test('kArchiveCleanupThreshold is 50', () {
+      expect(kArchiveCleanupThreshold, 50);
     });
   });
 }

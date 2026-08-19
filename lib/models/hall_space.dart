@@ -185,12 +185,6 @@ enum ArchiveShelfKind {
   }
 }
 
-/// Backward compatibility alias for [ArchiveShelfKind]. Still the live,
-/// actively-used name throughout archive_bucket_screen.dart/archive_screen.dart
-/// -- the Bucket->Shelf cutover itself is a separate, larger rename task,
-/// not part of this dead-alias cleanup.
-typedef ArchiveBucketKind = ArchiveShelfKind;
-
 /// PROF-1 / NOMEN-2: Holds all 6 archive shelves and episode completion records for a single medium domain.
 class DomainArchive {
   final Map<String, MediaItem> watching;

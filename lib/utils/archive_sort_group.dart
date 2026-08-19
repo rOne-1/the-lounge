@@ -2,7 +2,7 @@ import '../models/media_item.dart';
 import '../models/watch_record.dart';
 import 'weighted_rating.dart';
 
-/// PERS-SORT-1 / SORT-1: sort options offered on archive bucket screens (Watchlist/Saved/Watched/etc).
+/// PERS-SORT-1 / SORT-1: sort options offered on archive shelf screens (Watchlist/Saved/Watched/etc).
 enum ArchiveSortOption {
   dateAdded('Date Added'),
   lastAdded('Last Added'),
@@ -13,9 +13,7 @@ enum ArchiveSortOption {
   const ArchiveSortOption(this.label);
 }
 
-typedef PileSortOption = ArchiveSortOption;
-
-/// PERS-SORT-1: group options offered on archive bucket screens.
+/// PERS-SORT-1: group options offered on archive shelf screens.
 enum ArchiveGroupOption {
   none('None'),
   genre('Genre'),
@@ -26,8 +24,6 @@ enum ArchiveGroupOption {
   const ArchiveGroupOption(this.label);
 }
 
-typedef PileGroupOption = ArchiveGroupOption;
-
 /// SORT-2: Aggregates the latest added or released timestamp for a collection cluster.
 DateTime getCollectionLastAdded(List<MediaItem> items) {
   if (items.isEmpty) return DateTime.fromMillisecondsSinceEpoch(0);
@@ -36,18 +32,18 @@ DateTime getCollectionLastAdded(List<MediaItem> items) {
       .reduce((max, date) => date.isAfter(max) ? date : max);
 }
 
-/// `m` in the weighted-rating formula for archive bucket sorting -- deliberately a
-/// modest floor (unlike Discover's stricter curation bar), since a bucket is
+/// `m` in the weighted-rating formula for archive shelf sorting -- deliberately a
+/// modest floor (unlike Discover's stricter curation bar), since a shelf is
 /// the user's own saved titles, not a discovery feed being filtered for
 /// quality.
 const double _archiveWeightedRatingMinVotes = 50.0;
 
 /// Sorts [items] per [option]. [items] is assumed to already be in the
-/// bucket's natural insertion order (oldest-added-first, the order
+/// shelf's natural insertion order (oldest-added-first, the order
 /// `Map<String, MediaItem>.values` yields for the app's LinkedHashMap-backed
-/// status buckets) -- `dateAdded` uses that directly rather than needing a
+/// status shelves) -- `dateAdded` uses that directly rather than needing a
 /// separate persisted timestamp per title.
-List<MediaItem> sortArchiveBucket(List<MediaItem> items, ArchiveSortOption option) {
+List<MediaItem> sortArchiveShelf(List<MediaItem> items, ArchiveSortOption option) {
   switch (option) {
     case ArchiveSortOption.dateAdded:
       return items.reversed.toList(); // most-recently-added first
@@ -88,10 +84,6 @@ List<MediaItem> sortArchiveBucket(List<MediaItem> items, ArchiveSortOption optio
       return sorted;
   }
 }
-
-/// Backward compatible alias for [sortArchiveBucket].
-List<MediaItem> sortPile(List<MediaItem> items, ArchiveSortOption option) =>
-    sortArchiveBucket(items, option);
 
 /// Multi-membership: a title with several genres appears in every matching
 /// group, per the locked spec.
@@ -141,7 +133,7 @@ Map<String, List<MediaItem>> groupByLanguage(List<MediaItem> items) {
 }
 
 /// PERS-SORT-1: sorts Watched-archive items by personal rating tier (Loved ->
-/// Liked -> Okay -> Not for me -> Unrated last) -- the one bucket where a
+/// Liked -> Okay -> Not for me -> Unrated last) -- the one shelf where a
 /// personal-rating sort is meaningful. Looks at the overall (not per-season)
 /// first-watch record, matching [findPrimaryWatchRecord]'s notion of "the"
 /// personal rating for a title.

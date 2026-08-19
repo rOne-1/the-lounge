@@ -9,7 +9,7 @@ import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/screens/calendar_screen.dart';
-import 'package:the_lounge/screens/archive_bucket_screen.dart';
+import 'package:the_lounge/screens/archive_shelf_screen.dart';
 import 'package:the_lounge/widgets/atmospheric_empty_state.dart';
 
 /// Returns zero titles from every list endpoint -- MockMovieRepository's
@@ -34,7 +34,7 @@ void main() {
     prefs = await SharedPreferences.getInstance();
   });
 
-  group('ArchiveBucketScreen empty states (FS-3)', () {
+  group('ArchiveShelfScreen empty states (FS-3)', () {
     testWidgets('Watchlist pile shows AtmosphericEmptyState, CTA navigates to Discover', (tester) async {
       final container = ProviderContainer(
         overrides: [
@@ -47,7 +47,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: ArchiveBucketScreen(kind: ArchiveBucketKind.watchlist)),
+          child: const MaterialApp(home: ArchiveShelfScreen(kind: ArchiveShelfKind.watchlist)),
         ),
       );
       await tester.pumpAndSettle();
@@ -75,7 +75,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: ArchiveBucketScreen(kind: ArchiveBucketKind.watched)),
+          child: const MaterialApp(home: ArchiveShelfScreen(kind: ArchiveShelfKind.watched)),
         ),
       );
       await tester.pumpAndSettle();

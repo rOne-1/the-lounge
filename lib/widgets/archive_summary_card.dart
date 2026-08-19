@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import 'pressable_scale.dart';
 
-/// YSR-COMP-3: A 2x2 grid summary card representing an archive bucket.
+/// YSR-COMP-3: A 2x2 grid summary card representing an archive shelf.
 /// Features a status icon badge, a prominent Bodoni Moda italic count numeral,
 /// status-tinted luxury gradient background, and responsive typography.
 /// Fully dynamic and theme-isolated via AmbianceColors & AppStatusColors.
@@ -157,6 +157,3 @@ class ArchiveSummaryCard extends StatelessWidget {
     );
   }
 }
-
-/// Backward compatibility alias for [ArchiveSummaryCard].
-typedef PileSummaryCard = ArchiveSummaryCard;
