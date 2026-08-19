@@ -8,14 +8,15 @@ import '../providers/navigation_provider.dart';
 import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
 
-/// PERS-SORT-1: the pile size that triggers the (non-blocking, dismissible)
+/// PERS-SORT-1: the archive bucket size that triggers the (non-blocking, dismissible)
 /// cleanup prompt.
-const int kPileCleanupThreshold = 50;
+const int kArchiveCleanupThreshold = 50;
+const int kPileCleanupThreshold = kArchiveCleanupThreshold;
 
 /// PERS-SORT-1: the 50-item periodic cleanup swipe tool. Works through the
-/// Saved pile one title at a time: swipe/tap right promotes to Watchlist,
+/// Saved archive one title at a time: swipe/tap right promotes to Watchlist,
 /// left keeps it in Saved (just advances), down releases it (Dropped).
-/// Never forced -- the caller (Your Space's Saved tab banner) is itself
+/// Never forced -- the caller (The Lounge's Saved archive banner) is itself
 /// dismissible, and this screen can always be backed out of mid-session
 /// with whatever's left simply remaining in Saved untouched.
 class CleanupSwipeScreen extends ConsumerStatefulWidget {

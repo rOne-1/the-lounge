@@ -7,13 +7,13 @@ import '../models/profile_space.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../widgets/dashed_border_card.dart';
-import '../widgets/pile_summary_card.dart';
+import '../widgets/archive_summary_card.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/watching_hero_card.dart';
-import 'pile_screen.dart';
+import 'archive_bucket_screen.dart';
 
-/// YSR-HUB-1 / COUNT-1 / COUNT-2: The Archive Hub (`your collection.png`) - a dedicated status
-/// hub providing access to all 6 status piles (Watching, Watched, Watchlist,
+/// YSR-HUB-1 / COUNT-1 / COUNT-2: The Archive Hub - a dedicated status
+/// hub providing access to all 6 status buckets (Watching, Watched, Watchlist,
 /// Saved, On-Hold, Dropped). Built with luxury status gradients, squircle icon
 /// badges, large Bodoni Moda italic count numerals, dynamic medium-reactive counts,
 /// and contextual pluralization per active domain (Movies / TV / Anime).
@@ -92,13 +92,13 @@ class ArchiveScreen extends ConsumerWidget {
     String topBarSubtitle;
     switch (activeDomain) {
       case MediumDomain.movies:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "movie" : "movies"} · 6 piles';
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "movie" : "movies"} · 6 buckets';
         break;
       case MediumDomain.tv:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "TV show" : "TV shows"} · 6 piles';
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "TV show" : "TV shows"} · 6 buckets';
         break;
       case MediumDomain.anime:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "anime" : "anime series"} · 6 piles';
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "anime" : "anime series"} · 6 buckets';
         break;
     }
 
@@ -127,11 +127,11 @@ class ArchiveScreen extends ConsumerWidget {
                   WatchingHeroCard(
                     count: watchingCount,
                     subtitle: watchingSubtitle,
-                    onTap: () => _openPile(context, PileKind.watching),
+                    onTap: () => _openBucket(context, ArchiveBucketKind.watching),
                   ),
                   const SizedBox(height: 14),
 
-                  // 2. 2x2 Main Piles Grid (Watched, Watchlist, Saved, On-Hold)
+                  // 2. 2x2 Main Buckets Grid (Watched, Watchlist, Saved, On-Hold)
                   GridView.count(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
@@ -140,49 +140,49 @@ class ArchiveScreen extends ConsumerWidget {
                     crossAxisSpacing: 12,
                     childAspectRatio: 1.16,
                     children: [
-                      PileSummaryCard(
-                        label: PileKind.watched.label,
+                      ArchiveSummaryCard(
+                        label: ArchiveBucketKind.watched.label,
                         subtitle: subtitleFor(watchedCount),
                         count: watchedCount,
                         icon: Icons.check_rounded,
-                        statusColor: PileKind.watched.statusColor,
-                        onTap: () => _openPile(context, PileKind.watched),
+                        statusColor: ArchiveBucketKind.watched.statusColor,
+                        onTap: () => _openBucket(context, ArchiveBucketKind.watched),
                       ),
-                      PileSummaryCard(
-                        label: PileKind.watchlist.label,
+                      ArchiveSummaryCard(
+                        label: ArchiveBucketKind.watchlist.label,
                         subtitle: subtitleFor(watchlistCount),
                         count: watchlistCount,
                         icon: Icons.bookmark_rounded,
-                        statusColor: PileKind.watchlist.statusColor,
-                        onTap: () => _openPile(context, PileKind.watchlist),
+                        statusColor: ArchiveBucketKind.watchlist.statusColor,
+                        onTap: () => _openBucket(context, ArchiveBucketKind.watchlist),
                       ),
-                      PileSummaryCard(
-                        label: PileKind.saved.label,
+                      ArchiveSummaryCard(
+                        label: ArchiveBucketKind.saved.label,
                         subtitle: subtitleFor(savedCount),
                         count: savedCount,
                         icon: Icons.favorite_rounded,
-                        statusColor: PileKind.saved.statusColor,
-                        onTap: () => _openPile(context, PileKind.saved),
+                        statusColor: ArchiveBucketKind.saved.statusColor,
+                        onTap: () => _openBucket(context, ArchiveBucketKind.saved),
                       ),
-                      PileSummaryCard(
-                        label: PileKind.onHold.label,
+                      ArchiveSummaryCard(
+                        label: ArchiveBucketKind.onHold.label,
                         subtitle: subtitleFor(onHoldCount),
                         count: onHoldCount,
                         icon: Icons.pause_rounded,
-                        statusColor: PileKind.onHold.statusColor,
-                        onTap: () => _openPile(context, PileKind.onHold),
+                        statusColor: ArchiveBucketKind.onHold.statusColor,
+                        onTap: () => _openBucket(context, ArchiveBucketKind.onHold),
                       ),
                     ],
                   ),
                   const SizedBox(height: 14),
 
-                  // 3. Dropped Pile Card (Full-width dashed card)
+                  // 3. Dropped Bucket Card (Full-width dashed card)
                   DashedBorderCard(
                     borderColor: AppStatusColors.dropped.withValues(alpha: 0.32),
                     backgroundColor: AppStatusColors.dropped.withValues(alpha: 0.06),
                     borderRadius: const BorderRadius.all(Radius.circular(22.0)),
                     padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
-                    onTap: () => _openPile(context, PileKind.dropped),
+                    onTap: () => _openBucket(context, ArchiveBucketKind.dropped),
                     child: Row(
                       children: [
                         Container(
@@ -302,10 +302,10 @@ class ArchiveScreen extends ConsumerWidget {
     );
   }
 
-  void _openPile(BuildContext context, PileKind kind) {
+  void _openBucket(BuildContext context, ArchiveBucketKind kind) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (context) => PileScreen(kind: kind),
+        builder: (context) => ArchiveBucketScreen(kind: kind),
       ),
     );
   }

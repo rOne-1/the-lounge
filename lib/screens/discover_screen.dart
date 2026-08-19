@@ -585,7 +585,7 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           isDark: isDark,
                           icon: Icons.arrow_forward,
                           title: 'Swipe right — Save for later',
-                          subtitle: 'A "maybe" bookmark → lands in your Maybe pile',
+                          subtitle: 'A "maybe" bookmark → lands in your Saved archive',
                           color: AppStatusColors.save,
                           bgColor: AppStatusColors.save.withValues(alpha: 0.16),
                         ),

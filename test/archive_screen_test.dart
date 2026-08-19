@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/archive_screen.dart';
-import 'package:the_lounge/screens/pile_screen.dart';
+import 'package:the_lounge/screens/archive_bucket_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
@@ -35,12 +35,12 @@ void main() {
   }
 
   group('YSR-HUB-1: ArchiveScreen structure & routing', () {
-    testWidgets('renders top bar and all 6 pile cards', (tester) async {
+    testWidgets('renders top bar and all 6 bucket cards', (tester) async {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
       expect(find.text('Your Archive'), findsOneWidget);
-      expect(find.textContaining('6 piles'), findsOneWidget);
+      expect(find.textContaining('6 buckets'), findsOneWidget);
 
       expect(find.text('Watching'), findsOneWidget);
       expect(find.text('Watched'), findsOneWidget);
@@ -50,7 +50,7 @@ void main() {
       expect(find.text('Dropped'), findsOneWidget);
     });
 
-    testWidgets('tapping Watching card pushes PileScreen(kind: watching)', (tester) async {
+    testWidgets('tapping Watching card pushes ArchiveBucketScreen(kind: watching)', (tester) async {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
@@ -59,11 +59,11 @@ void main() {
       await tester.tap(finder);
       await tester.pumpAndSettle();
 
-      final pileScreen = tester.widget<PileScreen>(find.byType(PileScreen));
-      expect(pileScreen.kind, PileKind.watching);
+      final bucketScreen = tester.widget<ArchiveBucketScreen>(find.byType(ArchiveBucketScreen));
+      expect(bucketScreen.kind, ArchiveBucketKind.watching);
     });
 
-    testWidgets('tapping Dropped card pushes PileScreen(kind: dropped)', (tester) async {
+    testWidgets('tapping Dropped card pushes ArchiveBucketScreen(kind: dropped)', (tester) async {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
@@ -72,11 +72,11 @@ void main() {
       await tester.tap(finder);
       await tester.pumpAndSettle();
 
-      final pileScreen = tester.widget<PileScreen>(find.byType(PileScreen));
-      expect(pileScreen.kind, PileKind.dropped);
+      final bucketScreen = tester.widget<ArchiveBucketScreen>(find.byType(ArchiveBucketScreen));
+      expect(bucketScreen.kind, ArchiveBucketKind.dropped);
     });
 
-    testWidgets('tapping Watched card pushes PileScreen(kind: watched)', (tester) async {
+    testWidgets('tapping Watched card pushes ArchiveBucketScreen(kind: watched)', (tester) async {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
@@ -85,8 +85,8 @@ void main() {
       await tester.tap(finder);
       await tester.pumpAndSettle();
 
-      final pileScreen = tester.widget<PileScreen>(find.byType(PileScreen));
-      expect(pileScreen.kind, PileKind.watched);
+      final bucketScreen = tester.widget<ArchiveBucketScreen>(find.byType(ArchiveBucketScreen));
+      expect(bucketScreen.kind, ArchiveBucketKind.watched);
     });
 
     testWidgets('COUNT-1 / COUNT-2: counts react dynamically to Movies vs TV media toggle',
@@ -94,14 +94,14 @@ void main() {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
-      // Initially Movies mode: 0 movies · 6 piles
-      expect(find.text('0 movies · 6 piles'), findsOneWidget);
+      // Initially Movies mode: 0 movies · 6 buckets
+      expect(find.text('0 movies · 6 buckets'), findsOneWidget);
 
       // Switch to TV mode
       container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
       await tester.pumpAndSettle();
 
-      expect(find.text('0 TV shows · 6 piles'), findsOneWidget);
+      expect(find.text('0 TV shows · 6 buckets'), findsOneWidget);
     });
   });
 }
