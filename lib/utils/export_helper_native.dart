@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -24,6 +25,24 @@ Future<void> shareJsonFile(String jsonString, String fileName) async {
       files: [xFile],
       fileNameOverrides: [fileName],
       subject: 'The Lounge Backup',
+    ),
+  );
+}
+
+/// ANLY-SHARE-1: sibling to [shareJsonFile], same platform-split pattern,
+/// for sharing a rendered PNG (e.g. the Analytics summary card) instead of
+/// a JSON backup.
+Future<void> shareImageFile(Uint8List pngBytes, String fileName) async {
+  final xFile = XFile.fromData(
+    pngBytes,
+    mimeType: 'image/png',
+    name: fileName,
+  );
+  await SharePlus.instance.share(
+    ShareParams(
+      files: [xFile],
+      fileNameOverrides: [fileName],
+      subject: 'The Lounge Analytics',
     ),
   );
 }

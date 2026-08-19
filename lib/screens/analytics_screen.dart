@@ -1,9 +1,14 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../providers/analytics_provider.dart';
+import '../utils/export_helper.dart';
 import '../utils/relative_time.dart';
+import '../widgets/analytics/analytics_share_card.dart';
 import '../widgets/analytics/binge_velocity_section.dart';
 import '../widgets/analytics/cast_constellations_section.dart';
 import '../widgets/analytics/chronological_heatmap.dart';
@@ -11,7 +16,15 @@ import '../widgets/analytics/genre_dna_section.dart';
 import '../widgets/analytics/rating_divergence_section.dart';
 import '../widgets/archive_summary_card.dart';
 import '../widgets/atmospheric_empty_state.dart';
+import '../widgets/lounge_toast.dart';
 import '../widgets/pressable_scale.dart';
+
+/// ANLY-SHARE-1: stable across the screen's lifetime (a plain top-level
+/// GlobalKey, not per-build) so the offscreen [AnalyticsShareCard]'s
+/// RepaintBoundary can be found again when Share is tapped. Only one
+/// AnalyticsScreen is ever mounted at a time in this app's navigation, so
+/// a single shared key is safe.
+final GlobalKey _analyticsShareCardKey = GlobalKey();
 
 /// ANLY-HUB-2: the Analytics epic's hub screen. Follows the Archive/Tools
 /// scaffolding convention exactly (custom top-bar, not a stock AppBar;
@@ -25,10 +38,9 @@ import '../widgets/pressable_scale.dart';
 /// - loading: `isGenerating` -> the app's established full-screen loading
 ///   treatment (plain centered CircularProgressIndicator, matching every
 ///   other async-load screen in the app -- Discover, Calendar, Search).
-/// - results: sectioned metric groups (Temporal built out first; Taste and
-///   Share land in later phases of the epic and are appended here as they
-///   ship, not stubbed as "coming soon" placeholders -- a screen only ever
-///   shows shipped, fully-polished sections, per SP-2).
+/// - results: sectioned metric groups (Temporal, then Taste), a Share
+///   action that captures an offscreen [AnalyticsShareCard] as a PNG via
+///   [shareImageFile], and a Regenerate action.
 class AnalyticsScreen extends ConsumerWidget {
   const AnalyticsScreen({super.key});
 
@@ -163,63 +175,104 @@ class _AnalyticsResults extends StatelessWidget {
     final movieHours = (result.timeInvestment.movieMinutes / 60).round();
     final tvHours = (result.timeInvestment.tvMinutes / 60).round();
 
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(state.generatedAt),
-      tween: Tween(begin: 0.0, end: 1.0),
-      duration: AppPhysics.houseSpringDuration,
-      curve: AppPhysics.houseSpringCurve,
-      builder: (context, t, child) {
-        return Opacity(
-          opacity: t.clamp(0.0, 1.0),
-          child: Transform.translate(
-            offset: Offset(0, (1 - t.clamp(0.0, 1.0)) * 16),
-            child: child,
+    return Stack(
+      children: [
+        // ANLY-SHARE-1: painted (so RepaintBoundary.toImage() has a real
+        // raster to capture) but positioned entirely outside the visible
+        // viewport -- Offstage/Opacity(0) both skip painting in modern
+        // Flutter, which would make the captured image blank.
+        Positioned(
+          left: -9999,
+          top: 0,
+          child: RepaintBoundary(
+            key: _analyticsShareCardKey,
+            child: AnalyticsShareCard(result: result),
           ),
-        );
-      },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        ),
+        TweenAnimationBuilder<double>(
+          key: ValueKey(state.generatedAt),
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
+          builder: (context, t, child) {
+            return Opacity(
+              opacity: t.clamp(0.0, 1.0),
+              child: Transform.translate(
+                offset: Offset(0, (1 - t.clamp(0.0, 1.0)) * 16),
+                child: child,
+              ),
+            );
+          },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  state.generatedAt != null
-                      ? 'Updated ${formatRelativeTime(state.generatedAt!)}'
-                      : '',
-                  style: AppThemes.safeGeist(fontSize: 12.5, color: colors.sub),
-                ),
-              ),
-              PressableScale(
-                onTap: () => ref.read(analyticsProvider.notifier).generate(),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: colors.pill,
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: colors.lineRgba),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      state.generatedAt != null
+                          ? 'Updated ${formatRelativeTime(state.generatedAt!)}'
+                          : '',
+                      style: AppThemes.safeGeist(fontSize: 12.5, color: colors.sub),
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.refresh_rounded, size: 14, color: colors.ink),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Regenerate',
-                        style: AppThemes.safeGeist(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w600,
-                          color: colors.ink,
-                        ),
+                  PressableScale(
+                    onTap: () => _handleShare(context),
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: colors.pill,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: colors.lineRgba),
                       ),
-                    ],
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.ios_share_rounded, size: 14, color: colors.ink),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Share',
+                            style: AppThemes.safeGeist(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: colors.ink,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ),
+                  PressableScale(
+                    onTap: () => ref.read(analyticsProvider.notifier).generate(),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: colors.pill,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(color: colors.lineRgba),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.refresh_rounded, size: 14, color: colors.ink),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Regenerate',
+                            style: AppThemes.safeGeist(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: colors.ink,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
+              const SizedBox(height: 20),
           _SectionHeader(title: 'Temporal'),
           const SizedBox(height: 12),
           GridView.count(
@@ -301,11 +354,33 @@ class _AnalyticsResults extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           GenreDnaSection(genreFrequency: result.genreFrequency),
-        ],
-      ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
+  Future<void> _handleShare(BuildContext context) async {
+    try {
+      final boundary = _analyticsShareCardKey.currentContext?.findRenderObject()
+          as RenderRepaintBoundary?;
+      if (boundary == null) return;
+      final image = await boundary.toImage(pixelRatio: 3.0);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) return;
+      final bytes = byteData.buffer.asUint8List();
+      await shareImageFile(bytes, 'the_lounge_analytics.png');
+    } catch (_) {
+      if (context.mounted) {
+        LoungeToast.show(
+          context,
+          'Could not create the share image.',
+          type: ToastType.danger,
+        );
+      }
+    }
+  }
 }
 
 class _SectionHeader extends StatelessWidget {

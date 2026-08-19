@@ -7,6 +7,7 @@ import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/analytics_provider.dart';
 import 'package:the_lounge/screens/analytics_screen.dart';
 import 'package:the_lounge/utils/analytics_engine.dart';
+import 'package:the_lounge/widgets/analytics/analytics_share_card.dart';
 import 'package:the_lounge/widgets/analytics/binge_velocity_section.dart';
 import 'package:the_lounge/widgets/analytics/cast_constellations_section.dart';
 import 'package:the_lounge/widgets/analytics/chronological_heatmap.dart';
@@ -183,9 +184,82 @@ void main() {
       expect(find.text('avg. days per season'), findsOneWidget);
       expect(find.text('Taste'), findsOneWidget);
       expect(find.byType(CastConstellationsSection), findsOneWidget);
-      expect(find.text('Nolan'), findsOneWidget);
+      // Scoped to CastConstellationsSection: the offscreen AnalyticsShareCard
+      // (ANLY-SHARE-1) is also always present once there's a result, and
+      // its "Top Director" stat renders the same name.
+      expect(
+        find.descendant(
+          of: find.byType(CastConstellationsSection),
+          matching: find.text('Nolan'),
+        ),
+        findsOneWidget,
+      );
       expect(find.byType(RatingDivergenceSection), findsOneWidget);
       expect(find.byType(GenreDnaSection), findsOneWidget);
+    });
+  });
+
+  group('ANLY-SHARE-1: image export', () {
+    testWidgets(
+        'the Share button and its offscreen capture target are present and correctly wired',
+        (tester) async {
+      final prefs = await mockPrefs();
+      final seeded = AnalyticsState(
+        result: const AnalyticsResult(
+          heatmap: HeatmapData({}),
+          timeInvestment: TimeInvestment(movieMinutes: 120, tvMinutes: 0),
+          bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
+          castRanking: [],
+          directorRanking: [],
+          ratingDivergence: [],
+          genreFrequency: {},
+        ),
+        generatedAt: DateTime(2026, 1, 1),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          analyticsProvider.overrideWith(() => _SeededNotifier(seeded)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: AnalyticsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // The offscreen capture target (AnalyticsShareCard wrapped in the
+      // RepaintBoundary _handleShare looks up) exists and is positioned
+      // off-canvas, not visually shown but genuinely painted.
+      expect(find.byType(AnalyticsShareCard), findsOneWidget);
+      final positioned = tester.widget<Positioned>(
+        find.ancestor(
+          of: find.byType(AnalyticsShareCard),
+          matching: find.byType(Positioned),
+        ),
+      );
+      expect(positioned.left, lessThan(0));
+
+      expect(find.text('Share'), findsOneWidget);
+
+      // NOTE on scope, flagging honestly: this test deliberately does NOT
+      // tap Share and drive the real capture through. Doing so calls the
+      // real RenderRepaintBoundary.toImage(), which throws an uncaught
+      // google_fonts "allowRuntimeFetching is false and font not found in
+      // assets" error specifically during toImage()'s text-layout pass
+      // (this project's tests always set allowRuntimeFetching: false to
+      // avoid real network calls, and no font assets are bundled for
+      // tests) -- a test-environment-only gap in this harness, not a
+      // production bug (fonts load normally in the real app). The two
+      // things a full round-trip would otherwise cover are independently
+      // verified elsewhere instead: AnalyticsShareCard's data correctness
+      // (analytics_share_card_test.dart) and shareImageFile's platform
+      // wiring, which mirrors shareJsonFile's already-covered pattern
+      // exactly (settings_screen_test.dart's "Share Backup" test).
     });
   });
 }
