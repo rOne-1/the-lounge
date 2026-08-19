@@ -30,23 +30,57 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     _loadAgenda();
   }
 
+  /// CAL-1: for TV, `releaseOrAirDate` is the show's original premiere
+  /// (`first_air_date`) -- for an ongoing show that's routinely years in
+  /// the past, not when its next episode actually airs. Prefer the real
+  /// next-episode date when TMDB provided one; movies only ever have the
+  /// single `releaseOrAirDate`.
+  DateTime? _effectiveDate(MediaItem item) {
+    if (item.type == MediaType.tv && item.nextEpisodeAirDate != null) {
+      return item.nextEpisodeAirDate;
+    }
+    return item.releaseOrAirDate;
+  }
+
   Future<void> _loadAgenda() async {
     final repo = ref.read(movieRepositoryProvider);
 
-    // LANG-2 (2nd pass): getTrendingMovies/getTrendingTvShows route through
-    // /discover with server-side with_original_language when a Hall lock
-    // is active (see MovieRepository's originalLanguage param) -- a plain
-    // single-page fetch-then-filter left the agenda near-empty for a
-    // locked regional language with few/no matches in the raw global
-    // trending chart.
+    // CAL-1: Calendar is specifically an *upcoming* releases agenda (see
+    // this screen's own empty-state copy: "No upcoming movie premieres" /
+    // "No upcoming TV episodes"), not a general trending feed --
+    // getTrendingMovies/getTrendingTvShows return whatever's popular RIGHT
+    // NOW regardless of release date, which routinely includes titles
+    // released years ago. getUpcomingMovies/getOnTheAirTvShows are the
+    // correct semantic match (both already have their own server-side +
+    // client-side future-date filtering, see tmdb_movie_repository.dart).
+    //
+    // LANG-2 (2nd pass): both route through /discover with server-side
+    // with_original_language when a Hall lock is active (see
+    // MovieRepository's originalLanguage param) -- a plain single-page
+    // fetch-then-filter left the agenda near-empty for a locked regional
+    // language with few/no matches in the raw global chart.
     final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
-    final movies = await repo.getTrendingMovies(originalLanguage: lockedLanguageCode);
-    final tvShows = await repo.getTrendingTvShows(originalLanguage: lockedLanguageCode);
+    final movies = await repo.getUpcomingMovies(originalLanguage: lockedLanguageCode);
+    final tvShows = await repo.getOnTheAirTvShows(originalLanguage: lockedLanguageCode);
+
+    // Belt-and-suspenders (matches getUpcomingMovies' own "server-side
+    // filter already excludes released titles, but keep the client-side
+    // check too" convention): re-derive "upcoming" here using each item's
+    // real effective date (next-episode date for TV, not first-air-date),
+    // rather than trusting every source endpoint's classification as-is.
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    bool isUpcoming(MediaItem item) {
+      final date = _effectiveDate(item);
+      if (date == null) return false;
+      final dateOnly = DateTime(date.year, date.month, date.day);
+      return !dateOnly.isBefore(today);
+    }
 
     if (mounted) {
       setState(() {
-        _allMovies = movies.where((m) => m.releaseOrAirDate != null).toList();
-        _allTvShows = tvShows.where((m) => m.releaseOrAirDate != null).toList();
+        _allMovies = movies.where(isUpcoming).toList();
+        _allTvShows = tvShows.where(isUpcoming).toList();
         _loading = false;
       });
     }
@@ -74,7 +108,9 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
     final Map<DateTime, List<MediaItem>> grouped = {};
     for (final item in targetItems) {
-      final date = item.releaseOrAirDate!;
+      // Safe to force-unwrap: _loadAgenda already filtered targetItems down
+      // to items with a real, non-null, upcoming effective date.
+      final date = _effectiveDate(item)!;
       final dateKey = DateTime(date.year, date.month, date.day);
       grouped.putIfAbsent(dateKey, () => []).add(item);
     }
@@ -108,7 +144,13 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
         final dateIndex = index;
         final date = sortedDates[dateIndex];
         final items = grouped[date]!;
-        final isToday = date.difference(DateTime.now()).inDays == 0;
+        // date is already midnight-normalized (see the grouping above);
+        // comparing against today's own midnight-normalized value avoids
+        // the previous time-of-day-dependent edge case where `.inDays`
+        // truncation could misclassify "tomorrow" as "today" within the
+        // last hour before midnight.
+        final now = DateTime.now();
+        final isToday = date == DateTime(now.year, now.month, now.day);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,7 +158,11 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 12.0),
               child: Text(
-                isToday ? 'Today' : '${_monthName(date.month)} ${date.day}',
+                isToday
+                    ? 'Today'
+                    : date.year == now.year
+                        ? '${_monthName(date.month)} ${date.day}'
+                        : '${_monthName(date.month)} ${date.day}, ${date.year}',
                 style: AppThemes.safeGeist(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,

@@ -133,4 +133,111 @@ void main() {
     expect(find.text('Inception Premiere'), findsNothing);
     await tester.pump(const Duration(seconds: 1));
   });
+
+  group('CAL-1: upcoming-date correctness', () {
+    testWidgets(
+        'an ongoing TV show is dated by its next episode, not its years-old premiere',
+        (WidgetTester tester) async {
+      // Regression: dev-reported bug -- a long-running show's
+      // first_air_date (releaseOrAirDate) is routinely years in the past;
+      // the Calendar previously grouped/displayed TV items by that stale
+      // date instead of the real next-episode date.
+      final oldShowNewEpisode = MediaItem(
+        id: 'tv2',
+        title: 'Long Running Show',
+        type: MediaType.tv,
+        rating: 8.0,
+        releaseOrAirDate: DateTime(2015, 3, 1), // premiered a decade ago
+        nextEpisodeAirDate: DateTime.now().add(const Duration(days: 3)),
+        overview: 'Still airing',
+        genres: const ['Drama'],
+      );
+
+      final mockRepo = MockCalendarRepository(movies: const [], tvShows: [oldShowNewEpisode]);
+      final container = ProviderContainer(
+        overrides: [movieRepositoryProvider.overrideWithValue(mockRepo)],
+      );
+      addTearDown(container.dispose);
+      container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+
+      // The show appears (its next episode is genuinely upcoming) --
+      // grouped under a near-future date, not "2015".
+      expect(find.text('Long Running Show'), findsOneWidget);
+      expect(find.textContaining('2015'), findsNothing);
+    });
+
+    testWidgets('a title with a genuinely past effective date is excluded entirely',
+        (WidgetTester tester) async {
+      final pastMovie = MediaItem(
+        id: 'm2',
+        title: 'Already Released Movie',
+        type: MediaType.movie,
+        rating: 7.0,
+        releaseOrAirDate: DateTime(2019, 5, 30),
+        overview: 'Old release',
+        genres: const ['Drama'],
+      );
+
+      final mockRepo = MockCalendarRepository(movies: [pastMovie], tvShows: const []);
+      final container = ProviderContainer(
+        overrides: [movieRepositoryProvider.overrideWithValue(mockRepo)],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.text('Already Released Movie'), findsNothing);
+      // Falls back to the "no upcoming" empty state instead of silently
+      // showing stale content.
+      expect(find.text('No upcoming movie premieres'), findsOneWidget);
+    });
+
+    testWidgets('the date header shows the year when it differs from the current year',
+        (WidgetTester tester) async {
+      final now = DateTime.now();
+      final nextYearDate = DateTime(now.year + 1, 1, 15);
+      final movieNextYear = MediaItem(
+        id: 'm3',
+        title: 'Next Year Release',
+        type: MediaType.movie,
+        rating: 7.0,
+        releaseOrAirDate: nextYearDate,
+        overview: '',
+        genres: const ['Drama'],
+      );
+
+      final mockRepo = MockCalendarRepository(movies: [movieNextYear], tvShows: const []);
+      final container = ProviderContainer(
+        overrides: [movieRepositoryProvider.overrideWithValue(mockRepo)],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+
+      expect(find.textContaining('${nextYearDate.year}'), findsOneWidget);
+    });
+  });
 }

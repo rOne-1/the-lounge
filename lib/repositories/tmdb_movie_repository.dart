@@ -1081,6 +1081,20 @@ class TmdbMovieRepository implements MovieRepository {
       releaseOrAirDate = DateTime.tryParse(dateStr);
     }
 
+    // CAL-1: for an ongoing TV show, `first_air_date` above is the show's
+    // original premiere -- often years in the past -- not when its next
+    // episode actually airs. TMDB's list endpoints that make sense for
+    // "upcoming" (on_the_air, popular, top_rated) include a
+    // `next_episode_to_air` object with the real date when applicable.
+    DateTime? nextEpisodeAirDate;
+    final nextEpisodeJson = json['next_episode_to_air'];
+    if (nextEpisodeJson is Map) {
+      final nextAirStr = nextEpisodeJson['air_date'] as String?;
+      if (nextAirStr != null && nextAirStr.trim().isNotEmpty) {
+        nextEpisodeAirDate = DateTime.tryParse(nextAirStr.trim());
+      }
+    }
+
     final overview = json['overview'] as String? ?? '';
 
     final genres = <String>[];
@@ -1488,6 +1502,7 @@ class TmdbMovieRepository implements MovieRepository {
       type: type,
       rating: rating,
       releaseOrAirDate: releaseOrAirDate,
+      nextEpisodeAirDate: nextEpisodeAirDate,
       overview: overview,
       genres: genres,
       posterUrl: posterUrl,

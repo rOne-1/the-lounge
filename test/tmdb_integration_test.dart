@@ -1203,6 +1203,70 @@ void main() {
       expect(url, contains('air_date.lte=$expectedLte'));
     });
   });
+
+  group('CAL-1 (2026-08-20): next_episode_to_air parsing', () {
+    test(
+        'getOnTheAirTvShows parses next_episode_to_air.air_date into '
+        'nextEpisodeAirDate, separately from the show\'s original '
+        'first_air_date', () async {
+      // Regression: dev-reported bug -- Calendar was grouping/displaying
+      // ongoing TV shows by first_air_date (routinely years in the past
+      // for a long-running show), not by when the next episode actually
+      // airs.
+      final nextEpisodeDate =
+          DateTime.now().add(const Duration(days: 3)).toIso8601String().split('T').first;
+      final client = MockClient((request) async {
+        if (request.url.path.contains('/tv/on_the_air')) {
+          return http.Response(
+              jsonEncode({
+                'results': [
+                  {
+                    'id': 10,
+                    'name': 'Long Running Show',
+                    'first_air_date': '2015-03-01',
+                    'next_episode_to_air': {
+                      'air_date': nextEpisodeDate,
+                      'episode_number': 5,
+                    },
+                  },
+                ],
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      final results = await repo.getOnTheAirTvShows();
+      expect(results, hasLength(1));
+      expect(results.first.releaseOrAirDate, DateTime.parse('2015-03-01'));
+      expect(results.first.nextEpisodeAirDate, DateTime.parse(nextEpisodeDate));
+    });
+
+    test('a show with no next_episode_to_air in the response leaves nextEpisodeAirDate null',
+        () async {
+      final client = MockClient((request) async {
+        return http.Response(
+            jsonEncode({
+              'results': [
+                {'id': 11, 'name': 'No Next Episode Info', 'first_air_date': '2020-01-01'},
+              ],
+            }),
+            200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      final results = await repo.getOnTheAirTvShows();
+      expect(results, hasLength(1));
+      expect(results.first.nextEpisodeAirDate, isNull);
+      expect(results.first.releaseOrAirDate, DateTime.parse('2020-01-01'));
+    });
+  });
 }
 
 
