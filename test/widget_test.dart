@@ -79,7 +79,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    // Landing Page (YourSpaceScreen at root) does not show the capsule
+    // Landing Page (LoungeScreen at root) does not show the capsule
     expect(find.byKey(const ValueKey('floating_nav_capsule')), findsNothing);
 
     // Tapping Browse from the dock reveals the floating capsule on LobbyScreen
@@ -116,12 +116,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Landing page (Your Space, nothing pushed): capsule hidden.
+    // Landing page (The Lounge, nothing pushed): capsule hidden.
     expect(find.byKey(const ValueKey('floating_nav_capsule')), findsNothing);
 
-    // Push Archive from Your Space's dock. This is a real Navigator push
-    // while staying on the yourSpace tab (routeDepth > 0, currentTab still
-    // yourSpace) -- the exact shape that exposed the real bug: the capsule
+    // Push Archive from The Lounge's dock. This is a real Navigator push
+    // while staying on the lounge tab (routeDepth > 0, currentTab still
+    // lounge) -- the exact shape that exposed the real bug: the capsule
     // is drawn as a Stack sibling of the app's Navigator (see main.dart's
     // GlobalCapsuleLayer), not a descendant of it, so it has no reachable
     // Navigator ancestor unless wired through rootNavigatorKey.

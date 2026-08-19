@@ -1,4 +1,4 @@
-// Regression coverage for PERS-NAV-1: Your Space is the app's default
+// Regression coverage for PERS-NAV-1 / NAME-1: The Lounge is the app's default
 // startup destination and navigation anchor.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -16,12 +16,12 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  test('NavigationState defaults to AppTab.yourSpace', () {
+  test('NavigationState defaults to AppTab.lounge', () {
     const state = NavigationState();
-    expect(state.currentTab, AppTab.yourSpace);
+    expect(state.currentTab, AppTab.lounge);
   });
 
-  testWidgets('initial tab on a fresh ShellScreen mount is Your Space',
+  testWidgets('initial tab on a fresh ShellScreen mount is The Lounge',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -41,14 +41,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
-    // The landing page's own dock card confirms Your Space, not Lobby,
+    expect(container.read(navigationProvider).currentTab, AppTab.lounge);
+    // The landing page's own dock card confirms The Lounge, not Lobby,
     // is what's actually showing.
     expect(find.text('Archive'), findsOneWidget);
   });
 
   testWidgets(
-      'a back gesture from every other tab returns to Your Space, which itself is allowed to pop the root route',
+      'a back gesture from every other tab returns to The Lounge, which itself is allowed to pop the root route',
       (tester) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -76,10 +76,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(didPop, isTrue, reason: 'back from $tab should be intercepted, not exit the app');
-      expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
+      expect(container.read(navigationProvider).currentTab, AppTab.lounge);
     }
 
-    // Already on Your Space: back is no longer intercepted (canPop: true),
+    // Already on The Lounge: back is no longer intercepted (canPop: true),
     // matching the app's designated exit point.
     final finalPop = await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();

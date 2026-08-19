@@ -280,7 +280,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
+      expect(container.read(navigationProvider).currentTab, AppTab.lounge);
     });
 
     testWidgets('is hidden entirely when the watchlist is empty for the active type',

@@ -5,7 +5,7 @@ enum AppTab {
   lobby,
   discover,
   search,
-  yourSpace,
+  lounge,
   calendar,
 }
 
@@ -18,11 +18,11 @@ class NavigationState {
   final AppTab currentTab;
   final MediaTypeToggle activeMediaType;
 
-  // PERS-NAV-1: Your Space is the app's default startup destination and
+  // PERS-NAV-1 / NAME-1: The Lounge is the app's default startup destination and
   // navigation anchor (see ShellScreen's PopScope and
   // FloatingNavigationCapsule's destination ordering).
   const NavigationState({
-    this.currentTab = AppTab.yourSpace,
+    this.currentTab = AppTab.lounge,
     this.activeMediaType = MediaTypeToggle.movies,
   });
 

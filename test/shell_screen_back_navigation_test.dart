@@ -55,15 +55,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(didPop, isTrue);
-    expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
+    expect(container.read(navigationProvider).currentTab, AppTab.lounge);
     expect(find.byType(ShellScreen), findsOneWidget);
   });
 
-  testWidgets('system back on Your Space is allowed to pop the root route', (tester) async {
-    final container = await pumpShell(tester, AppTab.yourSpace);
+  testWidgets('system back on The Lounge is allowed to pop the root route', (tester) async {
+    final container = await pumpShell(tester, AppTab.lounge);
     addTearDown(container.dispose);
 
-    expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
+    expect(container.read(navigationProvider).currentTab, AppTab.lounge);
 
     // false here means PopScope did not intercept it -- the root route's
     // own single-route Navigator has nothing left to pop to, so the app is
@@ -75,7 +75,7 @@ void main() {
     expect(didPop, isFalse);
   });
 
-  testWidgets('back from Lobby, Discover, Search, and Calendar all redirect to Your Space',
+  testWidgets('back from Lobby, Discover, Search, and Calendar all redirect to The Lounge',
       (tester) async {
     for (final tab in [AppTab.lobby, AppTab.discover, AppTab.search, AppTab.calendar]) {
       final container = await pumpShell(tester, tab);
@@ -83,7 +83,7 @@ void main() {
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(container.read(navigationProvider).currentTab, AppTab.yourSpace);
+      expect(container.read(navigationProvider).currentTab, AppTab.lounge);
 
       container.dispose();
       await tester.pumpWidget(const SizedBox.shrink());

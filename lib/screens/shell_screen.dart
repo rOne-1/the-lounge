@@ -8,7 +8,7 @@ import '../constants.dart';
 import 'lobby_screen.dart';
 import 'discover_screen.dart';
 import 'search_screen.dart';
-import 'your_space_screen.dart';
+import 'lounge_screen.dart';
 import 'calendar_screen.dart';
 
 class ShellScreen extends ConsumerWidget {
@@ -21,16 +21,16 @@ class ShellScreen extends ConsumerWidget {
     final navigationState = ref.watch(navigationProvider);
     final ambiance = ref.watch(ambianceProvider);
 
-    // NAV-1/PERS-NAV-1: the last back press before exiting the app must
-    // return to Your Space first (the app's navigation anchor), not
+    // NAV-1/PERS-NAV-1 / NAME-1: the last back press before exiting the app must
+    // return to The Lounge first (the app's navigation anchor), not
     // terminate immediately from Lobby/Discover/Search/Calendar. canPop is
-    // only true once already on Your Space, so the OS pop/back gesture is
+    // only true once already on The Lounge, so the OS pop/back gesture is
     // intercepted everywhere else and redirected.
     return PopScope(
-      canPop: navigationState.currentTab == AppTab.yourSpace,
+      canPop: navigationState.currentTab == AppTab.lounge,
       onPopInvokedWithResult: (didPop, result) {
         if (didPop) return;
-        ref.read(navigationProvider.notifier).setTab(AppTab.yourSpace);
+        ref.read(navigationProvider.notifier).setTab(AppTab.lounge);
       },
       // IA-1/NAV-3: fixed chrome (top bar, bottom nav bar, per-screen media
       // toggles) is gone -- ShellScreen now reserves zero screen space for
@@ -75,7 +75,7 @@ class ShellScreen extends ConsumerWidget {
         return 1;
       case AppTab.search:
         return 2;
-      case AppTab.yourSpace:
+      case AppTab.lounge:
         return 3;
       case AppTab.calendar:
         return 4;
@@ -89,7 +89,7 @@ class ShellScreen extends ConsumerWidget {
     VoidCallback? onSwipeRight;
 
     // HIERARCHICAL SWIPE MODEL:
-    // 1. "Your Space" is the elevated Sanctuary Gateway -- isolated with ZERO swipe navigation.
+    // 1. "The Lounge" is the elevated Sanctuary Gateway -- isolated with ZERO swipe navigation.
     // 2. "Discover" has dedicated 2D card deck gestures -- isolated with ZERO shell swipe interception.
     // 3. The Browse cycle forms an isolated 3-screen sequence: Lobby <-> Search <-> Calendar.
     switch (tab) {
@@ -109,7 +109,7 @@ class ShellScreen extends ConsumerWidget {
         onSwipeLeft = null;
         onSwipeRight = () => ref.read(navigationProvider.notifier).setTab(AppTab.search);
         break;
-      case AppTab.yourSpace:
+      case AppTab.lounge:
         onSwipeLeft = null;
         onSwipeRight = null;
         break;
@@ -126,8 +126,8 @@ class ShellScreen extends ConsumerWidget {
         ),
         const DiscoverScreen(key: PageStorageKey(AppTab.discover)),
         const SearchScreen(key: PageStorageKey(AppTab.search)),
-        YourSpaceScreen(
-          key: const PageStorageKey(AppTab.yourSpace),
+        LoungeScreen(
+          key: const PageStorageKey(AppTab.lounge),
           enableAnimation: enableAnimation,
         ),
         const CalendarScreen(key: PageStorageKey(AppTab.calendar)),

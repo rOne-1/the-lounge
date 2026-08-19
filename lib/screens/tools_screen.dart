@@ -135,7 +135,7 @@ class ToolsScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                'Keep your space in order',
+                'Keep your lounge in order',
                 style: AppThemes.safeGeist(
                   fontSize: 13.5,
                   color: colors.sub,

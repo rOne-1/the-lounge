@@ -9,7 +9,7 @@ import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/screens/lounge_screen.dart';
 
-// IA-1: The Lounge gets a direct Settings entry point alongside (not
+// IA-1 / NAME-1: The Lounge gets a direct Settings entry point alongside (not
 // instead of) the shell's own auto-hiding top-bar gear icon.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -22,7 +22,7 @@ void main() {
     prefs = await SharedPreferences.getInstance();
   });
 
-  testWidgets('tapping the Your Space settings icon opens SettingsScreen', (tester) async {
+  testWidgets('tapping the Lounge settings icon opens SettingsScreen', (tester) async {
     final container = ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),

@@ -120,8 +120,8 @@ class MyApp extends ConsumerWidget {
 /// so widget tests can reconstruct the same builder-sibling tree shape that
 /// production actually uses -- see floating_navigation_capsule_test.dart.
 ///
-/// Hidden only when truly sitting at the Your Space landing screen with
-/// nothing pushed on top (`routeDepth <= 0 && currentTab == yourSpace`).
+/// Hidden only when truly sitting at the Lounge landing screen with
+/// nothing pushed on top (`routeDepth <= 0 && currentTab == lounge`).
 /// `routeDepth` alone isn't enough: Lobby/Discover/Search/Calendar are tab
 /// switches within ShellScreen's IndexedStack, not Navigator pushes, so they
 /// sit at routeDepth 0 too and still need the capsule shown.
@@ -138,7 +138,7 @@ class GlobalCapsuleLayer extends ConsumerWidget {
         ref.watch(shouldShowConfigurationErrorProvider);
 
     if (shouldShowConfigurationError ||
-        (routeDepth <= 0 && currentTab == AppTab.yourSpace)) {
+        (routeDepth <= 0 && currentTab == AppTab.lounge)) {
       return const SizedBox.shrink();
     }
 

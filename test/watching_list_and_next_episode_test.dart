@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/lobby_screen.dart';
-import 'package:the_lounge/screens/your_space_screen.dart';
+import 'package:the_lounge/screens/lounge_screen.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
@@ -133,7 +133,7 @@ void main() {
   ];
 
   testWidgets(
-      'YourSpaceScreen shows the 3-group landing page, and the Watching pile card opens its PileScreen',
+      'LoungeScreen shows the 3-group landing page, and the Watching pile card opens its PileScreen',
       (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(items: {'movie-10': testMovie, 'tv-20': testTvShow});
     final prefs = await SharedPreferences.getInstance();
@@ -154,7 +154,7 @@ void main() {
         container: container,
         child: const MaterialApp(
           home: Scaffold(
-            body: YourSpaceScreen(),
+            body: LoungeScreen(),
           ),
         ),
       ),

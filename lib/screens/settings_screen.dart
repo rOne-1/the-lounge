@@ -170,7 +170,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                             ),
                             subtitle: Text(
-                              'Share your space data file directly',
+                              'Share your archive data file directly',
                               style: AppThemes.safeGeist(fontSize: 12, color: subColor),
                             ),
                             onTap: () async {
@@ -200,7 +200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               ),
                             ),
                             subtitle: Text(
-                              'Restore your space from a JSON file',
+                              'Restore your archive from a JSON file',
                               style: AppThemes.safeGeist(fontSize: 12, color: subColor),
                             ),
                             onTap: () async {

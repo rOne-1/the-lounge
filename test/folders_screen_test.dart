@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/folders_screen.dart';
 import 'package:the_lounge/screens/folder_detail_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
-import 'package:the_lounge/screens/your_space_screen.dart';
+import 'package:the_lounge/screens/lounge_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -92,7 +92,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: const MaterialApp(home: Scaffold(body: YourSpaceScreen())),
+          child: const MaterialApp(home: Scaffold(body: LoungeScreen())),
         ),
       );
       await tester.tap(find.text('Tools'));

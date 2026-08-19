@@ -141,8 +141,8 @@ void main() {
     });
   });
 
-  group('PERS-SORT-1: cleanup banner in Your Space', () {
-    Future<ProviderContainer> pumpYourSpace(WidgetTester tester, {required int savedCount}) async {
+  group('PERS-SORT-1: cleanup banner in Saved pile', () {
+    Future<ProviderContainer> pumpSavedPile(WidgetTester tester, {required int savedCount}) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
       final container = ProviderContainer(
@@ -167,17 +167,17 @@ void main() {
     }
 
     testWidgets('does not appear at or below the threshold', (tester) async {
-      await pumpYourSpace(tester, savedCount: kPileCleanupThreshold);
+      await pumpSavedPile(tester, savedCount: kPileCleanupThreshold);
       expect(find.byKey(const ValueKey('cleanup_banner_cta')), findsNothing);
     });
 
     testWidgets('appears once the Saved pile exceeds the threshold', (tester) async {
-      await pumpYourSpace(tester, savedCount: kPileCleanupThreshold + 1);
+      await pumpSavedPile(tester, savedCount: kPileCleanupThreshold + 1);
       expect(find.byKey(const ValueKey('cleanup_banner_cta')), findsOneWidget);
     });
 
     testWidgets('dismissing the banner hides it for the session', (tester) async {
-      await pumpYourSpace(tester, savedCount: kPileCleanupThreshold + 1);
+      await pumpSavedPile(tester, savedCount: kPileCleanupThreshold + 1);
       expect(find.byKey(const ValueKey('cleanup_banner_cta')), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('cleanup_banner_dismiss')));
@@ -187,7 +187,7 @@ void main() {
     });
 
     testWidgets('tapping "Clean up" opens CleanupSwipeScreen', (tester) async {
-      await pumpYourSpace(tester, savedCount: kPileCleanupThreshold + 1);
+      await pumpSavedPile(tester, savedCount: kPileCleanupThreshold + 1);
 
       await tester.tap(find.byKey(const ValueKey('cleanup_banner_cta')));
       await tester.pumpAndSettle();

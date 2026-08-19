@@ -146,7 +146,7 @@ class LobbyScreen extends ConsumerWidget {
     final rail1Items = mediaState.watchingList.values
         .where((m) => m.type == activeType)
         .toList();
-    // E12: same source and ordering as YourSpaceScreen's own Watchlist tab
+    // E12: same source and ordering as LoungeScreen's own Watchlist tab
     // (insertion order, no re-sort) so "See all" doesn't reorder things
     // relative to what was just shown in the carousel.
     final watchlistItems = mediaState.watchlist.values
@@ -299,7 +299,7 @@ class LobbyScreen extends ConsumerWidget {
                   PressableScale(
                     onTap: () => ref
                         .read(navigationProvider.notifier)
-                        .setTab(AppTab.yourSpace),
+                        .setTab(AppTab.lounge),
                     child: Text(
                       'See all',
                       style: AppThemes.safeGeist(
@@ -383,7 +383,7 @@ class LobbyScreen extends ConsumerWidget {
               itemsAsync: AsyncValue.data(watchlistItems),
               isDark: isDark,
               onSeeAll: () =>
-                  ref.read(navigationProvider.notifier).setTab(AppTab.yourSpace),
+                  ref.read(navigationProvider.notifier).setTab(AppTab.lounge),
             ),
 
             // RAIL 2: Trending This Week

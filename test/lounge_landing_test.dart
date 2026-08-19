@@ -1,4 +1,4 @@
-// Widget tests for YSR-GATEWAY-1: Your Space's Sanctuary Gateway landing screen
+// Widget tests for YSR-GATEWAY-1 / NAME-1: The Lounge's Sanctuary Gateway landing screen
 // and its 4-card navigation dock routing.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,6 +11,7 @@ import 'package:the_lounge/screens/tools_screen.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/widgets/lounge_doorway_emblem.dart';
 import 'package:the_lounge/widgets/ambient_glow.dart';
+import 'package:the_lounge/widgets/profile_selector_sheet.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
@@ -47,7 +48,7 @@ void main() {
     await tester.pump();
   }
 
-  group('YSR-GATEWAY-1: Sanctuary Gateway structure', () {
+  group('YSR-GATEWAY-1 / NAME-1: Sanctuary Gateway structure', () {
     testWidgets('renders Day overline, greeting, emblem centerpiece and 4 dock cards',
         (tester) async {
       final container = await pumpLounge(tester);
@@ -67,10 +68,24 @@ void main() {
       expect(find.text('Browse'), findsOneWidget);
       expect(find.text('Tools'), findsOneWidget);
       expect(find.text('Settings'), findsOneWidget);
+
+      // Persona Switcher Pill
+      expect(find.byKey(const ValueKey('lounge_persona_pill')), findsOneWidget);
+      expect(find.text('Common Space'), findsOneWidget);
+    });
+
+    testWidgets('tapping persona pill opens ProfileSelectorSheet', (tester) async {
+      final container = await pumpLounge(tester);
+      addTearDown(container.dispose);
+
+      await tester.tap(find.byKey(const ValueKey('lounge_persona_pill')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProfileSelectorSheet), findsOneWidget);
     });
   });
 
-  group('YSR-GATEWAY-1: 4-Card Dock Navigation Routing', () {
+  group('YSR-GATEWAY-1 / NAME-1: 4-Card Dock Navigation Routing', () {
     testWidgets('Archive card pushes ArchiveScreen', (tester) async {
       final container = await pumpLounge(tester);
       addTearDown(container.dispose);
