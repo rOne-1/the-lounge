@@ -302,6 +302,8 @@ class HallSelectorSheet extends ConsumerWidget {
     final textController = TextEditingController(text: hall.name);
     String selectedThemeId = hall.themeId ??
         (hall.id == 'common' ? 'screening_room' : (hall.id == 'custom_1' ? 'midnight_cinema' : 'reading_room'));
+    String? selectedLanguageCode = hall.lockedLanguageCode;
+    String? selectedLanguageName = hall.lockedLanguageName;
     final colors = context.ambianceColors;
 
     showDialog<void>(
@@ -417,6 +419,57 @@ class HallSelectorSheet extends ConsumerWidget {
                         );
                       }).toList(),
                     ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'LANGUAGE LOCK',
+                      style: AppThemes.safeGeist(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: colors.sub,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Restricts Lobby, Discover, Search, and Calendar in this hall to one original language.',
+                      style: AppThemes.safeGeist(fontSize: 11, color: colors.sub),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        PressableScale(
+                          onTap: () {
+                            setDialogState(() {
+                              selectedLanguageCode = null;
+                              selectedLanguageName = null;
+                            });
+                          },
+                          child: _LanguageChip(
+                            label: 'All Languages',
+                            isSelected: selectedLanguageCode == null,
+                            colors: colors,
+                          ),
+                        ),
+                        ...supportedLanguages.map((lang) {
+                          final isSelected = selectedLanguageCode == lang['code'];
+                          return PressableScale(
+                            onTap: () {
+                              setDialogState(() {
+                                selectedLanguageCode = lang['code'];
+                                selectedLanguageName = lang['name'];
+                              });
+                            },
+                            child: _LanguageChip(
+                              label: lang['name']!,
+                              isSelected: isSelected,
+                              colors: colors,
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
                   ],
                 ),
               ),
@@ -435,6 +488,11 @@ class HallSelectorSheet extends ConsumerWidget {
                       ref.read(hallProvider.notifier).renameHall(hall.id, newName);
                     }
                     ref.read(hallProvider.notifier).updateHallTheme(hall.id, selectedThemeId);
+                    ref.read(hallProvider.notifier).updateHallLanguage(
+                          hall.id,
+                          selectedLanguageCode,
+                          selectedLanguageName,
+                        );
                     Navigator.of(dialogCtx).pop();
                   },
                   child: Text(
@@ -450,6 +508,45 @@ class HallSelectorSheet extends ConsumerWidget {
           },
         );
       },
+    );
+  }
+}
+
+/// LANG-1: a single language-lock chip in [HallSelectorSheet]'s customize
+/// dialog, matching the visual weight of the theme-swatch chips right above
+/// it (accent-tinted fill + border when selected) minus the color swatch,
+/// since a language has no color of its own to show.
+class _LanguageChip extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final AmbianceColors colors;
+
+  const _LanguageChip({
+    required this.label,
+    required this.isSelected,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: isSelected ? colors.acc.withValues(alpha: 0.15) : colors.base,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isSelected ? colors.acc : colors.lineRgba,
+          width: isSelected ? 1.5 : 1.0,
+        ),
+      ),
+      child: Text(
+        label,
+        style: AppThemes.safeGeist(
+          fontSize: 11.5,
+          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          color: colors.ink,
+        ),
+      ),
     );
   }
 }

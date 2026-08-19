@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import 'ambiance_provider.dart';
+import 'hall_provider.dart';
 import 'media_provider.dart';
 import '../repositories/anime_filtered_movie_repository.dart';
 import '../repositories/mock_movie_repository.dart';
@@ -157,19 +158,39 @@ final shouldShowConfigurationErrorProvider = Provider<bool>((ref) {
   return ref.watch(isUsingMockRepositoryProvider);
 });
 
+/// LANG-2: TMDB's fixed-list endpoints (trending/popular/top_rated/
+/// now_playing/upcoming/airing_today/on_the_air) have no server-side
+/// content-language filter -- confirmed against TMDB's own API docs, which
+/// note these are "really just a discover call behind the scenes" with
+/// their filters not exposed to the client, unlike `/discover/movie` and
+/// `/discover/tv` (which do support `with_original_language` and are used
+/// directly by Discover/Search via [DiscoverFilterParams.originalLanguage]).
+/// So a Hall's language lock is enforced client-side here instead, applied
+/// uniformly to every one of these providers.
+List<MediaItem> _applyHallLanguageLock(List<MediaItem> items, String? lockedLanguageCode) {
+  if (lockedLanguageCode == null || lockedLanguageCode.isEmpty) return items;
+  return items.where((item) => item.originalLanguage == lockedLanguageCode).toList();
+}
+
 final trendingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getTrendingMovies();
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getTrendingMovies();
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final trendingTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getTrendingTvShows();
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getTrendingTvShows();
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final popularMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getPopularMovies();
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getPopularMovies();
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final mediaDetailsProvider =
@@ -186,33 +207,45 @@ final watchProviderRegionsProvider =
 
 final topRatedMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getTopRatedMovies();
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getTopRatedMovies();
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final topRatedTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getTopRatedTvShows();
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getTopRatedTvShows();
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final nowPlayingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final country = ref.watch(mediaProvider.select((s) => s.watchProvidersCountry));
-  return repo.getNowPlayingMovies(region: country);
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getNowPlayingMovies(region: country);
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final airingTodayTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getAiringTodayTvShows();
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getAiringTodayTvShows();
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final upcomingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getUpcomingMovies();
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getUpcomingMovies();
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final onTheAirTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getOnTheAirTvShows();
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final items = await repo.getOnTheAirTvShows();
+  return _applyHallLanguageLock(items, lockedLanguageCode);
 });
 
 final tvSeasonDetailsProvider =
@@ -376,11 +409,26 @@ final discoverFilterProvider =
   return DiscoverFilterNotifier();
 });
 
+/// LANG-2: unlike the fixed-list endpoints above, `/discover` genuinely
+/// supports `with_original_language` server-side (see
+/// [DiscoverFilterParams.originalLanguage]), so a Hall lock is applied by
+/// overriding that param at the query rather than filtering results after
+/// the fact -- also pre-empting wasted network calls for excluded titles.
+/// The override takes precedence over the user's own language chip
+/// selection in the Search/Browse filter sheet, matching "pre-set and lock"
+/// from the Hall Architecture triage's LANG-2 spec.
+DiscoverFilterParams applyHallLanguageLock(DiscoverFilterParams params, String? lockedLanguageCode) {
+  if (lockedLanguageCode == null || lockedLanguageCode.isEmpty) return params;
+  return params.copyWith(originalLanguage: lockedLanguageCode);
+}
+
 final discoverMediaProvider =
     FutureProvider.family<List<MediaItem>, bool>((ref, isMovies) async {
   final repo = ref.watch(movieRepositoryProvider);
   final filterParams = ref.watch(discoverFilterProvider);
-  return repo.discoverMedia(isMovies: isMovies, params: filterParams);
+  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final effectiveParams = applyHallLanguageLock(filterParams, lockedLanguageCode);
+  return repo.discoverMedia(isMovies: isMovies, params: effectiveParams);
 });
 
 final searchPersonsProvider =

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../providers/hall_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
 import '../models/media_item.dart';
@@ -34,10 +35,22 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final movies = await repo.getTrendingMovies();
     final tvShows = await repo.getTrendingTvShows();
 
+    // LANG-2: getTrendingMovies/getTrendingTvShows have no server-side
+    // content-language filter (see _applyHallLanguageLock's doc comment in
+    // repository_provider.dart), so the Hall's lock is applied client-side
+    // here, same as Lobby's rail providers.
+    final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
+    bool matchesLock(MediaItem m) =>
+        lockedLanguageCode == null || m.originalLanguage == lockedLanguageCode;
+
     if (mounted) {
       setState(() {
-        _allMovies = movies.where((m) => m.releaseOrAirDate != null).toList();
-        _allTvShows = tvShows.where((m) => m.releaseOrAirDate != null).toList();
+        _allMovies = movies
+            .where((m) => m.releaseOrAirDate != null && matchesLock(m))
+            .toList();
+        _allTvShows = tvShows
+            .where((m) => m.releaseOrAirDate != null && matchesLock(m))
+            .toList();
         _loading = false;
       });
     }
@@ -48,6 +61,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     final isDark = context.ambianceColors.isDark;
     final inkColor = context.ambianceColors.ink;
     final subColor = context.ambianceColors.sub;
+
+    // LANG-2: _loadAgenda() is a one-shot imperative fetch, not a
+    // FutureProvider Riverpod can auto-rerun on dependency change, so a
+    // Hall switch while already sitting on Calendar would otherwise leave
+    // the agenda showing the previous Hall's language lock until the tab is
+    // left and re-entered. Re-fetch explicitly when the lock changes.
+    ref.listen(activeHallSpaceProvider.select((h) => h.lockedLanguageCode),
+        (previous, next) {
+      if (previous != next) _loadAgenda();
+    });
 
     final navState = ref.watch(navigationProvider);
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;

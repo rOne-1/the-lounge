@@ -383,6 +383,8 @@ class DomainArchive {
   }
 }
 
+const _sentinel = Object();
+
 /// PROF-1 / NOMEN-1: 2D Partitioned Hall Space containing data across the 3 domains (Movies, TV, Anime).
 class HallSpace {
   final String id;
@@ -415,14 +417,19 @@ class HallSpace {
 
   DomainArchive archiveFor(MediumDomain domain) => domainArchive(domain);
 
+  // lockedLanguageCode/lockedLanguageName use the sentinel pattern (like
+  // DiscoverFilterParams.copyWith) rather than plain `?? this.x` -- the
+  // Language Lock picker needs to be able to explicitly clear a hall back
+  // to "All Languages / Unrestricted" (pass null), which `?? this.x` can
+  // never express since null always falls through to the existing value.
   HallSpace copyWith({
     String? id,
     String? name,
     String? iconKey,
     bool? isCommon,
     String? themeId,
-    String? lockedLanguageCode,
-    String? lockedLanguageName,
+    Object? lockedLanguageCode = _sentinel,
+    Object? lockedLanguageName = _sentinel,
     Map<MediumDomain, DomainArchive>? domains,
     List<UserFolder>? customFolders,
     Map<String, List<WatchRecord>>? watchHistory,
@@ -433,8 +440,12 @@ class HallSpace {
       iconKey: iconKey ?? this.iconKey,
       isCommon: isCommon ?? this.isCommon,
       themeId: themeId ?? this.themeId,
-      lockedLanguageCode: lockedLanguageCode ?? this.lockedLanguageCode,
-      lockedLanguageName: lockedLanguageName ?? this.lockedLanguageName,
+      lockedLanguageCode: lockedLanguageCode == _sentinel
+          ? this.lockedLanguageCode
+          : lockedLanguageCode as String?,
+      lockedLanguageName: lockedLanguageName == _sentinel
+          ? this.lockedLanguageName
+          : lockedLanguageName as String?,
       domains: domains ?? this.domains,
       customFolders: customFolders ?? this.customFolders,
       watchHistory: watchHistory ?? this.watchHistory,

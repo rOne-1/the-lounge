@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
+import '../providers/hall_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/repository_provider.dart';
 import '../utils/scroll_chrome_tracker.dart';
@@ -187,10 +188,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     try {
       final repo = ref.read(movieRepositoryProvider);
       final filterParams = ref.read(discoverFilterProvider);
+      final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
+      final effectiveParams = applyHallLanguageLock(filterParams, lockedLanguageCode);
       final nextPage = _currentPage + 1;
       final newItems = await repo.discoverMedia(
         isMovies: isMovies,
-        params: filterParams,
+        params: effectiveParams,
         page: nextPage,
       );
       if (mounted) {
@@ -1414,6 +1417,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final activeRef = externalRef ?? ref;
     final filterParams = activeRef.watch(discoverFilterProvider);
     final filterNotifier = activeRef.read(discoverFilterProvider.notifier);
+    // LANG-2: when the active Hall has a language lock, it overrides
+    // whatever the user picked here (see applyHallLanguageLock, used at the
+    // actual query call sites) -- the chips below reflect that by locking
+    // onto the Hall's language and disabling the other options, rather than
+    // silently ignoring a selection the user can still see and tap.
+    final lockedLanguageCode = activeRef.watch(activeHallSpaceProvider).lockedLanguageCode;
     final inkColor = context.ambianceColors.ink;
     final subColor = context.ambianceColors.sub;
     final lineRgba = context.ambianceColors.lineRgba;
@@ -1858,13 +1867,30 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 },
               ),
               const SizedBox(height: 12),
-              Text(
-                'Original Language',
-                style: AppThemes.safeGeist(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: subColor,
-                ),
+              Row(
+                children: [
+                  Text(
+                    'Original Language',
+                    style: AppThemes.safeGeist(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: subColor,
+                    ),
+                  ),
+                  if (lockedLanguageCode != null) ...[
+                    const SizedBox(width: 6),
+                    Icon(Icons.lock_outline_rounded, size: 12, color: subColor),
+                    const SizedBox(width: 2),
+                    Text(
+                      'Locked by Hall',
+                      style: AppThemes.safeGeist(
+                        fontSize: 10.5,
+                        fontStyle: FontStyle.italic,
+                        color: subColor,
+                      ),
+                    ),
+                  ],
+                ],
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -1872,7 +1898,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 runSpacing: 6,
                 children: [
                   PressableScale(
-                    onTap: () => filterNotifier.setOriginalLanguage(null),
+                    onTap: lockedLanguageCode != null
+                        ? null
+                        : () => filterNotifier.setOriginalLanguage(null),
                     child: AnimatedContainer(
                       duration: AppPhysics.houseSpringDuration,
                       curve: AppPhysics.houseSpringCurve,
@@ -1881,7 +1909,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         vertical: 6,
                       ),
                       decoration: _buildFilterChipDecoration(
-                        isSelected: filterParams.originalLanguage == null,
+                        isSelected: lockedLanguageCode == null &&
+                            filterParams.originalLanguage == null,
                         isDark: isDark,
                         pillColor: pillColor,
                         lineRgba: lineRgba,
@@ -1890,7 +1919,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         'Any Language',
                         style: AppThemes.safeGeist(
                           fontSize: 12,
-                          color: filterParams.originalLanguage == null
+                          color: lockedLanguageCode == null &&
+                                  filterParams.originalLanguage == null
                               ? (Theme.of(context).colorScheme.onPrimary)
                               : inkColor,
                         ),
@@ -1898,11 +1928,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                   ),
                   ..._languages.map((lang) {
-                    final isSelected =
-                        filterParams.originalLanguage == lang['code'];
+                    final isSelected = lockedLanguageCode != null
+                        ? lockedLanguageCode == lang['code']
+                        : filterParams.originalLanguage == lang['code'];
                     return PressableScale(
-                      onTap: () =>
-                          filterNotifier.setOriginalLanguage(lang['code']),
+                      onTap: lockedLanguageCode != null
+                          ? null
+                          : () => filterNotifier.setOriginalLanguage(lang['code']),
                       child: AnimatedContainer(
                         duration: AppPhysics.houseSpringDuration,
                       curve: AppPhysics.houseSpringCurve,

@@ -10,6 +10,7 @@ import '../models/watch_record.dart';
 import '../models/user_folder.dart';
 import '../services/hall_storage_service.dart';
 import 'ambiance_provider.dart';
+import 'hall_provider.dart';
 import '../themes/theme_registry.dart';
 import '../constants.dart';
 import '../utils/weighted_rating.dart';
@@ -2264,8 +2265,18 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
             excludedIds.contains(cleanId);
       }
 
-      final discoverParams =
-          DiscoverFilterParams(minVoteCount: _minVoteCountFloor);
+      // LANG-2: pre-filter the discoverMedia() calls server-side; the
+      // getPopularMovies/getTopRatedTvShows calls blended in below can't be
+      // (TMDB's fixed-list endpoints have no content-language filter -- see
+      // the doc comment on _applyHallLanguageLock in repository_provider.dart),
+      // so `filtered` below also re-checks every item's language regardless
+      // of source.
+      final lockedLanguageCode =
+          ref.read(activeHallSpaceProvider).lockedLanguageCode;
+      final discoverParams = DiscoverFilterParams(
+        minVoteCount: _minVoteCountFloor,
+        originalLanguage: lockedLanguageCode,
+      );
       List<MediaItem> newItems = [];
       int attempts = 0;
       
@@ -2300,7 +2311,10 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
             poolMean: poolMean,
             minVotes: _minVotesForFullWeight,
           );
+          final matchesLanguageLock = lockedLanguageCode == null ||
+              item.originalLanguage == lockedLanguageCode;
           return wr >= _weightedRatingThreshold &&
+              matchesLanguageLock &&
               !isExcluded(item) &&
               seen.add(item.id);
         }).toList();

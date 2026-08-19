@@ -170,6 +170,33 @@ class HallNotifier extends Notifier<HallState> {
     } catch (_) {}
   }
 
+  /// LANG-1: Sets or clears a hall's language restriction. Pass `null` for
+  /// both [languageCode] and [languageName] to unlock the hall back to All
+  /// Languages -- HallSpace.copyWith's sentinel pattern makes that an
+  /// explicit clear, not a no-op.
+  Future<void> updateHallLanguage(
+    String hallId,
+    String? languageCode,
+    String? languageName,
+  ) async {
+    final updated = state.halls.map((p) {
+      if (p.id == hallId) {
+        return p.copyWith(
+          lockedLanguageCode: languageCode,
+          lockedLanguageName: languageName,
+        );
+      }
+      return p;
+    }).toList();
+
+    state = state.copyWith(halls: updated);
+
+    final target = updated.firstWhere((p) => p.id == hallId);
+    try {
+      await _storageService.saveHall(_prefs, target);
+    } catch (_) {}
+  }
+
   Future<void> updateActiveHall(HallSpace Function(HallSpace current) updater) async {
     final current = state.activeHall;
     final updatedHall = updater(current);
