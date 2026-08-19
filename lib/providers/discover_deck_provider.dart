@@ -92,6 +92,15 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
   /// meaningfully selective without double-penalizing well-voted titles.
   static const double _weightedRatingThreshold = 6.5;
 
+  /// Hard floor on the title's own raw rating, independent of the weighted
+  /// formula above. WR alone isn't enough as a strict floor: a title with
+  /// very few votes gets pulled *up* toward the pool mean, so a genuinely
+  /// bad (e.g. 1.5-star) title with only a handful of votes could still
+  /// clear [_weightedRatingThreshold] if that day's pool mean happened to
+  /// be high. This is a strict, unconditional cutoff -- nothing rated below
+  /// it is ever allowed into the deck, no matter how few/many votes it has.
+  static const double _minRawRatingFloor = 4.0;
+
   String get _lastManualReloadKey =>
       'the_lounge_last_manual_reload_${isMovies ? 'movies' : 'tv'}';
 
@@ -168,6 +177,7 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
           ref.read(activeHallSpaceProvider).lockedLanguageCode;
       final discoverParams = DiscoverFilterParams(
         minVoteCount: _minVoteCountFloor,
+        minRating: _minRawRatingFloor,
         originalLanguage: lockedLanguageCode,
       );
       List<MediaItem> newItems = [];
@@ -212,7 +222,8 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
           );
           final matchesLanguageLock = lockedLanguageCode == null ||
               item.originalLanguage == lockedLanguageCode;
-          return wr >= _weightedRatingThreshold &&
+          return item.rating >= _minRawRatingFloor &&
+              wr >= _weightedRatingThreshold &&
               matchesLanguageLock &&
               !isExcluded(item) &&
               seen.add(item.id);
