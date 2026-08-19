@@ -161,7 +161,7 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
       // LANG-2: pre-filter the discoverMedia() calls server-side; the
       // getPopularMovies/getTopRatedTvShows calls blended in below can't be
       // (TMDB's fixed-list endpoints have no content-language filter -- see
-      // the doc comment on _applyHallLanguageLock in repository_provider.dart),
+      // the doc comment on fetchLanguageLockedList in repository_provider.dart),
       // so `filtered` below also re-checks every item's language regardless
       // of source.
       final lockedLanguageCode =

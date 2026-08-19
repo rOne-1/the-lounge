@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/media_item.dart';
 import '../constants.dart';
+import '../providers/hall_provider.dart';
 import '../providers/repository_provider.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/media_card.dart';
@@ -74,14 +75,27 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
     });
     try {
       final nextPage = _currentPage + 1;
-      final newItems = await _fetchNextPage(nextPage);
+      final rawItems = await _fetchNextPage(nextPage);
+      // LANG-2 bugfix: the initial itemsProvider fetch enforces a Hall's
+      // language lock (see fetchLanguageLockedList in
+      // repository_provider.dart), but "Load More" here calls the raw
+      // repository directly and was bypassing that filter entirely --
+      // wrong-language items could leak in on page 2+. Apply the same lock.
+      final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
+      final newItems = (lockedLanguageCode != null && lockedLanguageCode.isNotEmpty)
+          ? rawItems.where((e) => e.originalLanguage == lockedLanguageCode).toList()
+          : rawItems;
       if (mounted) {
         final existingIds = _accumulatedItems.map((e) => e.id).toSet();
         final fresh = newItems.where((e) => !existingIds.contains(e.id)).toList();
         setState(() {
-          if (fresh.isEmpty) {
+          if (rawItems.isEmpty) {
+            // TMDB itself is exhausted -- genuinely no more pages.
             _hasMore = false;
           } else {
+            // The raw page had content (all language-filtered out, or all
+            // duplicates, is possible) -- advance so the next tap tries the
+            // following page instead of getting stuck here.
             _currentPage = nextPage;
             _accumulatedItems.addAll(fresh);
           }

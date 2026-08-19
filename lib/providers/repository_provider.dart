@@ -96,30 +96,66 @@ final shouldShowConfigurationErrorProvider = Provider<bool>((ref) {
 /// directly by Discover/Search via [DiscoverFilterParams.originalLanguage]).
 /// So a Hall's language lock is enforced client-side here instead, applied
 /// uniformly to every one of these providers.
-List<MediaItem> _applyHallLanguageLock(List<MediaItem> items, String? lockedLanguageCode) {
-  if (lockedLanguageCode == null || lockedLanguageCode.isEmpty) return items;
-  return items.where((item) => item.originalLanguage == lockedLanguageCode).toList();
+///
+/// LANG-2 bugfix (dev-reported 2026-08-19): a single page's worth of raw
+/// results is often mostly-to-entirely the wrong language once a lock is
+/// active, so naively filtering just page 1 left Lobby rails rendering
+/// near-empty (confirmed live -- a locked-language Hall's "Now Playing"/
+/// "Upcoming" rails dropped to 1-2 items). Mirrors
+/// `DiscoverDeckNotifier.loadPool`'s existing multi-page retry pattern
+/// (`discover_deck_provider.dart`): keep fetching additional pages until
+/// [targetCount] matching items are collected or [maxPages] is hit,
+/// instead of silently truncating to whatever page 1 happened to contain.
+/// No-op (single unfiltered fetch) when no lock is active.
+Future<List<MediaItem>> fetchLanguageLockedList(
+  Future<List<MediaItem>> Function(int page) fetchPage,
+  String? lockedLanguageCode, {
+  int targetCount = 12,
+  int maxPages = 5,
+}) async {
+  if (lockedLanguageCode == null || lockedLanguageCode.isEmpty) {
+    return fetchPage(1);
+  }
+  final collected = <MediaItem>[];
+  final seenIds = <String>{};
+  for (int page = 1; page <= maxPages; page++) {
+    final pageItems = await fetchPage(page);
+    if (pageItems.isEmpty) break;
+    for (final item in pageItems) {
+      if (item.originalLanguage == lockedLanguageCode && seenIds.add(item.id)) {
+        collected.add(item);
+      }
+    }
+    if (collected.length >= targetCount) break;
+  }
+  return collected;
 }
 
 final trendingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getTrendingMovies();
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getTrendingMovies(page: page),
+    lockedLanguageCode,
+  );
 });
 
 final trendingTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getTrendingTvShows();
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getTrendingTvShows(page: page),
+    lockedLanguageCode,
+  );
 });
 
 final popularMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getPopularMovies();
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getPopularMovies(page: page),
+    lockedLanguageCode,
+  );
 });
 
 final mediaDetailsProvider =
@@ -137,44 +173,56 @@ final watchProviderRegionsProvider =
 final topRatedMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getTopRatedMovies();
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getTopRatedMovies(page: page),
+    lockedLanguageCode,
+  );
 });
 
 final topRatedTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getTopRatedTvShows();
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getTopRatedTvShows(page: page),
+    lockedLanguageCode,
+  );
 });
 
 final nowPlayingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final country = ref.watch(mediaProvider.select((s) => s.watchProvidersCountry));
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getNowPlayingMovies(region: country);
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getNowPlayingMovies(page: page, region: country),
+    lockedLanguageCode,
+  );
 });
 
 final airingTodayTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getAiringTodayTvShows();
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getAiringTodayTvShows(page: page),
+    lockedLanguageCode,
+  );
 });
 
 final upcomingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getUpcomingMovies();
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getUpcomingMovies(page: page),
+    lockedLanguageCode,
+  );
 });
 
 final onTheAirTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final items = await repo.getOnTheAirTvShows();
-  return _applyHallLanguageLock(items, lockedLanguageCode);
+  return fetchLanguageLockedList(
+    (page) => repo.getOnTheAirTvShows(page: page),
+    lockedLanguageCode,
+  );
 });
 
 final tvSeasonDetailsProvider =

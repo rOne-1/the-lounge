@@ -32,25 +32,27 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
 
   Future<void> _loadAgenda() async {
     final repo = ref.read(movieRepositoryProvider);
-    final movies = await repo.getTrendingMovies();
-    final tvShows = await repo.getTrendingTvShows();
 
     // LANG-2: getTrendingMovies/getTrendingTvShows have no server-side
-    // content-language filter (see _applyHallLanguageLock's doc comment in
-    // repository_provider.dart), so the Hall's lock is applied client-side
-    // here, same as Lobby's rail providers.
+    // content-language filter (see fetchLanguageLockedList's doc comment in
+    // repository_provider.dart), so the Hall's lock is applied via the same
+    // multi-page-backfill helper Lobby's rail providers use -- a plain
+    // single-page fetch-then-filter left the agenda near-empty for a locked
+    // language with few matches on page 1.
     final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
-    bool matchesLock(MediaItem m) =>
-        lockedLanguageCode == null || m.originalLanguage == lockedLanguageCode;
+    final movies = await fetchLanguageLockedList(
+      (page) => repo.getTrendingMovies(page: page),
+      lockedLanguageCode,
+    );
+    final tvShows = await fetchLanguageLockedList(
+      (page) => repo.getTrendingTvShows(page: page),
+      lockedLanguageCode,
+    );
 
     if (mounted) {
       setState(() {
-        _allMovies = movies
-            .where((m) => m.releaseOrAirDate != null && matchesLock(m))
-            .toList();
-        _allTvShows = tvShows
-            .where((m) => m.releaseOrAirDate != null && matchesLock(m))
-            .toList();
+        _allMovies = movies.where((m) => m.releaseOrAirDate != null).toList();
+        _allTvShows = tvShows.where((m) => m.releaseOrAirDate != null).toList();
         _loading = false;
       });
     }

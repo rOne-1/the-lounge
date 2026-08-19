@@ -64,6 +64,32 @@ class _MixedLanguageRepository extends MockMovieRepository {
   }
 }
 
+/// Dev-reported 2026-08-19: page 1 alone often has too few (or zero)
+/// matches for a locked language, since TMDB's fixed-list endpoints return
+/// one unfiltered page with no server-side language filter -- Lobby's
+/// rails rendered near-empty as a result. This repository puts the only
+/// Hindi ('hi') match on page 3, with pages 1-2 entirely English, so a test
+/// against it only passes if the provider actually backfills across pages
+/// rather than truncating to page 1.
+class _SparseLanguageRepository extends MockMovieRepository {
+  final List<int> requestedPages = [];
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async {
+    requestedPages.add(page);
+    switch (page) {
+      case 1:
+        return [_movie('np-en-1', 'English One', 'en'), _movie('np-en-2', 'English Two', 'en')];
+      case 2:
+        return [_movie('np-en-3', 'English Three', 'en')];
+      case 3:
+        return [_movie('np-hi-1', 'Hindi One', 'hi')];
+      default:
+        return [];
+    }
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -179,6 +205,50 @@ void main() {
       expect((await container.read(popularMoviesProvider.future)).map((m) => m.id), ['en1']);
       expect((await container.read(topRatedMoviesProvider.future)).map((m) => m.id), ['en1']);
       expect((await container.read(upcomingMoviesProvider.future)).map((m) => m.id), ['en1']);
+    });
+
+    test('nowPlayingMoviesProvider backfills across pages when the locked '
+        'language has no matches on page 1 (dev-reported bug, 2026-08-19: '
+        'Lobby rails rendered near-empty for a locked language)', () async {
+      final sparseRepo = _SparseLanguageRepository();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(sparseRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(hallProvider.notifier).updateHallLanguage('common', 'hi', 'Hindi');
+
+      final result = await container.read(nowPlayingMoviesProvider.future);
+      expect(result.map((m) => m.id), ['np-hi-1']);
+      // Confirms it actually paged forward rather than getting lucky --
+      // page 1 alone (the pre-fix behavior) would have returned nothing.
+      // Keeps going past page 3's single match (1 item is far short of the
+      // targetCount default of 12) until page 4 comes back empty and ends
+      // the search via genuine exhaustion, not an early "found one" stop.
+      expect(sparseRepo.requestedPages, [1, 2, 3, 4]);
+    });
+
+    test('nowPlayingMoviesProvider stops paging once the repository genuinely '
+        'exhausts (page returns empty), rather than looping past it', () async {
+      final sparseRepo = _SparseLanguageRepository();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(sparseRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // No language on any page matches 'ko' -- page 4 returns [] and that
+      // should end the search rather than retrying up to maxPages.
+      await container.read(hallProvider.notifier).updateHallLanguage('common', 'ko', 'Korean');
+
+      final result = await container.read(nowPlayingMoviesProvider.future);
+      expect(result, isEmpty);
+      expect(sparseRepo.requestedPages, [1, 2, 3, 4]);
     });
   });
 

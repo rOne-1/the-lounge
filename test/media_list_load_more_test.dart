@@ -6,19 +6,21 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/providers/hall_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/screens/lobby_screen.dart';
 import 'package:the_lounge/screens/media_list_screen.dart';
 
-MediaItem _movie(String id, String title) => MediaItem(
+MediaItem _movie(String id, String title, [String? originalLanguage]) => MediaItem(
       id: id,
       title: title,
       type: MediaType.movie,
       rating: 7.0,
       overview: '',
       genres: const [],
+      originalLanguage: originalLanguage,
     );
 
 /// Captures the `region` argument on every getNowPlayingMovies call and
@@ -67,6 +69,26 @@ class _RegionAwareRepository extends MockMovieRepository {
 
   @override
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => [];
+}
+
+/// Dev-reported 2026-08-19 (related bug found while investigating the
+/// Lobby-rail regression): the initial itemsProvider fetch enforces a
+/// Hall's language lock, but "Load More" called the raw repository
+/// directly and let wrong-language items leak in from page 2 onward.
+/// Page 1 is entirely the locked language; page 2 deliberately mixes in a
+/// wrong-language item so a test only passes if Load More itself filters.
+class _MixedLanguagePagedRepository extends MockMovieRepository {
+  @override
+  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async {
+    switch (page) {
+      case 1:
+        return [_movie('t-hi-1', 'Hindi One', 'hi')];
+      case 2:
+        return [_movie('t-hi-2', 'Hindi Two', 'hi'), _movie('t-en-1', 'English One', 'en')];
+      default:
+        return [];
+    }
+  }
 }
 
 void main() {
@@ -178,5 +200,55 @@ void main() {
 
     expect(find.text('You\'ve reached the end'), findsOneWidget);
     expect(find.textContaining('Load More'), findsNothing);
+  });
+
+  testWidgets(
+      'Load More respects an active Hall language lock instead of leaking '
+      'wrong-language items in from page 2+ (dev-reported bug, 2026-08-19)',
+      (WidgetTester tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final repo = _MixedLanguagePagedRepository();
+
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(repo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(hallProvider.notifier).updateHallLanguage('common', 'hi', 'Hindi');
+
+    // Deliberately a plain single-page FutureProvider here, NOT
+    // trendingMoviesProvider -- that provider's own initial fetch already
+    // backfills across pages (the other bugfix above), which would pull
+    // page 2's Hindi item in before any "Load More" tap and defeat the
+    // point of this test: isolating whether Load More itself, in
+    // isolation, still respects the lock on pages it fetches directly.
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
+            body: MediaListScreen(
+              title: 'Trending',
+              itemsProvider: FutureProvider((ref) => repo.getTrendingMovies()),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hindi One'), findsOneWidget);
+    expect(find.text('Load More (Page 2)'), findsOneWidget);
+
+    await tester.tap(find.text('Load More (Page 2)'));
+    await tester.pumpAndSettle();
+
+    // The English item on page 2 must be filtered out; the Hindi one kept.
+    expect(find.text('Hindi Two'), findsOneWidget);
+    expect(find.text('English One'), findsNothing);
   });
 }
