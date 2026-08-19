@@ -46,6 +46,8 @@ void main() {
       title: 'Inception',
       type: MediaType.movie,
       rating: 8.8,
+      overview: '',
+      genres: ['Sci-Fi'],
     );
 
     test('DomainArchive serialization and bucket lookup', () {

@@ -137,6 +137,7 @@ void main() {
       type: MediaType.movie,
       rating: 8.5,
       overview: '',
+      genres: const ['Action'],
       belongsToCollection: const MediaCollection(id: 2, name: 'Matrix Series'),
       addedDate: DateTime(2024, 1, 1),
     );
@@ -147,6 +148,7 @@ void main() {
       type: MediaType.movie,
       rating: 8.0,
       overview: '',
+      genres: const ['Sci-Fi'],
       belongsToCollection: const MediaCollection(id: 3, name: 'Avatar Saga'),
       addedDate: DateTime(2026, 7, 1),
     );

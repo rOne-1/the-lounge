@@ -241,6 +241,11 @@ class _FloatingNavigationCapsuleState
                   MaterialPageRoute(builder: (context) => const SettingsScreen()),
                 );
               },
+              onProfileSelector: () {
+                HapticFeedback.selectionClick();
+                setState(() => _expanded = false);
+                ProfileSelectorSheet.show(_navigator.context);
+              },
             ),
           ),
         ),
@@ -257,6 +262,7 @@ class _CapsuleBody extends ConsumerWidget {
   final bool? enableAnimation;
   final ValueChanged<AppTab> onSelectTab;
   final VoidCallback onSettings;
+  final VoidCallback onProfileSelector;
 
   const _CapsuleBody({
     required this.expanded,
@@ -266,6 +272,7 @@ class _CapsuleBody extends ConsumerWidget {
     required this.enableAnimation,
     required this.onSelectTab,
     required this.onSettings,
+    required this.onProfileSelector,
   });
 
   @override
@@ -297,14 +304,6 @@ class _CapsuleBody extends ConsumerWidget {
             duration: AppPhysics.houseSpringDuration,
             switchInCurve: AppPhysics.houseSpringCurve,
             switchOutCurve: Curves.easeOut,
-          // Each branch is laid out at its own fixed target size via
-          // OverflowBox, ignoring the outer AnimatedContainer's currently
-          // *animating* width/height constraints -- without this, the
-          // AnimatedContainer hands its child tight constraints matching
-          // whatever size it's mid-animation at (e.g. 152px growing toward
-          // 292px), and the expanded content overflows against that
-          // transient width. The outer container's own clip is what makes
-          // it visually "grow"/"shrink" around whichever child is showing.
           child: expanded
               ? OverflowBox(
                   key: const ValueKey('expanded'),
@@ -319,6 +318,7 @@ class _CapsuleBody extends ConsumerWidget {
                     child: _ExpandedContent(
                       onSelectTab: onSelectTab,
                       onSettings: onSettings,
+                      onProfileSelector: onProfileSelector,
                     ),
                   ),
                 )
@@ -401,10 +401,12 @@ class _CollapsedContent extends ConsumerWidget {
 class _ExpandedContent extends ConsumerWidget {
   final ValueChanged<AppTab> onSelectTab;
   final VoidCallback onSettings;
+  final VoidCallback onProfileSelector;
 
   const _ExpandedContent({
     required this.onSelectTab,
     required this.onSettings,
+    required this.onProfileSelector,
   });
 
   // PERS-NAV-1 / NAME-1: The Lounge leads the list, reflecting its role as the app's
@@ -437,15 +439,16 @@ class _ExpandedContent extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               for (final destination in _destinations)
-                _DestinationPill(
-                  key: ValueKey('floating_nav_tab_${destination.$1.name}'),
-                  isSelected: navState.currentTab == destination.$1,
-                  icon: destination.$3,
-                  label: destination.$2,
-                  onTap: () => onSelectTab(destination.$1),
+                Expanded(
+                  child: _DestinationPill(
+                    key: ValueKey('floating_nav_tab_${destination.$1.name}'),
+                    isSelected: navState.currentTab == destination.$1,
+                    icon: destination.$3,
+                    label: destination.$2,
+                    onTap: () => onSelectTab(destination.$1),
+                  ),
                 ),
             ],
           ),
@@ -468,9 +471,7 @@ class _ExpandedContent extends ConsumerWidget {
                 key: const ValueKey('floating_nav_profile_button'),
                 icon: Icons.person_outline_rounded,
                 label: 'Persona',
-                onTap: () {
-                  ProfileSelectorSheet.show(context);
-                },
+                onTap: onProfileSelector,
               ),
               const SizedBox(width: 8),
               _UtilityAction(
@@ -531,8 +532,8 @@ class _DestinationPill extends StatelessWidget {
           AnimatedContainer(
             duration: AppPhysics.houseSpringDuration,
             curve: AppPhysics.houseSpringCurve,
-            width: 40,
-            height: 40,
+            width: 38,
+            height: 38,
             decoration: BoxDecoration(
               color: isSelected ? ambiance.pill : Colors.transparent,
               shape: BoxShape.circle,
@@ -543,6 +544,9 @@ class _DestinationPill extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: AppThemes.safeGeist(
               fontSize: 9,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -638,6 +642,7 @@ class _UtilityAction extends StatelessWidget {
           opacity: enabled ? 1.0 : 0.45,
           child: Container(
             height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
               color: ambiance.pill,
               border: Border.all(color: ambiance.lineRgba),
@@ -645,15 +650,20 @@ class _UtilityAction extends StatelessWidget {
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: color, size: 15),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: AppThemes.safeGeist(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: color,
+                Icon(icon, color: color, size: 14),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppThemes.safeGeist(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: color,
+                    ),
                   ),
                 ),
               ],

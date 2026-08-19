@@ -50,6 +50,37 @@ class ProfileStorageService {
     return prefs.setString(kLoungeActiveProfileIdKey, profileId);
   }
 
+  /// Loads all profiles from SharedPreferences synchronously.
+  List<ProfileSpace> loadAllProfilesSync(SharedPreferences prefs) {
+    final manifestJson = prefs.getString(kLoungeProfilesManifestKey);
+    List<Map<String, dynamic>> manifestList = [];
+
+    if (manifestJson != null && manifestJson.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(manifestJson);
+        if (decoded is List) {
+          manifestList = decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        }
+      } catch (_) {}
+    }
+
+    if (manifestList.isEmpty) {
+      manifestList = [
+        ProfileSpace.defaultCommon().toJson(),
+        ProfileSpace.defaultCustom1().toJson(),
+        ProfileSpace.defaultCustom2().toJson(),
+      ];
+    }
+
+    final profiles = <ProfileSpace>[];
+    for (final rawMeta in manifestList) {
+      final id = rawMeta['id']?.toString() ?? 'common';
+      final profile = loadProfileSync(prefs, id, defaultMeta: rawMeta);
+      profiles.add(profile);
+    }
+    return profiles;
+  }
+
   /// Loads all profiles from SharedPreferences. Runs migration if needed.
   Future<List<ProfileSpace>> loadAllProfiles(SharedPreferences prefs) async {
     final alreadyMigrated =
@@ -80,20 +111,12 @@ class ProfileStorageService {
       await prefs.setString(kLoungeProfilesManifestKey, jsonEncode(manifestList));
     }
 
-    final profiles = <ProfileSpace>[];
-
-    for (final rawMeta in manifestList) {
-      final id = rawMeta['id']?.toString() ?? 'common';
-      final profile = await loadProfile(prefs, id, defaultMeta: rawMeta);
-      profiles.add(profile);
-    }
-
-    return profiles;
+    return loadAllProfilesSync(prefs);
   }
 
-  /// Loads a single profile with all its partitioned domains.
-  Future<ProfileSpace> loadProfile(SharedPreferences prefs, String profileId,
-      {Map<String, dynamic>? defaultMeta}) async {
+  /// Loads a single profile synchronously.
+  ProfileSpace loadProfileSync(SharedPreferences prefs, String profileId,
+      {Map<String, dynamic>? defaultMeta}) {
     String name = defaultMeta?['name']?.toString() ??
         (profileId == 'common' ? 'Common Space' : 'Persona $profileId');
     String iconKey = defaultMeta?['iconKey']?.toString() ?? 'star';
@@ -162,6 +185,12 @@ class ProfileStorageService {
       customFolders: folders,
       watchHistory: history,
     );
+  }
+
+  /// Loads a single profile with all its partitioned domains.
+  Future<ProfileSpace> loadProfile(SharedPreferences prefs, String profileId,
+      {Map<String, dynamic>? defaultMeta}) async {
+    return loadProfileSync(prefs, profileId, defaultMeta: defaultMeta);
   }
 
   /// Persists a profile space and all its 2D domain archives.

@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
 import '../models/discover_filter_params.dart';
+import '../models/profile_space.dart';
 import '../models/watch_record.dart';
 import '../models/user_folder.dart';
+import '../services/profile_storage_service.dart';
 import 'ambiance_provider.dart';
 import '../themes/theme_registry.dart';
 import '../constants.dart';
@@ -115,48 +117,133 @@ class MediaNotifier extends Notifier<MediaState> {
   static const _seasonEndDatesKey = 'the_lounge_season_end_dates';
   static const _customFoldersKey = 'the_lounge_custom_folders';
 
+  ProfileStorageService get _storageService => ProfileStorageService();
+
   @override
   MediaState build() {
     String initialCountry = 'US';
-    Map<String, MediaItem> watchlist = const {};
-    Map<String, MediaItem> maybeList = const {};
-    Map<String, MediaItem> watchingList = const {};
-    Map<String, MediaItem> watchedList = const {};
-    Map<String, MediaItem> droppedList = const {};
-    Map<String, MediaItem> onHoldList = const {};
-    Map<String, Set<String>> watchedEpisodes = const {};
-    Map<String, List<WatchRecord>> watchHistory = const {};
-    Map<String, DateTime> startDates = const {};
-    Map<String, DateTime> endDates = const {};
-    Map<String, Map<int, DateTime>> seasonStartDates = const {};
-    Map<String, Map<int, DateTime>> seasonEndDates = const {};
-    Map<String, UserFolder> customFolders = const {};
-
     try {
       final prefs = ref.watch(sharedPreferencesProvider);
       final stored = prefs.getString(_watchProvidersCountryKey);
       if (stored != null && stored.isNotEmpty) {
         initialCountry = stored;
       }
-      watchlist = _parseMediaMap(prefs, _watchlistKey);
-      maybeList = _parseMediaMap(prefs, _maybeListKey);
-      watchingList = _parseMediaMap(prefs, _watchingListKey);
-      watchedList = _parseMediaMap(prefs, _watchedListKey);
-      droppedList = _parseMediaMap(prefs, _droppedListKey);
-      onHoldList = _parseMediaMap(prefs, _onHoldListKey);
-      watchedEpisodes = _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
-      watchHistory = _parseWatchHistory(prefs, _watchHistoryKey);
-      startDates = _parseDateMap(prefs, _startDatesKey);
-      endDates = _parseDateMap(prefs, _endDatesKey);
-      seasonStartDates = _parseSeasonDateMap(prefs, _seasonStartDatesKey);
-      seasonEndDates = _parseSeasonDateMap(prefs, _seasonEndDatesKey);
-      customFolders = _parseCustomFolders(prefs, _customFoldersKey);
+      final activeProfileId = _storageService.getActiveProfileId(prefs);
+      return _loadProfileState(prefs, activeProfileId, initialCountry);
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
+      return MediaState(watchProvidersCountry: initialCountry);
+    }
+  }
+
+  MediaState _loadProfileState(SharedPreferences prefs, String profileId, String country) {
+    final movieKey = ProfileStorageService.domainStorageKey(profileId, MediumDomain.movies);
+    final tvKey = ProfileStorageService.domainStorageKey(profileId, MediumDomain.tv);
+    final animeKey = ProfileStorageService.domainStorageKey(profileId, MediumDomain.anime);
+    final foldersKey = ProfileStorageService.profileFoldersKey(profileId);
+    final historyKey = ProfileStorageService.profileHistoryKey(profileId);
+
+    final rawMovie = prefs.getString(movieKey);
+    final rawTv = prefs.getString(tvKey);
+    final rawAnime = prefs.getString(animeKey);
+
+    if (rawMovie != null || rawTv != null || rawAnime != null || profileId != 'common') {
+      DomainArchive parseDomain(String? raw) {
+        if (raw == null || raw.isEmpty) return const DomainArchive();
+        try {
+          return DomainArchive.fromJson(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+        } catch (_) {
+          return const DomainArchive();
+        }
+      }
+
+      final movieArchive = parseDomain(rawMovie);
+      final tvArchive = parseDomain(rawTv);
+      final animeArchive = parseDomain(rawAnime);
+
+      Map<String, MediaItem> combineMaps(Map<String, MediaItem> Function(DomainArchive a) getter) {
+        return {
+          ...getter(movieArchive),
+          ...getter(tvArchive),
+          ...getter(animeArchive),
+        };
+      }
+
+      final watchlist = combineMaps((a) => a.watchlist);
+      final maybeList = combineMaps((a) => a.saved);
+      final watchingList = combineMaps((a) => a.watching);
+      final watchedList = combineMaps((a) => a.watched);
+      final droppedList = combineMaps((a) => a.dropped);
+      final onHoldList = combineMaps((a) => a.onHold);
+
+      final episodes = <String, Set<String>>{
+        ...movieArchive.watchedEpisodes,
+        ...tvArchive.watchedEpisodes,
+        ...animeArchive.watchedEpisodes,
+      };
+
+      final startDates = <String, DateTime>{
+        ...movieArchive.startDates,
+        ...tvArchive.startDates,
+        ...animeArchive.startDates,
+      };
+
+      final endDates = <String, DateTime>{
+        ...movieArchive.endDates,
+        ...tvArchive.endDates,
+        ...animeArchive.endDates,
+      };
+
+      final seasonStartDates = <String, Map<int, DateTime>>{
+        ...movieArchive.seasonStartDates,
+        ...tvArchive.seasonStartDates,
+        ...animeArchive.seasonStartDates,
+      };
+
+      final seasonEndDates = <String, Map<int, DateTime>>{
+        ...movieArchive.seasonEndDates,
+        ...tvArchive.seasonEndDates,
+        ...animeArchive.seasonEndDates,
+      };
+
+      final customFolders = _parseCustomFolders(prefs, foldersKey);
+      final watchHistory = _parseWatchHistory(prefs, historyKey);
+
+      return MediaState(
+        watchProvidersCountry: country,
+        watchlist: watchlist,
+        maybeList: maybeList,
+        watchingList: watchingList,
+        watchedList: watchedList,
+        droppedList: droppedList,
+        onHoldList: onHoldList,
+        watchedEpisodes: episodes,
+        watchHistory: watchHistory,
+        startDates: startDates,
+        endDates: endDates,
+        seasonStartDates: seasonStartDates,
+        seasonEndDates: seasonEndDates,
+        customFolders: customFolders,
+      );
     }
 
+    // Fallback: Legacy un-namespaced keys for common profile
+    final watchlist = _parseMediaMap(prefs, _watchlistKey);
+    final maybeList = _parseMediaMap(prefs, _maybeListKey);
+    final watchingList = _parseMediaMap(prefs, _watchingListKey);
+    final watchedList = _parseMediaMap(prefs, _watchedListKey);
+    final droppedList = _parseMediaMap(prefs, _droppedListKey);
+    final onHoldList = _parseMediaMap(prefs, _onHoldListKey);
+    final watchedEpisodes = _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
+    final watchHistory = _parseWatchHistory(prefs, _watchHistoryKey);
+    final startDates = _parseDateMap(prefs, _startDatesKey);
+    final endDates = _parseDateMap(prefs, _endDatesKey);
+    final seasonStartDates = _parseSeasonDateMap(prefs, _seasonStartDatesKey);
+    final seasonEndDates = _parseSeasonDateMap(prefs, _seasonEndDatesKey);
+    final customFolders = _parseCustomFolders(prefs, _customFoldersKey);
+
     return MediaState(
-      watchProvidersCountry: initialCountry,
+      watchProvidersCountry: country,
       watchlist: watchlist,
       maybeList: maybeList,
       watchingList: watchingList,
@@ -173,43 +260,23 @@ class MediaNotifier extends Notifier<MediaState> {
     );
   }
 
+  Future<void> loadForProfile(String profileId) async {
+    try {
+      final prefs = ref.read(sharedPreferencesProvider);
+      final stored = prefs.getString(_watchProvidersCountryKey);
+      final country = (stored != null && stored.isNotEmpty) ? stored : 'US';
+      state = _loadProfileState(prefs, profileId, country);
+    } catch (_) {}
+  }
+
   Future<void> _loadFromPrefs() async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
-      final watchlist = _parseMediaMap(prefs, _watchlistKey);
-      final maybeList = _parseMediaMap(prefs, _maybeListKey);
-      final watchingList = _parseMediaMap(prefs, _watchingListKey);
-      final watchedList = _parseMediaMap(prefs, _watchedListKey);
-      final droppedList = _parseMediaMap(prefs, _droppedListKey);
-      final onHoldList = _parseMediaMap(prefs, _onHoldListKey);
-      final watchedEpisodes =
-          _parseWatchedEpisodes(prefs, _watchedEpisodesKey);
-      final watchHistory = _parseWatchHistory(prefs, _watchHistoryKey);
-      final startDates = _parseDateMap(prefs, _startDatesKey);
-      final endDates = _parseDateMap(prefs, _endDatesKey);
-      final seasonStartDates =
-          _parseSeasonDateMap(prefs, _seasonStartDatesKey);
-      final seasonEndDates = _parseSeasonDateMap(prefs, _seasonEndDatesKey);
-      final customFolders = _parseCustomFolders(prefs, _customFoldersKey);
-
-      state = state.copyWith(
-        watchlist: watchlist,
-        maybeList: maybeList,
-        watchingList: watchingList,
-        watchedList: watchedList,
-        droppedList: droppedList,
-        onHoldList: onHoldList,
-        watchedEpisodes: watchedEpisodes,
-        watchHistory: watchHistory,
-        startDates: startDates,
-        endDates: endDates,
-        seasonStartDates: seasonStartDates,
-        seasonEndDates: seasonEndDates,
-        customFolders: customFolders,
-      );
-    } catch (_) {
-      // Defensively catch missing SharedPreferences override in unit tests
-    }
+      final activeProfileId = _storageService.getActiveProfileId(prefs);
+      final stored = prefs.getString(_watchProvidersCountryKey);
+      final country = (stored != null && stored.isNotEmpty) ? stored : 'US';
+      state = _loadProfileState(prefs, activeProfileId, country);
+    } catch (_) {}
   }
 
   Future<void> loadFromPrefs() => _loadFromPrefs();
@@ -217,70 +284,65 @@ class MediaNotifier extends Notifier<MediaState> {
   Future<void> _saveToPrefs() async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
+      final activeProfileId = _storageService.getActiveProfileId(prefs);
+
+      Map<String, MediaItem> filterType(Map<String, MediaItem> map, MediaType type) {
+        return Map.fromEntries(map.entries.where((e) => e.value.type == type));
+      }
+
+      final movieArchive = DomainArchive(
+        watchlist: filterType(state.watchlist, MediaType.movie),
+        saved: filterType(state.maybeList, MediaType.movie),
+        watching: filterType(state.watchingList, MediaType.movie),
+        watched: filterType(state.watchedList, MediaType.movie),
+        dropped: filterType(state.droppedList, MediaType.movie),
+        onHold: filterType(state.onHoldList, MediaType.movie),
+        startDates: state.startDates,
+        endDates: state.endDates,
+      );
+
+      final tvArchive = DomainArchive(
+        watchlist: filterType(state.watchlist, MediaType.tv),
+        saved: filterType(state.maybeList, MediaType.tv),
+        watching: filterType(state.watchingList, MediaType.tv),
+        watched: filterType(state.watchedList, MediaType.tv),
+        dropped: filterType(state.droppedList, MediaType.tv),
+        onHold: filterType(state.onHoldList, MediaType.tv),
+        watchedEpisodes: state.watchedEpisodes,
+        startDates: state.startDates,
+        endDates: state.endDates,
+        seasonStartDates: state.seasonStartDates,
+        seasonEndDates: state.seasonEndDates,
+      );
+
+      final movieKey = ProfileStorageService.domainStorageKey(activeProfileId, MediumDomain.movies);
+      final tvKey = ProfileStorageService.domainStorageKey(activeProfileId, MediumDomain.tv);
+      final foldersKey = ProfileStorageService.profileFoldersKey(activeProfileId);
+      final historyKey = ProfileStorageService.profileHistoryKey(activeProfileId);
+
       await Future.wait([
-        prefs.setString(
-          _watchlistKey,
-          jsonEncode(
-              state.watchlist.map((k, v) => MapEntry(k, v.toMinimalJson()))),
-        ),
-        prefs.setString(
-          _maybeListKey,
-          jsonEncode(
-              state.maybeList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
-        ),
-        prefs.setString(
-          _watchingListKey,
-          jsonEncode(
-              state.watchingList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
-        ),
-        prefs.setString(
-          _watchedListKey,
-          jsonEncode(
-              state.watchedList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
-        ),
-        prefs.setString(
-          _droppedListKey,
-          jsonEncode(
-              state.droppedList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
-        ),
-        prefs.setString(
-          _onHoldListKey,
-          jsonEncode(
-              state.onHoldList.map((k, v) => MapEntry(k, v.toMinimalJson()))),
-        ),
-        prefs.setString(
-          _watchedEpisodesKey,
-          jsonEncode(
-            state.watchedEpisodes.map((k, v) => MapEntry(k, v.toList())),
-          ),
-        ),
-        prefs.setString(
-          _watchHistoryKey,
-          jsonEncode(_watchHistoryToJson(state.watchHistory)),
-        ),
-        prefs.setString(
-          _startDatesKey,
-          jsonEncode(_dateMapToJson(state.startDates)),
-        ),
-        prefs.setString(
-          _endDatesKey,
-          jsonEncode(_dateMapToJson(state.endDates)),
-        ),
-        prefs.setString(
-          _seasonStartDatesKey,
-          jsonEncode(_seasonDateMapToJson(state.seasonStartDates)),
-        ),
-        prefs.setString(
-          _seasonEndDatesKey,
-          jsonEncode(_seasonDateMapToJson(state.seasonEndDates)),
-        ),
-        prefs.setString(
-          _customFoldersKey,
-          jsonEncode(_customFoldersToJson(state.customFolders)),
-        ),
+        prefs.setString(movieKey, jsonEncode(movieArchive.toJson())),
+        prefs.setString(tvKey, jsonEncode(tvArchive.toJson())),
+        prefs.setString(foldersKey, jsonEncode(_customFoldersToJson(state.customFolders))),
+        prefs.setString(historyKey, jsonEncode(_watchHistoryToJson(state.watchHistory))),
+        if (activeProfileId == 'common') ...[
+          prefs.setString(_watchlistKey, jsonEncode(state.watchlist.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_maybeListKey, jsonEncode(state.maybeList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_watchingListKey, jsonEncode(state.watchingList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_watchedListKey, jsonEncode(state.watchedList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_droppedListKey, jsonEncode(state.droppedList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_onHoldListKey, jsonEncode(state.onHoldList.map((k, v) => MapEntry(k, v.toMinimalJson())))),
+          prefs.setString(_watchedEpisodesKey, jsonEncode(state.watchedEpisodes.map((k, v) => MapEntry(k, v.toList())))),
+          prefs.setString(_watchHistoryKey, jsonEncode(_watchHistoryToJson(state.watchHistory))),
+          prefs.setString(_startDatesKey, jsonEncode(_dateMapToJson(state.startDates))),
+          prefs.setString(_endDatesKey, jsonEncode(_dateMapToJson(state.endDates))),
+          prefs.setString(_seasonStartDatesKey, jsonEncode(_seasonDateMapToJson(state.seasonStartDates))),
+          prefs.setString(_seasonEndDatesKey, jsonEncode(_seasonDateMapToJson(state.seasonEndDates))),
+          prefs.setString(_customFoldersKey, jsonEncode(_customFoldersToJson(state.customFolders))),
+        ],
       ]);
     } catch (_) {
-      // Defensively catch missing SharedPreferences override or save errors in unit tests
+      // Defensively catch missing SharedPreferences override in unit tests
     }
   }
 

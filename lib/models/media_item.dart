@@ -363,6 +363,7 @@ class MediaItem {
   final String? originalLanguage;
   final List<String>? spokenLanguages;
   final String? status;
+  final DateTime? addedDate;
 
   const MediaItem({
     required this.id,
@@ -403,6 +404,7 @@ class MediaItem {
     this.originalLanguage,
     this.spokenLanguages,
     this.status,
+    this.addedDate,
   });
 
   /// Helper getter returning user-facing display string for original language.
@@ -525,6 +527,7 @@ class MediaItem {
     String? originalLanguage,
     List<String>? spokenLanguages,
     String? status,
+    DateTime? addedDate,
   }) {
     return MediaItem(
       id: id ?? this.id,
@@ -566,20 +569,11 @@ class MediaItem {
       originalLanguage: originalLanguage ?? this.originalLanguage,
       spokenLanguages: spokenLanguages ?? this.spokenLanguages,
       status: status ?? this.status,
+      addedDate: addedDate ?? this.addedDate,
     );
   }
 
   /// Serializes lightweight snapshot of [MediaItem] for local persistence.
-  ///
-  /// Bugfix: previously omitted `genres`/`originalLanguage`/
-  /// `releaseOrAirDate`/`voteCount` entirely, so every item silently lost
-  /// this data on the next app restart (this is the format all 6 status
-  /// piles persist through) -- breaking pile sort-by-release-date (every
-  /// restored item compares as null-vs-null, a no-op), sort-by-rating's
-  /// vote-count weighting, and group-by-genre/-language (restored items
-  /// always landed in "Other"/"Unknown"). Invisible in a single unbroken
-  /// session since fresh MediaItem objects still carry full data in memory;
-  /// only surfaces once state round-trips through SharedPreferences.
   Map<String, dynamic> toMinimalJson() {
     return {
       'id': id,
@@ -590,6 +584,7 @@ class MediaItem {
       'genres': genres,
       'originalLanguage': originalLanguage,
       'releaseOrAirDate': releaseOrAirDate?.toIso8601String(),
+      'addedDate': addedDate?.toIso8601String(),
       'voteCount': voteCount,
       if (belongsToCollection != null) ...{
         'collectionId': belongsToCollection!.id,
@@ -597,6 +592,11 @@ class MediaItem {
       },
     };
   }
+
+  Map<String, dynamic> toJson() => toMinimalJson();
+
+  factory MediaItem.fromJson(Map<String, dynamic> json) =>
+      MediaItem.fromMinimalJson(json);
 
   /// Restores a thin [MediaItem] snapshot from lightweight local persistence JSON.
   factory MediaItem.fromMinimalJson(Map<String, dynamic> json) {
@@ -626,6 +626,10 @@ class MediaItem {
     final releaseDate =
         releaseDateStr != null ? DateTime.tryParse(releaseDateStr) : null;
 
+    final addedDateStr = json['addedDate'] as String?;
+    final addedDate =
+        addedDateStr != null ? DateTime.tryParse(addedDateStr) : null;
+
     final rawTitle = json['title'] as String? ?? json['name'] as String? ?? '';
     final rawPoster = json['posterUrl'] as String? ?? json['poster_path'] as String?;
 
@@ -639,6 +643,7 @@ class MediaItem {
       genres: genresList,
       originalLanguage: json['originalLanguage'] as String? ?? json['original_language'] as String?,
       releaseOrAirDate: releaseDate,
+      addedDate: addedDate,
       voteCount: (json['voteCount'] as num? ?? json['vote_count'] as num?)?.toInt(),
       belongsToCollection: col,
     );

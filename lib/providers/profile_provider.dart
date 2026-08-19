@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/profile_space.dart';
 import '../services/profile_storage_service.dart';
 import 'ambiance_provider.dart';
+import 'media_provider.dart';
 
 final profileStorageServiceProvider = Provider<ProfileStorageService>((ref) {
   return ProfileStorageService();
@@ -52,7 +53,6 @@ class ProfileNotifier extends Notifier<ProfileState> {
 
   @override
   ProfileState build() {
-    // Initial sync load
     List<ProfileSpace> initialProfiles = [
       ProfileSpace.defaultCommon(),
       ProfileSpace.defaultCustom1(),
@@ -63,32 +63,14 @@ class ProfileNotifier extends Notifier<ProfileState> {
     try {
       final prefs = ref.watch(sharedPreferencesProvider);
       activeId = _storageService.getActiveProfileId(prefs);
+      initialProfiles = _storageService.loadAllProfilesSync(prefs);
     } catch (_) {}
-
-    // Asynchronously populate full domain storage
-    Future.microtask(() => _loadInitialData());
 
     return ProfileState(
       activeProfileId: activeId,
       profiles: initialProfiles,
-      isLoading: true,
+      isLoading: false,
     );
-  }
-
-  Future<void> _loadInitialData() async {
-    try {
-      final prefs = ref.read(sharedPreferencesProvider);
-      final activeId = _storageService.getActiveProfileId(prefs);
-      final loadedProfiles = await _storageService.loadAllProfiles(prefs);
-
-      state = state.copyWith(
-        activeProfileId: activeId,
-        profiles: loadedProfiles,
-        isLoading: false,
-      );
-    } catch (_) {
-      state = state.copyWith(isLoading: false);
-    }
   }
 
   Future<void> switchProfile(String profileId) async {
@@ -102,6 +84,7 @@ class ProfileNotifier extends Notifier<ProfileState> {
     state = state.copyWith(activeProfileId: targetProfile.id);
     try {
       await _storageService.saveActiveProfileId(_prefs, targetProfile.id);
+      await ref.read(mediaProvider.notifier).loadForProfile(targetProfile.id);
     } catch (_) {}
   }
 

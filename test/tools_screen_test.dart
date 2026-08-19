@@ -42,7 +42,7 @@ void main() {
       addTearDown(container.dispose);
 
       expect(find.text('Tools'), findsOneWidget);
-      expect(find.text('Keep your space in order'), findsOneWidget);
+      expect(find.text('Keep your lounge in order'), findsOneWidget);
 
       expect(find.text('Rate Titles'), findsOneWidget);
       expect(find.text('Custom Folders'), findsOneWidget);

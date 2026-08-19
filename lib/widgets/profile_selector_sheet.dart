@@ -81,27 +81,29 @@ class ProfileSelectorSheet extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'The Lounge Personas',
-                      style: GoogleFonts.bodoniModa(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w500,
-                        fontStyle: FontStyle.italic,
-                        color: colors.ink,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'The Lounge Personas',
+                        style: GoogleFonts.bodoniModa(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w500,
+                          fontStyle: FontStyle.italic,
+                          color: colors.ink,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Partition your archive and watch habits',
-                      style: AppThemes.safeGeist(
-                        fontSize: 12.5,
-                        color: colors.sub,
+                      const SizedBox(height: 2),
+                      Text(
+                        'Partition your archive and watch habits',
+                        style: AppThemes.safeGeist(
+                          fontSize: 12.5,
+                          color: colors.sub,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),

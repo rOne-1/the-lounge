@@ -1028,7 +1028,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFE53935),
+                  color: context.ambianceColors.danger,
                   borderRadius: BorderRadius.circular(8),
                   boxShadow: const [
                     BoxShadow(

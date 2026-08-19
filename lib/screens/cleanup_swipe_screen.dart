@@ -90,9 +90,7 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
                   border: Border.all(color: colors.lineRgba),
                   boxShadow: [
                     BoxShadow(
-                      color: colors.isDark
-                          ? const Color(0x18000000)
-                          : const Color(0x06000000),
+                      color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),

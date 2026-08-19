@@ -9,12 +9,18 @@ void main() {
         id: '1',
         title: 'Old Movie',
         type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: const ['Drama'],
         addedDate: DateTime(2025, 1, 1),
       );
       final itemNew = MediaItem(
         id: '2',
         title: 'New Movie',
         type: MediaType.movie,
+        rating: 8.0,
+        overview: '',
+        genres: const ['Action'],
         addedDate: DateTime(2026, 5, 20),
       );
 
@@ -28,14 +34,20 @@ void main() {
         id: 'd1',
         title: 'Dune: Part One',
         type: MediaType.movie,
-        collectionName: 'Dune Collection',
+        rating: 8.0,
+        overview: '',
+        genres: const ['Sci-Fi'],
+        belongsToCollection: const MediaCollection(id: 1, name: 'Dune Collection'),
         addedDate: DateTime(2024, 3, 1),
       );
       final dune2 = MediaItem(
         id: 'd2',
         title: 'Dune: Part Two',
         type: MediaType.movie,
-        collectionName: 'Dune Collection',
+        rating: 8.5,
+        overview: '',
+        genres: const ['Sci-Fi'],
+        belongsToCollection: const MediaCollection(id: 1, name: 'Dune Collection'),
         addedDate: DateTime(2026, 8, 1),
       );
 
@@ -48,7 +60,10 @@ void main() {
         id: '10',
         title: 'Interstellar',
         type: MediaType.movie,
-        releaseDate: '2014-11-07',
+        rating: 8.6,
+        overview: '',
+        genres: const ['Sci-Fi'],
+        releaseOrAirDate: DateTime(2014, 11, 7),
       );
 
       final latest = getCollectionLastAdded([item]);

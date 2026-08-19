@@ -1456,7 +1456,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
               decoration: BoxDecoration(
-                color: const Color(0xFFF5C518), // IMDb Yellow
+                color: context.ambianceColors.starRating,
                 borderRadius: BorderRadius.circular(4),
               ),
               child: Text(

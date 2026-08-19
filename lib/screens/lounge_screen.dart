@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../models/media_item.dart';
+import '../models/profile_space.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/profile_provider.dart';
@@ -110,7 +112,7 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
         countForType(mediaState.droppedList) +
         countForType(mediaState.watchedList);
 
-    String domainSubtitle;
+    String domainSubtitle = '$libraryCount titles in the lounge';
     switch (activeDomain) {
       case MediumDomain.movies:
         domainSubtitle = '$libraryCount ${libraryCount == 1 ? "movie" : "movies"} in the lounge';

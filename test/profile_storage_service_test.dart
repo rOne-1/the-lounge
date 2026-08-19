@@ -33,12 +33,16 @@ void main() {
         title: 'Interstellar',
         type: MediaType.movie,
         rating: 8.7,
+        overview: '',
+        genres: ['Sci-Fi'],
       );
       final tv = const MediaItem(
         id: 't-200',
         title: 'Severance',
         type: MediaType.tv,
         rating: 8.9,
+        overview: '',
+        genres: ['Sci-Fi'],
       );
 
       final custom1 = ProfileSpace.defaultCustom1().copyWith(
@@ -68,11 +72,17 @@ void main() {
         id: 'movie-1',
         title: 'The Dark Knight',
         type: MediaType.movie,
+        rating: 9.0,
+        overview: '',
+        genres: ['Action'],
       );
       final legacyTv = const MediaItem(
         id: 'tv-1',
         title: 'Breaking Bad',
         type: MediaType.tv,
+        rating: 9.5,
+        overview: '',
+        genres: ['Drama'],
       );
 
       await prefs.setString(
@@ -107,7 +117,14 @@ void main() {
           domains: {
             MediumDomain.movies: const DomainArchive(
               watchlist: {
-                'm-1': MediaItem(id: 'm-1', title: 'Arrival', type: MediaType.movie),
+                'm-1': MediaItem(
+                  id: 'm-1',
+                  title: 'Arrival',
+                  type: MediaType.movie,
+                  rating: 8.0,
+                  overview: '',
+                  genres: ['Sci-Fi'],
+                ),
               },
             ),
           },
