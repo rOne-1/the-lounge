@@ -99,10 +99,30 @@ class HallNotifier extends Notifier<HallState> {
     try {
       await _storageService.saveActiveHallId(_prefs, targetHall.id);
       await ref.read(mediaProvider.notifier).loadForProfile(targetHall.id);
-      if (targetHall.themeId != null) {
-        await ref.read(ambianceProvider.notifier).setTheme(targetHall.themeId!);
-      }
     } catch (_) {}
+
+    // Discover's deck providers are plain (non-autoDispose) Notifiers that
+    // only ever fetch once, in their own build() -- nothing about mediaProvider
+    // finishing its reload for the new hall makes them re-run on their own.
+    // Left alone, the pool would keep showing the previous hall's candidates
+    // (built from its exclusion set and, since LANG-2, its language lock)
+    // indefinitely. Invalidating forces build() to re-run, which kicks off a
+    // fresh loadPool() against the now-current mediaProvider/hall state.
+    // In its own try/catch, deliberately not sharing one with the theme
+    // switch below: they're independent side effects of a hall switch, and
+    // the theme switch's GoogleFonts/network path failing must never
+    // silently skip the deck refresh (or vice versa) just because they
+    // happened to share a swallowed exception.
+    try {
+      ref.invalidate(discoverMoviesDeckProvider);
+      ref.invalidate(discoverTvDeckProvider);
+    } catch (_) {}
+
+    if (targetHall.themeId != null) {
+      try {
+        await ref.read(ambianceProvider.notifier).setTheme(targetHall.themeId!);
+      } catch (_) {}
+    }
   }
 
   /// Backward compatibility alias for [switchHall].
@@ -195,6 +215,20 @@ class HallNotifier extends Notifier<HallState> {
     try {
       await _storageService.saveHall(_prefs, target);
     } catch (_) {}
+
+    // Same reactivity gap switchHall closes, hit from a different angle:
+    // editing the *active* hall's language lock in place (no hall switch
+    // involved) leaves an already-loaded Discover pool built from the old
+    // lock. Only refresh when the edited hall is actually the active one --
+    // editing a different hall's settings shouldn't touch the deck you're
+    // not even looking at. Own try/catch, independent of the save above, for
+    // the same reason as switchHall's.
+    if (state.activeHallId == hallId) {
+      try {
+        ref.invalidate(discoverMoviesDeckProvider);
+        ref.invalidate(discoverTvDeckProvider);
+      } catch (_) {}
+    }
   }
 
   Future<void> updateActiveHall(HallSpace Function(HallSpace current) updater) async {
