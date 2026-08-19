@@ -760,7 +760,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       ),
                     ),
                   ),
-                  child: ClipRect(
+                  // Isolated in its own compositing layer: this header sits
+                  // inside _PersistentTabView's FadeTransition/ScaleTransition
+                  // (the tab-switch animation wrapping the shell's IndexedStack).
+                  // BackdropFilter composited underneath an animated Opacity/
+                  // Transform ancestor is a known Flutter engine limitation --
+                  // the saveLayer it needs can render fully black and stay that
+                  // way until something forces a full scene re-composite (e.g.
+                  // minimizing/restoring the window). RepaintBoundary forces
+                  // this subtree into its own layer, decoupled from the
+                  // ancestor's animated opacity/scale compositing.
+                  child: RepaintBoundary(
+                    child: ClipRect(
                     child: BackdropFilter(
                       filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
                       child: SafeArea(
@@ -816,6 +827,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           ],
                         ),
                       ),
+                    ),
                     ),
                   ),
                 ),
