@@ -24,6 +24,16 @@ class BingeVelocitySection extends StatelessWidget {
       ..sort((a, b) => a.days.compareTo(b.days));
     final topShows = sorted.take(_maxBars).toList();
 
+    // SP-3: a genuine sub-day average (seasons binged within hours) still
+    // rounds to a misleading bare "0" in days -- switch to hours for that
+    // case instead of silently showing 0.
+    final showAverageInHours = average != null && average < 1;
+    final averageDisplayValue = average == null
+        ? 0
+        : showAverageInHours
+            ? (average * 24).round()
+            : average.round();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -31,10 +41,10 @@ class BingeVelocitySection extends StatelessWidget {
           label: 'Binge Velocity',
           subtitle: average == null
               ? 'Not enough season data yet'
-              : average.round() == 1
-                  ? 'avg. day per season'
-                  : 'avg. days per season',
-          count: average == null ? 0 : average.round(),
+              : showAverageInHours
+                  ? (averageDisplayValue == 1 ? 'avg. hour per season' : 'avg. hours per season')
+                  : (averageDisplayValue == 1 ? 'avg. day per season' : 'avg. days per season'),
+          count: averageDisplayValue,
           icon: Icons.speed_rounded,
           statusColor: colors.acc,
           onTap: () {},

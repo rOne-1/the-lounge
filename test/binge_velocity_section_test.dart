@@ -38,6 +38,28 @@ void main() {
     expect(find.byType(BarChart), findsOneWidget);
   });
 
+  testWidgets(
+      'a genuine sub-day average shows hours instead of a misleading bare "0"',
+      (tester) async {
+    // Regression: a real user's first live test (seasons binged within
+    // hours of each other) rounded to a bare "0" days, which read as
+    // broken even though it was mathematically correct -- SP-3 (honest
+    // math) means switching units, not just showing a technically-true 0.
+    await pump(
+      tester,
+      const BingeVelocity(
+        averageDays: 0.25, // 6 hours
+        perSeason: [
+          ShowBingeVelocity(showId: 'tv_1', showTitle: 'Binged Show', seasonNumber: 1, days: 0.25),
+        ],
+      ),
+    );
+
+    expect(find.text('avg. hours per season'), findsOneWidget);
+    expect(find.text('6'), findsOneWidget);
+    expect(find.text('Not enough season data yet'), findsNothing);
+  });
+
   testWidgets('caps the chart to the 10 fastest binges', (tester) async {
     final perSeason = List.generate(
       15,

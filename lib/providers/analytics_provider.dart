@@ -45,6 +45,14 @@ class AnalyticsNotifier extends Notifier<AnalyticsState> {
   Future<void> generate() async {
     state = state.copyWith(isGenerating: true, clearError: true);
     try {
+      // ANLY-DATA-2: backfill any Watched titles still missing
+      // runtime/cast/director (real for anything marked Watched from a
+      // list/grid card rather than the Detail screen -- TMDB's list
+      // endpoints never include that data) before reading mediaProvider's
+      // state, so Time Investment and Cast/Auteur Constellations reflect
+      // it. Still gated entirely behind this explicit Generate tap (SP-1).
+      await ref.read(mediaProvider.notifier).backfillMissingWatchedMetadata();
+
       final mediaState = ref.read(mediaProvider);
       final input = AnalyticsInput(
         watchedList: mediaState.watchedList,

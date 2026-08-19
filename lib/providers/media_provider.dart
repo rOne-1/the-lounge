@@ -1885,6 +1885,68 @@ class MediaNotifier extends Notifier<MediaState> {
     }
   }
 
+  /// ANLY-DATA-2: backfills `runtime`/`cast`/`director` for Watched titles
+  /// that don't have them yet. This is a real, structural data gap, not a
+  /// bug in ANLY-DATA-1's persistence fix: TMDB's search/discover/popular
+  /// list endpoints never include `runtime`/`credits` in the first place --
+  /// only the full Details endpoint does (see `getMediaDetails` in
+  /// `tmdb_movie_repository.dart`). Any title marked Watched from a list/
+  /// grid card (QuickStatusSheet, Discover swipe) rather than the Detail
+  /// screen genuinely never had this data to persist. Mirrors
+  /// `_enrichWatchedTvShow`'s fire-and-forget fetch-then-patch pattern, but
+  /// runs on demand (called from `AnalyticsNotifier.generate()`, itself
+  /// only ever triggered by an explicit user tap) rather than as an
+  /// always-on background job -- consistent with the Analytics epic's own
+  /// "never computes as a side effect" principle.
+  ///
+  /// [maxItems] bounds how many titles get fetched in one call, so a very
+  /// large library backfills gradually across a few Generate taps instead
+  /// of firing dozens of network requests at once. Already-enriched titles
+  /// are skipped entirely (cheap to re-check on every call).
+  Future<void> backfillMissingWatchedMetadata({int maxItems = 30}) async {
+    final missing = state.watchedList.values
+        .where((item) =>
+            item.runtime == null || item.cast.isEmpty || item.director == null)
+        .take(maxItems)
+        .toList();
+    if (missing.isEmpty) return;
+
+    final repo = ref.read(movieRepositoryProvider);
+    var patchedAny = false;
+    final newWatchedList = Map<String, MediaItem>.from(state.watchedList);
+
+    for (final item in missing) {
+      try {
+        final details = await repo.getMediaDetails(item.prefixedId);
+        if (details == null) continue;
+        // Re-check against the latest state -- the title may have been
+        // unmarked Watched (or already enriched by a concurrent call)
+        // while this fetch was in flight.
+        final current = newWatchedList[item.id];
+        if (current == null) continue;
+        newWatchedList[item.id] = current.copyWith(
+          runtime: current.runtime ?? details.runtime,
+          cast: current.cast.isNotEmpty ? current.cast : details.cast,
+          director: current.director ?? details.director,
+        );
+        patchedAny = true;
+      } catch (e, stack) {
+        developer.log(
+          'Failed to backfill metadata for ${item.id} -- left unenriched '
+          'until a future Generate tap retries it.',
+          name: 'MediaNotifier.backfillMissingWatchedMetadata',
+          error: e,
+          stackTrace: stack,
+        );
+      }
+    }
+
+    if (patchedAny) {
+      state = state.copyWith(watchedList: newWatchedList);
+      await _saveToPrefs();
+    }
+  }
+
   Future<void> _enrichSingleEpisodeWatched(
     String showId,
     int seasonNumber,
