@@ -41,8 +41,19 @@ class AmbianceNotifier extends Notifier<AppTheme> {
     final prefs = ref.read(sharedPreferencesProvider);
     await prefs.setString(_ambianceKey, ambiance.id);
   }
+
+  Future<void> setTheme(String themeId) async {
+    String id = themeId;
+    if (id == 'screeningRoom') id = 'screening_room';
+    if (id == 'readingRoom') id = 'reading_room';
+    if (id == 'violetDusk') id = 'violet_dusk';
+    final theme = getThemeById(id);
+    await setAmbiance(theme);
+  }
 }
 
 final ambianceProvider = NotifierProvider<AmbianceNotifier, AppTheme>(() {
   return AmbianceNotifier();
 });
+
+final themeProvider = ambianceProvider;

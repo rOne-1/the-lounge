@@ -99,6 +99,9 @@ class HallNotifier extends Notifier<HallState> {
     try {
       await _storageService.saveActiveHallId(_prefs, targetHall.id);
       await ref.read(mediaProvider.notifier).loadForProfile(targetHall.id);
+      if (targetHall.themeId != null) {
+        await ref.read(ambianceProvider.notifier).setTheme(targetHall.themeId!);
+      }
     } catch (_) {}
   }
 
@@ -147,6 +150,25 @@ class HallNotifier extends Notifier<HallState> {
   /// Backward compatibility alias for [updateHallIcon].
   Future<void> updateProfileIcon(String profileId, String iconKey) =>
       updateHallIcon(profileId, iconKey);
+
+  Future<void> updateHallTheme(String hallId, String themeId) async {
+    final updated = state.halls.map((p) {
+      if (p.id == hallId) {
+        return p.copyWith(themeId: themeId);
+      }
+      return p;
+    }).toList();
+
+    state = state.copyWith(halls: updated);
+
+    final target = updated.firstWhere((p) => p.id == hallId);
+    try {
+      await _storageService.saveHall(_prefs, target);
+      if (state.activeHallId == hallId) {
+        await ref.read(ambianceProvider.notifier).setTheme(themeId);
+      }
+    } catch (_) {}
+  }
 
   Future<void> updateActiveHall(HallSpace Function(HallSpace current) updater) async {
     final current = state.activeHall;

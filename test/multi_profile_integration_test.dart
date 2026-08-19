@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/profile_space.dart';
@@ -14,6 +15,7 @@ void main() {
   late SharedPreferences prefs;
 
   setUp(() async {
+    GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
   });
@@ -37,7 +39,7 @@ void main() {
       genres: ['Sci-Fi', 'Drama'],
     );
 
-    test('Hermetic profile switching, mutation isolation, and domain partitioning', () async {
+    testWidgets('Hermetic profile switching, mutation isolation, and domain partitioning', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),

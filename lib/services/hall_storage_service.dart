@@ -163,6 +163,10 @@ class HallStorageService {
       } catch (_) {}
     }
 
+    themeId ??= (hallId == 'common'
+        ? 'screening_room'
+        : (hallId == 'custom_1' ? 'midnight_cinema' : 'reading_room'));
+
     // Upgrade old names if still legacy strings
     if (name == 'Common Space' || name == 'Common') {
       name = 'The Grand Hall';

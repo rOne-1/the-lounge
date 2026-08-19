@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/hall_provider.dart';
@@ -10,12 +11,13 @@ void main() {
   late SharedPreferences prefs;
 
   setUp(() async {
+    GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
   });
 
   group('NOMEN-1: HallProvider state management', () {
-    test('initial state loads active common hall and 3 default halls', () async {
+    testWidgets('initial state loads active common hall and 3 default halls', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -29,7 +31,7 @@ void main() {
       expect(state.activeHall.name, 'The Grand Hall');
     });
 
-    test('switchHall updates activeHallId and activeHall getter', () async {
+    testWidgets('switchHall updates activeHallId and activeHall getter', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -45,7 +47,7 @@ void main() {
       expect(state.activeHall.isCommon, isFalse);
     });
 
-    test('renameHall updates hall name in state and persists', () async {
+    testWidgets('renameHall updates hall name in state and persists', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -60,7 +62,7 @@ void main() {
       expect(p2.name, 'Midnight Anime Vault');
     });
 
-    test('updateHallIcon updates iconKey', () async {
+    testWidgets('updateHallIcon updates hall icon in state and persists', (tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -68,11 +70,11 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container.read(hallProvider.notifier).updateHallIcon('custom_1', 'heart');
+      await container.read(hallProvider.notifier).updateHallIcon('custom_1', 'reel');
 
       final state = container.read(hallProvider);
       final p1 = state.halls.firstWhere((p) => p.id == 'custom_1');
-      expect(p1.iconKey, 'heart');
+      expect(p1.iconKey, 'reel');
     });
   });
 }

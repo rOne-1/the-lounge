@@ -545,7 +545,8 @@ class HallSpace {
       name: resolvedName,
       iconKey: resolvedIcon,
       isCommon: isCommon,
-      themeId: json['themeId'] as String?,
+      themeId: json['themeId'] as String? ??
+          (id == 'common' ? 'screening_room' : (id == 'custom_1' ? 'midnight_cinema' : 'reading_room')),
       lockedLanguageCode: json['lockedLanguageCode'] as String?,
       lockedLanguageName: json['lockedLanguageName'] as String?,
       domains: domainMap,
@@ -560,6 +561,7 @@ class HallSpace {
       name: 'The Grand Hall',
       iconKey: 'arch',
       isCommon: true,
+      themeId: 'screening_room',
       domains: {
         MediumDomain.movies: DomainArchive(),
         MediumDomain.tv: DomainArchive(),
@@ -574,6 +576,7 @@ class HallSpace {
       name: 'The Mezzanine Hall',
       iconKey: 'reel',
       isCommon: false,
+      themeId: 'midnight_cinema',
       domains: {
         MediumDomain.movies: DomainArchive(),
         MediumDomain.tv: DomainArchive(),
@@ -588,6 +591,7 @@ class HallSpace {
       name: 'The Private Screening Hall',
       iconKey: 'curtain',
       isCommon: false,
+      themeId: 'reading_room',
       domains: {
         MediumDomain.movies: DomainArchive(),
         MediumDomain.tv: DomainArchive(),

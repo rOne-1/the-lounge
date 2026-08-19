@@ -77,17 +77,17 @@ void main() {
     final editButtons = find.byIcon(Icons.edit_outlined);
     expect(editButtons, findsWidgets);
 
-    await tester.tap(editButtons.first);
+    await tester.tap(editButtons.at(1));
     await tester.pumpAndSettle();
 
-    expect(find.text('Rename Screening Hall'), findsOneWidget);
+    expect(find.text('Customize Screening Hall'), findsOneWidget);
     expect(find.byType(TextField), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'Cinema Vault');
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Rename Screening Hall'), findsNothing);
+    expect(find.text('Customize Screening Hall'), findsNothing);
     final p1 = container.read(hallProvider).halls.firstWhere((p) => p.id == 'custom_1');
     expect(p1.name, 'Cinema Vault');
   });

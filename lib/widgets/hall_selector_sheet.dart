@@ -256,10 +256,25 @@ class HallSelectorSheet extends ConsumerWidget {
 
                         // Action / Active Checkmark
                         if (isActive)
-                          Icon(
-                            Icons.check_circle_rounded,
-                            color: colors.acc,
-                            size: 22,
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  Icons.edit_outlined,
+                                  size: 18,
+                                  color: colors.sub,
+                                ),
+                                onPressed: () => _promptCustomizeHall(context, ref, hall),
+                                splashRadius: 18,
+                              ),
+                              const SizedBox(width: 2),
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: colors.acc,
+                                size: 22,
+                              ),
+                            ],
                           )
                         else
                           IconButton(
@@ -268,7 +283,7 @@ class HallSelectorSheet extends ConsumerWidget {
                               size: 18,
                               color: colors.sub,
                             ),
-                            onPressed: () => _promptRename(context, ref, hall),
+                            onPressed: () => _promptCustomizeHall(context, ref, hall),
                             splashRadius: 18,
                           ),
                       ],
@@ -283,67 +298,156 @@ class HallSelectorSheet extends ConsumerWidget {
     );
   }
 
-  void _promptRename(BuildContext context, WidgetRef ref, HallSpace hall) {
+  void _promptCustomizeHall(BuildContext context, WidgetRef ref, HallSpace hall) {
     final textController = TextEditingController(text: hall.name);
+    String selectedThemeId = hall.themeId ??
+        (hall.id == 'common' ? 'screening_room' : (hall.id == 'custom_1' ? 'midnight_cinema' : 'reading_room'));
     final colors = context.ambianceColors;
 
     showDialog<void>(
       context: context,
       builder: (dialogCtx) {
-        return AlertDialog(
-          backgroundColor: colors.card,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-            side: BorderSide(color: colors.lineRgba),
-          ),
-          title: Text(
-            'Rename Screening Hall',
-            style: GoogleFonts.bodoniModa(
-              fontSize: 20,
-              fontStyle: FontStyle.italic,
-              color: colors.ink,
-            ),
-          ),
-          content: TextField(
-            controller: textController,
-            autofocus: true,
-            style: AppThemes.safeGeist(color: colors.ink),
-            decoration: InputDecoration(
-              hintText: 'Enter name',
-              hintStyle: AppThemes.safeGeist(color: colors.sub),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.lineRgba),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              backgroundColor: colors.card,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: colors.lineRgba),
               ),
-              focusedBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: colors.acc),
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(),
-              child: Text(
-                'Cancel',
-                style: AppThemes.safeGeist(color: colors.sub),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                final newName = textController.text.trim();
-                if (newName.isNotEmpty) {
-                  ref.read(hallProvider.notifier).renameHall(hall.id, newName);
-                }
-                Navigator.of(dialogCtx).pop();
-              },
-              child: Text(
-                'Save',
-                style: AppThemes.safeGeist(
-                  color: colors.acc,
-                  fontWeight: FontWeight.w600,
+              title: Text(
+                'Customize Screening Hall',
+                style: GoogleFonts.bodoniModa(
+                  fontSize: 20,
+                  fontStyle: FontStyle.italic,
+                  color: colors.ink,
                 ),
               ),
-            ),
-          ],
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'HALL NAME',
+                      style: AppThemes.safeGeist(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: colors.sub,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: textController,
+                      autofocus: true,
+                      style: AppThemes.safeGeist(color: colors.ink),
+                      decoration: InputDecoration(
+                        hintText: 'Enter name',
+                        hintStyle: AppThemes.safeGeist(color: colors.sub),
+                        enabledBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: colors.lineRgba),
+                        ),
+                        focusedBorder: UnderlineInputBorder(
+                          borderSide: BorderSide(color: colors.acc),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      'HALL AMBIANCE THEME',
+                      style: AppThemes.safeGeist(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                        color: colors.sub,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: allThemes.map((theme) {
+                        final isThemeSelected = theme.id == selectedThemeId;
+                        return PressableScale(
+                          onTap: () {
+                            setDialogState(() {
+                              selectedThemeId = theme.id;
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isThemeSelected
+                                  ? colors.acc.withValues(alpha: 0.15)
+                                  : colors.base,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isThemeSelected ? colors.acc : colors.lineRgba,
+                                width: isThemeSelected ? 1.5 : 1.0,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  width: 14,
+                                  height: 14,
+                                  decoration: BoxDecoration(
+                                    color: theme.colors.acc,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: theme.colors.ink.withValues(alpha: 0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  theme.displayName,
+                                  style: AppThemes.safeGeist(
+                                    fontSize: 11.5,
+                                    fontWeight: isThemeSelected ? FontWeight.w600 : FontWeight.w400,
+                                    color: colors.ink,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogCtx).pop(),
+                  child: Text(
+                    'Cancel',
+                    style: AppThemes.safeGeist(color: colors.sub),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    final newName = textController.text.trim();
+                    if (newName.isNotEmpty) {
+                      ref.read(hallProvider.notifier).renameHall(hall.id, newName);
+                    }
+                    ref.read(hallProvider.notifier).updateHallTheme(hall.id, selectedThemeId);
+                    Navigator.of(dialogCtx).pop();
+                  },
+                  child: Text(
+                    'Save',
+                    style: AppThemes.safeGeist(
+                      color: colors.acc,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
