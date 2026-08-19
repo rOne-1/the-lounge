@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../models/hall_space.dart';
+import '../models/media_item.dart';
 import '../providers/hall_provider.dart';
+import '../providers/media_provider.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'pressable_scale.dart';
 
-/// PROF-3 / NOMEN-1: Bottom sheet for selecting, renaming, and managing Screening Halls.
+/// PROF-3 / NOMEN-1 / FIX-2: Bottom sheet for selecting, renaming, and managing Screening Halls.
 class HallSelectorSheet extends ConsumerWidget {
   const HallSelectorSheet({super.key});
 
@@ -52,8 +54,12 @@ class HallSelectorSheet extends ConsumerWidget {
     final colors = context.ambianceColors;
     final isDark = colors.isDark;
     final hallState = ref.watch(hallProvider);
+    final mediaState = ref.watch(mediaProvider);
     final halls = hallState.halls;
     final activeId = hallState.activeHallId;
+
+    int countForType(Map<String, dynamic> itemsMap, MediaType targetType) =>
+        itemsMap.values.where((m) => m is MediaItem && m.type == targetType).length;
 
     return DragToDismissSheet(
       isDark: isDark,
@@ -125,13 +131,26 @@ class HallSelectorSheet extends ConsumerWidget {
               final isActive = hall.id == activeId;
               final icon = _iconFor(hall.iconKey);
 
-              final movieCount = hall.domainArchive(MediumDomain.movies).totalCount;
-              final tvCount = hall.domainArchive(MediumDomain.tv).totalCount;
-              final totalCount = movieCount + tvCount;
+              final movieCount = isActive
+                  ? (countForType(mediaState.watchlist, MediaType.movie) +
+                      countForType(mediaState.maybeList, MediaType.movie) +
+                      countForType(mediaState.watchingList, MediaType.movie) +
+                      countForType(mediaState.onHoldList, MediaType.movie) +
+                      countForType(mediaState.droppedList, MediaType.movie) +
+                      countForType(mediaState.watchedList, MediaType.movie))
+                  : hall.domainArchive(MediumDomain.movies).totalCount;
 
-              final subtitleText = hall.isCommon
-                  ? 'Main Lounge · $totalCount saved'
-                  : '$movieCount ${movieCount == 1 ? "movie" : "movies"} · $tvCount ${tvCount == 1 ? "show" : "shows"}';
+              final tvCount = isActive
+                  ? (countForType(mediaState.watchlist, MediaType.tv) +
+                      countForType(mediaState.maybeList, MediaType.tv) +
+                      countForType(mediaState.watchingList, MediaType.tv) +
+                      countForType(mediaState.onHoldList, MediaType.tv) +
+                      countForType(mediaState.droppedList, MediaType.tv) +
+                      countForType(mediaState.watchedList, MediaType.tv))
+                  : hall.domainArchive(MediumDomain.tv).totalCount;
+
+              final subtitleText =
+                  '$movieCount ${movieCount == 1 ? "movie" : "movies"} · $tvCount ${tvCount == 1 ? "show" : "shows"}';
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10.0),

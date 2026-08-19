@@ -8,10 +8,11 @@ import '../constants.dart';
 import '../providers/ambiance_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/media_provider.dart';
+import '../providers/hall_provider.dart';
 import '../screens/settings_screen.dart';
 import 'ambient_glow.dart';
 import 'pressable_scale.dart';
-import 'profile_selector_sheet.dart';
+import 'hall_selector_sheet.dart';
 
 /// IA-1/NAV-3: the single floating, draggable, edge-snapping navigation
 /// capsule that replaces ShellScreen's fixed top bar and bottom nav bar.
@@ -420,9 +421,35 @@ class _ExpandedContent extends ConsumerWidget {
     (AppTab.calendar, 'Calendar', Icons.calendar_today_outlined),
   ];
 
+  static IconData _iconForHall(String iconKey) {
+    switch (iconKey) {
+      case 'arch':
+        return Icons.meeting_room_rounded;
+      case 'reel':
+        return Icons.movie_filter_rounded;
+      case 'curtain':
+        return Icons.auto_awesome_rounded;
+      case 'star':
+        return Icons.star_rounded;
+      case 'sparkles':
+        return Icons.auto_awesome_rounded;
+      case 'popcorn':
+        return Icons.movie_filter_rounded;
+      case 'heart':
+        return Icons.favorite_rounded;
+      case 'tv':
+        return Icons.tv_rounded;
+      case 'movie':
+        return Icons.local_movies_rounded;
+      default:
+        return Icons.theater_comedy_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final navState = ref.watch(navigationProvider);
+    final activeHall = ref.watch(activeHallSpaceProvider);
     final notifier = ref.read(navigationProvider.notifier);
     final ambiance = context.ambianceColors;
 
@@ -469,8 +496,8 @@ class _ExpandedContent extends ConsumerWidget {
             children: [
               _UtilityAction(
                 key: const ValueKey('floating_nav_profile_button'),
-                icon: Icons.person_outline_rounded,
-                label: 'Persona',
+                icon: _iconForHall(activeHall.iconKey),
+                label: activeHall.name,
                 onTap: onProfileSelector,
               ),
               const SizedBox(width: 8),
@@ -655,14 +682,20 @@ class _UtilityAction extends StatelessWidget {
                 Icon(icon, color: color, size: 14),
                 const SizedBox(width: 4),
                 Flexible(
-                  child: Text(
-                    label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppThemes.safeGeist(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      color: color,
+                  child: AnimatedSwitcher(
+                    duration: AppPhysics.houseSpringDuration,
+                    switchInCurve: AppPhysics.houseSpringCurve,
+                    switchOutCurve: Curves.easeOut,
+                    child: Text(
+                      label,
+                      key: ValueKey(label),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppThemes.safeGeist(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: color,
+                      ),
                     ),
                   ),
                 ),

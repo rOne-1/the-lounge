@@ -9,9 +9,10 @@ import 'package:the_lounge/main.dart';
 import 'package:the_lounge/screens/shell_screen.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
-import 'package:the_lounge/widgets/profile_selector_sheet.dart';
+import 'package:the_lounge/widgets/hall_selector_sheet.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
+import 'package:the_lounge/providers/hall_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 
@@ -143,7 +144,7 @@ void main() {
     expect(find.byType(SettingsScreen), findsOneWidget);
   });
 
-  testWidgets('persona shortcut in the expanded capsule opens ProfileSelectorSheet',
+  testWidgets('hall shortcut in the expanded capsule opens HallSelectorSheet and displays active hall name',
       (tester) async {
     final container = await pumpShell(tester);
     addTearDown(container.dispose);
@@ -152,10 +153,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('floating_nav_profile_button')), findsOneWidget);
+    expect(find.text('The Grand Hall'), findsOneWidget);
+
     await tester.tap(find.byKey(const ValueKey('floating_nav_profile_button')));
     await tester.pumpAndSettle();
 
     expect(find.byType(ProfileSelectorSheet), findsOneWidget);
+  });
+
+  testWidgets('FIX-1: capsule dynamically updates active hall name upon hall switch',
+      (tester) async {
+    final container = await pumpShell(tester);
+    addTearDown(container.dispose);
+
+    await tester.tap(capsuleFinder);
+    await tester.pumpAndSettle();
+    expect(find.text('The Grand Hall'), findsOneWidget);
+
+    // Switch to Mezzanine Hall
+    await container.read(hallProvider.notifier).switchHall('custom_1');
+    await tester.pumpAndSettle();
+
+    expect(find.text('The Mezzanine Hall'), findsOneWidget);
   });
 
   testWidgets('dragging the capsule and releasing snaps it to the nearest screen edge',
