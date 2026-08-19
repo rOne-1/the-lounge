@@ -3,15 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/media_item.dart';
 import '../models/hall_space.dart';
+import '../providers/analytics_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/hall_provider.dart';
 import '../constants.dart';
 import '../widgets/ambient_glow.dart';
+import '../widgets/analytics_hero_card.dart';
 import '../widgets/lounge_doorway_emblem.dart';
 import '../widgets/memory_moments_section.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/hall_selector_sheet.dart';
+import 'analytics_screen.dart';
 import 'archive_screen.dart';
 import 'tools_screen.dart';
 import 'settings_screen.dart';
@@ -270,6 +273,15 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 14),
+
+              // 3b. Analytics Hero Banner (ANLY-HUB-1) -- the third of the
+              // app's "3 Cores", so it gets a full-width hero entry rather
+              // than being squeezed into the 4-card dock above.
+              AnalyticsHeroCard(
+                generatedAt: ref.watch(analyticsProvider).generatedAt,
+                onTap: () => _push(context, const AnalyticsScreen()),
               ),
               const SizedBox(height: 36),
 

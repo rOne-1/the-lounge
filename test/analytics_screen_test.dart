@@ -1,0 +1,174 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:the_lounge/providers/ambiance_provider.dart';
+import 'package:the_lounge/providers/analytics_provider.dart';
+import 'package:the_lounge/screens/analytics_screen.dart';
+import 'package:the_lounge/utils/analytics_engine.dart';
+
+// Note on strategy: the actual generate()/compute() round-trip (does it
+// populate result/generatedAt correctly, does regeneration overwrite the
+// previous result) is already covered end-to-end in
+// analytics_provider_test.dart, via plain test() bodies that await the
+// real isolate directly -- fast and reliable there. Combining a real
+// compute() isolate with testWidgets()/pumpAndSettle() is a known bad mix
+// (a CircularProgressIndicator's perpetual animation makes pumpAndSettle()
+// never settle regardless of whether the isolate has actually finished,
+// and this session's attempt at tester.runAsync() + a polling loop hung
+// indefinitely rather than completing). So this file tests the screen in
+// isolation from real async work: idle state, that tapping Generate/
+// Regenerate transitions into the loading state (proving the UI is wired
+// to the real notifier), and that the results state renders correctly
+// given an already-populated AnalyticsState (injected directly via a
+// provider override, bypassing compute() entirely).
+void main() {
+  setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  Future<SharedPreferences> mockPrefs() async {
+    SharedPreferences.setMockInitialValues({});
+    return SharedPreferences.getInstance();
+  }
+
+  group('ANLY-HUB-2: idle state (SP-1)', () {
+    testWidgets('shows the Generate button and no chart content on open', (tester) async {
+      final prefs = await mockPrefs();
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: AnalyticsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Generate Analytics'), findsOneWidget);
+      expect(find.text('Ready when you are'), findsOneWidget);
+      expect(find.text('Temporal'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+  });
+
+  group('ANLY-HUB-2: generation flow (UI wiring)', () {
+    testWidgets('tapping Generate transitions into the loading state', (tester) async {
+      final prefs = await mockPrefs();
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: AnalyticsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Generate Analytics'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      expect(container.read(analyticsProvider).isGenerating, isTrue);
+    });
+
+    testWidgets('tapping Regenerate transitions back into the loading state', (tester) async {
+      final prefs = await mockPrefs();
+      final seeded = AnalyticsState(
+        result: const AnalyticsResult(
+          heatmap: HeatmapData({}),
+          timeInvestment: TimeInvestment(movieMinutes: 0, tvMinutes: 0),
+          bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
+          castRanking: [],
+          directorRanking: [],
+          ratingDivergence: [],
+          genreFrequency: {},
+        ),
+        generatedAt: DateTime(2026, 1, 1),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          analyticsProvider.overrideWith(() => _SeededNotifier(seeded)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: AnalyticsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Regenerate'), findsOneWidget);
+
+      await tester.tap(find.text('Regenerate'));
+      await tester.pump();
+
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+    });
+  });
+
+  group('ANLY-HUB-2: results state rendering', () {
+    testWidgets('renders Temporal section content from a seeded AnalyticsResult', (tester) async {
+      final prefs = await mockPrefs();
+      final seeded = AnalyticsState(
+        result: const AnalyticsResult(
+          heatmap: HeatmapData({}),
+          timeInvestment: TimeInvestment(movieMinutes: 120, tvMinutes: 270),
+          bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
+          castRanking: [],
+          directorRanking: [],
+          ratingDivergence: [],
+          genreFrequency: {},
+        ),
+        generatedAt: DateTime(2026, 1, 1),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          analyticsProvider.overrideWith(() => _SeededNotifier(seeded)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: AnalyticsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Generate Analytics'), findsNothing);
+      expect(find.byType(CircularProgressIndicator), findsNothing);
+      expect(find.text('Temporal'), findsOneWidget);
+      expect(find.text('Movies'), findsOneWidget);
+      expect(find.text('TV Shows'), findsOneWidget);
+      expect(find.text('2 hours watched'), findsOneWidget);
+      expect(find.text('~5 hours watched (estimate)'), findsOneWidget);
+    });
+  });
+}
+
+/// Test-only notifier that starts with a fixed [AnalyticsState] instead of
+/// the real idle default, so results-state rendering can be tested without
+/// going through a real compute() isolate. generate() still delegates to
+/// the real implementation (unused by these tests, but kept real rather
+/// than stubbed in case a future test wants it).
+class _SeededNotifier extends AnalyticsNotifier {
+  final AnalyticsState seeded;
+  _SeededNotifier(this.seeded);
+
+  @override
+  AnalyticsState build() => seeded;
+}

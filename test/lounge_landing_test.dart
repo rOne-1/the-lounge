@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/lounge_screen.dart';
+import 'package:the_lounge/screens/analytics_screen.dart';
 import 'package:the_lounge/screens/archive_screen.dart';
 import 'package:the_lounge/screens/tools_screen.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
@@ -125,6 +126,21 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(SettingsScreen), findsOneWidget);
+    });
+  });
+
+  group('ANLY-HUB-1: Analytics hero banner', () {
+    testWidgets('renders below the dock and pushes AnalyticsScreen on tap', (tester) async {
+      final container = await pumpLounge(tester);
+      addTearDown(container.dispose);
+
+      expect(find.text('Analytics'), findsOneWidget);
+      expect(find.text('Discover your watching habits'), findsOneWidget);
+
+      await tapDockCard(tester, 'Analytics');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AnalyticsScreen), findsOneWidget);
     });
   });
 }
