@@ -11,6 +11,7 @@ import '../providers/media_provider.dart';
 import '../screens/settings_screen.dart';
 import 'ambient_glow.dart';
 import 'pressable_scale.dart';
+import 'profile_selector_sheet.dart';
 
 /// IA-1/NAV-3: the single floating, draggable, edge-snapping navigation
 /// capsule that replaces ShellScreen's fixed top bar and bottom nav bar.
@@ -389,7 +390,7 @@ class _CollapsedContent extends ConsumerWidget {
         return Icons.style_outlined;
       case AppTab.search:
         return Icons.search;
-      case AppTab.yourSpace:
+      case AppTab.lounge:
         return Icons.bookmark_outline;
       case AppTab.calendar:
         return Icons.calendar_today_outlined;
@@ -406,11 +407,11 @@ class _ExpandedContent extends ConsumerWidget {
     required this.onSettings,
   });
 
-  // PERS-NAV-1: Your Space leads the list, reflecting its role as the app's
+  // PERS-NAV-1 / NAME-1: The Lounge leads the list, reflecting its role as the app's
   // navigation anchor (default startup tab, and where back-navigation from
   // every other tab lands).
   static const _destinations = [
-    (AppTab.yourSpace, 'Space', Icons.bookmark_outline),
+    (AppTab.lounge, 'Lounge', Icons.bookmark_outline),
     (AppTab.lobby, 'Lobby', Icons.theaters_outlined),
     (AppTab.discover, 'Discover', Icons.style_outlined),
     (AppTab.search, 'Search', Icons.search),
@@ -464,12 +465,21 @@ class _ExpandedContent extends ConsumerWidget {
           Row(
             children: [
               _UtilityAction(
+                key: const ValueKey('floating_nav_profile_button'),
+                icon: Icons.person_outline_rounded,
+                label: 'Persona',
+                onTap: () {
+                  ProfileSelectorSheet.show(context);
+                },
+              ),
+              const SizedBox(width: 8),
+              _UtilityAction(
                 key: const ValueKey('floating_nav_settings_button'),
                 icon: Icons.settings_outlined,
                 label: 'Settings',
                 onTap: onSettings,
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               _UtilityAction(
                 key: const ValueKey('floating_nav_undo_button'),
                 icon: Icons.undo,

@@ -9,6 +9,7 @@ import 'package:the_lounge/main.dart';
 import 'package:the_lounge/screens/shell_screen.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/screens/discover_screen.dart';
+import 'package:the_lounge/widgets/profile_selector_sheet.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
@@ -90,7 +91,7 @@ void main() {
     expect(find.byKey(const ValueKey('floating_nav_tab_lobby')), findsOneWidget);
     expect(find.byKey(const ValueKey('floating_nav_tab_discover')), findsOneWidget);
     expect(find.byKey(const ValueKey('floating_nav_tab_search')), findsOneWidget);
-    expect(find.byKey(const ValueKey('floating_nav_tab_yourSpace')), findsOneWidget);
+    expect(find.byKey(const ValueKey('floating_nav_tab_lounge')), findsOneWidget);
     expect(find.byKey(const ValueKey('floating_nav_tab_calendar')), findsOneWidget);
     expect(find.text('Movies'), findsOneWidget);
     expect(find.text('TV'), findsOneWidget);
@@ -140,6 +141,21 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(SettingsScreen), findsOneWidget);
+  });
+
+  testWidgets('persona shortcut in the expanded capsule opens ProfileSelectorSheet',
+      (tester) async {
+    final container = await pumpShell(tester);
+    addTearDown(container.dispose);
+
+    await tester.tap(capsuleFinder);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('floating_nav_profile_button')), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('floating_nav_profile_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProfileSelectorSheet), findsOneWidget);
   });
 
   testWidgets('dragging the capsule and releasing snaps it to the nearest screen edge',
