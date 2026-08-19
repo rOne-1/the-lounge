@@ -125,6 +125,8 @@ local-notes/
 # Agent/tooling-local files -- not tracked deliverables
 CLAUDE.md
 PRODUCT.md
+.claude/
+.impeccable/
 
 # Environment variables
 .env
