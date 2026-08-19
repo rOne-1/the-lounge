@@ -28,11 +28,11 @@ the other missing docs) into `/documentation` properly.
 **`/local-notes`** (gitignored) holds working material, not tracked deliverables:
 - `development_rules_for_antigravity.md` — universal dev rules (see below,
   mostly still relevant even though it's Antigravity-branded)
-- `the_lounge_multi_profile_medium_partitioned_triage.md` — **the CURRENT MASTER
-  SOURCE OF TRUTH for active work.** The Multi-Profile & Medium-Partitioned Architecture
-  sprint triage report (5 packages: Terminology/Lounge naming refactor, 2D Partitioned
-  ProfileSpace engine & ProfileStorageService, Medium-reactive counts & pluralization,
-  Watched Collections "Last Added" sorting, and smooth search top bar animation).
+- `the_lounge_hall_architecture_and_customization_triage.md` — **the CURRENT MASTER
+  SOURCE OF TRUTH for active work.** The Hall Architecture, Shelves & Personalization
+  sprint triage report (4 packages: Luxury Nomenclature refactor [Persona->Hall,
+  Buckets->Shelves], Nav pill dynamic Hall name, Selector sheet reactive count fix,
+  Per-Hall theme auto-switching, and Per-Hall locked language restriction filter engine).
 - `the_lounge_uiux_and_animation_master_audit.md` — the master UI/UX & motion
   audit baseline establishing the benchmark architecture and quality bar.
 - `outstanding_issues_notepad.md` — **still lives at the top level, still
@@ -40,7 +40,7 @@ the other missing docs) into `/documentation` properly.
   new work).
 - `completed pile/` — archive of fully completed/reviewed triage sprints,
   including prior bug, UI/UX, IA-1 floating nav, systems sweeps, Personalization
-  Epic, Your Space Redesign, and Multi-Issue Reliability/UX Polish.
+  Epic, Your Space Redesign, Multi-Issue Polish, and Multi-Profile Partitioning.
 - `architecture/` — system architecture doc + Mermaid diagrams (see note
   above — this is the real architecture doc, `/documentation` is not).
 
@@ -176,8 +176,9 @@ Small, easily-reversible technical calls can just be made and noted inline.
 
 ## Where to start
 
-1. Read `local-notes/the_lounge_multi_profile_medium_partitioned_triage.md` for current
-   active priorities, architectural specifications, naming conventions, and sprint packages.
+1. Read `local-notes/the_lounge_hall_architecture_and_customization_triage.md` for current
+   active priorities, luxury screening room nomenclature, architectural specifications,
+   and sprint packages.
 2. Check `local-notes/outstanding_issues_notepad.md` (top level, still
    active) for known residual issues near whatever you're about to
    touch.

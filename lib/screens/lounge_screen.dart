@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../models/media_item.dart';
-import '../models/profile_space.dart';
+import '../models/hall_space.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../providers/profile_provider.dart';
+import '../providers/hall_provider.dart';
 import '../constants.dart';
 import '../widgets/ambient_glow.dart';
 import '../widgets/lounge_doorway_emblem.dart';
 import '../widgets/memory_moments_section.dart';
 import '../widgets/pressable_scale.dart';
-import '../widgets/profile_selector_sheet.dart';
+import '../widgets/hall_selector_sheet.dart';
 import 'archive_screen.dart';
 import 'tools_screen.dart';
 import 'settings_screen.dart';
@@ -45,6 +45,12 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
 
   IconData _iconFor(String iconKey) {
     switch (iconKey) {
+      case 'arch':
+        return Icons.meeting_room_rounded;
+      case 'reel':
+        return Icons.movie_filter_rounded;
+      case 'curtain':
+        return Icons.auto_awesome_rounded;
       case 'star':
         return Icons.star_rounded;
       case 'sparkles':
@@ -58,7 +64,7 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
       case 'movie':
         return Icons.local_movies_rounded;
       default:
-        return Icons.person_rounded;
+        return Icons.theater_comedy_rounded;
     }
   }
 
@@ -86,8 +92,8 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
   @override
   Widget build(BuildContext context) {
     final mediaState = ref.watch(mediaProvider);
-    final profileState = ref.watch(profileProvider);
-    final activeProfile = profileState.activeProfile;
+    final hallState = ref.watch(hallProvider);
+    final activeHall = hallState.activeHall;
     final colors = context.ambianceColors;
     final mediaQuery = MediaQuery.of(context);
     final isLarge = mediaQuery.size.width >= 600;
@@ -139,10 +145,10 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 8),
-              // Persona Switcher Pill
+              // Hall Switcher Pill
               PressableScale(
-                key: const ValueKey('lounge_persona_pill'),
-                onTap: () => ProfileSelectorSheet.show(context),
+                key: const ValueKey('lounge_hall_pill'),
+                onTap: () => HallSelectorSheet.show(context),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
@@ -154,13 +160,13 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        _iconFor(activeProfile.iconKey),
+                        _iconFor(activeHall.iconKey),
                         size: 14,
                         color: colors.acc,
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        activeProfile.name,
+                        activeHall.name,
                         style: AppThemes.safeGeist(
                           fontSize: 12.0,
                           fontWeight: FontWeight.w600,

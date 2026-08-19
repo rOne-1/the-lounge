@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
-import '../models/profile_space.dart';
+import '../models/hall_space.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../widgets/dashed_border_card.dart';
@@ -12,8 +12,8 @@ import '../widgets/pressable_scale.dart';
 import '../widgets/watching_hero_card.dart';
 import 'archive_bucket_screen.dart';
 
-/// YSR-HUB-1 / COUNT-1 / COUNT-2: The Archive Hub - a dedicated status
-/// hub providing access to all 6 status buckets (Watching, Watched, Watchlist,
+/// YSR-HUB-1 / COUNT-1 / COUNT-2 / NOMEN-2: The Archive Hub - a dedicated screening
+/// hub providing access to all 6 archive shelves (Watching, Watched, Watchlist,
 /// Saved, On-Hold, Dropped). Built with luxury status gradients, squircle icon
 /// badges, large Bodoni Moda italic count numerals, dynamic medium-reactive counts,
 /// and contextual pluralization per active domain (Movies / TV / Anime).
@@ -92,13 +92,13 @@ class ArchiveScreen extends ConsumerWidget {
     String topBarSubtitle;
     switch (activeDomain) {
       case MediumDomain.movies:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "movie" : "movies"} · 6 buckets';
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "movie" : "movies"} · 6 shelves';
         break;
       case MediumDomain.tv:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "TV show" : "TV shows"} · 6 buckets';
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "TV show" : "TV shows"} · 6 shelves';
         break;
       case MediumDomain.anime:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "anime" : "anime series"} · 6 buckets';
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "anime" : "anime series"} · 6 shelves';
         break;
     }
 

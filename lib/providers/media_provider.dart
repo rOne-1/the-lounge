@@ -5,10 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/media_item.dart';
 import '../models/discover_filter_params.dart';
-import '../models/profile_space.dart';
+import '../models/hall_space.dart';
 import '../models/watch_record.dart';
 import '../models/user_folder.dart';
-import '../services/profile_storage_service.dart';
+import '../services/hall_storage_service.dart';
 import 'ambiance_provider.dart';
 import '../themes/theme_registry.dart';
 import '../constants.dart';
@@ -259,6 +259,8 @@ class MediaNotifier extends Notifier<MediaState> {
       customFolders: customFolders,
     );
   }
+
+  Future<void> loadForHall(String hallId) => loadForProfile(hallId);
 
   Future<void> loadForProfile(String profileId) async {
     try {

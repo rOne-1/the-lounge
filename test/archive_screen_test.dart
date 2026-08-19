@@ -40,7 +40,7 @@ void main() {
       addTearDown(container.dispose);
 
       expect(find.text('Your Archive'), findsOneWidget);
-      expect(find.textContaining('6 buckets'), findsOneWidget);
+      expect(find.textContaining('6 shelves'), findsOneWidget);
 
       expect(find.text('Watching'), findsOneWidget);
       expect(find.text('Watched'), findsOneWidget);
@@ -94,14 +94,14 @@ void main() {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
-      // Initially Movies mode: 0 movies · 6 buckets
-      expect(find.text('0 movies · 6 buckets'), findsOneWidget);
+      // Initially Movies mode: 0 movies · 6 shelves
+      expect(find.text('0 movies · 6 shelves'), findsOneWidget);
 
       // Switch to TV mode
       container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
       await tester.pumpAndSettle();
 
-      expect(find.text('0 TV shows · 6 buckets'), findsOneWidget);
+      expect(find.text('0 TV shows · 6 shelves'), findsOneWidget);
     });
   });
 }

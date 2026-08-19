@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
+import '../models/hall_space.dart';
 import '../constants.dart';
 import '../utils/archive_sort_group.dart';
 import '../widgets/atmospheric_empty_state.dart';
@@ -12,104 +13,7 @@ import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
 
-/// PERS-SPACE-1 / NAME-1: the six status destinations in The Lounge's Archive.
-/// Standalone archive bucket destinations (Watching, Watched, Watchlist, Saved, On-Hold, Dropped).
-enum ArchiveBucketKind {
-  watchlist,
-  saved,
-  watching,
-  onHold,
-  dropped,
-  watched;
-
-  String get label {
-    switch (this) {
-      case ArchiveBucketKind.watchlist:
-        return 'Watchlist';
-      case ArchiveBucketKind.saved:
-        return 'Saved';
-      case ArchiveBucketKind.watching:
-        return 'Watching';
-      case ArchiveBucketKind.onHold:
-        return 'On-Hold';
-      case ArchiveBucketKind.dropped:
-        return 'Dropped';
-      case ArchiveBucketKind.watched:
-        return 'Watched';
-    }
-  }
-
-  String? get subtitle {
-    switch (this) {
-      case ArchiveBucketKind.watchlist:
-        return 'Committed watchlist of titles you plan to watch soon.';
-      case ArchiveBucketKind.saved:
-        return 'Soft, non-committal bookmarks for titles you might want to check out later.';
-      case ArchiveBucketKind.watching:
-        return 'Titles you\'re actively watching right now.';
-      case ArchiveBucketKind.onHold:
-        return 'Paused for now -- pick back up whenever you\'re ready.';
-      case ArchiveBucketKind.dropped:
-        return 'Titles you stopped watching.';
-      case ArchiveBucketKind.watched:
-        return null;
-    }
-  }
-
-  Color get statusColor {
-    switch (this) {
-      case ArchiveBucketKind.watchlist:
-        return AppStatusColors.watchlist;
-      case ArchiveBucketKind.saved:
-        return AppStatusColors.save;
-      case ArchiveBucketKind.watching:
-        return AppStatusColors.watching;
-      case ArchiveBucketKind.onHold:
-        return AppStatusColors.onHold;
-      case ArchiveBucketKind.dropped:
-        return AppStatusColors.dropped;
-      case ArchiveBucketKind.watched:
-        return AppStatusColors.watched;
-    }
-  }
-
-  IconData get icon {
-    switch (this) {
-      case ArchiveBucketKind.watchlist:
-        return Icons.bookmark_rounded;
-      case ArchiveBucketKind.saved:
-        return Icons.archive_rounded;
-      case ArchiveBucketKind.watching:
-        return Icons.play_circle_fill_rounded;
-      case ArchiveBucketKind.onHold:
-        return Icons.pause_circle_filled_rounded;
-      case ArchiveBucketKind.dropped:
-        return Icons.remove_circle_rounded;
-      case ArchiveBucketKind.watched:
-        return Icons.check_circle_rounded;
-    }
-  }
-
-  Map<String, MediaItem> mapFrom(MediaState state) {
-    switch (this) {
-      case ArchiveBucketKind.watchlist:
-        return state.watchlist;
-      case ArchiveBucketKind.saved:
-        return state.maybeList;
-      case ArchiveBucketKind.watching:
-        return state.watchingList;
-      case ArchiveBucketKind.onHold:
-        return state.onHoldList;
-      case ArchiveBucketKind.dropped:
-        return state.droppedList;
-      case ArchiveBucketKind.watched:
-        return state.watchedList;
-    }
-  }
-}
-
-/// Backward compatibility alias for [ArchiveBucketKind].
-typedef PileKind = ArchiveBucketKind;
+export '../models/hall_space.dart' show ArchiveShelfKind, ArchiveBucketKind, PileKind;
 
 /// PERS-SPACE-1/PERS-SORT-1 / NAME-1: standalone screen for a single status archive bucket,
 /// every bucket gets the same sort/group suite, respects the global movies/TV toggle,

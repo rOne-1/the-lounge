@@ -26,7 +26,7 @@ void main() {
       final state = container.read(profileProvider);
       expect(state.activeProfileId, 'common');
       expect(state.profiles.length, 3);
-      expect(state.activeProfile.name, 'Common Space');
+      expect(state.activeProfile.name, 'The Grand Hall');
     });
 
     test('switchProfile updates activeProfileId and activeProfile getter', () async {
