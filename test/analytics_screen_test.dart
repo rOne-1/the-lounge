@@ -8,7 +8,10 @@ import 'package:the_lounge/providers/analytics_provider.dart';
 import 'package:the_lounge/screens/analytics_screen.dart';
 import 'package:the_lounge/utils/analytics_engine.dart';
 import 'package:the_lounge/widgets/analytics/binge_velocity_section.dart';
+import 'package:the_lounge/widgets/analytics/cast_constellations_section.dart';
 import 'package:the_lounge/widgets/analytics/chronological_heatmap.dart';
+import 'package:the_lounge/widgets/analytics/genre_dna_section.dart';
+import 'package:the_lounge/widgets/analytics/rating_divergence_section.dart';
 
 // Note on strategy: the actual generate()/compute() round-trip (does it
 // populate result/generatedAt correctly, does regeneration overwrite the
@@ -138,10 +141,17 @@ void main() {
               ),
             ],
           ),
-          castRanking: [],
-          directorRanking: [],
-          ratingDivergence: [],
-          genreFrequency: {},
+          castRanking: [NameCount(name: 'Alice', count: 2)],
+          directorRanking: [NameCount(name: 'Nolan', count: 1)],
+          ratingDivergence: [
+            RatingDivergencePoint(
+              mediaId: 'movie_1',
+              title: 'A Movie',
+              personalPoint: 9.0,
+              weightedRatingValue: 6.0,
+            ),
+          ],
+          genreFrequency: {'Drama': 2, 'Action': 1, 'Comedy': 1},
         ),
         generatedAt: DateTime(2026, 1, 1),
       );
@@ -171,6 +181,11 @@ void main() {
       expect(find.byType(ChronologicalHeatmap), findsOneWidget);
       expect(find.byType(BingeVelocitySection), findsOneWidget);
       expect(find.text('avg. days per season'), findsOneWidget);
+      expect(find.text('Taste'), findsOneWidget);
+      expect(find.byType(CastConstellationsSection), findsOneWidget);
+      expect(find.text('Nolan'), findsOneWidget);
+      expect(find.byType(RatingDivergenceSection), findsOneWidget);
+      expect(find.byType(GenreDnaSection), findsOneWidget);
     });
   });
 }

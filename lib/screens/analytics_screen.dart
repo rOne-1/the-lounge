@@ -5,7 +5,10 @@ import '../constants.dart';
 import '../providers/analytics_provider.dart';
 import '../utils/relative_time.dart';
 import '../widgets/analytics/binge_velocity_section.dart';
+import '../widgets/analytics/cast_constellations_section.dart';
 import '../widgets/analytics/chronological_heatmap.dart';
+import '../widgets/analytics/genre_dna_section.dart';
+import '../widgets/analytics/rating_divergence_section.dart';
 import '../widgets/archive_summary_card.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/pressable_scale.dart';
@@ -260,6 +263,44 @@ class _AnalyticsResults extends StatelessWidget {
           ChronologicalHeatmap(data: result.heatmap),
           const SizedBox(height: 20),
           BingeVelocitySection(data: result.bingeVelocity),
+          const SizedBox(height: 28),
+          _SectionHeader(title: 'Taste'),
+          const SizedBox(height: 16),
+          Text(
+            'Cast & Crew',
+            style: AppThemes.safeGeist(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colors.sub,
+            ),
+          ),
+          const SizedBox(height: 10),
+          CastConstellationsSection(
+            directorRanking: result.directorRanking,
+            castRanking: result.castRanking,
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Rating Divergence',
+            style: AppThemes.safeGeist(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colors.sub,
+            ),
+          ),
+          const SizedBox(height: 10),
+          RatingDivergenceSection(points: result.ratingDivergence),
+          const SizedBox(height: 20),
+          Text(
+            'Genre DNA',
+            style: AppThemes.safeGeist(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colors.sub,
+            ),
+          ),
+          const SizedBox(height: 10),
+          GenreDnaSection(genreFrequency: result.genreFrequency),
         ],
       ),
     );
