@@ -9,8 +9,6 @@ final hallStorageServiceProvider = Provider<HallStorageService>((ref) {
   return HallStorageService();
 });
 
-final profileStorageServiceProvider = hallStorageServiceProvider;
-
 class HallState {
   final String activeHallId;
   final List<HallSpace> halls;
@@ -30,15 +28,6 @@ class HallState {
     );
   }
 
-  /// Backward compatibility alias for [activeHallId].
-  String get activeProfileId => activeHallId;
-
-  /// Backward compatibility alias for [halls].
-  List<HallSpace> get profiles => halls;
-
-  /// Backward compatibility alias for [activeHall].
-  HallSpace get activeProfile => activeHall;
-
   DomainArchive activeDomainArchive(MediumDomain domain) {
     return activeHall.domainArchive(domain);
   }
@@ -55,9 +44,6 @@ class HallState {
     );
   }
 }
-
-/// Backward compatibility alias for [HallState].
-typedef ProfileState = HallState;
 
 class HallNotifier extends Notifier<HallState> {
   HallStorageService get _storageService =>
@@ -125,9 +111,6 @@ class HallNotifier extends Notifier<HallState> {
     }
   }
 
-  /// Backward compatibility alias for [switchHall].
-  Future<void> switchProfile(String profileId) => switchHall(profileId);
-
   Future<void> renameHall(String hallId, String newName) async {
     final trimmed = newName.trim();
     if (trimmed.isEmpty) return;
@@ -147,10 +130,6 @@ class HallNotifier extends Notifier<HallState> {
     } catch (_) {}
   }
 
-  /// Backward compatibility alias for [renameHall].
-  Future<void> renameProfile(String profileId, String newName) =>
-      renameHall(profileId, newName);
-
   Future<void> updateHallIcon(String hallId, String iconKey) async {
     final updated = state.halls.map((p) {
       if (p.id == hallId) {
@@ -166,10 +145,6 @@ class HallNotifier extends Notifier<HallState> {
       await _storageService.saveHall(_prefs, target);
     } catch (_) {}
   }
-
-  /// Backward compatibility alias for [updateHallIcon].
-  Future<void> updateProfileIcon(String profileId, String iconKey) =>
-      updateHallIcon(profileId, iconKey);
 
   Future<void> updateHallTheme(String hallId, String themeId) async {
     final updated = state.halls.map((p) {
@@ -247,13 +222,7 @@ class HallNotifier extends Notifier<HallState> {
     } catch (_) {}
   }
 
-  /// Backward compatibility alias for [updateActiveHall].
-  Future<void> updateActiveProfile(HallSpace Function(HallSpace current) updater) =>
-      updateActiveHall(updater);
 }
-
-/// Backward compatibility alias for [HallNotifier].
-typedef ProfileNotifier = HallNotifier;
 
 final hallProvider =
     NotifierProvider<HallNotifier, HallState>(HallNotifier.new);
@@ -261,6 +230,3 @@ final hallProvider =
 final activeHallSpaceProvider = Provider<HallSpace>((ref) {
   return ref.watch(hallProvider).activeHall;
 });
-
-/// Backward compatibility alias for [hallProvider].
-final profileProvider = hallProvider;

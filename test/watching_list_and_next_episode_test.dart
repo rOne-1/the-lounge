@@ -133,7 +133,7 @@ void main() {
   ];
 
   testWidgets(
-      'LoungeScreen shows the 3-group landing page, and the Watching pile card opens its PileScreen',
+      'LoungeScreen shows the 3-group landing page, and the Watching pile card opens its ArchiveBucketScreen',
       (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(items: {'movie-10': testMovie, 'tv-20': testTvShow});
     final prefs = await SharedPreferences.getInstance();
@@ -172,7 +172,7 @@ void main() {
     await tester.tap(find.text('Archive'));
     await tester.pumpAndSettle();
 
-    // Tap the "Watching" hero card, which pushes PileScreen.
+    // Tap the "Watching" hero card, which pushes ArchiveBucketScreen.
     await tester.tap(find.text('Watching'));
     await tester.pumpAndSettle();
 

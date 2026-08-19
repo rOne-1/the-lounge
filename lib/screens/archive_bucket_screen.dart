@@ -13,7 +13,7 @@ import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
 
-export '../models/hall_space.dart' show ArchiveShelfKind, ArchiveBucketKind, PileKind;
+export '../models/hall_space.dart' show ArchiveShelfKind, ArchiveBucketKind;
 
 /// PERS-SPACE-1/PERS-SORT-1 / NAME-1: standalone screen for a single status archive bucket,
 /// every bucket gets the same sort/group suite, respects the global movies/TV toggle,
@@ -26,9 +26,6 @@ class ArchiveBucketScreen extends ConsumerStatefulWidget {
   @override
   ConsumerState<ArchiveBucketScreen> createState() => _ArchiveBucketScreenState();
 }
-
-/// Backward compatibility alias for [ArchiveBucketScreen].
-typedef PileScreen = ArchiveBucketScreen;
 
 class _ArchiveBucketScreenState extends ConsumerState<ArchiveBucketScreen>
     with SingleTickerProviderStateMixin {

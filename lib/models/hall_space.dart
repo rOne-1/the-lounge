@@ -185,10 +185,11 @@ enum ArchiveShelfKind {
   }
 }
 
-/// Backward compatibility alias for [ArchiveShelfKind].
-typedef ArchiveBucket = ArchiveShelfKind;
+/// Backward compatibility alias for [ArchiveShelfKind]. Still the live,
+/// actively-used name throughout archive_bucket_screen.dart/archive_screen.dart
+/// -- the Bucket->Shelf cutover itself is a separate, larger rename task,
+/// not part of this dead-alias cleanup.
 typedef ArchiveBucketKind = ArchiveShelfKind;
-typedef PileKind = ArchiveShelfKind;
 
 /// PROF-1 / NOMEN-2: Holds all 6 archive shelves and episode completion records for a single medium domain.
 class DomainArchive {
@@ -252,9 +253,6 @@ class DomainArchive {
         return dropped;
     }
   }
-
-  /// Backward compatibility alias for [shelf].
-  Map<String, MediaItem> bucket(ArchiveShelfKind b) => shelf(b);
 
   DomainArchive copyWith({
     Map<String, MediaItem>? watching,
@@ -611,11 +609,4 @@ class HallSpace {
     );
   }
 
-  /// Backward compatibility aliases
-  static HallSpace defaultCommon() => defaultGrandHall();
-  static HallSpace defaultCustom1() => defaultMezzanineHall();
-  static HallSpace defaultCustom2() => defaultPrivateScreeningHall();
 }
-
-/// Backward compatibility alias for [HallSpace].
-typedef ProfileSpace = HallSpace;

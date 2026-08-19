@@ -10,13 +10,10 @@ import '../models/watch_record.dart';
 /// and v4 Multi-Hall backup JSON export/import.
 class HallStorageService {
   static const String kLoungeHallsManifestKey = 'lounge_profiles_manifest_v1';
-  static const String kLoungeProfilesManifestKey = kLoungeHallsManifestKey;
 
   static const String kLoungeActiveHallIdKey = 'lounge_active_profile_id';
-  static const String kLoungeActiveProfileIdKey = kLoungeActiveHallIdKey;
 
   static const String kLoungeHallsMigratedKey = 'lounge_profiles_migrated_v1';
-  static const String kLoungeProfilesMigratedKey = kLoungeHallsMigratedKey;
 
   // Legacy un-namespaced storage keys for migration
   static const String _legacyWatchlistKey = 'watchlist';
@@ -37,34 +34,23 @@ class HallStorageService {
       'profile_${hallId}_domain_${domain.name}';
 
   static String hallMetaKey(String hallId) => 'profile_${hallId}_meta';
-  static String profileMetaKey(String hallId) => hallMetaKey(hallId);
 
   static String hallFoldersKey(String hallId) =>
       'profile_${hallId}_custom_folders';
-  static String profileFoldersKey(String hallId) => hallFoldersKey(hallId);
 
   static String hallHistoryKey(String hallId) =>
       'profile_${hallId}_watch_history';
-  static String profileHistoryKey(String hallId) => hallHistoryKey(hallId);
 
   /// Reads active hall ID, defaulting to 'common'.
   String getActiveHallId(SharedPreferences prefs) {
     return prefs.getString(kLoungeActiveHallIdKey) ?? 'common';
   }
 
-  /// Backward compatibility alias for [getActiveHallId].
-  String getActiveProfileId(SharedPreferences prefs) => getActiveHallId(prefs);
-
   /// Sets active hall ID.
   Future<bool> saveActiveHallId(
       SharedPreferences prefs, String hallId) async {
     return prefs.setString(kLoungeActiveHallIdKey, hallId);
   }
-
-  /// Backward compatibility alias for [saveActiveHallId].
-  Future<bool> saveActiveProfileId(
-          SharedPreferences prefs, String profileId) async =>
-      saveActiveHallId(prefs, profileId);
 
   /// Loads all halls from SharedPreferences synchronously.
   List<HallSpace> loadAllHallsSync(SharedPreferences prefs) {
@@ -96,10 +82,6 @@ class HallStorageService {
     }
     return halls;
   }
-
-  /// Backward compatibility alias for [loadAllHallsSync].
-  List<HallSpace> loadAllProfilesSync(SharedPreferences prefs) =>
-      loadAllHallsSync(prefs);
 
   /// Loads all halls from SharedPreferences. Runs migration if needed.
   Future<List<HallSpace>> loadAllHalls(SharedPreferences prefs) async {
@@ -133,10 +115,6 @@ class HallStorageService {
 
     return loadAllHallsSync(prefs);
   }
-
-  /// Backward compatibility alias for [loadAllHalls].
-  Future<List<HallSpace>> loadAllProfiles(SharedPreferences prefs) =>
-      loadAllHalls(prefs);
 
   /// Loads a single hall synchronously.
   HallSpace loadHallSync(SharedPreferences prefs, String hallId,
@@ -241,21 +219,11 @@ class HallStorageService {
     );
   }
 
-  /// Backward compatibility alias for [loadHallSync].
-  HallSpace loadProfileSync(SharedPreferences prefs, String profileId,
-          {Map<String, dynamic>? defaultMeta}) =>
-      loadHallSync(prefs, profileId, defaultMeta: defaultMeta);
-
   /// Loads a single hall with all its partitioned domains.
   Future<HallSpace> loadHall(SharedPreferences prefs, String hallId,
       {Map<String, dynamic>? defaultMeta}) async {
     return loadHallSync(prefs, hallId, defaultMeta: defaultMeta);
   }
-
-  /// Backward compatibility alias for [loadHall].
-  Future<HallSpace> loadProfile(SharedPreferences prefs, String profileId,
-          {Map<String, dynamic>? defaultMeta}) =>
-      loadHall(prefs, profileId, defaultMeta: defaultMeta);
 
   /// Persists a hall space and all its 2D domain archives.
   Future<void> saveHall(SharedPreferences prefs, HallSpace hall) async {
@@ -295,10 +263,6 @@ class HallStorageService {
     // 5. Update manifest
     await _updateManifestMeta(prefs, hall);
   }
-
-  /// Backward compatibility alias for [saveHall].
-  Future<void> saveProfile(SharedPreferences prefs, HallSpace profile) =>
-      saveHall(prefs, profile);
 
   Future<void> _updateManifestMeta(
       SharedPreferences prefs, HallSpace hall) async {
@@ -518,20 +482,16 @@ class HallStorageService {
 
   /// Exports full multi-hall backup JSON (v4 schema).
   String exportFullBackupJson({
-    List<HallSpace>? halls,
-    List<HallSpace>? profiles,
-    String? activeHallId,
-    String? activeProfileId,
+    List<HallSpace> halls = const [],
+    String activeHallId = 'common',
     required String themeId,
   }) {
-    final resolvedHalls = halls ?? profiles ?? [];
-    final resolvedActiveId = activeHallId ?? activeProfileId ?? 'common';
     final payload = {
       'schema_version': 4,
       'exported_at': DateTime.now().toIso8601String(),
-      'active_profile_id': resolvedActiveId,
+      'active_profile_id': activeHallId,
       'theme_id': themeId,
-      'profiles': resolvedHalls.map((p) => p.toJson()).toList(),
+      'profiles': halls.map((p) => p.toJson()).toList(),
     };
     return const JsonEncoder.withIndent('  ').convert(payload);
   }
@@ -612,6 +572,3 @@ class HallStorageService {
     ];
   }
 }
-
-/// Backward compatibility alias for [HallStorageService].
-typedef ProfileStorageService = HallStorageService;

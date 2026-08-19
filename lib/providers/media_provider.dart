@@ -118,7 +118,7 @@ class MediaNotifier extends Notifier<MediaState> {
   static const _seasonEndDatesKey = 'the_lounge_season_end_dates';
   static const _customFoldersKey = 'the_lounge_custom_folders';
 
-  ProfileStorageService get _storageService => ProfileStorageService();
+  HallStorageService get _storageService => HallStorageService();
 
   @override
   MediaState build() {
@@ -129,7 +129,7 @@ class MediaNotifier extends Notifier<MediaState> {
       if (stored != null && stored.isNotEmpty) {
         initialCountry = stored;
       }
-      final activeProfileId = _storageService.getActiveProfileId(prefs);
+      final activeProfileId = _storageService.getActiveHallId(prefs);
       return _loadProfileState(prefs, activeProfileId, initialCountry);
     } catch (_) {
       // Defensively catch missing SharedPreferences override in unit tests
@@ -138,11 +138,11 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   MediaState _loadProfileState(SharedPreferences prefs, String profileId, String country) {
-    final movieKey = ProfileStorageService.domainStorageKey(profileId, MediumDomain.movies);
-    final tvKey = ProfileStorageService.domainStorageKey(profileId, MediumDomain.tv);
-    final animeKey = ProfileStorageService.domainStorageKey(profileId, MediumDomain.anime);
-    final foldersKey = ProfileStorageService.profileFoldersKey(profileId);
-    final historyKey = ProfileStorageService.profileHistoryKey(profileId);
+    final movieKey = HallStorageService.domainStorageKey(profileId, MediumDomain.movies);
+    final tvKey = HallStorageService.domainStorageKey(profileId, MediumDomain.tv);
+    final animeKey = HallStorageService.domainStorageKey(profileId, MediumDomain.anime);
+    final foldersKey = HallStorageService.hallFoldersKey(profileId);
+    final historyKey = HallStorageService.hallHistoryKey(profileId);
 
     final rawMovie = prefs.getString(movieKey);
     final rawTv = prefs.getString(tvKey);
@@ -261,8 +261,6 @@ class MediaNotifier extends Notifier<MediaState> {
     );
   }
 
-  Future<void> loadForHall(String hallId) => loadForProfile(hallId);
-
   Future<void> loadForProfile(String profileId) async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
@@ -275,7 +273,7 @@ class MediaNotifier extends Notifier<MediaState> {
   Future<void> _loadFromPrefs() async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
-      final activeProfileId = _storageService.getActiveProfileId(prefs);
+      final activeProfileId = _storageService.getActiveHallId(prefs);
       final stored = prefs.getString(_watchProvidersCountryKey);
       final country = (stored != null && stored.isNotEmpty) ? stored : 'US';
       state = _loadProfileState(prefs, activeProfileId, country);
@@ -287,7 +285,7 @@ class MediaNotifier extends Notifier<MediaState> {
   Future<void> _saveToPrefs() async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
-      final activeProfileId = _storageService.getActiveProfileId(prefs);
+      final activeProfileId = _storageService.getActiveHallId(prefs);
 
       Map<String, MediaItem> filterType(Map<String, MediaItem> map, MediaType type) {
         return Map.fromEntries(map.entries.where((e) => e.value.type == type));
@@ -318,10 +316,10 @@ class MediaNotifier extends Notifier<MediaState> {
         seasonEndDates: state.seasonEndDates,
       );
 
-      final movieKey = ProfileStorageService.domainStorageKey(activeProfileId, MediumDomain.movies);
-      final tvKey = ProfileStorageService.domainStorageKey(activeProfileId, MediumDomain.tv);
-      final foldersKey = ProfileStorageService.profileFoldersKey(activeProfileId);
-      final historyKey = ProfileStorageService.profileHistoryKey(activeProfileId);
+      final movieKey = HallStorageService.domainStorageKey(activeProfileId, MediumDomain.movies);
+      final tvKey = HallStorageService.domainStorageKey(activeProfileId, MediumDomain.tv);
+      final foldersKey = HallStorageService.hallFoldersKey(activeProfileId);
+      final historyKey = HallStorageService.hallHistoryKey(activeProfileId);
 
       await Future.wait([
         prefs.setString(movieKey, jsonEncode(movieArchive.toJson())),

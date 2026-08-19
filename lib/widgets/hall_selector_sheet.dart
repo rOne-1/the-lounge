@@ -550,6 +550,3 @@ class _LanguageChip extends StatelessWidget {
     );
   }
 }
-
-/// Backward compatibility alias for [HallSelectorSheet].
-typedef ProfileSelectorSheet = HallSelectorSheet;

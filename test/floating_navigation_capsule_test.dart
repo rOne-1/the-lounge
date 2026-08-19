@@ -158,7 +158,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('floating_nav_profile_button')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(ProfileSelectorSheet), findsOneWidget);
+    expect(find.byType(HallSelectorSheet), findsOneWidget);
   });
 
   testWidgets('FIX-1: capsule dynamically updates active hall name upon hall switch',

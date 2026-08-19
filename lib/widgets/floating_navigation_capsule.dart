@@ -245,7 +245,7 @@ class _FloatingNavigationCapsuleState
               onProfileSelector: () {
                 HapticFeedback.selectionClick();
                 setState(() => _expanded = false);
-                ProfileSelectorSheet.show(_navigator.context);
+                HallSelectorSheet.show(_navigator.context);
               },
             ),
           ),

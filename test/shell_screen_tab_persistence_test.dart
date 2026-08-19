@@ -9,7 +9,7 @@
 // Space's old "In Progress" tab + sub-filter selection surviving a tab
 // round trip. That state no longer exists -- PERS-SPACE-1's 3-group
 // redesign retired the tab/sub-filter UI entirely in favor of standalone
-// PileScreen destinations pushed onto the Navigator, and Your Space itself
+// ArchiveBucketScreen destinations pushed onto the Navigator, and Your Space itself
 // carries no meaningful per-visit UI state anymore. Removed rather than
 // kept passing vacuously; the CO-13 Discover-deck-pool test below still
 // covers the same underlying IndexedStack-preservation concern.
