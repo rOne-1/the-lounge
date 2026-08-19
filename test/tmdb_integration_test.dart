@@ -377,6 +377,52 @@ void main() {
       );
     });
 
+    test(
+        'TV details fall back to last_episode_to_air.runtime when episode_run_time is empty',
+        () async {
+      // Regression: some shows (e.g. deliberately variable episode lengths)
+      // leave TMDB's aggregate `episode_run_time` empty at the show level
+      // even though a real per-episode runtime is available elsewhere on
+      // the same response -- Analytics' Time Investment previously showed
+      // 0 hours for a fully-watched show like this because `runtime`
+      // resolved to null and got silently excluded.
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/tv/94605')) {
+          return http.Response(
+              jsonEncode({
+                'id': 94605,
+                'name': 'Arcane',
+                'vote_average': 8.751,
+                'first_air_date': '2021-11-06',
+                'overview': '',
+                'genres': [
+                  {'id': 16, 'name': 'Animation'}
+                ],
+                'episode_run_time': [],
+                'last_episode_to_air': {'runtime': 51},
+                'credits': {
+                  'cast': [
+                    {'id': 1, 'name': 'Hailee Steinfeld', 'character': 'Vi'},
+                  ],
+                  'crew': [
+                    {'job': 'Director', 'name': 'Christian Linke'},
+                  ]
+                },
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service =
+          TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final details = await repo.getMediaDetails('tv_94605');
+      expect(details, isNotNull);
+      expect(details!.runtime, equals(51));
+    });
+
     test('Configured repository parses multi-country flatrate, rent, and buy providers',
         () async {
       final mockClient = MockClient((request) async {

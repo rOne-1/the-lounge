@@ -1122,10 +1122,23 @@ class TmdbMovieRepository implements MovieRepository {
     final backdropPath = json['backdrop_path'] as String?;
     final backdropUrl = TmdbImageHelper.getBackdropUrl(backdropPath);
 
+    // Some shows (e.g. those with deliberately variable episode lengths)
+    // leave the aggregate `episode_run_time` empty even though TMDB still
+    // reports a real per-episode runtime on the last/next aired episode --
+    // fall back to those before giving up entirely, rather than silently
+    // excluding an otherwise fully-watched show from anything that sums
+    // real runtime (Analytics' Time Investment).
+    int? episodeRuntimeFrom(dynamic episodeJson) {
+      if (episodeJson is! Map) return null;
+      return (episodeJson['runtime'] as num?)?.toInt();
+    }
+
     final runtime = (json['runtime'] as num?)?.toInt() ??
         ((json['episode_run_time'] as List?)?.isNotEmpty == true
             ? ((json['episode_run_time'] as List).first as num).toInt()
-            : null);
+            : null) ??
+        episodeRuntimeFrom(json['last_episode_to_air']) ??
+        episodeRuntimeFrom(json['next_episode_to_air']);
 
     final seasonsCount = (json['number_of_seasons'] as num?)?.toInt();
     final episodesCount = (json['number_of_episodes'] as num?)?.toInt();

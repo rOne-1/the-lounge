@@ -107,7 +107,7 @@ class AnalyticsHeroCard extends StatelessWidget {
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.centerLeft,
                           child: Text(
-                            'THE THIRD CORE',
+                            'YOUR INSIGHTS',
                             style: AppThemes.safeGeist(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w700,
