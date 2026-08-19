@@ -7,6 +7,8 @@ import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/analytics_provider.dart';
 import 'package:the_lounge/screens/analytics_screen.dart';
 import 'package:the_lounge/utils/analytics_engine.dart';
+import 'package:the_lounge/widgets/analytics/binge_velocity_section.dart';
+import 'package:the_lounge/widgets/analytics/chronological_heatmap.dart';
 
 // Note on strategy: the actual generate()/compute() round-trip (does it
 // populate result/generatedAt correctly, does regeneration overwrite the
@@ -125,7 +127,17 @@ void main() {
         result: const AnalyticsResult(
           heatmap: HeatmapData({}),
           timeInvestment: TimeInvestment(movieMinutes: 120, tvMinutes: 270),
-          bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
+          bingeVelocity: BingeVelocity(
+            averageDays: 3.0,
+            perSeason: [
+              ShowBingeVelocity(
+                showId: 'tv_1',
+                showTitle: 'A Show',
+                seasonNumber: 1,
+                days: 3.0,
+              ),
+            ],
+          ),
           castRanking: [],
           directorRanking: [],
           ratingDivergence: [],
@@ -156,6 +168,9 @@ void main() {
       expect(find.text('TV Shows'), findsOneWidget);
       expect(find.text('2 hours watched'), findsOneWidget);
       expect(find.text('~5 hours watched (estimate)'), findsOneWidget);
+      expect(find.byType(ChronologicalHeatmap), findsOneWidget);
+      expect(find.byType(BingeVelocitySection), findsOneWidget);
+      expect(find.text('avg. days per season'), findsOneWidget);
     });
   });
 }

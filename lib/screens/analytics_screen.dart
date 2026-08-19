@@ -4,6 +4,8 @@ import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../providers/analytics_provider.dart';
 import '../utils/relative_time.dart';
+import '../widgets/analytics/binge_velocity_section.dart';
+import '../widgets/analytics/chronological_heatmap.dart';
 import '../widgets/archive_summary_card.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/pressable_scale.dart';
@@ -245,6 +247,19 @@ class _AnalyticsResults extends StatelessWidget {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+          Text(
+            'Watch Activity',
+            style: AppThemes.safeGeist(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colors.sub,
+            ),
+          ),
+          const SizedBox(height: 10),
+          ChronologicalHeatmap(data: result.heatmap),
+          const SizedBox(height: 20),
+          BingeVelocitySection(data: result.bingeVelocity),
         ],
       ),
     );
