@@ -128,4 +128,43 @@ void main() {
     expect(find.text('Collapse All'), findsNothing);
     expect(find.text('Expand All'), findsNothing);
   });
+
+  testWidgets('SORT-2: collections are sorted by their most recent item addedDate',
+      (tester) async {
+    final olderCollectionMovie = MediaItem(
+      id: 'm-old',
+      title: 'Old Matrix',
+      type: MediaType.movie,
+      rating: 8.5,
+      overview: '',
+      belongsToCollection: const MediaCollection(id: 2, name: 'Matrix Series'),
+      addedDate: DateTime(2024, 1, 1),
+    );
+
+    final newerCollectionMovie = MediaItem(
+      id: 'm-new',
+      title: 'New Avatar',
+      type: MediaType.movie,
+      rating: 8.0,
+      overview: '',
+      belongsToCollection: const MediaCollection(id: 3, name: 'Avatar Saga'),
+      addedDate: DateTime(2026, 7, 1),
+    );
+
+    final container = await pumpWatchedPile(
+      tester,
+      [olderCollectionMovie, newerCollectionMovie],
+    );
+    addTearDown(container.dispose);
+
+    // Both collections render
+    expect(find.text('Avatar Saga'), findsOneWidget);
+    expect(find.text('Matrix Series'), findsOneWidget);
+
+    final avatarPos = tester.getTopLeft(find.text('Avatar Saga'));
+    final matrixPos = tester.getTopLeft(find.text('Matrix Series'));
+
+    // Avatar Saga (added in 2026) appears above Matrix Series (added in 2024)
+    expect(avatarPos.dy, lessThan(matrixPos.dy));
+  });
 }

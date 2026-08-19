@@ -12,8 +12,8 @@ import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
 
-/// PERS-SPACE-1: the six status destinations in Your Space's "Piles" group.
-/// Each was previously one of four tabs inside `YourSpaceScreen` (Watching/
+/// PERS-SPACE-1 / NAME-1: the six status destinations in The Lounge's Archive.
+/// Each was previously one of four tabs inside `LoungeScreen` (Watching/
 /// On-Hold/Dropped were combined into a single "In Progress" tab behind a
 /// sub-filter); the 3-group landing redesign promotes all six to standalone
 /// destinations, so the sub-filter concept is retired in favor of direct
@@ -112,11 +112,11 @@ enum PileKind {
   }
 }
 
-/// PERS-SPACE-1/PERS-SORT-1: standalone screen for a single status pile,
-/// extracted from `YourSpaceScreen`'s former tab-content builders so every
+/// PERS-SPACE-1/PERS-SORT-1 / NAME-1: standalone screen for a single status pile,
+/// extracted from `LoungeScreen`'s former tab-content builders so every
 /// pile (not just the four that used to be tabs) gets the same sort/group
 /// suite, respects the global movies/TV toggle, and is independently
-/// navigable from the new landing page's Piles group.
+/// navigable from the new landing page's Archive.
 class PileScreen extends ConsumerStatefulWidget {
   final PileKind kind;
 
@@ -636,12 +636,53 @@ class _PileScreenState extends ConsumerState<PileScreen>
       }
     }
 
+    final collectionEntries = groupedByCollection.entries.toList();
+
     if (_watchedSortByRating) {
       final watchHistory = ref.read(mediaProvider).watchHistory;
-      for (final key in groupedByCollection.keys.toList()) {
-        groupedByCollection[key] = personalRatingSort(groupedByCollection[key]!, watchHistory);
+      for (final entry in collectionEntries) {
+        final sorted = personalRatingSort(entry.value, watchHistory);
+        entry.value
+          ..clear()
+          ..addAll(sorted);
       }
       final sortedStandalone = personalRatingSort(standaloneItems, watchHistory);
+      standaloneItems
+        ..clear()
+        ..addAll(sortedStandalone);
+    } else if (_sort == PileSortOption.lastAdded || _sort == PileSortOption.dateAdded) {
+      // SORT-2: Sort collection clusters by the most recent timestamp in each cluster
+      collectionEntries.sort((a, b) {
+        final dateA = getCollectionLastAdded(a.value);
+        final dateB = getCollectionLastAdded(b.value);
+        return dateB.compareTo(dateA);
+      });
+      for (final entry in collectionEntries) {
+        entry.value.sort((a, b) {
+          final ad = a.addedDate ?? a.releaseOrAirDate;
+          final bd = b.addedDate ?? b.releaseOrAirDate;
+          if (ad == null && bd == null) return 0;
+          if (ad == null) return 1;
+          if (bd == null) return -1;
+          return bd.compareTo(ad);
+        });
+      }
+      standaloneItems.sort((a, b) {
+        final ad = a.addedDate ?? a.releaseOrAirDate;
+        final bd = b.addedDate ?? b.releaseOrAirDate;
+        if (ad == null && bd == null) return 0;
+        if (ad == null) return 1;
+        if (bd == null) return -1;
+        return bd.compareTo(ad);
+      });
+    } else {
+      for (final entry in collectionEntries) {
+        final sorted = sortPile(entry.value, _sort);
+        entry.value
+          ..clear()
+          ..addAll(sorted);
+      }
+      final sortedStandalone = sortPile(standaloneItems, _sort);
       standaloneItems
         ..clear()
         ..addAll(sortedStandalone);
@@ -651,7 +692,7 @@ class _PileScreenState extends ConsumerState<PileScreen>
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
 
     final watchedGroupKeys = [
-      for (final colName in groupedByCollection.keys) 'watched_col_$colName',
+      for (final entry in collectionEntries) 'watched_col_${entry.key}',
       if (standaloneItems.isNotEmpty) 'watched_standalone',
     ];
 
@@ -665,94 +706,104 @@ class _PileScreenState extends ConsumerState<PileScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (watchedGroupKeys.length > 1)
-            Align(
-              alignment: Alignment.centerRight,
-              child: PressableScale(
-                onTap: () {
-                  final collapseAll = !_watchedAllCollapsed;
-                  for (final key in watchedGroupKeys) {
-                    final controller = _watchedTileController(key);
-                    if (collapseAll) {
-                      controller.collapse();
-                    } else {
-                      controller.expand();
+          Row(
+            children: [
+              Expanded(
+                child: LoungeDropdown<PileSortOption>(
+                  value: _sort,
+                  hintText: 'Sort',
+                  isActive: _sort != PileSortOption.dateAdded && _sort != PileSortOption.lastAdded,
+                  items: PileSortOption.values
+                      .map((o) => LoungeDropdownItem(value: o, label: o.label))
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() {
+                        _sort = v;
+                        _watchedSortByRating = false;
+                      });
                     }
-                  }
-                  setState(() => _watchedAllCollapsed = collapseAll);
-                },
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              PressableScale(
+                onTap: () => setState(() => _watchedSortByRating = !_watchedSortByRating),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
-                    color: colors.pill,
+                    color: _watchedSortByRating ? colors.acc.withValues(alpha: 0.14) : colors.pill,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: colors.lineRgba),
+                    border: Border.all(
+                      color: _watchedSortByRating ? colors.acc : colors.lineRgba,
+                      width: _watchedSortByRating ? 1.5 : 1.0,
+                    ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      AnimatedSwitcher(
-                        duration: AppPhysics.houseSpringDuration,
-                        switchInCurve: AppPhysics.houseSpringCurve,
-                        switchOutCurve: Curves.easeOut,
-                        transitionBuilder: (child, animation) =>
-                            ScaleTransition(scale: animation, child: child),
-                        child: Icon(
-                          _watchedAllCollapsed ? Icons.unfold_more : Icons.unfold_less,
-                          key: ValueKey(_watchedAllCollapsed),
-                          size: 15,
-                          color: colors.acc,
-                        ),
-                      ),
-                      const SizedBox(width: 5),
+                      Icon(Icons.star_rounded, size: 14, color: _watchedSortByRating ? colors.acc : colors.sub),
+                      const SizedBox(width: 4),
                       Text(
-                        _watchedAllCollapsed ? 'Expand All' : 'Collapse All',
+                        'My Rating',
                         style: AppThemes.safeGeist(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: colors.acc,
+                          color: _watchedSortByRating ? colors.acc : colors.sub,
                         ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          const SizedBox(height: 8),
-          // PERS-SORT-1: Personal Rating Sort, offered only here (Watched
-          // pile) -- a TMDB weighted-rating sort wouldn't add anything once
-          // everything's already watched, but "what did I love?" does.
-          PressableScale(
-            onTap: () => setState(() => _watchedSortByRating = !_watchedSortByRating),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: _watchedSortByRating ? colors.acc.withValues(alpha: 0.14) : colors.pill,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: _watchedSortByRating ? colors.acc : colors.lineRgba,
-                  width: _watchedSortByRating ? 1.5 : 1.0,
-                ),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.star_rounded, size: 14, color: _watchedSortByRating ? colors.acc : colors.sub),
-                  const SizedBox(width: 5),
-                  Text(
-                    'Sort by My Rating',
-                    style: AppThemes.safeGeist(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: _watchedSortByRating ? colors.acc : colors.sub,
+              if (watchedGroupKeys.length > 1) ...[
+                const SizedBox(width: 8),
+                PressableScale(
+                  onTap: () {
+                    final collapseAll = !_watchedAllCollapsed;
+                    for (final key in watchedGroupKeys) {
+                      final controller = _watchedTileController(key);
+                      if (collapseAll) {
+                        controller.collapse();
+                      } else {
+                        controller.expand();
+                      }
+                    }
+                    setState(() => _watchedAllCollapsed = collapseAll);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: colors.pill,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: colors.lineRgba),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          _watchedAllCollapsed ? Icons.unfold_more : Icons.unfold_less,
+                          size: 14,
+                          color: colors.acc,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _watchedAllCollapsed ? 'Expand All' : 'Collapse All',
+                          style: AppThemes.safeGeist(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: colors.acc,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 12),
-          ...groupedByCollection.entries.map((entry) {
+          ...collectionEntries.map((entry) {
             final colName = entry.key;
             final colItems = entry.value;
             return Container(

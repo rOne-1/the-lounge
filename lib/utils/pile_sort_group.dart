@@ -2,9 +2,10 @@ import '../models/media_item.dart';
 import '../models/watch_record.dart';
 import 'weighted_rating.dart';
 
-/// PERS-SORT-1: sort options offered on pile screens (Watchlist/Saved/etc).
+/// PERS-SORT-1 / SORT-1: sort options offered on pile screens (Watchlist/Saved/Watched/etc).
 enum PileSortOption {
   dateAdded('Date Added'),
+  lastAdded('Last Added'),
   weightedRating('Top Rated'),
   releaseDate('Release Date');
 
@@ -23,6 +24,14 @@ enum PileGroupOption {
   const PileGroupOption(this.label);
 }
 
+/// SORT-2: Aggregates the latest added or released timestamp for a collection cluster.
+DateTime getCollectionLastAdded(List<MediaItem> items) {
+  if (items.isEmpty) return DateTime.fromMillisecondsSinceEpoch(0);
+  return items
+      .map((i) => i.addedDate ?? i.releaseOrAirDate ?? DateTime.fromMillisecondsSinceEpoch(0))
+      .reduce((max, date) => date.isAfter(max) ? date : max);
+}
+
 /// `m` in the weighted-rating formula for pile sorting -- deliberately a
 /// modest floor (unlike Discover's stricter curation bar), since a pile is
 /// the user's own saved titles, not a discovery feed being filtered for
@@ -38,6 +47,17 @@ List<MediaItem> sortPile(List<MediaItem> items, PileSortOption option) {
   switch (option) {
     case PileSortOption.dateAdded:
       return items.reversed.toList(); // most-recently-added first
+    case PileSortOption.lastAdded:
+      final sorted = List<MediaItem>.from(items)
+        ..sort((a, b) {
+          final ad = a.addedDate ?? a.releaseOrAirDate;
+          final bd = b.addedDate ?? b.releaseOrAirDate;
+          if (ad == null && bd == null) return 0;
+          if (ad == null) return 1;
+          if (bd == null) return -1;
+          return bd.compareTo(ad); // newest timestamp first
+        });
+      return sorted;
     case PileSortOption.weightedRating:
       final poolMean = meanRatingOf(items);
       final sorted = List<MediaItem>.from(items)
