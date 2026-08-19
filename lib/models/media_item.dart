@@ -586,6 +586,9 @@ class MediaItem {
       'releaseOrAirDate': releaseOrAirDate?.toIso8601String(),
       'addedDate': addedDate?.toIso8601String(),
       'voteCount': voteCount,
+      'runtime': runtime,
+      'cast': cast,
+      'director': director,
       if (belongsToCollection != null) ...{
         'collectionId': belongsToCollection!.id,
         'collectionName': belongsToCollection!.name,
@@ -633,6 +636,11 @@ class MediaItem {
     final rawTitle = json['title'] as String? ?? json['name'] as String? ?? '';
     final rawPoster = json['posterUrl'] as String? ?? json['poster_path'] as String?;
 
+    final castJson = json['cast'];
+    final castList = castJson is List
+        ? castJson.whereType<String>().toList()
+        : const <String>[];
+
     return MediaItem(
       id: (json['id']?.toString() ?? ''),
       title: rawTitle,
@@ -645,6 +653,9 @@ class MediaItem {
       releaseOrAirDate: releaseDate,
       addedDate: addedDate,
       voteCount: (json['voteCount'] as num? ?? json['vote_count'] as num?)?.toInt(),
+      runtime: (json['runtime'] as num?)?.toInt(),
+      cast: castList,
+      director: json['director'] as String?,
       belongsToCollection: col,
     );
   }

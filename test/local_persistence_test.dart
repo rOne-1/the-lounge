@@ -92,6 +92,34 @@ void main() {
       expect(restored.releaseOrAirDate, DateTime(2019, 5, 30));
       expect(restored.voteCount, 4200);
     });
+
+    test(
+        'toMinimalJson/fromMinimalJson round-trips runtime, cast, and director '
+        '(ANLY-DATA-1)', () {
+      // Regression: these 3 fields were previously dropped entirely by
+      // toMinimalJson, so any watched title reloaded from persistence (i.e.
+      // anything not still resident from the current in-memory session) had
+      // runtime == null, cast == [], director == null -- silently breaking
+      // any feature depending on them (Analytics' Time Investment hours
+      // calc and Cast/Auteur Constellations rankings).
+      final item = MediaItem(
+        id: 'movie_500',
+        title: 'Runtime Round Trip',
+        type: MediaType.movie,
+        rating: 8.1,
+        overview: 'Something with cast/crew metadata.',
+        genres: const ['Drama'],
+        runtime: 128,
+        cast: const ['Actor One', 'Actor Two'],
+        director: 'Director Name',
+      );
+
+      final restored = MediaItem.fromMinimalJson(item.toMinimalJson());
+
+      expect(restored.runtime, 128);
+      expect(restored.cast, ['Actor One', 'Actor Two']);
+      expect(restored.director, 'Director Name');
+    });
   });
 
   group('Local Persistence - Section 2: Persist and Restore 4 Status Maps & Episode Progress', () {
