@@ -17,7 +17,7 @@ import 'package:the_lounge/main.dart';
 
 class TestRepository extends MockMovieRepository {
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async {
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async {
     return [
       const MediaItem(
           id: '1',
@@ -55,30 +55,30 @@ class TestRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async {
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async {
     return [];
   }
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => [];
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async => null;
@@ -141,31 +141,31 @@ class _ManyPagesRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => [];
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => [];
 }
 
 void main() {
@@ -920,21 +920,22 @@ class _SingleMovieRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
   Future<List<MediaItem>> getNowPlayingMovies({
     int page = 1,
     String? region,
+    String? originalLanguage,
   }) async =>
       [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => [];
 }

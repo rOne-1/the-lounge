@@ -1025,6 +1025,184 @@ void main() {
       expect(item.trailerVideoId, isNull);
     });
   });
+
+  group('LANG-2 (2nd pass, 2026-08-19): fixed-list methods route through '
+      '/discover with server-side with_original_language when a language is '
+      'given -- the actual fix for the dev-reported bug (a client-side '
+      'filter/backfill over TMDB\'s globally-weighted, English-dominated '
+      'trending/popular/now-playing charts could not reliably surface real '
+      'regional-language content, no matter how many pages it tried).', () {
+    // _ensureGenresLoaded() fires its own /genre/movie/list and
+    // /genre/tv/list calls ahead of the real request being tested, so every
+    // test here filters requestedUrls down to the one call that actually
+    // matters instead of assuming it's the only request made.
+    String findUrl(List<String> requestedUrls, String pathSegment) =>
+        requestedUrls.firstWhere((u) => u.contains(pathSegment));
+
+    test('getTrendingMovies(originalLanguage: ...) hits /discover/movie with '
+        'with_original_language, not /trending/movie/week', () async {
+      final requestedUrls = <String>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url.toString());
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      await repo.getTrendingMovies(originalLanguage: 'hi');
+
+      expect(requestedUrls.any((u) => u.contains('/trending/movie/week')), isFalse);
+      final url = findUrl(requestedUrls, '/discover/movie');
+      expect(url, contains('with_original_language=hi'));
+    });
+
+    test('getTrendingMovies() with no language still hits the real dedicated '
+        'endpoint unchanged (regression guard: unlocked halls must not '
+        'route through /discover)', () async {
+      final requestedUrls = <String>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url.toString());
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      await repo.getTrendingMovies();
+
+      expect(requestedUrls.any((u) => u.contains('/trending/movie/week')), isTrue);
+      expect(requestedUrls.any((u) => u.contains('/discover/movie')), isFalse);
+    });
+
+    test('getPopularMovies/getTrendingTvShows/getTopRatedTvShows all route '
+        'through /discover with the language too (systemic, not one '
+        'method patched in isolation)', () async {
+      final requestedUrls = <String>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url.toString());
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      await repo.getPopularMovies(originalLanguage: 'ta');
+      await repo.getTrendingTvShows(originalLanguage: 'ta');
+      await repo.getTopRatedTvShows(originalLanguage: 'ta');
+
+      final discoverUrls = requestedUrls.where((u) => u.contains('/discover/')).toList();
+      expect(discoverUrls, hasLength(3));
+      for (final url in discoverUrls) {
+        expect(url, contains('with_original_language=ta'));
+      }
+    });
+
+    test('getTopRatedMovies(originalLanguage: ...) sorts by vote_average.desc '
+        'with a vote_count.gte floor (avoids a single high-scoring, '
+        'near-unvoted title dominating "top rated")', () async {
+      final requestedUrls = <String>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url.toString());
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      await repo.getTopRatedMovies(originalLanguage: 'hi');
+
+      final url = findUrl(requestedUrls, '/discover/movie');
+      expect(url, contains('with_original_language=hi'));
+      expect(url, contains('sort_by=vote_average.desc'));
+      expect(url, contains('vote_count.gte=50'));
+    });
+
+    test('getNowPlayingMovies(originalLanguage: ...) approximates the '
+        'now_playing rolling window via primary_release_date.gte/lte on '
+        '/discover/movie', () async {
+      final requestedUrls = <String>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url.toString());
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      await repo.getNowPlayingMovies(originalLanguage: 'te');
+
+      final url = findUrl(requestedUrls, '/discover/movie');
+      final now = DateTime.now();
+      final expectedLte = formatTmdbDate(now);
+      final expectedGte = formatTmdbDate(now.subtract(const Duration(days: 45)));
+      expect(url, contains('with_original_language=te'));
+      expect(url, contains('primary_release_date.gte=$expectedGte'));
+      expect(url, contains('primary_release_date.lte=$expectedLte'));
+    });
+
+    test('getUpcomingMovies(originalLanguage: ...) keeps its existing '
+        'discover-based date-widening logic (DATA-1) and adds '
+        'with_original_language alongside it', () async {
+      final requestedUrls = <String>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url.toString());
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      await repo.getUpcomingMovies(originalLanguage: 'kn');
+
+      final url = findUrl(requestedUrls, '/discover/movie');
+      expect(url, contains('with_original_language=kn'));
+      expect(url, contains('primary_release_date.gte='));
+    });
+
+    test('getAiringTodayTvShows(originalLanguage: ...) scopes air_date.gte/'
+        'lte to today only, on /discover/tv', () async {
+      final requestedUrls = <String>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url.toString());
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      await repo.getAiringTodayTvShows(originalLanguage: 'ml');
+
+      final url = findUrl(requestedUrls, '/discover/tv');
+      final today = formatTmdbDate(DateTime.now());
+      expect(url, contains('with_original_language=ml'));
+      expect(url, contains('air_date.gte=$today'));
+      expect(url, contains('air_date.lte=$today'));
+    });
+
+    test('getOnTheAirTvShows(originalLanguage: ...) widens air_date.gte/lte '
+        'to a ~7-day window (wider than Airing Today\'s single-day window), '
+        'on /discover/tv', () async {
+      final requestedUrls = <String>[];
+      final client = MockClient((request) async {
+        requestedUrls.add(request.url.toString());
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+      final repo = TmdbMovieRepository(
+        apiService: TmdbApiService(token: 'valid_token', client: client),
+      );
+
+      await repo.getOnTheAirTvShows(originalLanguage: 'bn');
+
+      final url = findUrl(requestedUrls, '/discover/tv');
+      final now = DateTime.now();
+      final expectedGte = formatTmdbDate(now);
+      final expectedLte = formatTmdbDate(now.add(const Duration(days: 7)));
+      expect(url, contains('with_original_language=bn'));
+      expect(url, contains('air_date.gte=$expectedGte'));
+      expect(url, contains('air_date.lte=$expectedLte'));
+    });
+  });
 }
 
 

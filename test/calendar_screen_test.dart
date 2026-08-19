@@ -16,31 +16,31 @@ class MockCalendarRepository extends MockMovieRepository {
   MockCalendarRepository({required this.movies, required this.tvShows});
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => movies;
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => movies;
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => movies;
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => movies;
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => tvShows;
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => tvShows;
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => movies;
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => movies;
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => tvShows;
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => tvShows;
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => movies;
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => movies;
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => tvShows;
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => tvShows;
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => movies;
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => movies;
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => tvShows;
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => tvShows;
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async => null;

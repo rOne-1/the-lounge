@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/discover_filter_params.dart';
 import 'api_call_tracker.dart';
+import 'tmdb_endpoints.dart';
 
 
 /// Container for search results filtered client-side into title matches vs person filmographies.
@@ -31,7 +32,6 @@ class SearchFilterResult {
 
 /// Low-level service for interacting with the TMDB API v3 endpoints using v4 Bearer token header.
 class TmdbApiService {
-  static const String baseUrl = 'https://api.themoviedb.org/3';
   final String? token;
   final http.Client _client;
 
@@ -72,7 +72,7 @@ class TmdbApiService {
       });
     }
 
-    final uri = Uri.parse('$baseUrl$path').replace(
+    final uri = Uri.parse('${TmdbEndpoints.baseUrl}$path').replace(
       queryParameters: stringParams.isNotEmpty ? stringParams : null,
     );
 
@@ -112,12 +112,12 @@ class TmdbApiService {
 
   /// GET /3/configuration
   Future<Map<String, dynamic>> getConfiguration() async {
-    return _get('/configuration');
+    return _get(TmdbEndpoints.configuration);
   }
 
   /// GET /3/trending/movie/week
   Future<Map<String, dynamic>> getTrendingMovies({int page = 1}) async {
-    return _get('/trending/movie/week', {
+    return _get(TmdbEndpoints.trendingMoviesWeek, {
       'page': page,
       'include_adult': false,
     });
@@ -125,7 +125,7 @@ class TmdbApiService {
 
   /// GET /3/trending/tv/week
   Future<Map<String, dynamic>> getTrendingTvShows({int page = 1}) async {
-    return _get('/trending/tv/week', {
+    return _get(TmdbEndpoints.trendingTvShowsWeek, {
       'page': page,
       'include_adult': false,
     });
@@ -133,7 +133,7 @@ class TmdbApiService {
 
   /// GET /3/movie/popular
   Future<Map<String, dynamic>> getPopularMovies({int page = 1}) async {
-    return _get('/movie/popular', {
+    return _get(TmdbEndpoints.popularMovies, {
       'page': page,
       'include_adult': false,
     });
@@ -141,7 +141,7 @@ class TmdbApiService {
 
   /// GET /3/tv/popular
   Future<Map<String, dynamic>> getPopularTvShows({int page = 1}) async {
-    return _get('/tv/popular', {
+    return _get(TmdbEndpoints.popularTvShows, {
       'page': page,
       'include_adult': false,
     });
@@ -149,7 +149,7 @@ class TmdbApiService {
 
   /// GET /3/movie/top_rated
   Future<Map<String, dynamic>> getTopRatedMovies({int page = 1}) async {
-    return _get('/movie/top_rated', {
+    return _get(TmdbEndpoints.topRatedMovies, {
       'page': page,
       'include_adult': false,
     });
@@ -157,7 +157,7 @@ class TmdbApiService {
 
   /// GET /3/tv/top_rated
   Future<Map<String, dynamic>> getTopRatedTvShows({int page = 1}) async {
-    return _get('/tv/top_rated', {
+    return _get(TmdbEndpoints.topRatedTvShows, {
       'page': page,
       'include_adult': false,
     });
@@ -168,7 +168,7 @@ class TmdbApiService {
     int page = 1,
     String region = 'US',
   }) async {
-    return _get('/movie/now_playing', {
+    return _get(TmdbEndpoints.nowPlayingMovies, {
       'page': page,
       'include_adult': false,
       'region': region,
@@ -177,7 +177,7 @@ class TmdbApiService {
 
   /// GET /3/tv/airing_today
   Future<Map<String, dynamic>> getAiringTodayTvShows({int page = 1}) async {
-    return _get('/tv/airing_today', {
+    return _get(TmdbEndpoints.airingTodayTvShows, {
       'page': page,
       'include_adult': false,
     });
@@ -185,7 +185,7 @@ class TmdbApiService {
 
   /// GET /3/movie/upcoming
   Future<Map<String, dynamic>> getUpcomingMovies({int page = 1}) async {
-    return _get('/movie/upcoming', {
+    return _get(TmdbEndpoints.upcomingMovies, {
       'page': page,
       'include_adult': false,
     });
@@ -193,7 +193,7 @@ class TmdbApiService {
 
   /// GET /3/tv/on_the_air
   Future<Map<String, dynamic>> getOnTheAirTvShows({int page = 1}) async {
-    return _get('/tv/on_the_air', {
+    return _get(TmdbEndpoints.onTheAirTvShows, {
       'page': page,
       'include_adult': false,
     });
@@ -241,12 +241,18 @@ class TmdbApiService {
       if (params.minRating != null) {
         query['vote_average.gte'] = params.minRating;
       }
+      if (params.primaryReleaseDateGte != null) {
+        query['primary_release_date.gte'] = params.primaryReleaseDateGte;
+      }
+      if (params.primaryReleaseDateLte != null) {
+        query['primary_release_date.lte'] = params.primaryReleaseDateLte;
+      }
       query['sort_by'] = params.sortBy;
     }
     if (withGenres != null) query['with_genres'] = withGenres;
     if (sortBy != null) query['sort_by'] = sortBy;
     if (extraParams != null) query.addAll(extraParams);
-    return _get('/discover/movie', query);
+    return _get(TmdbEndpoints.discoverMovies, query);
   }
 
   /// GET /3/discover/tv
@@ -296,22 +302,28 @@ class TmdbApiService {
       if (params.minRating != null) {
         query['vote_average.gte'] = params.minRating;
       }
+      if (params.airDateGte != null) {
+        query['air_date.gte'] = params.airDateGte;
+      }
+      if (params.airDateLte != null) {
+        query['air_date.lte'] = params.airDateLte;
+      }
       query['sort_by'] = params.sortBy;
     }
     if (withGenres != null) query['with_genres'] = withGenres;
     if (sortBy != null) query['sort_by'] = sortBy;
     if (extraParams != null) query.addAll(extraParams);
-    return _get('/discover/tv', query);
+    return _get(TmdbEndpoints.discoverTv, query);
   }
 
   /// GET /3/genre/movie/list
   Future<Map<String, dynamic>> getMovieGenres() async {
-    return _get('/genre/movie/list');
+    return _get(TmdbEndpoints.movieGenres);
   }
 
   /// GET /3/genre/tv/list
   Future<Map<String, dynamic>> getTvGenres() async {
-    return _get('/genre/tv/list');
+    return _get(TmdbEndpoints.tvGenres);
   }
 
   /// GET /3/search/multi
@@ -319,7 +331,7 @@ class TmdbApiService {
     String query, {
     int page = 1,
   }) async {
-    return _get('/search/multi', {
+    return _get(TmdbEndpoints.searchMulti, {
       'query': query,
       'page': page,
       'include_adult': false,
@@ -331,7 +343,7 @@ class TmdbApiService {
     String query, {
     int page = 1,
   }) async {
-    return _get('/search/person', {
+    return _get(TmdbEndpoints.searchPerson, {
       'query': query,
       'page': page,
       'include_adult': false,
@@ -341,13 +353,13 @@ class TmdbApiService {
   /// GET /3/person/{id}/movie_credits — this person's actual movie
   /// filmography (cast + crew), not TMDB's narrow "known for" sample.
   Future<Map<String, dynamic>> getPersonMovieCredits(String personId) async {
-    return _get('/person/$personId/movie_credits');
+    return _get(TmdbEndpoints.personMovieCredits(personId));
   }
 
   /// GET /3/person/{id}/tv_credits — this person's actual TV filmography
   /// (cast + crew), not TMDB's narrow "known for" sample.
   Future<Map<String, dynamic>> getPersonTvCredits(String personId) async {
-    return _get('/person/$personId/tv_credits');
+    return _get(TmdbEndpoints.personTvCredits(personId));
   }
 
   /// Whether a raw TMDB search/credit item is worth showing: has a real
@@ -432,7 +444,7 @@ class TmdbApiService {
     final query = appendToResponse != null
         ? {'append_to_response': appendToResponse}
         : null;
-    return _get('/movie/$id', query);
+    return _get(TmdbEndpoints.movieDetails(id), query);
   }
 
   /// GET /3/tv/{id}
@@ -443,7 +455,7 @@ class TmdbApiService {
     final query = appendToResponse != null
         ? {'append_to_response': appendToResponse}
         : null;
-    return _get('/tv/$id', query);
+    return _get(TmdbEndpoints.tvDetails(id), query);
   }
 
   /// GET /3/tv/{id} (Alias for getTvDetails)
@@ -456,32 +468,32 @@ class TmdbApiService {
 
   /// GET /3/movie/{id}/credits
   Future<Map<String, dynamic>> getMovieCredits(String id) async {
-    return _get('/movie/$id/credits');
+    return _get(TmdbEndpoints.movieCredits(id));
   }
 
   /// GET /3/tv/{id}/credits
   Future<Map<String, dynamic>> getTvCredits(String id) async {
-    return _get('/tv/$id/credits');
+    return _get(TmdbEndpoints.tvCredits(id));
   }
 
   /// GET /3/movie/{id}/videos
   Future<Map<String, dynamic>> getMovieVideos(String id) async {
-    return _get('/movie/$id/videos');
+    return _get(TmdbEndpoints.movieVideos(id));
   }
 
   /// GET /3/tv/{id}/videos
   Future<Map<String, dynamic>> getTvVideos(String id) async {
-    return _get('/tv/$id/videos');
+    return _get(TmdbEndpoints.tvVideos(id));
   }
 
   /// GET /3/movie/{id}/watch/providers
   Future<Map<String, dynamic>> getMovieWatchProviders(String id) async {
-    return _get('/movie/$id/watch/providers');
+    return _get(TmdbEndpoints.movieWatchProviders(id));
   }
 
   /// GET /3/tv/{id}/watch/providers
   Future<Map<String, dynamic>> getTvWatchProviders(String id) async {
-    return _get('/tv/$id/watch/providers');
+    return _get(TmdbEndpoints.tvWatchProviders(id));
   }
 
   /// GET /3/tv/{id}/season/{season_number}
@@ -489,32 +501,32 @@ class TmdbApiService {
     String tvId,
     int seasonNumber,
   ) async {
-    return _get('/tv/$tvId/season/$seasonNumber');
+    return _get(TmdbEndpoints.tvSeasonDetails(tvId, seasonNumber));
   }
 
   /// GET /3/watch/providers/regions
   Future<Map<String, dynamic>> getWatchProviderRegions() async {
-    return _get('/watch/providers/regions');
+    return _get(TmdbEndpoints.watchProviderRegions);
   }
 
   Future<Map<String, dynamic>> getMovieRecommendations(String id, {int page = 1}) async {
-    return _get('/movie/$id/recommendations', {'page': page, 'include_adult': false});
+    return _get(TmdbEndpoints.movieRecommendations(id), {'page': page, 'include_adult': false});
   }
 
   Future<Map<String, dynamic>> getTvRecommendations(String id, {int page = 1}) async {
-    return _get('/tv/$id/recommendations', {'page': page, 'include_adult': false});
+    return _get(TmdbEndpoints.tvRecommendations(id), {'page': page, 'include_adult': false});
   }
 
   Future<Map<String, dynamic>> getSimilarMovies(String id, {int page = 1}) async {
-    return _get('/movie/$id/similar', {'page': page, 'include_adult': false});
+    return _get(TmdbEndpoints.similarMovies(id), {'page': page, 'include_adult': false});
   }
 
   Future<Map<String, dynamic>> getSimilarTvShows(String id, {int page = 1}) async {
-    return _get('/tv/$id/similar', {'page': page, 'include_adult': false});
+    return _get(TmdbEndpoints.similarTvShows(id), {'page': page, 'include_adult': false});
   }
 
   /// GET /3/collection/{collection_id}
   Future<Map<String, dynamic>> getCollectionDetails(int collectionId) async {
-    return _get('/collection/$collectionId');
+    return _get(TmdbEndpoints.collectionDetails(collectionId));
   }
 }

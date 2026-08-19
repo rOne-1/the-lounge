@@ -3,15 +3,21 @@ import '../models/media_item.dart';
 import '../models/media_collection_detail.dart';
 
 abstract class MovieRepository {
-  Future<List<MediaItem>> getTrendingMovies({int page = 1});
-  Future<List<MediaItem>> getPopularMovies({int page = 1});
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1});
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1});
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1});
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region});
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1});
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1});
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1});
+  // LANG-2 (2nd pass, 2026-08-19): originalLanguage on these 9 fixed-list
+  // methods, when provided, must be honored server-side (TMDB
+  // with_original_language) rather than the caller filtering the returned
+  // page client-side -- these lists are globally-weighted/English-dominated,
+  // so a regional-language lock can have zero matches on any given page of
+  // the unfiltered list. See TmdbMovieRepository's implementations.
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage});
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage});
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage});
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage});
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage});
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage});
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage});
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage});
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage});
   Future<MediaItem?> getMediaDetails(String id);
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber);
   Future<List<MediaItem>> searchMedia(String query);

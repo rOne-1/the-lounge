@@ -35,15 +35,15 @@ class _SingleMovieRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => [];
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => [];
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => [];
 }
 
 void main() {

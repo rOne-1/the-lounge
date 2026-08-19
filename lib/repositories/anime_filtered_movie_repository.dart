@@ -22,42 +22,51 @@ class AnimeFilteredMovieRepository implements MovieRepository {
   const AnimeFilteredMovieRepository(this.inner);
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async =>
-      (await inner.getTrendingMovies(page: page)).excludingAnime();
-
-  @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async =>
-      (await inner.getPopularMovies(page: page)).excludingAnime();
-
-  @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async =>
-      (await inner.getTrendingTvShows(page: page)).excludingAnime();
-
-  @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async =>
-      (await inner.getTopRatedMovies(page: page)).excludingAnime();
-
-  @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async =>
-      (await inner.getTopRatedTvShows(page: page)).excludingAnime();
-
-  @override
-  Future<List<MediaItem>> getNowPlayingMovies(
-          {int page = 1, String? region}) async =>
-      (await inner.getNowPlayingMovies(page: page, region: region))
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async =>
+      (await inner.getTrendingMovies(page: page, originalLanguage: originalLanguage))
           .excludingAnime();
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async =>
-      (await inner.getAiringTodayTvShows(page: page)).excludingAnime();
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async =>
+      (await inner.getPopularMovies(page: page, originalLanguage: originalLanguage))
+          .excludingAnime();
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async =>
-      (await inner.getUpcomingMovies(page: page)).excludingAnime();
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async =>
+      (await inner.getTrendingTvShows(page: page, originalLanguage: originalLanguage))
+          .excludingAnime();
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async =>
-      (await inner.getOnTheAirTvShows(page: page)).excludingAnime();
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async =>
+      (await inner.getTopRatedMovies(page: page, originalLanguage: originalLanguage))
+          .excludingAnime();
+
+  @override
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async =>
+      (await inner.getTopRatedTvShows(page: page, originalLanguage: originalLanguage))
+          .excludingAnime();
+
+  @override
+  Future<List<MediaItem>> getNowPlayingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      (await inner.getNowPlayingMovies(
+              page: page, region: region, originalLanguage: originalLanguage))
+          .excludingAnime();
+
+  @override
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async =>
+      (await inner.getAiringTodayTvShows(page: page, originalLanguage: originalLanguage))
+          .excludingAnime();
+
+  @override
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async =>
+      (await inner.getUpcomingMovies(page: page, originalLanguage: originalLanguage))
+          .excludingAnime();
+
+  @override
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async =>
+      (await inner.getOnTheAirTvShows(page: page, originalLanguage: originalLanguage))
+          .excludingAnime();
 
   @override
   Future<MediaItem?> getMediaDetails(String id) => inner.getMediaDetails(id);

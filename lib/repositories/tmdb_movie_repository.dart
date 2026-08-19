@@ -8,9 +8,15 @@ import '../models/media_collection_detail.dart';
 import '../services/crash_reporting_service.dart';
 import '../services/tmdb_api_service.dart';
 import '../services/tmdb_cache_service.dart';
+import '../services/tmdb_endpoints.dart';
 import '../utils/tmdb_image_helper.dart';
 import 'mock_movie_repository.dart';
 import 'movie_repository.dart';
+
+/// Formats a [DateTime] as TMDB's expected 'YYYY-MM-DD' query-param date
+/// string (used for the discover-based date-range filters below).
+String formatTmdbDate(DateTime date) =>
+    '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
 /// Helper function to detect socket/network exceptions.
 bool isNetworkException(Object error) {
@@ -110,8 +116,8 @@ class TmdbMovieRepository implements MovieRepository {
   Future<void> _ensureGenresLoaded() async {
     if (_genresLoaded || !isConfigured) return;
     try {
-      final movieGenresKey = cacheService.generateKey('/genre/movie/list');
-      final tvGenresKey = cacheService.generateKey('/genre/tv/list');
+      final movieGenresKey = cacheService.generateKey(TmdbEndpoints.movieGenres);
+      final tvGenresKey = cacheService.generateKey(TmdbEndpoints.tvGenres);
 
       Map<String, dynamic>? movieGenresRes =
           await cacheService.get(movieGenresKey);
@@ -154,7 +160,17 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async {
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async {
+    // LANG-2 (2nd pass): globally-weighted, English-dominated -- route
+    // through /discover with server-side with_original_language instead of
+    // the caller trying to salvage matches from an unfiltered page.
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      return discoverMedia(
+        isMovies: true,
+        params: DiscoverFilterParams(originalLanguage: originalLanguage),
+        page: page,
+      );
+    }
     if (!isConfigured) {
       _logWarning(
           'TMDB token is missing or unconfigured.');
@@ -166,7 +182,7 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/trending/movie/week', {'page': page, 'include_adult': false});
+          .generateKey(TmdbEndpoints.trendingMoviesWeek, {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getTrendingMovies(page: page);
@@ -190,7 +206,14 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async {
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async {
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      return discoverMedia(
+        isMovies: true,
+        params: DiscoverFilterParams(originalLanguage: originalLanguage),
+        page: page,
+      );
+    }
     if (!isConfigured) {
       _logWarning(
           'TMDB token is missing or unconfigured.');
@@ -202,7 +225,7 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/movie/popular', {'page': page, 'include_adult': false});
+          .generateKey(TmdbEndpoints.popularMovies, {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getPopularMovies(page: page);
@@ -226,7 +249,14 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async {
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async {
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      return discoverMedia(
+        isMovies: false,
+        params: DiscoverFilterParams(originalLanguage: originalLanguage),
+        page: page,
+      );
+    }
     if (!isConfigured) {
       _logWarning(
           'TMDB token is missing or unconfigured.');
@@ -238,7 +268,7 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/trending/tv/week', {'page': page, 'include_adult': false});
+          .generateKey(TmdbEndpoints.trendingTvShowsWeek, {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getTrendingTvShows(page: page);
@@ -262,7 +292,21 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async {
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async {
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      // vote_count.gte matches DiscoverDeckNotifier's own floor (E2/CO-9):
+      // avoids a single high-scoring, near-unvoted title dominating "top
+      // rated" the way a raw vote_average sort would.
+      return discoverMedia(
+        isMovies: true,
+        params: DiscoverFilterParams(
+          sortBy: 'vote_average.desc',
+          minVoteCount: 50,
+          originalLanguage: originalLanguage,
+        ),
+        page: page,
+      );
+    }
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
@@ -273,7 +317,7 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/movie/top_rated', {'page': page, 'include_adult': false});
+          .generateKey(TmdbEndpoints.topRatedMovies, {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getTopRatedMovies(page: page);
@@ -294,7 +338,18 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async {
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async {
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      return discoverMedia(
+        isMovies: false,
+        params: DiscoverFilterParams(
+          sortBy: 'vote_average.desc',
+          minVoteCount: 50,
+          originalLanguage: originalLanguage,
+        ),
+        page: page,
+      );
+    }
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
@@ -305,7 +360,7 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/tv/top_rated', {'page': page, 'include_adult': false});
+          .generateKey(TmdbEndpoints.topRatedTvShows, {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getTopRatedTvShows(page: page);
@@ -326,7 +381,22 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async {
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async {
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      // Approximates TMDB's own now_playing rolling window (roughly the
+      // last ~45 days) via /discover, since that dedicated endpoint has no
+      // language filter at all.
+      final now = DateTime.now();
+      return discoverMedia(
+        isMovies: true,
+        params: DiscoverFilterParams(
+          originalLanguage: originalLanguage,
+          primaryReleaseDateGte: formatTmdbDate(now.subtract(const Duration(days: 45))),
+          primaryReleaseDateLte: formatTmdbDate(now),
+        ),
+        page: page,
+      );
+    }
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
@@ -337,7 +407,7 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final activeRegion = (region != null && region.isNotEmpty) ? region : 'US';
-      final key = cacheService.generateKey('/movie/now_playing', {
+      final key = cacheService.generateKey(TmdbEndpoints.nowPlayingMovies, {
         'page': page,
         'include_adult': false,
         'region': activeRegion,
@@ -362,7 +432,19 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async {
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async {
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      final todayStr = formatTmdbDate(DateTime.now());
+      return discoverMedia(
+        isMovies: false,
+        params: DiscoverFilterParams(
+          originalLanguage: originalLanguage,
+          airDateGte: todayStr,
+          airDateLte: todayStr,
+        ),
+        page: page,
+      );
+    }
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
@@ -373,7 +455,7 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/tv/airing_today', {'page': page, 'include_adult': false});
+          .generateKey(TmdbEndpoints.airingTodayTvShows, {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getAiringTodayTvShows(page: page);
@@ -394,7 +476,7 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async {
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
@@ -405,8 +487,8 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final now = DateTime.now();
-      final todayStr =
-          '${now.year.toString().padLeft(4, '0')}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+      final todayStr = formatTmdbDate(now);
+      final hasLock = originalLanguage != null && originalLanguage.isNotEmpty;
 
       Future<List<MediaItem>> fetchFilteredPage(int p) async {
         // DATA-1: TMDB's /movie/upcoming is a narrow regional theatrical
@@ -418,11 +500,16 @@ class TmdbMovieRepository implements MovieRepository {
         // endpoint could ever surface them. /discover/movie with an
         // explicit primary_release_date.gte instead genuinely includes
         // them, sorted by popularity/anticipation.
-        final key = cacheService.generateKey('/discover/movie', {
+        //
+        // LANG-2 (2nd pass): with_original_language added the same way when
+        // a Hall lock is active -- same server-side reasoning as the other
+        // 8 fixed-list methods above.
+        final key = cacheService.generateKey(TmdbEndpoints.discoverMovies, {
           'page': p,
           'include_adult': false,
           'sort_by': 'popularity.desc',
           'primary_release_date.gte': todayStr,
+          if (hasLock) 'with_original_language': originalLanguage,
         });
         Map<String, dynamic>? res = await cacheService.get(key);
         if (res == null) {
@@ -432,6 +519,7 @@ class TmdbMovieRepository implements MovieRepository {
             extraParams: {
               'primary_release_date.gte': todayStr,
               'vote_count.gte': 0,
+              if (hasLock) 'with_original_language': originalLanguage,
             },
           );
           await cacheService.put(key, res);
@@ -479,7 +567,19 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async {
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async {
+    if (originalLanguage != null && originalLanguage.isNotEmpty) {
+      final now = DateTime.now();
+      return discoverMedia(
+        isMovies: false,
+        params: DiscoverFilterParams(
+          originalLanguage: originalLanguage,
+          airDateGte: formatTmdbDate(now),
+          airDateLte: formatTmdbDate(now.add(const Duration(days: 7))),
+        ),
+        page: page,
+      );
+    }
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
@@ -490,7 +590,7 @@ class TmdbMovieRepository implements MovieRepository {
     try {
       await _ensureGenresLoaded();
       final key = cacheService
-          .generateKey('/tv/on_the_air', {'page': page, 'include_adult': false});
+          .generateKey(TmdbEndpoints.onTheAirTvShows, {'page': page, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getOnTheAirTvShows(page: page);
@@ -520,7 +620,7 @@ class TmdbMovieRepository implements MovieRepository {
       return null;
     }
     final cleanId = tvId.replaceFirst(RegExp(r'^(tv_|movie_)'), '');
-    final key = cacheService.generateKey('/tv/$cleanId/season/$seasonNumber');
+    final key = cacheService.generateKey(TmdbEndpoints.tvSeasonDetails(cleanId, seasonNumber));
 
     if (cacheService.isNegativeCached(key)) {
       return null;
@@ -580,7 +680,7 @@ class TmdbMovieRepository implements MovieRepository {
       };
 
       if (explicitType == MediaType.tv) {
-        final key = cacheService.generateKey('/tv/$cleanId', queryParams);
+        final key = cacheService.generateKey(TmdbEndpoints.tvDetails(cleanId), queryParams);
         detailsJson = await cacheService.get(key);
         if (detailsJson == null) {
           detailsJson = await apiService.getTvDetails(cleanId,
@@ -589,7 +689,7 @@ class TmdbMovieRepository implements MovieRepository {
           await cacheService.put(key, detailsJson);
         }
       } else if (explicitType == MediaType.movie) {
-        final key = cacheService.generateKey('/movie/$cleanId', queryParams);
+        final key = cacheService.generateKey(TmdbEndpoints.movieDetails(cleanId), queryParams);
         detailsJson = await cacheService.get(key);
         if (detailsJson == null) {
           detailsJson = await apiService.getMovieDetails(cleanId,
@@ -599,12 +699,12 @@ class TmdbMovieRepository implements MovieRepository {
         }
       } else {
         // Try movie details first
-        final movieKey = cacheService.generateKey('/movie/$cleanId', queryParams);
+        final movieKey = cacheService.generateKey(TmdbEndpoints.movieDetails(cleanId), queryParams);
         detailsJson = await cacheService.get(movieKey);
         if (detailsJson != null) {
           resolvedType = MediaType.movie;
         } else {
-          final tvKey = cacheService.generateKey('/tv/$cleanId', queryParams);
+          final tvKey = cacheService.generateKey(TmdbEndpoints.tvDetails(cleanId), queryParams);
           detailsJson = await cacheService.get(tvKey);
           if (detailsJson != null) {
             resolvedType = MediaType.tv;
@@ -652,7 +752,7 @@ class TmdbMovieRepository implements MovieRepository {
     }
     try {
       await _ensureGenresLoaded();
-      final key = cacheService.generateKey('/search/multi', {
+      final key = cacheService.generateKey(TmdbEndpoints.searchMulti, {
         'query': query,
         'page': 1,
         'include_adult': false,
@@ -725,7 +825,7 @@ class TmdbMovieRepository implements MovieRepository {
       return _defaultRegions;
     }
     try {
-      final key = cacheService.generateKey('/watch/providers/regions');
+      final key = cacheService.generateKey(TmdbEndpoints.watchProviderRegions);
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getWatchProviderRegions();
@@ -805,7 +905,7 @@ class TmdbMovieRepository implements MovieRepository {
         return filmography.where((item) => item.type == targetType).toList();
       }
 
-      final endpoint = isMovies ? '/discover/movie' : '/discover/tv';
+      final endpoint = isMovies ? TmdbEndpoints.discoverMovies : TmdbEndpoints.discoverTv;
       final queryParams = <String, dynamic>{
         'page': page,
         'include_adult': false,
@@ -862,6 +962,18 @@ class TmdbMovieRepository implements MovieRepository {
       if (params.minRating != null) {
         queryParams['vote_average.gte'] = params.minRating;
       }
+      if (params.primaryReleaseDateGte != null) {
+        queryParams['primary_release_date.gte'] = params.primaryReleaseDateGte;
+      }
+      if (params.primaryReleaseDateLte != null) {
+        queryParams['primary_release_date.lte'] = params.primaryReleaseDateLte;
+      }
+      if (params.airDateGte != null) {
+        queryParams['air_date.gte'] = params.airDateGte;
+      }
+      if (params.airDateLte != null) {
+        queryParams['air_date.lte'] = params.airDateLte;
+      }
       queryParams['sort_by'] = params.sortBy;
 
       final key = cacheService.generateKey(endpoint, queryParams);
@@ -903,7 +1015,7 @@ class TmdbMovieRepository implements MovieRepository {
       return [];
     }
     try {
-      final key = cacheService.generateKey('/search/person', {
+      final key = cacheService.generateKey(TmdbEndpoints.searchPerson, {
         'query': query,
         'page': 1,
         'include_adult': false,
@@ -1525,7 +1637,9 @@ class TmdbMovieRepository implements MovieRepository {
         cleanId = mediaId.substring(6);
         isMovie = true;
       }
-      final endpoint = isMovie ? '/movie/$cleanId/recommendations' : '/tv/$cleanId/recommendations';
+      final endpoint = isMovie
+          ? TmdbEndpoints.movieRecommendations(cleanId)
+          : TmdbEndpoints.tvRecommendations(cleanId);
       final key = cacheService.generateKey(endpoint, {'page': 1, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
@@ -1566,7 +1680,9 @@ class TmdbMovieRepository implements MovieRepository {
         cleanId = mediaId.substring(6);
         isMovie = true;
       }
-      final endpoint = isMovie ? '/movie/$cleanId/similar' : '/tv/$cleanId/similar';
+      final endpoint = isMovie
+          ? TmdbEndpoints.similarMovies(cleanId)
+          : TmdbEndpoints.similarTvShows(cleanId);
       final key = cacheService.generateKey(endpoint, {'page': 1, 'include_adult': false});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
@@ -1600,14 +1716,14 @@ class TmdbMovieRepository implements MovieRepository {
       await _ensureGenresLoaded();
 
       final movieKey =
-          cacheService.generateKey('/person/$personId/movie_credits');
+          cacheService.generateKey(TmdbEndpoints.personMovieCredits('$personId'));
       Map<String, dynamic>? movieRes = await cacheService.get(movieKey);
       if (movieRes == null) {
         movieRes = await apiService.getPersonMovieCredits('$personId');
         await cacheService.put(movieKey, movieRes);
       }
 
-      final tvKey = cacheService.generateKey('/person/$personId/tv_credits');
+      final tvKey = cacheService.generateKey(TmdbEndpoints.personTvCredits('$personId'));
       Map<String, dynamic>? tvRes = await cacheService.get(tvKey);
       if (tvRes == null) {
         tvRes = await apiService.getPersonTvCredits('$personId');
@@ -1647,7 +1763,7 @@ class TmdbMovieRepository implements MovieRepository {
   @override
   Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) async {
     try {
-      final key = cacheService.generateKey('/collection/$collectionId', {});
+      final key = cacheService.generateKey(TmdbEndpoints.collectionDetails(collectionId), {});
       Map<String, dynamic>? res = await cacheService.get(key);
       if (res == null) {
         res = await apiService.getCollectionDetails(collectionId);

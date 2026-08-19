@@ -55,10 +55,10 @@ class _FakeInnerRepository extends MockMovieRepository {
   _FakeInnerRepository(this.items);
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => items;
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => items;
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => items;
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => items;
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => items;

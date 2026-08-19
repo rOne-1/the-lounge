@@ -36,9 +36,9 @@ class _CountingRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];
 }
 
 void main() {

@@ -17,10 +17,10 @@ import 'package:the_lounge/widgets/atmospheric_empty_state.dart';
 /// wrong for testing an empty state.
 class _EmptyRepository extends MockMovieRepository {
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => [];
 }
 
 void main() {

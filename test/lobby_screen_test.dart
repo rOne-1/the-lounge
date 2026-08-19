@@ -23,31 +23,31 @@ class MockTestRepository extends MockMovieRepository {
   });
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => trendingMovies;
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => trendingMovies;
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => popularMovies;
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => popularMovies;
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => trendingTvShows;
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => trendingTvShows;
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => trendingMovies;
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => trendingMovies;
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => trendingTvShows;
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => trendingTvShows;
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => trendingMovies;
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => trendingMovies;
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => trendingTvShows;
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => trendingTvShows;
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => trendingMovies;
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => trendingMovies;
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => trendingTvShows;
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => trendingTvShows;
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async {

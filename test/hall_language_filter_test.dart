@@ -26,31 +26,60 @@ MediaItem _movie(String id, String title, String originalLanguage) => MediaItem(
       releaseOrAirDate: DateTime(2026, 1, 1),
     );
 
+/// LANG-2 (2nd pass, 2026-08-19): a real [TmdbMovieRepository] routes
+/// through /discover with server-side with_original_language when given a
+/// non-null `originalLanguage` (verified separately, at the actual HTTP
+/// query-construction level, in tmdb_integration_test.dart). This mock
+/// stands in for that behavior -- filtering its own return value by
+/// `originalLanguage` when provided -- so tests here can verify the
+/// *wiring*: that each of the 9 fixed-list providers actually passes the
+/// Hall's locked language through to the repository call, rather than
+/// silently dropping it (the actual bug class this whole rewrite targets).
 class _MixedLanguageRepository extends MockMovieRepository {
   DiscoverFilterParams? lastDiscoverParams;
+
+  /// Records the `originalLanguage` argument each of the 9 methods was
+  /// last called with, keyed by method name -- lets a test assert the
+  /// provider passed the Hall's lock through, not just that the returned
+  /// data happens to look right.
+  final Map<String, String?> capturedOriginalLanguages = {};
 
   final _en = _movie('en1', 'English Movie', 'en');
   final _ja = _movie('ja1', 'Japanese Movie', 'ja');
 
+  List<MediaItem> _filtered(String methodName, String? originalLanguage) {
+    capturedOriginalLanguages[methodName] = originalLanguage;
+    if (originalLanguage == null || originalLanguage.isEmpty) return [_en, _ja];
+    return [_en, _ja].where((m) => m.originalLanguage == originalLanguage).toList();
+  }
+
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => [_en, _ja];
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async =>
+      _filtered('getTrendingMovies', originalLanguage);
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [_en, _ja];
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async =>
+      _filtered('getPopularMovies', originalLanguage);
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [_en, _ja];
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async =>
+      _filtered('getTopRatedMovies', originalLanguage);
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [_en, _ja];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async =>
+      _filtered('getUpcomingMovies', originalLanguage);
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async =>
-      [_en, _ja];
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async =>
+      _filtered('getNowPlayingMovies', originalLanguage);
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => [_en, _ja];
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async =>
+      _filtered('getTrendingTvShows', originalLanguage);
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [_en, _ja];
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async =>
+      _filtered('getTopRatedTvShows', originalLanguage);
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => [_en, _ja];
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async =>
+      _filtered('getAiringTodayTvShows', originalLanguage);
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => [_en, _ja];
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async =>
+      _filtered('getOnTheAirTvShows', originalLanguage);
 
   @override
   Future<List<MediaItem>> discoverMedia({
@@ -61,32 +90,6 @@ class _MixedLanguageRepository extends MockMovieRepository {
     lastDiscoverParams = params;
     if (params.originalLanguage == null) return [_en, _ja];
     return [_en, _ja].where((m) => m.originalLanguage == params.originalLanguage).toList();
-  }
-}
-
-/// Dev-reported 2026-08-19: page 1 alone often has too few (or zero)
-/// matches for a locked language, since TMDB's fixed-list endpoints return
-/// one unfiltered page with no server-side language filter -- Lobby's
-/// rails rendered near-empty as a result. This repository puts the only
-/// Hindi ('hi') match on page 3, with pages 1-2 entirely English, so a test
-/// against it only passes if the provider actually backfills across pages
-/// rather than truncating to page 1.
-class _SparseLanguageRepository extends MockMovieRepository {
-  final List<int> requestedPages = [];
-
-  @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async {
-    requestedPages.add(page);
-    switch (page) {
-      case 1:
-        return [_movie('np-en-1', 'English One', 'en'), _movie('np-en-2', 'English Two', 'en')];
-      case 2:
-        return [_movie('np-en-3', 'English Three', 'en')];
-      case 3:
-        return [_movie('np-hi-1', 'Hindi One', 'hi')];
-      default:
-        return [];
-    }
   }
 }
 
@@ -207,48 +210,64 @@ void main() {
       expect((await container.read(upcomingMoviesProvider.future)).map((m) => m.id), ['en1']);
     });
 
-    test('nowPlayingMoviesProvider backfills across pages when the locked '
-        'language has no matches on page 1 (dev-reported bug, 2026-08-19: '
-        'Lobby rails rendered near-empty for a locked language)', () async {
-      final sparseRepo = _SparseLanguageRepository();
+    test('every one of the 9 fixed-list providers passes the Hall\'s locked '
+        'language through to its repository call (2nd-pass redesign,  '
+        '2026-08-19: the 1st-pass fix client-side-filtered/backfilled a '
+        'globally-weighted, English-dominated raw list, which still failed '
+        'to surface real regional-language content -- fixed by pushing the '
+        'filter down to the repository layer, which routes through '
+        '/discover with server-side with_original_language instead)', () async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
-          movieRepositoryProvider.overrideWithValue(sparseRepo),
+          movieRepositoryProvider.overrideWithValue(repo),
         ],
       );
       addTearDown(container.dispose);
 
       await container.read(hallProvider.notifier).updateHallLanguage('common', 'hi', 'Hindi');
 
-      final result = await container.read(nowPlayingMoviesProvider.future);
-      expect(result.map((m) => m.id), ['np-hi-1']);
-      // Confirms it actually paged forward rather than getting lucky --
-      // page 1 alone (the pre-fix behavior) would have returned nothing.
-      // Keeps going past page 3's single match (1 item is far short of the
-      // targetCount default of 12) until page 4 comes back empty and ends
-      // the search via genuine exhaustion, not an early "found one" stop.
-      expect(sparseRepo.requestedPages, [1, 2, 3, 4]);
+      await container.read(trendingMoviesProvider.future);
+      await container.read(trendingTvShowsProvider.future);
+      await container.read(popularMoviesProvider.future);
+      await container.read(topRatedMoviesProvider.future);
+      await container.read(topRatedTvShowsProvider.future);
+      await container.read(nowPlayingMoviesProvider.future);
+      await container.read(airingTodayTvShowsProvider.future);
+      await container.read(upcomingMoviesProvider.future);
+      await container.read(onTheAirTvShowsProvider.future);
+
+      expect(
+        repo.capturedOriginalLanguages,
+        {
+          'getTrendingMovies': 'hi',
+          'getTrendingTvShows': 'hi',
+          'getPopularMovies': 'hi',
+          'getTopRatedMovies': 'hi',
+          'getTopRatedTvShows': 'hi',
+          'getNowPlayingMovies': 'hi',
+          'getAiringTodayTvShows': 'hi',
+          'getUpcomingMovies': 'hi',
+          'getOnTheAirTvShows': 'hi',
+        },
+      );
     });
 
-    test('nowPlayingMoviesProvider stops paging once the repository genuinely '
-        'exhausts (page returns empty), rather than looping past it', () async {
-      final sparseRepo = _SparseLanguageRepository();
+    test('the 9 fixed-list providers pass null through when the hall is '
+        'unrestricted, not an empty string or a stale lock', () async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
-          movieRepositoryProvider.overrideWithValue(sparseRepo),
+          movieRepositoryProvider.overrideWithValue(repo),
         ],
       );
       addTearDown(container.dispose);
 
-      // No language on any page matches 'ko' -- page 4 returns [] and that
-      // should end the search rather than retrying up to maxPages.
-      await container.read(hallProvider.notifier).updateHallLanguage('common', 'ko', 'Korean');
+      await container.read(nowPlayingMoviesProvider.future);
+      await container.read(onTheAirTvShowsProvider.future);
 
-      final result = await container.read(nowPlayingMoviesProvider.future);
-      expect(result, isEmpty);
-      expect(sparseRepo.requestedPages, [1, 2, 3, 4]);
+      expect(repo.capturedOriginalLanguages['getNowPlayingMovies'], isNull);
+      expect(repo.capturedOriginalLanguages['getOnTheAirTvShows'], isNull);
     });
   });
 

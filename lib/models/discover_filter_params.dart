@@ -25,6 +25,17 @@ class DiscoverFilterParams {
   final int? releaseYear;
   final double? minRating;
 
+  /// LANG-2 (2nd pass, 2026-08-19): date-range filters used to approximate
+  /// TMDB's dedicated now_playing/upcoming/airing_today/on_the_air
+  /// endpoints via /discover when a Hall's language lock is active (those
+  /// dedicated endpoints have no language filter at all -- see
+  /// repository_provider.dart's fetchLanguageLockedDiscover). ISO
+  /// 'YYYY-MM-DD' strings, matching TMDB's expected date format.
+  final String? primaryReleaseDateGte;
+  final String? primaryReleaseDateLte;
+  final String? airDateGte;
+  final String? airDateLte;
+
   const DiscoverFilterParams({
     this.genreId,
     this.genreName,
@@ -45,6 +56,10 @@ class DiscoverFilterParams {
     this.sortBy = 'popularity.desc',
     this.releaseYear,
     this.minRating,
+    this.primaryReleaseDateGte,
+    this.primaryReleaseDateLte,
+    this.airDateGte,
+    this.airDateLte,
   });
 
   /// Returns true if any filter other than sortBy is set.
@@ -60,7 +75,11 @@ class DiscoverFilterParams {
         tvNetworkId != null ||
         (tvStatus != null && tvStatus!.isNotEmpty) ||
         releaseYear != null ||
-        minRating != null;
+        minRating != null ||
+        primaryReleaseDateGte != null ||
+        primaryReleaseDateLte != null ||
+        airDateGte != null ||
+        airDateLte != null;
   }
 
   DiscoverFilterParams copyWith({
@@ -83,6 +102,10 @@ class DiscoverFilterParams {
     String? sortBy,
     Object? releaseYear = _sentinel,
     Object? minRating = _sentinel,
+    Object? primaryReleaseDateGte = _sentinel,
+    Object? primaryReleaseDateLte = _sentinel,
+    Object? airDateGte = _sentinel,
+    Object? airDateLte = _sentinel,
   }) {
     return DiscoverFilterParams(
       genreId: genreId == _sentinel ? this.genreId : genreId as int?,
@@ -122,6 +145,16 @@ class DiscoverFilterParams {
           releaseYear == _sentinel ? this.releaseYear : releaseYear as int?,
       minRating:
           minRating == _sentinel ? this.minRating : minRating as double?,
+      primaryReleaseDateGte: primaryReleaseDateGte == _sentinel
+          ? this.primaryReleaseDateGte
+          : primaryReleaseDateGte as String?,
+      primaryReleaseDateLte: primaryReleaseDateLte == _sentinel
+          ? this.primaryReleaseDateLte
+          : primaryReleaseDateLte as String?,
+      airDateGte:
+          airDateGte == _sentinel ? this.airDateGte : airDateGte as String?,
+      airDateLte:
+          airDateLte == _sentinel ? this.airDateLte : airDateLte as String?,
     );
   }
 
@@ -148,7 +181,11 @@ class DiscoverFilterParams {
           tvStatus == other.tvStatus &&
           sortBy == other.sortBy &&
           releaseYear == other.releaseYear &&
-          minRating == other.minRating;
+          minRating == other.minRating &&
+          primaryReleaseDateGte == other.primaryReleaseDateGte &&
+          primaryReleaseDateLte == other.primaryReleaseDateLte &&
+          airDateGte == other.airDateGte &&
+          airDateLte == other.airDateLte;
 
   @override
   int get hashCode => Object.hashAll([
@@ -171,10 +208,14 @@ class DiscoverFilterParams {
         sortBy,
         releaseYear,
         minRating,
+        primaryReleaseDateGte,
+        primaryReleaseDateLte,
+        airDateGte,
+        airDateLte,
       ]);
 
   @override
   String toString() {
-    return 'DiscoverFilterParams(genreId: $genreId, genreName: $genreName, keywordId: $keywordId, keywordName: $keywordName, personId: $personId, personName: $personName, providerId: $providerId, providerName: $providerName, watchRegion: $watchRegion, minRuntime: $minRuntime, maxRuntime: $maxRuntime, minVoteCount: $minVoteCount, originalLanguage: $originalLanguage, tvNetworkId: $tvNetworkId, tvNetworkName: $tvNetworkName, tvStatus: $tvStatus, sortBy: $sortBy, releaseYear: $releaseYear, minRating: $minRating)';
+    return 'DiscoverFilterParams(genreId: $genreId, genreName: $genreName, keywordId: $keywordId, keywordName: $keywordName, personId: $personId, personName: $personName, providerId: $providerId, providerName: $providerName, watchRegion: $watchRegion, minRuntime: $minRuntime, maxRuntime: $maxRuntime, minVoteCount: $minVoteCount, originalLanguage: $originalLanguage, tvNetworkId: $tvNetworkId, tvNetworkName: $tvNetworkName, tvStatus: $tvStatus, sortBy: $sortBy, releaseYear: $releaseYear, minRating: $minRating, primaryReleaseDateGte: $primaryReleaseDateGte, primaryReleaseDateLte: $primaryReleaseDateLte, airDateGte: $airDateGte, airDateLte: $airDateLte)';
   }
 }

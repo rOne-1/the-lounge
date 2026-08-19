@@ -22,31 +22,31 @@ class MockWatchingRepository extends MockMovieRepository {
   });
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async => items.values.where((i) => i.type == MediaType.movie).toList();
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.movie).toList();
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => items.values.where((i) => i.type == MediaType.movie).toList();
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.movie).toList();
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => items.values.where((i) => i.type == MediaType.tv).toList();
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.tv).toList();
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => items.values.where((i) => i.type == MediaType.movie).toList();
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.movie).toList();
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => items.values.where((i) => i.type == MediaType.tv).toList();
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.tv).toList();
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region}) async => items.values.where((i) => i.type == MediaType.movie).toList();
+  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.movie).toList();
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => items.values.where((i) => i.type == MediaType.tv).toList();
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.tv).toList();
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => items.values.where((i) => i.type == MediaType.movie).toList();
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.movie).toList();
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => items.values.where((i) => i.type == MediaType.tv).toList();
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.tv).toList();
 
   @override
   Future<MediaItem?> getMediaDetails(String id) async => items[id];

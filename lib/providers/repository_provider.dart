@@ -87,75 +87,38 @@ final shouldShowConfigurationErrorProvider = Provider<bool>((ref) {
   return ref.watch(isUsingMockRepositoryProvider);
 });
 
-/// LANG-2: TMDB's fixed-list endpoints (trending/popular/top_rated/
-/// now_playing/upcoming/airing_today/on_the_air) have no server-side
-/// content-language filter -- confirmed against TMDB's own API docs, which
-/// note these are "really just a discover call behind the scenes" with
-/// their filters not exposed to the client, unlike `/discover/movie` and
-/// `/discover/tv` (which do support `with_original_language` and are used
-/// directly by Discover/Search via [DiscoverFilterParams.originalLanguage]).
-/// So a Hall's language lock is enforced client-side here instead, applied
-/// uniformly to every one of these providers.
-///
-/// LANG-2 bugfix (dev-reported 2026-08-19): a single page's worth of raw
-/// results is often mostly-to-entirely the wrong language once a lock is
-/// active, so naively filtering just page 1 left Lobby rails rendering
-/// near-empty (confirmed live -- a locked-language Hall's "Now Playing"/
-/// "Upcoming" rails dropped to 1-2 items). Mirrors
-/// `DiscoverDeckNotifier.loadPool`'s existing multi-page retry pattern
-/// (`discover_deck_provider.dart`): keep fetching additional pages until
-/// [targetCount] matching items are collected or [maxPages] is hit,
-/// instead of silently truncating to whatever page 1 happened to contain.
-/// No-op (single unfiltered fetch) when no lock is active.
-Future<List<MediaItem>> fetchLanguageLockedList(
-  Future<List<MediaItem>> Function(int page) fetchPage,
-  String? lockedLanguageCode, {
-  int targetCount = 12,
-  int maxPages = 5,
-}) async {
-  if (lockedLanguageCode == null || lockedLanguageCode.isEmpty) {
-    return fetchPage(1);
-  }
-  final collected = <MediaItem>[];
-  final seenIds = <String>{};
-  for (int page = 1; page <= maxPages; page++) {
-    final pageItems = await fetchPage(page);
-    if (pageItems.isEmpty) break;
-    for (final item in pageItems) {
-      if (item.originalLanguage == lockedLanguageCode && seenIds.add(item.id)) {
-        collected.add(item);
-      }
-    }
-    if (collected.length >= targetCount) break;
-  }
-  return collected;
-}
-
+/// LANG-2 (2nd pass, 2026-08-19): TMDB's fixed-list endpoints (trending/
+/// popular/top_rated/now_playing/upcoming/airing_today/on_the_air) have no
+/// server-side content-language filter, and are globally-weighted/
+/// English-dominated -- a first attempt at this (client-side filtering,
+/// even backfilled across multiple pages) still left Lobby rails
+/// near-empty for a real regional-language lock (dev-reported: TMDB's
+/// trending/now-playing charts can go 100+ items deep with zero matches
+/// for a language that isn't globally chart-topping). Fixed at the
+/// repository layer instead: [MovieRepository]'s 9 fixed-list methods each
+/// accept an optional `originalLanguage`, and when set, [TmdbMovieRepository]
+/// routes through `/discover` with `with_original_language` applied
+/// server-side (the same mechanism Search/Browse's [discoverMediaProvider]
+/// already used correctly) -- TMDB does the real filtering, so every item
+/// returned already matches; a genuinely thin rail for a niche
+/// language+filter combination is an honest result, not a bug to backfill
+/// around.
 final trendingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getTrendingMovies(page: page),
-    lockedLanguageCode,
-  );
+  return repo.getTrendingMovies(originalLanguage: lockedLanguageCode);
 });
 
 final trendingTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getTrendingTvShows(page: page),
-    lockedLanguageCode,
-  );
+  return repo.getTrendingTvShows(originalLanguage: lockedLanguageCode);
 });
 
 final popularMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getPopularMovies(page: page),
-    lockedLanguageCode,
-  );
+  return repo.getPopularMovies(originalLanguage: lockedLanguageCode);
 });
 
 final mediaDetailsProvider =
@@ -173,56 +136,38 @@ final watchProviderRegionsProvider =
 final topRatedMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getTopRatedMovies(page: page),
-    lockedLanguageCode,
-  );
+  return repo.getTopRatedMovies(originalLanguage: lockedLanguageCode);
 });
 
 final topRatedTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getTopRatedTvShows(page: page),
-    lockedLanguageCode,
-  );
+  return repo.getTopRatedTvShows(originalLanguage: lockedLanguageCode);
 });
 
 final nowPlayingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final country = ref.watch(mediaProvider.select((s) => s.watchProvidersCountry));
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getNowPlayingMovies(page: page, region: country),
-    lockedLanguageCode,
-  );
+  return repo.getNowPlayingMovies(region: country, originalLanguage: lockedLanguageCode);
 });
 
 final airingTodayTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getAiringTodayTvShows(page: page),
-    lockedLanguageCode,
-  );
+  return repo.getAiringTodayTvShows(originalLanguage: lockedLanguageCode);
 });
 
 final upcomingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getUpcomingMovies(page: page),
-    lockedLanguageCode,
-  );
+  return repo.getUpcomingMovies(originalLanguage: lockedLanguageCode);
 });
 
 final onTheAirTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
   final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return fetchLanguageLockedList(
-    (page) => repo.getOnTheAirTvShows(page: page),
-    lockedLanguageCode,
-  );
+  return repo.getOnTheAirTvShows(originalLanguage: lockedLanguageCode);
 });
 
 final tvSeasonDetailsProvider =

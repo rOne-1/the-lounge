@@ -33,6 +33,7 @@ class _RegionAwareRepository extends MockMovieRepository {
   Future<List<MediaItem>> getNowPlayingMovies({
     int page = 1,
     String? region,
+    String? originalLanguage,
   }) async {
     capturedRegions.add(region);
     switch (page) {
@@ -46,29 +47,29 @@ class _RegionAwareRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async =>
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async =>
       page == 1 ? [_movie('t1', 'Trending One')] : [];
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1}) async => [];
+  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => [];
 }
 
 /// Dev-reported 2026-08-19 (related bug found while investigating the
@@ -79,7 +80,7 @@ class _RegionAwareRepository extends MockMovieRepository {
 /// wrong-language item so a test only passes if Load More itself filters.
 class _MixedLanguagePagedRepository extends MockMovieRepository {
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1}) async {
+  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async {
     switch (page) {
       case 1:
         return [_movie('t-hi-1', 'Hindi One', 'hi')];

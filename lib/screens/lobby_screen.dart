@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../providers/hall_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/media_provider.dart';
 import '../models/media_item.dart';
@@ -441,10 +442,13 @@ class LobbyScreen extends ConsumerWidget {
                 // user's actual watch-providers country, producing a
                 // mismatched/inconsistent list that read as broken
                 // pagination. Explicit fetchPage keeps every page on the
-                // same region as the initial load.
+                // same region as the initial load -- and (LANG-2, 2nd pass)
+                // the same Hall language lock, for the same reason.
                 final country = ref.read(
                   mediaProvider.select((s) => s.watchProvidersCountry),
                 );
+                final lockedLanguageCode =
+                    ref.read(activeHallSpaceProvider).lockedLanguageCode;
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -454,9 +458,11 @@ class LobbyScreen extends ConsumerWidget {
                           ? nowPlayingMoviesProvider
                           : airingTodayTvShowsProvider,
                       fetchPage: isMovies
-                          ? (page) => ref
-                              .read(movieRepositoryProvider)
-                              .getNowPlayingMovies(page: page, region: country)
+                          ? (page) => ref.read(movieRepositoryProvider).getNowPlayingMovies(
+                                page: page,
+                                region: country,
+                                originalLanguage: lockedLanguageCode,
+                              )
                           : null,
                     ),
                   ),

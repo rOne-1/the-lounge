@@ -46,25 +46,29 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
       return widget.fetchPage!(page);
     }
     final repo = ref.read(movieRepositoryProvider);
+    // LANG-2 (2nd pass): threaded through so Load More's later pages stay
+    // scoped to the Hall's language lock server-side, same as the initial
+    // itemsProvider fetch -- see MovieRepository's originalLanguage param.
+    final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
     final t = widget.title.toLowerCase();
     if (t.contains('trending') && (t.contains('tv') || t.contains('show'))) {
-      return repo.getTrendingTvShows(page: page);
+      return repo.getTrendingTvShows(page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('trending')) {
-      return repo.getTrendingMovies(page: page);
+      return repo.getTrendingMovies(page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('top rated') && (t.contains('tv') || t.contains('show'))) {
-      return repo.getTopRatedTvShows(page: page);
+      return repo.getTopRatedTvShows(page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('top rated')) {
-      return repo.getTopRatedMovies(page: page);
+      return repo.getTopRatedMovies(page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('now playing')) {
-      return repo.getNowPlayingMovies(page: page);
+      return repo.getNowPlayingMovies(page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('airing today')) {
-      return repo.getAiringTodayTvShows(page: page);
+      return repo.getAiringTodayTvShows(page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('upcoming')) {
-      return repo.getUpcomingMovies(page: page);
+      return repo.getUpcomingMovies(page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('on the air')) {
-      return repo.getOnTheAirTvShows(page: page);
+      return repo.getOnTheAirTvShows(page: page, originalLanguage: lockedLanguageCode);
     }
-    return repo.getTrendingMovies(page: page);
+    return repo.getTrendingMovies(page: page, originalLanguage: lockedLanguageCode);
   }
 
   Future<void> _loadMore() async {
@@ -76,11 +80,12 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
     try {
       final nextPage = _currentPage + 1;
       final rawItems = await _fetchNextPage(nextPage);
-      // LANG-2 bugfix: the initial itemsProvider fetch enforces a Hall's
-      // language lock (see fetchLanguageLockedList in
-      // repository_provider.dart), but "Load More" here calls the raw
-      // repository directly and was bypassing that filter entirely --
-      // wrong-language items could leak in on page 2+. Apply the same lock.
+      // LANG-2 (2nd pass): _fetchNextPage already scopes the fetch itself
+      // to the Hall's language lock server-side (see MovieRepository's
+      // originalLanguage param), so this is a defensive client-side
+      // backstop, not the primary filter -- catches anything that slips
+      // through (e.g. a future fetchPage override that forgets to thread
+      // the lock), rather than trusting every call site to get it right.
       final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
       final newItems = (lockedLanguageCode != null && lockedLanguageCode.isNotEmpty)
           ? rawItems.where((e) => e.originalLanguage == lockedLanguageCode).toList()

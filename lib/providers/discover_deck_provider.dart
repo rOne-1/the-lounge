@@ -158,12 +158,12 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
             excludedIds.contains(cleanId);
       }
 
-      // LANG-2: pre-filter the discoverMedia() calls server-side; the
-      // getPopularMovies/getTopRatedTvShows calls blended in below can't be
-      // (TMDB's fixed-list endpoints have no content-language filter -- see
-      // the doc comment on fetchLanguageLockedList in repository_provider.dart),
-      // so `filtered` below also re-checks every item's language regardless
-      // of source.
+      // LANG-2 (2nd pass): pre-filter both the discoverMedia() calls AND the
+      // getPopularMovies/getTopRatedTvShows blend-in calls server-side (see
+      // MovieRepository's originalLanguage param -- routes fixed-list
+      // methods through /discover with with_original_language when set).
+      // `filtered` below still re-checks every item's language regardless
+      // of source, as a defensive backstop, not the primary filter.
       final lockedLanguageCode =
           ref.read(activeHallSpaceProvider).lockedLanguageCode;
       final discoverParams = DiscoverFilterParams(
@@ -185,7 +185,10 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
             final d2 = await repo.discoverMedia(isMovies: true, params: discoverParams, page: p2);
             rawList.addAll(d2);
           } catch (_) {}
-          try { final pop1 = await repo.getPopularMovies(page: p1); rawList.addAll(pop1); } catch (_) {}
+          try {
+            final pop1 = await repo.getPopularMovies(page: p1, originalLanguage: lockedLanguageCode);
+            rawList.addAll(pop1);
+          } catch (_) {}
         } else {
           final d1 = await repo.discoverMedia(isMovies: false, params: discoverParams, page: p1);
           rawList.addAll(d1);
@@ -193,7 +196,10 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
             final d2 = await repo.discoverMedia(isMovies: false, params: discoverParams, page: p2);
             rawList.addAll(d2);
           } catch (_) {}
-          try { final top1 = await repo.getTopRatedTvShows(page: p1); rawList.addAll(top1); } catch (_) {}
+          try {
+            final top1 = await repo.getTopRatedTvShows(page: p1, originalLanguage: lockedLanguageCode);
+            rawList.addAll(top1);
+          } catch (_) {}
         }
 
         final seen = <String>{...state.pool.map((e) => e.id), ...newItems.map((e) => e.id)};
