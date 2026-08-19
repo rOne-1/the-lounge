@@ -2,18 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
+import '../models/media_item.dart';
+import '../models/profile_space.dart';
 import '../providers/media_provider.dart';
+import '../providers/navigation_provider.dart';
 import '../widgets/dashed_border_card.dart';
 import '../widgets/pile_summary_card.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/watching_hero_card.dart';
 import 'pile_screen.dart';
 
-/// YSR-HUB-1: The Archive Hub (`your collection.png`) - a dedicated status
+/// YSR-HUB-1 / COUNT-1 / COUNT-2: The Archive Hub (`your collection.png`) - a dedicated status
 /// hub providing access to all 6 status piles (Watching, Watched, Watchlist,
 /// Saved, On-Hold, Dropped). Built with luxury status gradients, squircle icon
-/// badges, large Bodoni Moda italic count numerals, and a 3-poster depth stack.
-/// Fully responsive and width-constrained for multi-device harmony.
+/// badges, large Bodoni Moda italic count numerals, dynamic medium-reactive counts,
+/// and contextual pluralization per active domain (Movies / TV / Anime).
 class ArchiveScreen extends ConsumerWidget {
   const ArchiveScreen({super.key});
 
@@ -24,14 +27,19 @@ class ArchiveScreen extends ConsumerWidget {
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
 
-    int countFor(Map<String, dynamic> itemsMap) => itemsMap.length;
+    final activeMediaType = ref.watch(navigationProvider).activeMediaType;
+    final activeDomain = MediumDomain.fromMediaTypeToggle(activeMediaType);
+    final targetType = activeMediaType == MediaTypeToggle.movies ? MediaType.movie : MediaType.tv;
 
-    final watchlistCount = countFor(mediaState.watchlist);
-    final savedCount = countFor(mediaState.maybeList);
-    final watchingCount = countFor(mediaState.watchingList);
-    final onHoldCount = countFor(mediaState.onHoldList);
-    final droppedCount = countFor(mediaState.droppedList);
-    final watchedCount = countFor(mediaState.watchedList);
+    int countForType(Map<String, dynamic> itemsMap) =>
+        itemsMap.values.where((m) => m is MediaItem && m.type == targetType).length;
+
+    final watchlistCount = countForType(mediaState.watchlist);
+    final savedCount = countForType(mediaState.maybeList);
+    final watchingCount = countForType(mediaState.watchingList);
+    final onHoldCount = countForType(mediaState.onHoldList);
+    final droppedCount = countForType(mediaState.droppedList);
+    final watchedCount = countForType(mediaState.watchedList);
 
     final totalTitles = watchlistCount +
         savedCount +
@@ -39,6 +47,60 @@ class ArchiveScreen extends ConsumerWidget {
         onHoldCount +
         droppedCount +
         watchedCount;
+
+    String subtitleFor(int count) {
+      switch (activeDomain) {
+        case MediumDomain.movies:
+          return count == 1 ? 'movie' : 'movies';
+        case MediumDomain.tv:
+          return count == 1 ? 'show' : 'shows';
+        case MediumDomain.anime:
+          return count == 1 ? 'series' : 'series';
+      }
+    }
+
+    String watchingSubtitle;
+    switch (activeDomain) {
+      case MediumDomain.movies:
+        watchingSubtitle = watchingCount == 1 ? '1 movie in progress' : '$watchingCount movies in progress';
+        break;
+      case MediumDomain.tv:
+        watchingSubtitle = watchingCount == 1 ? '1 show in progress' : '$watchingCount shows in progress';
+        break;
+      case MediumDomain.anime:
+        watchingSubtitle = watchingCount == 1 ? '1 series in progress' : '$watchingCount series in progress';
+        break;
+    }
+
+    String droppedSubtitle;
+    if (droppedCount == 0) {
+      droppedSubtitle = 'nothing here — a clean record';
+    } else {
+      switch (activeDomain) {
+        case MediumDomain.movies:
+          droppedSubtitle = '$droppedCount ${droppedCount == 1 ? "movie" : "movies"}';
+          break;
+        case MediumDomain.tv:
+          droppedSubtitle = '$droppedCount ${droppedCount == 1 ? "TV show" : "TV shows"}';
+          break;
+        case MediumDomain.anime:
+          droppedSubtitle = '$droppedCount ${droppedCount == 1 ? "anime" : "anime series"}';
+          break;
+      }
+    }
+
+    String topBarSubtitle;
+    switch (activeDomain) {
+      case MediumDomain.movies:
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "movie" : "movies"} · 6 piles';
+        break;
+      case MediumDomain.tv:
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "TV show" : "TV shows"} · 6 piles';
+        break;
+      case MediumDomain.anime:
+        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "anime" : "anime series"} · 6 piles';
+        break;
+    }
 
     return Scaffold(
       backgroundColor: colors.base,
@@ -58,12 +120,13 @@ class ArchiveScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Top Bar with Back Button & Header
-                  _buildTopBar(context, totalTitles),
+                  _buildTopBar(context, topBarSubtitle),
                   const SizedBox(height: 24),
 
                   // 1. Hero Watching Card
                   WatchingHeroCard(
                     count: watchingCount,
+                    subtitle: watchingSubtitle,
                     onTap: () => _openPile(context, PileKind.watching),
                   ),
                   const SizedBox(height: 14),
@@ -79,7 +142,7 @@ class ArchiveScreen extends ConsumerWidget {
                     children: [
                       PileSummaryCard(
                         label: PileKind.watched.label,
-                        subtitle: 'titles',
+                        subtitle: subtitleFor(watchedCount),
                         count: watchedCount,
                         icon: Icons.check_rounded,
                         statusColor: PileKind.watched.statusColor,
@@ -87,7 +150,7 @@ class ArchiveScreen extends ConsumerWidget {
                       ),
                       PileSummaryCard(
                         label: PileKind.watchlist.label,
-                        subtitle: 'titles',
+                        subtitle: subtitleFor(watchlistCount),
                         count: watchlistCount,
                         icon: Icons.bookmark_rounded,
                         statusColor: PileKind.watchlist.statusColor,
@@ -95,7 +158,7 @@ class ArchiveScreen extends ConsumerWidget {
                       ),
                       PileSummaryCard(
                         label: PileKind.saved.label,
-                        subtitle: 'titles',
+                        subtitle: subtitleFor(savedCount),
                         count: savedCount,
                         icon: Icons.favorite_rounded,
                         statusColor: PileKind.saved.statusColor,
@@ -103,7 +166,7 @@ class ArchiveScreen extends ConsumerWidget {
                       ),
                       PileSummaryCard(
                         label: PileKind.onHold.label,
-                        subtitle: 'titles',
+                        subtitle: subtitleFor(onHoldCount),
                         count: onHoldCount,
                         icon: Icons.pause_rounded,
                         statusColor: PileKind.onHold.statusColor,
@@ -150,9 +213,7 @@ class ArchiveScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                droppedCount == 0
-                                    ? 'nothing here — a clean record'
-                                    : '$droppedCount title${droppedCount == 1 ? '' : 's'}',
+                                droppedSubtitle,
                                 style: AppThemes.safeGeist(
                                   fontSize: 12.5,
                                   color: colors.sub,
@@ -182,7 +243,7 @@ class ArchiveScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildTopBar(BuildContext context, int totalTitles) {
+  Widget _buildTopBar(BuildContext context, String subtitle) {
     final colors = context.ambianceColors;
 
     return Row(
@@ -198,9 +259,7 @@ class ArchiveScreen extends ConsumerWidget {
               border: Border.all(color: colors.lineRgba),
               boxShadow: [
                 BoxShadow(
-                  color: colors.isDark
-                      ? const Color(0x18000000)
-                      : const Color(0x06000000),
+                  color: colors.scrim.withValues(alpha: colors.isDark ? 0.25 : 0.06),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -219,7 +278,7 @@ class ArchiveScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Your Collection',
+                'Your Archive',
                 style: GoogleFonts.bodoniModa(
                   fontSize: 30,
                   fontWeight: FontWeight.w400,
@@ -230,7 +289,7 @@ class ArchiveScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '$totalTitles titles · 6 piles',
+                subtitle,
                 style: AppThemes.safeGeist(
                   fontSize: 13.5,
                   color: colors.sub,

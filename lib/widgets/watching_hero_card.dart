@@ -8,11 +8,13 @@ import 'pressable_scale.dart';
 /// Fully dynamic, responsive, and theme-isolated via AmbianceColors & AppStatusColors.
 class WatchingHeroCard extends StatelessWidget {
   final int count;
+  final String? subtitle;
   final VoidCallback onTap;
 
   const WatchingHeroCard({
     super.key,
     required this.count,
+    this.subtitle,
     required this.onTap,
   });
 
@@ -128,7 +130,7 @@ class WatchingHeroCard extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      count == 1 ? '1 title in progress' : '$count titles in progress',
+                      subtitle ?? (count == 1 ? '1 title in progress' : '$count titles in progress'),
                       style: AppThemes.safeGeist(
                         fontSize: 13.5,
                         color: colors.sub,

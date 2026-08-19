@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/archive_screen.dart';
 import 'package:the_lounge/screens/pile_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
+import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 
@@ -38,7 +39,7 @@ void main() {
       final container = await pumpArchiveScreen(tester);
       addTearDown(container.dispose);
 
-      expect(find.text('Your Collection'), findsOneWidget);
+      expect(find.text('Your Archive'), findsOneWidget);
       expect(find.textContaining('6 piles'), findsOneWidget);
 
       expect(find.text('Watching'), findsOneWidget);
@@ -86,6 +87,21 @@ void main() {
 
       final pileScreen = tester.widget<PileScreen>(find.byType(PileScreen));
       expect(pileScreen.kind, PileKind.watched);
+    });
+
+    testWidgets('COUNT-1 / COUNT-2: counts react dynamically to Movies vs TV media toggle',
+        (tester) async {
+      final container = await pumpArchiveScreen(tester);
+      addTearDown(container.dispose);
+
+      // Initially Movies mode: 0 movies · 6 piles
+      expect(find.text('0 movies · 6 piles'), findsOneWidget);
+
+      // Switch to TV mode
+      container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
+      await tester.pumpAndSettle();
+
+      expect(find.text('0 TV shows · 6 piles'), findsOneWidget);
     });
   });
 }
