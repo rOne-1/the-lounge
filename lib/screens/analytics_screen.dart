@@ -352,7 +352,15 @@ class _AnalyticsResults extends StatelessWidget {
                 childAspectRatio: 1.16,
                 children: [
                   ArchiveSummaryCard(
-                    label: 'Movies',
+                    // EXP-CLARITY-1: this numeral is hours, not a title
+                    // count -- every other ArchiveSummaryCard in the app
+                    // puts an item count in this exact slot, so a bare
+                    // "Movies" label reads as "66 movies watched" when it
+                    // actually means "66 hours" (dev-reported confusion:
+                    // "36 movies in all shelves but analytics show 66
+                    // movies"). Label spells out the unit to remove that
+                    // ambiguity.
+                    label: 'Movie Hours',
                     subtitle: movieHours == 1
                         ? '1 hour watched'
                         : '$movieHours hours watched',
@@ -362,7 +370,7 @@ class _AnalyticsResults extends StatelessWidget {
                     onTap: () {},
                   ),
                   ArchiveSummaryCard(
-                    label: 'TV Shows',
+                    label: 'TV Hours',
                     subtitle: tvHours == 1
                         ? '~1 hour watched (estimate)'
                         : '~$tvHours hours watched (estimate)',

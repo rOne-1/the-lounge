@@ -262,8 +262,8 @@ void main() {
       expect(find.text('Generate Analytics'), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text('Temporal'), findsOneWidget);
-      expect(find.text('Movies'), findsOneWidget);
-      expect(find.text('TV Shows'), findsOneWidget);
+      expect(find.text('Movie Hours'), findsOneWidget);
+      expect(find.text('TV Hours'), findsOneWidget);
       expect(find.text('2 hours watched'), findsOneWidget);
       expect(find.text('~5 hours watched (estimate)'), findsOneWidget);
       expect(find.byType(ChronologicalHeatmap), findsOneWidget);
