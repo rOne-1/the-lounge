@@ -145,6 +145,7 @@ void main() {
               epicCount: 0),
           discoverSwipeRatio: DiscoverSwipeRatio(
               skippedCount: 0, watchlistedCount: 0, savedCount: 0),
+          studioAffinity: StudioAffinity([]),
         ),
         generatedAt: DateTime(2026, 1, 1),
       );
@@ -222,6 +223,7 @@ void main() {
             watchlistedCount: 2,
             savedCount: 1,
           ),
+          studioAffinity: StudioAffinity([NameCount(name: 'A24', count: 2)]),
         ),
         generatedAt: DateTime(2026, 1, 1),
       );
@@ -302,6 +304,7 @@ void main() {
               epicCount: 0),
           discoverSwipeRatio: DiscoverSwipeRatio(
               skippedCount: 0, watchlistedCount: 0, savedCount: 0),
+          studioAffinity: StudioAffinity([]),
         ),
         generatedAt: DateTime(2026, 1, 1),
       );

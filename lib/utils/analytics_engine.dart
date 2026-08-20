@@ -170,6 +170,13 @@ class RuntimePreferences {
   });
 }
 
+/// EXP-GLOBAL-3: a recurring production company/studio with its watched
+/// count.
+class StudioAffinity {
+  final List<NameCount> studios;
+  const StudioAffinity(this.studios);
+}
+
 /// EXP-FUNNEL-2: Discover deck interaction breakdown. A title can appear in
 /// more than one bucket over its lifetime (skipped once, later
 /// watchlisted) -- this is a snapshot of current standing, not a strict
@@ -204,6 +211,7 @@ class AnalyticsResult {
   final DayOfWeekDistribution dayOfWeekDistribution;
   final RuntimePreferences runtimePreferences;
   final DiscoverSwipeRatio discoverSwipeRatio;
+  final StudioAffinity studioAffinity;
 
   const AnalyticsResult({
     required this.heatmap,
@@ -219,6 +227,7 @@ class AnalyticsResult {
     required this.dayOfWeekDistribution,
     required this.runtimePreferences,
     required this.discoverSwipeRatio,
+    required this.studioAffinity,
   });
 }
 
@@ -487,6 +496,16 @@ RuntimePreferences computeRuntimePreferences(AnalyticsInput input) {
   );
 }
 
+/// EXP-GLOBAL-3: tallies `productionCompanyNames` across every watched
+/// title, reusing the same [_tally] helper as cast/director rankings.
+StudioAffinity computeStudioAffinity(AnalyticsInput input) {
+  final names = <String>[];
+  for (final item in input.watchedList.values) {
+    names.addAll(item.productionCompanyNames);
+  }
+  return StudioAffinity(_tally(names));
+}
+
 /// EXP-FUNNEL-2: Discover deck interaction breakdown from already-tracked
 /// counts (skip history, Watchlist/Maybe pile sizes) -- no new tracking.
 DiscoverSwipeRatio computeDiscoverSwipeRatio(AnalyticsInput input) {
@@ -516,6 +535,7 @@ AnalyticsResult computeAnalytics(AnalyticsInput input) {
     dayOfWeekDistribution: computeDayOfWeekDistribution(input),
     runtimePreferences: computeRuntimePreferences(input),
     discoverSwipeRatio: computeDiscoverSwipeRatio(input),
+    studioAffinity: computeStudioAffinity(input),
   );
 }
 

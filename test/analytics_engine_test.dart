@@ -673,6 +673,43 @@ void main() {
     });
   });
 
+  group('computeStudioAffinity', () {
+    test('tallies productionCompanyNames across watched titles, sorted desc',
+        () {
+      final items = {
+        'movie_1': const MediaItem(
+          id: 'movie_1',
+          title: 'One',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+          productionCompanyNames: ['A24', 'Plan B'],
+        ),
+        'movie_2': const MediaItem(
+          id: 'movie_2',
+          title: 'Two',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+          productionCompanyNames: ['A24'],
+        ),
+      };
+      final input = AnalyticsInput(
+        watchedList: items,
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeStudioAffinity(input);
+      expect(result.studios.first.name, 'A24');
+      expect(result.studios.first.count, 2);
+    });
+  });
+
   group('computeDiscoverSwipeRatio', () {
     test('reflects the counts passed in on AnalyticsInput directly', () {
       const input = AnalyticsInput(

@@ -45,6 +45,7 @@ void main() {
             epicCount: 0),
         discoverSwipeRatio: DiscoverSwipeRatio(
             skippedCount: 0, watchlistedCount: 0, savedCount: 0),
+        studioAffinity: StudioAffinity([]),
       ),
     );
 
@@ -84,6 +85,7 @@ void main() {
             epicCount: 0),
         discoverSwipeRatio: DiscoverSwipeRatio(
             skippedCount: 0, watchlistedCount: 0, savedCount: 0),
+        studioAffinity: StudioAffinity([]),
       ),
     );
 

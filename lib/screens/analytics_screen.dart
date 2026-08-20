@@ -18,6 +18,7 @@ import '../widgets/analytics/era_distribution_section.dart';
 import '../widgets/analytics/genre_dna_section.dart';
 import '../widgets/analytics/language_distribution_section.dart';
 import '../widgets/analytics/rating_divergence_section.dart';
+import '../widgets/analytics/studio_affinity_section.dart';
 import '../widgets/analytics/viewing_rhythm_section.dart';
 import '../widgets/archive_summary_card.dart';
 import '../widgets/atmospheric_empty_state.dart';
@@ -432,6 +433,17 @@ class _AnalyticsResults extends StatelessWidget {
               const SizedBox(height: 10),
               LanguageDistributionSection(
                   languages: result.languageDistribution),
+              const SizedBox(height: 16),
+              Text(
+                'Studios',
+                style: AppThemes.safeGeist(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 8),
+              StudioAffinitySection(studioAffinity: result.studioAffinity),
               const SizedBox(height: 20),
               Text(
                 'Discover Selectivity',
