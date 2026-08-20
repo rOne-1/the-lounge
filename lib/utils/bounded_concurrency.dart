@@ -8,7 +8,7 @@
 Future<List<R>> mapBounded<T, R>(
   List<T> items,
   Future<R> Function(T item) action, {
-  int maxConcurrent = 6,
+  int maxConcurrent = 4,
 }) async {
   if (items.isEmpty) return const [];
   final results = List<R?>.filled(items.length, null);

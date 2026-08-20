@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -146,6 +147,53 @@ void main() {
       expect(result.personFilmographies[1]['title'],
           equals('Inglourious Basterds'));
     });
+
+    group('PERF-STAMPEDE-1: transient network error retry', () {
+      test('retries a SocketException-style failure and succeeds', () async {
+        var attempts = 0;
+        final client = MockClient((request) async {
+          attempts++;
+          if (attempts < 3) {
+            throw const SocketException('Connection reset by peer');
+          }
+          return http.Response(
+              jsonEncode({'page': 1, 'results': []}), 200);
+        });
+
+        final service = TmdbApiService(token: 'valid_token', client: client);
+        final result = await service.getTrendingMovies();
+
+        expect(result['results'], isEmpty);
+        expect(attempts, 3);
+      });
+
+      test('gives up after exhausting retries on a persistent failure',
+          () async {
+        var attempts = 0;
+        final client = MockClient((request) async {
+          attempts++;
+          throw const SocketException('Connection reset by peer');
+        });
+
+        final service = TmdbApiService(token: 'valid_token', client: client);
+
+        await expectLater(service.getTrendingMovies(), throwsA(anything));
+        expect(attempts, 3);
+      });
+
+      test('does not retry a real API error response (e.g. 404)', () async {
+        var attempts = 0;
+        final client = MockClient((request) async {
+          attempts++;
+          return http.Response('{"status_message":"Not found"}', 404);
+        });
+
+        final service = TmdbApiService(token: 'valid_token', client: client);
+
+        await expectLater(service.getTrendingMovies(), throwsA(anything));
+        expect(attempts, 1);
+      });
+    });
   });
 
   group('TmdbMovieRepository', () {
@@ -175,6 +223,57 @@ void main() {
 
       final searchResults = await repo.searchMedia('Inception');
       expect(searchResults, isNotEmpty);
+    });
+
+    test(
+        'PERF-STAMPEDE-1: concurrent callers share one in-flight genre-list '
+        'fetch instead of each firing their own', () async {
+      var movieGenreRequests = 0;
+      var tvGenreRequests = 0;
+      final client = MockClient((request) async {
+        final path = request.url.path;
+        if (path.endsWith('/genre/movie/list')) {
+          movieGenreRequests++;
+          // Real-world regression: a slow-ish genre-list fetch leaves a
+          // wide window for concurrent callers to race past a naive
+          // "already loaded?" guard before it completes.
+          await Future.delayed(const Duration(milliseconds: 20));
+          return http.Response(
+              jsonEncode({
+                'genres': [
+                  {'id': 28, 'name': 'Action'}
+                ]
+              }),
+              200);
+        }
+        if (path.endsWith('/genre/tv/list')) {
+          tvGenreRequests++;
+          await Future.delayed(const Duration(milliseconds: 20));
+          return http.Response(
+              jsonEncode({
+                'genres': [
+                  {'id': 18, 'name': 'Drama'}
+                ]
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'page': 1, 'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: client);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      // Mirrors real app startup: several Lobby rails fire concurrently,
+      // each internally ensuring genres are loaded before mapping results.
+      await Future.wait([
+        repo.getTrendingMovies(),
+        repo.getPopularMovies(),
+        repo.getTrendingTvShows(),
+        repo.getTopRatedMovies(),
+      ]);
+
+      expect(movieGenreRequests, 1);
+      expect(tvGenreRequests, 1);
     });
 
     test('Network exceptions fall back gracefully without crashing app',

@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:developer' as developer;
-import 'package:http/http.dart' as http;
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import '../models/media_collection_detail.dart';
@@ -17,27 +15,6 @@ import 'movie_repository.dart';
 /// string (used for the discover-based date-range filters below).
 String formatTmdbDate(DateTime date) =>
     '${date.year.toString().padLeft(4, '0')}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-
-/// Helper function to detect socket/network exceptions.
-bool isNetworkException(Object error) {
-  if (error is SocketException ||
-      error is TimeoutException ||
-      error is HandshakeException ||
-      error is http.ClientException) {
-    return true;
-  }
-  final s = error.toString().toLowerCase();
-  return s.contains('socketexception') ||
-      s.contains('clientexception') ||
-      s.contains('failed host lookup') ||
-      s.contains('no internet') ||
-      s.contains('no connection') ||
-      s.contains('network exception') ||
-      s.contains('connection refused') ||
-      s.contains('connection timed out') ||
-      s.contains('network is unreachable') ||
-      s.contains('host lookup failed');
-}
 
 /// Repository implementation backed by TMDB API with graceful fallback to [MockMovieRepository].
 class TmdbMovieRepository implements MovieRepository {
@@ -113,8 +90,24 @@ class TmdbMovieRepository implements MovieRepository {
     CrashReportingService.captureException(error ?? message, stackTrace);
   }
 
-  Future<void> _ensureGenresLoaded() async {
-    if (_genresLoaded || !isConfigured) return;
+  // PERF-STAMPEDE-1: 16 different methods call _ensureGenresLoaded(), and on
+  // cold boot several of them (every Lobby rail, for one) fire concurrently.
+  // The old version only set _genresLoaded at the very end, so every caller
+  // that arrived before the first fetch finished saw _genresLoaded == false
+  // and independently fired its own genre-list request -- observed live as
+  // 7 simultaneous, near-identical /genre/movie/list calls, part of the
+  // connection-reset storm reported as a regression. Sharing the same
+  // in-flight Future across concurrent callers fixes that at the root.
+  Future<void>? _genresLoadingFuture;
+
+  Future<void> _ensureGenresLoaded() {
+    if (_genresLoaded || !isConfigured) return Future.value();
+    return _genresLoadingFuture ??= _loadGenres().whenComplete(() {
+      _genresLoadingFuture = null;
+    });
+  }
+
+  Future<void> _loadGenres() async {
     try {
       final movieGenresKey =
           cacheService.generateKey(TmdbEndpoints.movieGenres);

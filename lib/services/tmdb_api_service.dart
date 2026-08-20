@@ -1,8 +1,35 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../models/discover_filter_params.dart';
 import 'api_call_tracker.dart';
 import 'tmdb_endpoints.dart';
+
+/// Whether [error] represents a transient network failure (a dropped/reset
+/// connection, DNS hiccup, timeout) worth retrying, as opposed to a real API
+/// response (404, 401, etc.) that would fail again identically.
+bool isTransientNetworkError(Object error) {
+  if (error is SocketException ||
+      error is TimeoutException ||
+      error is HandshakeException ||
+      error is http.ClientException) {
+    return true;
+  }
+  final s = error.toString().toLowerCase();
+  return s.contains('socketexception') ||
+      s.contains('clientexception') ||
+      s.contains('connection reset') ||
+      s.contains('connection closed') ||
+      s.contains('failed host lookup') ||
+      s.contains('no internet') ||
+      s.contains('no connection') ||
+      s.contains('network exception') ||
+      s.contains('connection refused') ||
+      s.contains('connection timed out') ||
+      s.contains('network is unreachable') ||
+      s.contains('host lookup failed');
+}
 
 
 /// Container for search results filtered client-side into title matches vs person filmographies.
@@ -76,37 +103,56 @@ class TmdbApiService {
       queryParameters: stringParams.isNotEmpty ? stringParams : null,
     );
 
-    // E6: every TMDB request funnels through this single method, making it
-    // the one place to track total calls/failures for the session.
-    ApiCallTracker.instance.recordCall();
-    try {
-      final response = await _client.get(uri, headers: _headers);
+    // PERF-STAMPEDE-1: a dropped/reset connection (SocketException, seen in
+    // bulk during a real-world regression report -- "Connection reset by
+    // peer" across dozens of otherwise-unrelated endpoints) used to fail
+    // the request permanently on the very first attempt, with no built-in
+    // recovery -- every such hiccup became a hard, user-visible failure.
+    // Retry transient network errors a couple of times with backoff before
+    // giving up; a real API response (404, 401, etc.) is never retried,
+    // since it would just fail identically again.
+    const maxAttempts = 3;
+    const retryDelay = Duration(milliseconds: 500);
 
-      if (response.statusCode >= 200 && response.statusCode < 300) {
-        return jsonDecode(response.body) as Map<String, dynamic>;
-      } else {
-        ApiCallTracker.instance.recordFailure(
-          endpoint: path,
-          uri: uri,
-          statusCode: response.statusCode,
-          error: 'TMDB API Request Failed [$path]: Status ${response.statusCode}',
-          responseBody: response.body,
-          queryParams: queryParameters,
-        );
-        throw Exception(
-          'TMDB API Request Failed [$path]: Status ${response.statusCode} - ${response.body}',
-        );
+    for (var attempt = 1; ; attempt++) {
+      // E6: every TMDB request funnels through this single method, making it
+      // the one place to track total calls/failures for the session.
+      ApiCallTracker.instance.recordCall();
+      try {
+        final response = await _client.get(uri, headers: _headers);
+
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return jsonDecode(response.body) as Map<String, dynamic>;
+        } else {
+          ApiCallTracker.instance.recordFailure(
+            endpoint: path,
+            uri: uri,
+            statusCode: response.statusCode,
+            error: 'TMDB API Request Failed [$path]: Status ${response.statusCode}',
+            responseBody: response.body,
+            queryParams: queryParameters,
+          );
+          throw Exception(
+            'TMDB API Request Failed [$path]: Status ${response.statusCode} - ${response.body}',
+          );
+        }
+      } catch (e) {
+        final isRealApiFailure = e is Exception &&
+            e.toString().startsWith('Exception: TMDB API Request Failed');
+        if (!isRealApiFailure && isTransientNetworkError(e) && attempt < maxAttempts) {
+          await Future.delayed(retryDelay * attempt);
+          continue;
+        }
+        if (!isRealApiFailure) {
+          ApiCallTracker.instance.recordFailure(
+            endpoint: path,
+            uri: uri,
+            error: e,
+            queryParams: queryParameters,
+          );
+        }
+        rethrow;
       }
-    } catch (e) {
-      if (e is! Exception || !e.toString().startsWith('Exception: TMDB API Request Failed')) {
-        ApiCallTracker.instance.recordFailure(
-          endpoint: path,
-          uri: uri,
-          error: e,
-          queryParams: queryParameters,
-        );
-      }
-      rethrow;
     }
   }
 
