@@ -1,17 +1,40 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/media_item.dart';
 import '../utils/analytics_engine.dart';
 import 'media_provider.dart';
+
+/// EXP-FRANCHISE-1: one franchise/collection's completion standing. Lives
+/// outside [AnalyticsResult] deliberately -- unlike every other metric,
+/// computing this needs a live network fetch per collection
+/// (`getCollectionDetails`), so it can't run inside
+/// [runAnalyticsCompute]'s isolate-safe, purely-local-data pipeline. See
+/// [AnalyticsNotifier._fetchCollectionCompletions].
+class CollectionCompletion {
+  final int collectionId;
+  final String collectionName;
+  final int watchedCount;
+  final int totalCount;
+
+  const CollectionCompletion({
+    required this.collectionId,
+    required this.collectionName,
+    required this.watchedCount,
+    required this.totalCount,
+  });
+}
 
 /// ANLY-PROVIDER-1: cached generation state for the Analytics epic.
 class AnalyticsState {
   final AnalyticsResult? result;
+  final List<CollectionCompletion> collectionCompletions;
   final DateTime? generatedAt;
   final bool isGenerating;
   final Object? error;
 
   const AnalyticsState({
     this.result,
+    this.collectionCompletions = const [],
     this.generatedAt,
     this.isGenerating = false,
     this.error,
@@ -19,6 +42,7 @@ class AnalyticsState {
 
   AnalyticsState copyWith({
     AnalyticsResult? result,
+    List<CollectionCompletion>? collectionCompletions,
     DateTime? generatedAt,
     bool? isGenerating,
     Object? error,
@@ -26,6 +50,8 @@ class AnalyticsState {
   }) {
     return AnalyticsState(
       result: result ?? this.result,
+      collectionCompletions:
+          collectionCompletions ?? this.collectionCompletions,
       generatedAt: generatedAt ?? this.generatedAt,
       isGenerating: isGenerating ?? this.isGenerating,
       error: clearError ? null : (error ?? this.error),
@@ -41,6 +67,66 @@ class AnalyticsState {
 class AnalyticsNotifier extends Notifier<AnalyticsState> {
   @override
   AnalyticsState build() => const AnalyticsState();
+
+  /// EXP-FRANCHISE-1: fetches completion standing for the 5
+  /// most-recently-watched distinct collections among watched titles
+  /// (bounding worst-case Generate latency -- a franchise-heavy library
+  /// doesn't fetch every collection it's ever touched). A failed/slow
+  /// fetch for one collection just omits that row; it never blocks the
+  /// others or fails Generate as a whole.
+  Future<List<CollectionCompletion>> _fetchCollectionCompletions(
+    MediaState mediaState,
+  ) async {
+    final byCollection = <int, List<MediaItem>>{};
+    for (final item in mediaState.watchedList.values) {
+      final collection = item.belongsToCollection;
+      if (collection != null) {
+        byCollection.putIfAbsent(collection.id, () => []).add(item);
+      }
+    }
+    if (byCollection.isEmpty) return [];
+
+    DateTime? mostRecentWatchDate(List<MediaItem> items) {
+      DateTime? latest;
+      for (final item in items) {
+        final records = mediaState.watchHistory[item.id];
+        if (records == null) continue;
+        for (final record in records) {
+          final date = record.date ?? record.recordedAt;
+          if (latest == null || date.isAfter(latest)) latest = date;
+        }
+      }
+      return latest;
+    }
+
+    final sortedIds = byCollection.keys.toList()
+      ..sort((a, b) {
+        final dateA = mostRecentWatchDate(byCollection[a]!);
+        final dateB = mostRecentWatchDate(byCollection[b]!);
+        if (dateA == null && dateB == null) return 0;
+        if (dateA == null) return 1;
+        if (dateB == null) return -1;
+        return dateB.compareTo(dateA);
+      });
+
+    final repo = ref.read(movieRepositoryProvider);
+    final results = <CollectionCompletion>[];
+    for (final id in sortedIds.take(5)) {
+      try {
+        final detail = await repo.getCollectionDetails(id);
+        if (detail == null || detail.parts.isEmpty) continue;
+        results.add(CollectionCompletion(
+          collectionId: id,
+          collectionName: detail.name,
+          watchedCount: byCollection[id]!.length,
+          totalCount: detail.parts.length,
+        ));
+      } catch (_) {
+        // Skip this collection only -- the others still get a chance.
+      }
+    }
+    return results;
+  }
 
   Future<void> generate() async {
     state = state.copyWith(isGenerating: true, clearError: true);
@@ -68,8 +154,13 @@ class AnalyticsNotifier extends Notifier<AnalyticsState> {
         watchingList: mediaState.watchingList,
       );
       final result = await runAnalyticsCompute(input);
+      // EXP-FRANCHISE-1: network-dependent, so it runs on the main isolate
+      // after the pure compute() pipeline, not inside it.
+      final collectionCompletions =
+          await _fetchCollectionCompletions(mediaState);
       state = state.copyWith(
         result: result,
+        collectionCompletions: collectionCompletions,
         generatedAt: DateTime.now(),
         isGenerating: false,
       );

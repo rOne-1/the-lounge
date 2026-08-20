@@ -1999,7 +1999,13 @@ class MediaNotifier extends Notifier<MediaState> {
             item.director == null ||
             (item.type == MediaType.tv &&
                 (item.seasonsCount == null || item.episodesCount == null)) ||
-            item.productionCompanyNames.isEmpty)
+            item.productionCompanyNames.isEmpty ||
+            // EXP-FRANCHISE-1: a movie added from a grid card/Discover
+            // swipe (not the Detail screen) never had belongsToCollection
+            // fetched -- without this, the Collection Completion Gauge
+            // would systematically miss collections for anyone who
+            // doesn't add movies via the Detail screen specifically.
+            (item.type == MediaType.movie && item.belongsToCollection == null))
         .take(maxItems)
         .toList();
     if (missing.isEmpty) return;
@@ -2026,6 +2032,8 @@ class MediaNotifier extends Notifier<MediaState> {
           productionCompanyNames: current.productionCompanyNames.isNotEmpty
               ? current.productionCompanyNames
               : details.productionCompanyNames,
+          belongsToCollection:
+              current.belongsToCollection ?? details.belongsToCollection,
         );
         patchedAny = true;
       } catch (e, stack) {

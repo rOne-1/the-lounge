@@ -128,6 +128,45 @@ void main() {
     expect(enriched.productionCompanyNames, ['A24']);
   });
 
+  test(
+      'EXP-FRANCHISE-1: backfills belongsToCollection for a Watched movie '
+      'missing it', () async {
+    final fakeRepo = _FakeDetailsRepository({
+      'movie_1': const MediaItem(
+        id: 'movie_1',
+        title: 'A Movie',
+        type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: [],
+        runtime: 120,
+        cast: ['Alice'],
+        director: 'Nolan',
+        belongsToCollection: MediaCollection(id: 99, name: 'A Collection'),
+      ),
+    });
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        movieRepositoryProvider.overrideWithValue(fakeRepo),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(mediaProvider.notifier);
+    notifier.addToWatchedList(thinItem);
+    expect(
+      container.read(mediaProvider).watchedList['movie_1']?.belongsToCollection,
+      isNull,
+    );
+
+    await notifier.backfillMissingWatchedMetadata();
+
+    final enriched = container.read(mediaProvider).watchedList['movie_1']!;
+    expect(enriched.belongsToCollection?.id, 99);
+    expect(enriched.belongsToCollection?.name, 'A Collection');
+  });
+
   test('does not overwrite a title that already has complete metadata',
       () async {
     const alreadyRich = MediaItem(

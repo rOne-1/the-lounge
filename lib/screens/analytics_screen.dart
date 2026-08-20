@@ -13,6 +13,7 @@ import '../widgets/analytics/abandoned_shows_section.dart';
 import '../widgets/analytics/analytics_share_card.dart';
 import '../widgets/analytics/binge_velocity_section.dart';
 import '../widgets/analytics/cast_constellations_section.dart';
+import '../widgets/analytics/collection_completion_section.dart';
 import '../widgets/analytics/chronological_heatmap.dart';
 import '../widgets/analytics/discover_funnel_section.dart';
 import '../widgets/analytics/era_distribution_section.dart';
@@ -400,6 +401,19 @@ class _AnalyticsResults extends StatelessWidget {
               CastConstellationsSection(
                 directorRanking: result.directorRanking,
                 castRanking: result.castRanking,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Franchise Completion',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              CollectionCompletionSection(
+                completions: state.collectionCompletions,
               ),
               const SizedBox(height: 20),
               Text(
