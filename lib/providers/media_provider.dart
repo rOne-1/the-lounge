@@ -8,6 +8,7 @@ import '../models/hall_space.dart';
 import '../models/watch_record.dart';
 import '../models/user_folder.dart';
 import '../services/hall_storage_service.dart';
+import '../utils/bounded_concurrency.dart';
 import 'ambiance_provider.dart';
 import '../themes/theme_registry.dart';
 import '../constants.dart';
@@ -1909,13 +1910,17 @@ class MediaNotifier extends Notifier<MediaState> {
     try {
       final repo = ref.read(movieRepositoryProvider);
       final seasonsCount = item.seasonsCount ?? 1;
-      final List<TvSeason> seasons = [];
-      for (int s = 1; s <= seasonsCount; s++) {
-        final season = await repo.getTvSeasonDetails(item.id, s);
-        if (season != null && season.episodes.isNotEmpty) {
-          seasons.add(season);
-        }
-      }
+      // PERF-SEASONS-1: bounded-concurrent instead of one-at-a-time -- see
+      // tvShowSeasonsProvider in repository_provider.dart for the same fix.
+      final seasonNumbers = List.generate(seasonsCount, (i) => i + 1);
+      final fetchedSeasons = await mapBounded(
+        seasonNumbers,
+        (s) => repo.getTvSeasonDetails(item.id, s),
+      );
+      final seasons = [
+        for (final season in fetchedSeasons)
+          if (season != null && season.episodes.isNotEmpty) season
+      ];
       if (seasons.isNotEmpty) {
         // Deliberately no watchedKeys trust exception here: the episode set
         // currently in state for this item is still the coarse, count-based
@@ -2204,13 +2209,20 @@ class MediaNotifier extends Notifier<MediaState> {
             }
           }
 
-          final fetchedSeasons = <int, TvSeason>{};
-          for (final seasonNum in seasonsNeeded) {
-            final season = await repo.getTvSeasonDetails(showId, seasonNum);
-            if (season != null) {
-              fetchedSeasons[seasonNum] = season;
-            }
-          }
+          // PERF-SEASONS-1: bounded-concurrent instead of one-at-a-time --
+          // this loop previously gated the entire "Importing your backup…"
+          // step on one full network round trip per distinct season across
+          // every show in the backup (e.g. 22 seasons for a Grey's
+          // Anatomy-sized show), run strictly sequentially.
+          final seasonNumbersNeeded = seasonsNeeded.toList();
+          final fetchedList = await mapBounded(
+            seasonNumbersNeeded,
+            (seasonNum) => repo.getTvSeasonDetails(showId, seasonNum),
+          );
+          final fetchedSeasons = <int, TvSeason>{
+            for (var i = 0; i < seasonNumbersNeeded.length; i++)
+              if (fetchedList[i] != null) seasonNumbersNeeded[i]: fetchedList[i]!
+          };
 
           final epsToRemove = <String>[];
           for (final epKey in epSet) {

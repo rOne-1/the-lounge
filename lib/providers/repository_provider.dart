@@ -14,6 +14,7 @@ import '../repositories/movie_repository.dart';
 import '../repositories/tmdb_movie_repository.dart';
 import '../services/episode_skeleton_cache_service.dart';
 import '../services/tmdb_api_service.dart';
+import '../utils/bounded_concurrency.dart';
 
 /// Provider for [TmdbApiService] using environment token if available.
 final tmdbApiServiceProvider = Provider<TmdbApiService>((ref) {
@@ -204,13 +205,19 @@ final tvShowSeasonsProvider =
     seasonsCount = fullDetails?.seasonsCount ?? 1;
   }
   seasonsCount ??= 1;
-  final List<TvSeason> seasons = [];
-  for (int s = 1; s <= seasonsCount; s++) {
-    final season = await repo.getTvSeasonDetails(item.id, s);
-    if (season != null && season.episodes.isNotEmpty) {
-      seasons.add(season);
-    }
-  }
+  // PERF-SEASONS-1: bounded-concurrent instead of one-at-a-time -- a
+  // sequential await-in-a-loop here meant every TV detail screen (and every
+  // Continue Watching card) blocked on N full network round trips for an
+  // N-season show before this provider resolved.
+  final seasonNumbers = List.generate(seasonsCount, (i) => i + 1);
+  final fetchedSeasons = await mapBounded(
+    seasonNumbers,
+    (s) => repo.getTvSeasonDetails(item.id, s),
+  );
+  final seasons = [
+    for (final season in fetchedSeasons)
+      if (season != null && season.episodes.isNotEmpty) season
+  ];
 
   final mediaState = ref.read(mediaProvider);
   final isTracked = mediaState.watchingList.containsKey(item.id) ||
