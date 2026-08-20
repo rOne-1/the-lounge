@@ -13,7 +13,7 @@ class BingeVelocitySection extends StatelessWidget {
 
   const BingeVelocitySection({super.key, required this.data});
 
-  static const int _maxBars = 10;
+  static const int _maxBars = 7;
 
   @override
   Widget build(BuildContext context) {
@@ -34,17 +34,37 @@ class BingeVelocitySection extends StatelessWidget {
             ? (average * 24).round()
             : average.round();
 
+    // Even the hours fallback can round to a literal 0 for a genuinely
+    // near-instant season (e.g. a handful of minutes between recorded
+    // timestamps) -- a bare "0" here reads as broken/no-data even though a
+    // real value was computed, so treat it the same as the null case rather
+    // than displaying it.
+    final hasNoMeaningfulAverage = average == null || averageDisplayValue == 0;
+
+    // Explicit, clean-multiple interval instead of leaving fl_chart to
+    // auto-compute one -- an un-intervaled axis can place its regular tick
+    // step right next to the auto-added max-boundary tick, rendering the
+    // same rounded number twice near the top. Forcing maxY to be an exact
+    // multiple of interval makes the top gridline/tick coincide with the
+    // real boundary instead.
+    final rawMaxDays = topShows.isEmpty
+        ? 1.0
+        : topShows.map((s) => s.days).reduce((a, b) => a > b ? a : b).clamp(1.0, double.infinity);
+    final tickInterval = (rawMaxDays / 4).ceilToDouble().clamp(1.0, double.infinity);
+    final chartMaxY = tickInterval * 4;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ArchiveSummaryCard(
           label: 'Binge Velocity',
-          subtitle: average == null
-              ? 'Not enough season data yet'
+          subtitle: hasNoMeaningfulAverage
+              ? 'Log season progress to calculate'
               : showAverageInHours
                   ? (averageDisplayValue == 1 ? 'avg. hour per season' : 'avg. hours per season')
                   : (averageDisplayValue == 1 ? 'avg. day per season' : 'avg. days per season'),
           count: averageDisplayValue,
+          countLabelOverride: hasNoMeaningfulAverage ? '—' : null,
           icon: Icons.speed_rounded,
           statusColor: colors.acc,
           onTap: () {},
@@ -56,11 +76,7 @@ class BingeVelocitySection extends StatelessWidget {
             child: BarChart(
               BarChartData(
                 alignment: BarChartAlignment.spaceAround,
-                maxY: topShows
-                    .map((s) => s.days)
-                    .reduce((a, b) => a > b ? a : b)
-                    .clamp(1.0, double.infinity) *
-                    1.2,
+                maxY: chartMaxY,
                 barTouchData: BarTouchData(
                   touchTooltipData: BarTouchTooltipData(
                     getTooltipColor: (_) => colors.card2,
@@ -79,6 +95,7 @@ class BingeVelocitySection extends StatelessWidget {
                     sideTitles: SideTitles(
                       showTitles: true,
                       reservedSize: 32,
+                      interval: tickInterval,
                       getTitlesWidget: (value, meta) => Text(
                         value.toInt().toString(),
                         style: AppThemes.safeGeist(fontSize: 10, color: colors.sub),
@@ -95,7 +112,7 @@ class BingeVelocitySection extends StatelessWidget {
                           return const SizedBox.shrink();
                         }
                         final title = topShows[idx].showTitle;
-                        final short = title.length > 8 ? '${title.substring(0, 7)}…' : title;
+                        final short = title.length > 10 ? '${title.substring(0, 9)}…' : title;
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(

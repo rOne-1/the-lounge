@@ -31,7 +31,8 @@ class FloatingNavigationCapsule extends ConsumerStatefulWidget {
   /// hosted somewhere that already sits inside a real Navigator context.
   final GlobalKey<NavigatorState>? navigatorKey;
 
-  const FloatingNavigationCapsule({super.key, this.enableAnimation, this.navigatorKey});
+  const FloatingNavigationCapsule(
+      {super.key, this.enableAnimation, this.navigatorKey});
 
   @override
   ConsumerState<FloatingNavigationCapsule> createState() =>
@@ -83,7 +84,8 @@ class _FloatingNavigationCapsuleState
     return Rect.fromLTWH(
       _edgeMargin,
       safePadding.top + _edgeMargin,
-      (screenSize.width - _collapsedSize - _edgeMargin * 2).clamp(0.0, double.infinity),
+      (screenSize.width - _collapsedSize - _edgeMargin * 2)
+          .clamp(0.0, double.infinity),
       (screenSize.height -
               safePadding.top -
               safePadding.bottom -
@@ -172,7 +174,8 @@ class _FloatingNavigationCapsuleState
   }
 
   NavigatorState get _navigator =>
-      widget.navigatorKey?.currentState ?? Navigator.of(context, rootNavigator: true);
+      widget.navigatorKey?.currentState ??
+      Navigator.of(context, rootNavigator: true);
 
   void _selectTab(AppTab tab) {
     HapticFeedback.selectionClick();
@@ -195,17 +198,20 @@ class _FloatingNavigationCapsuleState
     final topLeft = _topLeft!;
 
     final expandedLeft = (topLeft.dx + _collapsedSize / 2 - _expandedWidth / 2)
-        .clamp(_edgeMargin, mediaQuery.size.width - _expandedWidth - _edgeMargin);
+        .clamp(
+            _edgeMargin, mediaQuery.size.width - _expandedWidth - _edgeMargin);
     final maxExpandedTop = mediaQuery.size.height -
         mediaQuery.padding.bottom -
         _expandedHeight -
         _edgeMargin;
     final expandedTop = (topLeft.dy + _collapsedSize / 2 - _expandedHeight / 2)
-        .clamp(mediaQuery.padding.top + _edgeMargin, maxExpandedTop.clamp(0.0, double.infinity));
+        .clamp(mediaQuery.padding.top + _edgeMargin,
+            maxExpandedTop.clamp(0.0, double.infinity));
 
     final bool isSettling = _motionController.isAnimating;
-    final Duration positionDuration =
-        (_dragging || isSettling) ? Duration.zero : AppPhysics.houseSpringDuration;
+    final Duration positionDuration = (_dragging || isSettling)
+        ? Duration.zero
+        : AppPhysics.houseSpringDuration;
 
     return Stack(
       children: [
@@ -239,7 +245,8 @@ class _FloatingNavigationCapsuleState
                 HapticFeedback.selectionClick();
                 setState(() => _expanded = false);
                 _navigator.push(
-                  MaterialPageRoute(builder: (context) => const SettingsScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const SettingsScreen()),
                 );
               },
               onProfileSelector: () {
@@ -297,45 +304,54 @@ class _CapsuleBody extends ConsumerWidget {
         ],
       ),
       clipBehavior: Clip.antiAlias,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Material(
-          type: MaterialType.transparency,
-          child: AnimatedSwitcher(
-            duration: AppPhysics.houseSpringDuration,
-            switchInCurve: AppPhysics.houseSpringCurve,
-            switchOutCurve: Curves.easeOut,
-          child: expanded
-              ? OverflowBox(
-                  key: const ValueKey('expanded'),
-                  alignment: Alignment.topLeft,
-                  minWidth: 0,
-                  maxWidth: expandedWidth,
-                  minHeight: 0,
-                  maxHeight: expandedHeight,
-                  child: SizedBox(
-                    width: expandedWidth,
-                    height: expandedHeight,
-                    child: _ExpandedContent(
-                      onSelectTab: onSelectTab,
-                      onSettings: onSettings,
-                      onProfileSelector: onProfileSelector,
+      // B4: RepaintBoundary isolates this into its own compositing layer --
+      // BackdropFilter composited underneath this AnimatedContainer's own
+      // size/decoration animation (expand/collapse) can otherwise render
+      // fully black and stay that way until something forces a full scene
+      // recomposite. This capsule is a global overlay present on every
+      // screen, so this is a high-severity instance of the same bug.
+      child: RepaintBoundary(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+          child: Material(
+            type: MaterialType.transparency,
+            child: AnimatedSwitcher(
+              duration: AppPhysics.houseSpringDuration,
+              switchInCurve: AppPhysics.houseSpringCurve,
+              switchOutCurve: Curves.easeOut,
+              child: expanded
+                  ? OverflowBox(
+                      key: const ValueKey('expanded'),
+                      alignment: Alignment.topLeft,
+                      minWidth: 0,
+                      maxWidth: expandedWidth,
+                      minHeight: 0,
+                      maxHeight: expandedHeight,
+                      child: SizedBox(
+                        width: expandedWidth,
+                        height: expandedHeight,
+                        child: _ExpandedContent(
+                          onSelectTab: onSelectTab,
+                          onSettings: onSettings,
+                          onProfileSelector: onProfileSelector,
+                        ),
+                      ),
+                    )
+                  : OverflowBox(
+                      key: const ValueKey('collapsed'),
+                      alignment: Alignment.center,
+                      minWidth: 0,
+                      maxWidth: collapsedSize,
+                      minHeight: 0,
+                      maxHeight: collapsedSize,
+                      child: SizedBox(
+                        width: collapsedSize,
+                        height: collapsedSize,
+                        child:
+                            _CollapsedContent(enableAnimation: enableAnimation),
+                      ),
                     ),
-                  ),
-                )
-              : OverflowBox(
-                  key: const ValueKey('collapsed'),
-                  alignment: Alignment.center,
-                  minWidth: 0,
-                  maxWidth: collapsedSize,
-                  minHeight: 0,
-                  maxHeight: collapsedSize,
-                  child: SizedBox(
-                    width: collapsedSize,
-                    height: collapsedSize,
-                    child: _CollapsedContent(enableAnimation: enableAnimation),
-                  ),
-                ),
+            ),
           ),
         ),
       ),
@@ -456,7 +472,8 @@ class _ExpandedContent extends ConsumerWidget {
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
     final isDiscover = navState.currentTab == AppTab.discover;
     final deckState = isDiscover
-        ? ref.watch(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider)
+        ? ref.watch(
+            isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider)
         : null;
     final hasLastSwipe = deckState?.lastSwipe != null;
 

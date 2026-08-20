@@ -24,8 +24,13 @@ void main() {
         // bevel sheen. No AmbianceColors token models "elevation shadow"
         // yet; worth a dedicated token in a future pass rather than
         // force-fitting an existing one.
-        'const Color.fromRGBO(255, 255, 255, 0.05)',
-        ': const Color.fromRGBO(0, 0, 0, 0.08),',
+        // dart format wraps this ternary's two branches onto their own
+        // lines (each just `? const Color.fromRGBO(` / `: const
+        // Color.fromRGBO(`, args on the following line) rather than one
+        // single-line literal -- allowlist both wrapped forms so a future
+        // reformat of this file doesn't re-break this brittle line-match.
+        '? const Color.fromRGBO(',
+        ': const Color.fromRGBO(',
         // Fixed inset depth shading inside the selected/accent-colored
         // status pill — a universal black-based inset convention (works
         // regardless of the accent color underneath it), not a themed hue.

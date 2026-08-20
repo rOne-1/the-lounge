@@ -26,10 +26,16 @@ class AnalyticsShareCard extends StatelessWidget {
     final topDirector = result.directorRanking.isNotEmpty ? result.directorRanking.first.name : null;
     final topActor = result.castRanking.isNotEmpty ? result.castRanking.first.name : null;
 
+    final stats = [
+      _StatEntry(value: '$totalHours', label: 'Hours Watched'),
+      if (topGenre != null) _StatEntry(value: topGenre, label: 'Top Genre'),
+      if (topDirector != null) _StatEntry(value: topDirector, label: 'Top Director'),
+      if (topActor != null) _StatEntry(value: topActor, label: 'Top Actor'),
+    ];
+
     return Container(
       width: 800,
       height: 1000,
-      padding: const EdgeInsets.all(56),
       decoration: BoxDecoration(
         color: colors.base,
         gradient: LinearGradient(
@@ -41,46 +47,62 @@ class AnalyticsShareCard extends StatelessWidget {
           ],
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Stack(
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'THE LOUNGE',
-                style: AppThemes.safeGeist(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: colors.acc,
-                  letterSpacing: 3,
-                ),
+          // Subtle watermark anchoring the composition -- deliberately
+          // clipped/oversized and low-opacity so it reads as texture, not
+          // as a second focal point competing with the real stats.
+          Positioned(
+            right: -70,
+            bottom: -40,
+            child: Opacity(
+              opacity: 0.07,
+              child: Image.asset(
+                'assets/icons/doorway_emblem.png',
+                width: 460,
+                height: 460,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const SizedBox.shrink(),
               ),
-              const SizedBox(height: 10),
-              Text(
-                'My Watching Habits',
-                style: GoogleFonts.bodoniModa(
-                  fontSize: 46,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w400,
-                  color: colors.ink,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(56),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'THE LOUNGE',
+                      style: AppThemes.safeGeist(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: colors.acc,
+                        letterSpacing: 3,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'My Watching Habits',
+                      style: GoogleFonts.bodoniModa(
+                        fontSize: 46,
+                        fontStyle: FontStyle.italic,
+                        fontWeight: FontWeight.w400,
+                        color: colors.ink,
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            ],
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _StatRow(value: '$totalHours', label: 'Hours Watched'),
-              if (topGenre != null) _StatRow(value: topGenre, label: 'Top Genre'),
-              if (topDirector != null) _StatRow(value: topDirector, label: 'Top Director'),
-              if (topActor != null) _StatRow(value: topActor, label: 'Top Actor'),
-            ],
-          ),
-          Text(
-            'Generated on-device -- the-lounge app',
-            style: AppThemes.safeGeist(fontSize: 13, color: colors.sub),
+                _StatGrid(stats: stats),
+                Text(
+                  'Generated on-device -- the-lounge app',
+                  style: AppThemes.safeGeist(fontSize: 13, color: colors.sub),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -88,42 +110,72 @@ class AnalyticsShareCard extends StatelessWidget {
   }
 }
 
-class _StatRow extends StatelessWidget {
+class _StatEntry {
   final String value;
   final String label;
 
-  const _StatRow({required this.value, required this.label});
+  const _StatEntry({required this.value, required this.label});
+}
+
+/// Balanced 2-per-row grid instead of a single tall column -- a column of
+/// up to 4 short stat rows left roughly half the card's width as dead
+/// space; pairing them up fills the composition properly.
+class _StatGrid extends StatelessWidget {
+  final List<_StatEntry> stats;
+
+  const _StatGrid({required this.stats});
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = <Widget>[];
+    for (var i = 0; i < stats.length; i += 2) {
+      final second = i + 1 < stats.length ? stats[i + 1] : null;
+      rows.add(
+        Padding(
+          padding: const EdgeInsets.only(bottom: 34),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(child: _StatCell(entry: stats[i])),
+              const SizedBox(width: 24),
+              Expanded(child: second != null ? _StatCell(entry: second) : const SizedBox.shrink()),
+            ],
+          ),
+        ),
+      );
+    }
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: rows);
+  }
+}
+
+class _StatCell extends StatelessWidget {
+  final _StatEntry entry;
+
+  const _StatCell({required this.entry});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 22),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.baseline,
-        textBaseline: TextBaseline.alphabetic,
-        children: [
-          ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 380),
-            child: Text(
-              value,
-              style: GoogleFonts.bodoniModa(
-                fontSize: 40,
-                fontStyle: FontStyle.italic,
-                fontWeight: FontWeight.w400,
-                color: colors.acc,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          entry.value,
+          style: GoogleFonts.bodoniModa(
+            fontSize: 36,
+            fontStyle: FontStyle.italic,
+            fontWeight: FontWeight.w400,
+            color: colors.acc,
           ),
-          const SizedBox(width: 14),
-          Text(
-            label,
-            style: AppThemes.safeGeist(fontSize: 16, color: colors.sub),
-          ),
-        ],
-      ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          entry.label,
+          style: AppThemes.safeGeist(fontSize: 15, color: colors.sub),
+        ),
+      ],
     );
   }
 }

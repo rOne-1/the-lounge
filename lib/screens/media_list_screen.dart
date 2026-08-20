@@ -49,26 +49,37 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
     // LANG-2 (2nd pass): threaded through so Load More's later pages stay
     // scoped to the Hall's language lock server-side, same as the initial
     // itemsProvider fetch -- see MovieRepository's originalLanguage param.
-    final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
+    final lockedLanguageCode =
+        ref.read(activeHallSpaceProvider).lockedLanguageCode;
     final t = widget.title.toLowerCase();
     if (t.contains('trending') && (t.contains('tv') || t.contains('show'))) {
-      return repo.getTrendingTvShows(page: page, originalLanguage: lockedLanguageCode);
+      return repo.getTrendingTvShows(
+          page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('trending')) {
-      return repo.getTrendingMovies(page: page, originalLanguage: lockedLanguageCode);
-    } else if (t.contains('top rated') && (t.contains('tv') || t.contains('show'))) {
-      return repo.getTopRatedTvShows(page: page, originalLanguage: lockedLanguageCode);
+      return repo.getTrendingMovies(
+          page: page, originalLanguage: lockedLanguageCode);
+    } else if (t.contains('top rated') &&
+        (t.contains('tv') || t.contains('show'))) {
+      return repo.getTopRatedTvShows(
+          page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('top rated')) {
-      return repo.getTopRatedMovies(page: page, originalLanguage: lockedLanguageCode);
+      return repo.getTopRatedMovies(
+          page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('now playing')) {
-      return repo.getNowPlayingMovies(page: page, originalLanguage: lockedLanguageCode);
+      return repo.getNowPlayingMovies(
+          page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('airing today')) {
-      return repo.getAiringTodayTvShows(page: page, originalLanguage: lockedLanguageCode);
+      return repo.getAiringTodayTvShows(
+          page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('upcoming')) {
-      return repo.getUpcomingMovies(page: page, originalLanguage: lockedLanguageCode);
+      return repo.getUpcomingMovies(
+          page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('on the air')) {
-      return repo.getOnTheAirTvShows(page: page, originalLanguage: lockedLanguageCode);
+      return repo.getOnTheAirTvShows(
+          page: page, originalLanguage: lockedLanguageCode);
     }
-    return repo.getTrendingMovies(page: page, originalLanguage: lockedLanguageCode);
+    return repo.getTrendingMovies(
+        page: page, originalLanguage: lockedLanguageCode);
   }
 
   Future<void> _loadMore() async {
@@ -86,13 +97,18 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
       // backstop, not the primary filter -- catches anything that slips
       // through (e.g. a future fetchPage override that forgets to thread
       // the lock), rather than trusting every call site to get it right.
-      final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
-      final newItems = (lockedLanguageCode != null && lockedLanguageCode.isNotEmpty)
-          ? rawItems.where((e) => e.originalLanguage == lockedLanguageCode).toList()
-          : rawItems;
+      final lockedLanguageCode =
+          ref.read(activeHallSpaceProvider).lockedLanguageCode;
+      final newItems =
+          (lockedLanguageCode != null && lockedLanguageCode.isNotEmpty)
+              ? rawItems
+                  .where((e) => e.originalLanguage == lockedLanguageCode)
+                  .toList()
+              : rawItems;
       if (mounted) {
         final existingIds = _accumulatedItems.map((e) => e.id).toSet();
-        final fresh = newItems.where((e) => !existingIds.contains(e.id)).toList();
+        final fresh =
+            newItems.where((e) => !existingIds.contains(e.id)).toList();
         setState(() {
           if (rawItems.isEmpty) {
             // TMDB itself is exhausted -- genuinely no more pages.
@@ -138,36 +154,45 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
           extendBodyBehindAppBar: true,
           appBar: PreferredSize(
             preferredSize: const Size.fromHeight(60),
-            child: ClipRRect(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                child: Container(
-                  color: context.ambianceColors.base.withValues(alpha: 0.75),
-                  child: AppBar(
-                    backgroundColor: Colors.transparent,
-                    elevation: 0,
-                    scrolledUnderElevation: 0,
-                    leading: Center(
-                      child: PressableScale(
-                        onTap: () => Navigator.maybePop(context),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: pillColor,
+            // B4: RepaintBoundary isolates this into its own compositing
+            // layer -- BackdropFilter composited underneath a page-route's
+            // own animated transition (fade/slide when this screen is
+            // pushed) can otherwise render fully black and stay that way
+            // until something forces a full scene recomposite. Same fix as
+            // search_screen.dart's header.
+            child: RepaintBoundary(
+              child: ClipRRect(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                  child: Container(
+                    color: context.ambianceColors.base.withValues(alpha: 0.75),
+                    child: AppBar(
+                      backgroundColor: Colors.transparent,
+                      elevation: 0,
+                      scrolledUnderElevation: 0,
+                      leading: Center(
+                        child: PressableScale(
+                          onTap: () => Navigator.maybePop(context),
+                          child: Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: pillColor,
+                            ),
+                            child: Icon(Icons.arrow_back,
+                                color: inkColor, size: 18),
                           ),
-                          child: Icon(Icons.arrow_back, color: inkColor, size: 18),
                         ),
                       ),
-                    ),
-                    title: Text(
-                      widget.title,
-                      style: GoogleFonts.bodoniModa(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        color: inkColor,
+                      title: Text(
+                        widget.title,
+                        style: GoogleFonts.bodoniModa(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          color: inkColor,
+                        ),
                       ),
                     ),
                   ),
@@ -233,7 +258,8 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                   ),
                   if (_hasMore)
                     Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 20.0 + bottomPadding),
+                      padding:
+                          EdgeInsets.fromLTRB(16, 8, 16, 20.0 + bottomPadding),
                       child: PressableScale(
                         onTap: _isLoadingMore ? null : _loadMore,
                         child: Container(
@@ -257,7 +283,8 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                               : Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.expand_more, color: inkColor, size: 20),
+                                    Icon(Icons.expand_more,
+                                        color: inkColor, size: 20),
                                     const SizedBox(width: 6),
                                     Text(
                                       'Load More (Page ${_currentPage + 1})',
@@ -277,11 +304,13 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                     // list was exhausted, with nothing marking that as
                     // intentional rather than a stalled/broken load.
                     Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 20.0 + bottomPadding),
+                      padding:
+                          EdgeInsets.fromLTRB(16, 8, 16, 20.0 + bottomPadding),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_outline, color: subColor, size: 16),
+                          Icon(Icons.check_circle_outline,
+                              color: subColor, size: 16),
                           const SizedBox(width: 6),
                           Text(
                             'You\'ve reached the end',
@@ -301,9 +330,8 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
             error: (err, stack) {
               final message = err.toString().replaceAll('Exception: ', '');
               return FullScreenErrorWidget(
-                message: message.isNotEmpty
-                    ? message
-                    : 'Failed to load media list.',
+                message:
+                    message.isNotEmpty ? message : 'Failed to load media list.',
                 onRetry: () {
                   setState(() {
                     _initialLoaded = false;

@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/analytics_provider.dart';
+import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/screens/analytics_screen.dart';
 import 'package:the_lounge/utils/analytics_engine.dart';
 import 'package:the_lounge/widgets/analytics/analytics_share_card.dart';
@@ -59,6 +60,35 @@ void main() {
       expect(find.text('Ready when you are'), findsOneWidget);
       expect(find.text('Temporal'), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
+    });
+
+    testWidgets(
+        'BACKUP-2: withholds the Generate CTA while a backup import is in flight',
+        (tester) async {
+      final prefs = await mockPrefs();
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+
+      container.read(isDataImportingProvider.notifier).set(true);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: AnalyticsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Generate Analytics'), findsNothing);
+      expect(find.text('Hold on a moment'), findsOneWidget);
+
+      container.read(isDataImportingProvider.notifier).set(false);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Generate Analytics'), findsOneWidget);
+      expect(find.text('Ready when you are'), findsOneWidget);
     });
   });
 

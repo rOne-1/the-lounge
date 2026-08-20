@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
@@ -5,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../providers/media_provider.dart';
 import '../providers/ambiance_provider.dart';
+import '../providers/hall_provider.dart';
+import '../services/hall_storage_service.dart';
 import '../constants.dart';
 import '../utils/export_helper.dart';
 import '../widgets/animated_segmented_control.dart';
@@ -34,6 +37,43 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       return await action();
     } finally {
       if (mounted) setState(() => _busyMessage = null);
+    }
+  }
+
+  /// BACKUP-1: routes an imported file to whichever importer actually
+  /// understands its dialect. New exports are HallStorageService's v4
+  /// multi-hall schema (`schema_version`) -- old backups saved by a
+  /// previous version of this screen are MediaNotifier's own single-hall
+  /// schema (`version`), whose field names (e.g. `watchedList`) don't all
+  /// match HallStorageService's own legacy-format key fallbacks
+  /// (`watched_list`/`watched_items`), so routing every file through the
+  /// new importer would silently drop most piles from an old backup.
+  Future<bool> _importBackup(WidgetRef ref, String jsonString) async {
+    Map<String, dynamic> decoded;
+    try {
+      final raw = jsonDecode(jsonString);
+      if (raw is! Map<String, dynamic>) return false;
+      decoded = raw;
+    } catch (_) {
+      return false;
+    }
+
+    ref.read(isDataImportingProvider.notifier).set(true);
+    try {
+      if (decoded.containsKey('schema_version')) {
+        final halls = HallStorageService().importBackupJson(jsonString);
+        if (halls.isEmpty) return false;
+        await ref.read(hallProvider.notifier).applyImportedHalls(halls);
+        return true;
+      }
+
+      if (decoded.containsKey('version')) {
+        return ref.read(mediaProvider.notifier).importBackupJson(jsonString);
+      }
+
+      return false;
+    } finally {
+      ref.read(isDataImportingProvider.notifier).set(false);
     }
   }
 
@@ -141,7 +181,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               style: AppThemes.safeGeist(fontSize: 12, color: subColor),
                             ),
                             onTap: () async {
-                              final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
+                              // BACKUP-1: multi-hall v4 export (all 3 Halls,
+                              // not just the active one) -- see
+                              // HallStorageService for the schema and
+                              // applyImportedHalls for the matching restore
+                              // path. Reads fresh from SharedPreferences
+                              // rather than hallProvider's cached state:
+                              // hallProvider only rebuilds on a hall
+                              // switch, so its cache can be stale relative
+                              // to mediaProvider mutations made since.
+                              final storageService = HallStorageService();
+                              final prefs = ref.read(sharedPreferencesProvider);
+                              final jsonString = storageService.exportFullBackupJson(
+                                halls: storageService.loadAllHallsSync(prefs),
+                                activeHallId: storageService.getActiveHallId(prefs),
+                                themeId: ambiance.id,
+                              );
                               try {
                                 final success = await _runBusy(
                                   'Exporting your backup…',
@@ -174,7 +229,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               style: AppThemes.safeGeist(fontSize: 12, color: subColor),
                             ),
                             onTap: () async {
-                              final jsonString = ref.read(mediaProvider.notifier).exportBackupJson(ambiance.id);
+                              final storageService = HallStorageService();
+                              final prefs = ref.read(sharedPreferencesProvider);
+                              final jsonString = storageService.exportFullBackupJson(
+                                halls: storageService.loadAllHallsSync(prefs),
+                                activeHallId: storageService.getActiveHallId(prefs),
+                                themeId: ambiance.id,
+                              );
                               try {
                                 await _runBusy(
                                   'Preparing your backup…',
@@ -243,7 +304,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                 if (shouldImport && context.mounted) {
                                   final success = await _runBusy(
                                     'Importing your backup…',
-                                    () => ref.read(mediaProvider.notifier).importBackupJson(jsonString),
+                                    () => _importBackup(ref, jsonString),
                                   );
                                   if (context.mounted) {
                                     if (success) {

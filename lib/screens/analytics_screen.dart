@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../providers/analytics_provider.dart';
+import '../providers/media_provider.dart';
 import '../utils/export_helper.dart';
 import '../utils/relative_time.dart';
 import '../widgets/analytics/analytics_share_card.dart';
@@ -60,7 +61,12 @@ class AnalyticsScreen extends ConsumerWidget {
             paddingHorizontal,
             14.0,
             paddingHorizontal,
-            100.0 + MediaQuery.of(context).padding.bottom,
+            // The floating navigation capsule is user-draggable and often
+            // rests bottom-right, directly over the Genre DNA radar's right
+            // vertex (the final, and widest, section) -- 100px wasn't
+            // enough clearance once the radar's own height grew; this
+            // leaves genuine room to scroll every chart fully clear of it.
+            160.0 + MediaQuery.of(context).padding.bottom,
           ),
           child: Center(
             child: ConstrainedBox(
@@ -104,7 +110,8 @@ class AnalyticsScreen extends ConsumerWidget {
               border: Border.all(color: colors.lineRgba),
               boxShadow: [
                 BoxShadow(
-                  color: colors.scrim.withValues(alpha: colors.isDark ? 0.25 : 0.06),
+                  color: colors.scrim
+                      .withValues(alpha: colors.isDark ? 0.25 : 0.06),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -148,15 +155,27 @@ class AnalyticsScreen extends ConsumerWidget {
   }
 
   Widget _buildIdleState(BuildContext context, WidgetRef ref) {
+    // BACKUP-2: a backup import (or account reset) is mid-flight -- data is
+    // actively being rewritten underneath this screen, so generating now
+    // would either read a half-restored state or race the import's own
+    // writes. Withhold the CTA instead of letting it produce a misleading
+    // result.
+    final isImporting = ref.watch(isDataImportingProvider);
+
     return Padding(
       padding: const EdgeInsets.only(top: 40),
       child: AtmosphericEmptyState(
         icon: Icons.insights_rounded,
-        title: 'Ready when you are',
-        message: 'Generate a fresh look at your watching habits -- computed '
-            'entirely on this device, only when you ask for it.',
-        ctaLabel: 'Generate Analytics',
-        onCta: () => ref.read(analyticsProvider.notifier).generate(),
+        title: isImporting ? 'Hold on a moment' : 'Ready when you are',
+        message: isImporting
+            ? 'Your backup is still restoring -- Analytics will be ready to '
+                'generate once it finishes.'
+            : 'Generate a fresh look at your watching habits -- computed '
+                'entirely on this device, only when you ask for it.',
+        ctaLabel: isImporting ? null : 'Generate Analytics',
+        onCta: isImporting
+            ? null
+            : () => ref.read(analyticsProvider.notifier).generate(),
       ),
     );
   }
@@ -174,6 +193,9 @@ class _AnalyticsResults extends StatelessWidget {
     final result = state.result!;
     final movieHours = (result.timeInvestment.movieMinutes / 60).round();
     final tvHours = (result.timeInvestment.tvMinutes / 60).round();
+    // BACKUP-2: see _buildIdleState -- same reasoning, applied to
+    // Regenerate on an already-visible results view.
+    final isImporting = ref.watch(isDataImportingProvider);
 
     return Stack(
       children: [
@@ -214,14 +236,16 @@ class _AnalyticsResults extends StatelessWidget {
                       state.generatedAt != null
                           ? 'Updated ${formatRelativeTime(state.generatedAt!)}'
                           : '',
-                      style: AppThemes.safeGeist(fontSize: 12.5, color: colors.sub),
+                      style: AppThemes.safeGeist(
+                          fontSize: 12.5, color: colors.sub),
                     ),
                   ),
                   PressableScale(
                     onTap: () => _handleShare(context),
                     child: Container(
                       margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: colors.pill,
                         borderRadius: BorderRadius.circular(999),
@@ -230,7 +254,8 @@ class _AnalyticsResults extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.ios_share_rounded, size: 14, color: colors.ink),
+                          Icon(Icons.ios_share_rounded,
+                              size: 14, color: colors.ink),
                           const SizedBox(width: 6),
                           Text(
                             'Share',
@@ -245,115 +270,124 @@ class _AnalyticsResults extends StatelessWidget {
                     ),
                   ),
                   PressableScale(
-                    onTap: () => ref.read(analyticsProvider.notifier).generate(),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: colors.pill,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: colors.lineRgba),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.refresh_rounded, size: 14, color: colors.ink),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Regenerate',
-                            style: AppThemes.safeGeist(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: colors.ink,
+                    onTap: isImporting
+                        ? null
+                        : () => ref.read(analyticsProvider.notifier).generate(),
+                    child: Opacity(
+                      opacity: isImporting ? 0.5 : 1.0,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: colors.pill,
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: colors.lineRgba),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.refresh_rounded,
+                                size: 14, color: colors.ink),
+                            const SizedBox(width: 6),
+                            Text(
+                              'Regenerate',
+                              style: AppThemes.safeGeist(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                                color: colors.ink,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 20),
-          _SectionHeader(title: 'Temporal'),
-          const SizedBox(height: 12),
-          GridView.count(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisCount: 2,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 1.16,
-            children: [
-              ArchiveSummaryCard(
-                label: 'Movies',
-                subtitle: movieHours == 1 ? '1 hour watched' : '$movieHours hours watched',
-                count: movieHours,
-                icon: Icons.local_movies_rounded,
-                statusColor: colors.acc,
-                onTap: () {},
+              _SectionHeader(title: 'Temporal'),
+              const SizedBox(height: 12),
+              GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 2,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 1.16,
+                children: [
+                  ArchiveSummaryCard(
+                    label: 'Movies',
+                    subtitle: movieHours == 1
+                        ? '1 hour watched'
+                        : '$movieHours hours watched',
+                    count: movieHours,
+                    icon: Icons.local_movies_rounded,
+                    statusColor: colors.acc,
+                    onTap: () {},
+                  ),
+                  ArchiveSummaryCard(
+                    label: 'TV Shows',
+                    subtitle: tvHours == 1
+                        ? '~1 hour watched (estimate)'
+                        : '~$tvHours hours watched (estimate)',
+                    count: tvHours,
+                    icon: Icons.live_tv_rounded,
+                    statusColor: colors.acc,
+                    onTap: () {},
+                  ),
+                ],
               ),
-              ArchiveSummaryCard(
-                label: 'TV Shows',
-                subtitle: tvHours == 1
-                    ? '~1 hour watched (estimate)'
-                    : '~$tvHours hours watched (estimate)',
-                count: tvHours,
-                icon: Icons.live_tv_rounded,
-                statusColor: colors.acc,
-                onTap: () {},
+              const SizedBox(height: 20),
+              Text(
+                'Watch Activity',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
               ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Watch Activity',
-            style: AppThemes.safeGeist(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: colors.sub,
-            ),
-          ),
-          const SizedBox(height: 10),
-          ChronologicalHeatmap(data: result.heatmap),
-          const SizedBox(height: 20),
-          BingeVelocitySection(data: result.bingeVelocity),
-          const SizedBox(height: 28),
-          _SectionHeader(title: 'Taste'),
-          const SizedBox(height: 16),
-          Text(
-            'Cast & Crew',
-            style: AppThemes.safeGeist(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: colors.sub,
-            ),
-          ),
-          const SizedBox(height: 10),
-          CastConstellationsSection(
-            directorRanking: result.directorRanking,
-            castRanking: result.castRanking,
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Rating Divergence',
-            style: AppThemes.safeGeist(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: colors.sub,
-            ),
-          ),
-          const SizedBox(height: 10),
-          RatingDivergenceSection(points: result.ratingDivergence),
-          const SizedBox(height: 20),
-          Text(
-            'Genre DNA',
-            style: AppThemes.safeGeist(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: colors.sub,
-            ),
-          ),
-          const SizedBox(height: 10),
-          GenreDnaSection(genreFrequency: result.genreFrequency),
+              const SizedBox(height: 10),
+              ChronologicalHeatmap(data: result.heatmap),
+              const SizedBox(height: 20),
+              BingeVelocitySection(data: result.bingeVelocity),
+              const SizedBox(height: 28),
+              _SectionHeader(title: 'Taste'),
+              const SizedBox(height: 16),
+              Text(
+                'Cast & Crew',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              CastConstellationsSection(
+                directorRanking: result.directorRanking,
+                castRanking: result.castRanking,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Rating Divergence',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              RatingDivergenceSection(points: result.ratingDivergence),
+              const SizedBox(height: 20),
+              Text(
+                'Genre DNA',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              GenreDnaSection(genreFrequency: result.genreFrequency),
             ],
           ),
         ),

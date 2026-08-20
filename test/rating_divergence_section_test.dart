@@ -1,4 +1,3 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:the_lounge/utils/analytics_engine.dart';
@@ -7,7 +6,11 @@ import 'package:the_lounge/widgets/analytics/rating_divergence_section.dart';
 void main() {
   Future<void> pump(WidgetTester tester, List<RatingDivergencePoint> points) async {
     await tester.pumpWidget(
-      MaterialApp(home: Scaffold(body: RatingDivergenceSection(points: points))),
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(child: RatingDivergenceSection(points: points)),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
   }
@@ -19,10 +22,10 @@ void main() {
           'the consensus.'),
       findsOneWidget,
     );
-    expect(find.byType(BarChart), findsNothing);
   });
 
-  testWidgets('renders a bar chart sorted by absolute divergence', (tester) async {
+  testWidgets('renders horizontal rows sorted by absolute divergence, most divergent first',
+      (tester) async {
     await pump(tester, const [
       RatingDivergencePoint(
         mediaId: 'movie_1',
@@ -38,13 +41,19 @@ void main() {
       ),
     ]);
 
-    expect(find.byType(BarChart), findsOneWidget);
-    final barChart = tester.widget<BarChart>(find.byType(BarChart));
-    // Biggest absolute delta (Big Gap, 5.0) should be sorted first (x: 0).
-    expect(barChart.data.barGroups.first.barRods.first.toY, 5.0);
+    expect(find.text('Small Gap'), findsOneWidget);
+    expect(find.text('Big Gap'), findsOneWidget);
+    // Delta labels: Big Gap = +5.0, Small Gap = +0.5.
+    expect(find.text('+5.0'), findsOneWidget);
+    expect(find.text('+0.5'), findsOneWidget);
+
+    // Biggest absolute delta (Big Gap) renders above the smaller one.
+    final bigGapY = tester.getTopLeft(find.text('Big Gap')).dy;
+    final smallGapY = tester.getTopLeft(find.text('Small Gap')).dy;
+    expect(bigGapY, lessThan(smallGapY));
   });
 
-  testWidgets('caps the chart to the 10 largest divergences', (tester) async {
+  testWidgets('caps the list to the 7 largest divergences', (tester) async {
     final points = List.generate(
       15,
       (i) => RatingDivergencePoint(
@@ -56,7 +65,12 @@ void main() {
     );
     await pump(tester, points);
 
-    final barChart = tester.widget<BarChart>(find.byType(BarChart));
-    expect(barChart.data.barGroups, hasLength(10));
+    // delta = i + 1, so the 7 largest are Movie 14 down through Movie 8.
+    for (var i = 8; i <= 14; i++) {
+      expect(find.text('Movie $i'), findsOneWidget);
+    }
+    for (var i = 0; i <= 7; i++) {
+      expect(find.text('Movie $i'), findsNothing);
+    }
   });
 }

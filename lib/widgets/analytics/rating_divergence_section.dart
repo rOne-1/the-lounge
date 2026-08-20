@@ -1,5 +1,5 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../constants.dart';
 import '../../utils/analytics_engine.dart';
 
@@ -7,12 +7,17 @@ import '../../utils/analytics_engine.dart';
 /// 0-10 scale via AnalyticsConstants.personalRatingPoints) against the
 /// app's Bayesian weightedRating, for the titles that diverge from
 /// consensus the most in either direction.
+///
+/// Hand-built horizontal rows rather than fl_chart's vertical BarChart --
+/// full movie titles read as vertical-axis labels far more legibly than
+/// truncated bottom-axis labels ever could, and a hand-built axis sidesteps
+/// fl_chart's tick generator producing duplicate boundary values entirely.
 class RatingDivergenceSection extends StatelessWidget {
   final List<RatingDivergencePoint> points;
 
   const RatingDivergenceSection({super.key, required this.points});
 
-  static const int _topN = 10;
+  static const int _topN = 7;
 
   @override
   Widget build(BuildContext context) {
@@ -34,85 +39,104 @@ class RatingDivergenceSection extends StatelessWidget {
         .reduce((a, b) => a > b ? a : b)
         .clamp(1.0, double.infinity);
 
-    return SizedBox(
-      height: 240,
-      child: BarChart(
-        BarChartData(
-          alignment: BarChartAlignment.spaceAround,
-          minY: -maxAbs * 1.2,
-          maxY: maxAbs * 1.2,
-          barTouchData: BarTouchData(
-            touchTooltipData: BarTouchTooltipData(
-              getTooltipColor: (_) => colors.card2,
-              getTooltipItem: (group, groupIndex, rod, rodIndex) {
-                final point = top[group.x.toInt()];
-                final direction = point.delta >= 0 ? 'above' : 'below';
-                return BarTooltipItem(
-                  '${point.title}\n${point.delta.abs().toStringAsFixed(1)} '
-                  'pts $direction consensus',
-                  AppThemes.safeGeist(fontSize: 12, color: colors.ink),
-                );
-              },
-            ),
-          ),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 32,
-                getTitlesWidget: (value, meta) => Text(
-                  value.toStringAsFixed(0),
-                  style: AppThemes.safeGeist(fontSize: 10, color: colors.sub),
-                ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < top.length; i++)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: _DivergenceRow(point: top[i], maxAbs: maxAbs),
+          )
+              .animate()
+              .fadeIn(
+                duration: AppPhysics.houseSpringDuration,
+                curve: AppPhysics.houseSpringCurve,
+                delay: (i.clamp(0, 6) * 40).ms,
+              )
+              .slideX(
+                begin: -0.06,
+                end: 0,
+                duration: AppPhysics.houseSpringDuration,
+                curve: AppPhysics.houseSpringCurve,
+                delay: (i.clamp(0, 6) * 40).ms,
               ),
-            ),
-            bottomTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: 28,
-                getTitlesWidget: (value, meta) {
-                  final idx = value.toInt();
-                  if (idx < 0 || idx >= top.length) return const SizedBox.shrink();
-                  final title = top[idx].title;
-                  final short = title.length > 8 ? '${title.substring(0, 7)}…' : title;
-                  return Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      short,
-                      style: AppThemes.safeGeist(fontSize: 9, color: colors.sub),
-                    ),
-                  );
-                },
-              ),
-            ),
-            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ],
+    );
+  }
+}
+
+class _DivergenceRow extends StatelessWidget {
+  final RatingDivergencePoint point;
+  final double maxAbs;
+
+  const _DivergenceRow({required this.point, required this.maxAbs});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.ambianceColors;
+    final isPositive = point.delta >= 0;
+    final sign = isPositive ? '+' : '';
+
+    return Row(
+      children: [
+        SizedBox(
+          width: 96,
+          child: Text(
+            point.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppThemes.safeGeist(fontSize: 12, color: colors.ink),
           ),
-          gridData: FlGridData(
-            show: true,
-            drawVerticalLine: false,
-            getDrawingHorizontalLine: (value) =>
-                FlLine(color: colors.lineRgba, strokeWidth: value == 0 ? 1.5 : 1),
-          ),
-          borderData: FlBorderData(show: false),
-          barGroups: [
-            for (var i = 0; i < top.length; i++)
-              BarChartGroupData(
-                x: i,
-                barRods: [
-                  BarChartRodData(
-                    toY: top[i].delta,
-                    color: colors.acc,
-                    width: 14,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ],
-              ),
-          ],
         ),
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
-      ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final halfWidth = constraints.maxWidth / 2;
+              final barWidth = (point.delta.abs() / maxAbs) * halfWidth;
+              return SizedBox(
+                height: 18,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Align(
+                      child: Container(width: 1.5, color: colors.lineRgba),
+                    ),
+                    Positioned(
+                      left: isPositive ? halfWidth : halfWidth - barWidth,
+                      width: barWidth,
+                      top: 3,
+                      bottom: 3,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colors.acc,
+                          borderRadius: BorderRadius.horizontal(
+                            left: isPositive ? Radius.zero : const Radius.circular(4),
+                            right: isPositive ? const Radius.circular(4) : Radius.zero,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 34,
+          child: Text(
+            '$sign${point.delta.toStringAsFixed(1)}',
+            textAlign: TextAlign.right,
+            style: AppThemes.safeGeist(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: colors.sub,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

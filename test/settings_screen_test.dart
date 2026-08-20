@@ -9,6 +9,7 @@ import 'package:file_picker/src/platform/file_picker_platform_interface.dart';
 import 'package:share_plus_platform_interface/share_plus_platform_interface.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
+import 'package:the_lounge/providers/hall_provider.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/constants.dart';
 import 'package:the_lounge/themes/app_theme.dart';
@@ -215,13 +216,82 @@ void main() {
 
     final exportedJson = utf8.decode(mockFilePicker.savedBytes!);
     final decoded = jsonDecode(exportedJson);
-    // Bumped to schema version 3 by PERS-FOLDERS-1 (adds customFolders).
-    // (Bumped to 2 earlier by PERS-DATA-1: watchHistory + start/end dates.)
-    expect(decoded['version'], equals(3));
-    expect(decoded['watchlist']['movie_1']['title'], equals('Inception'));
+    // BACKUP-1: Export now produces HallStorageService's multi-hall v4
+    // schema (all 3 Halls under 'profiles'), not MediaNotifier's old
+    // single-hall 'version'/'watchlist' shape -- see the multi-hall
+    // export/import round-trip test below for the actual regression this
+    // was fixed for.
+    expect(decoded['schema_version'], equals(4));
+    final profiles = (decoded['profiles'] as List).cast<Map<String, dynamic>>();
+    final grandHall = profiles.firstWhere((p) => p['id'] == 'common');
+    expect(
+      grandHall['domains']['movies']['watchlist']['movie_1']['title'],
+      equals('Inception'),
+    );
     expect(find.text('Backup exported successfully.'), findsOneWidget);
 
     // Let the LoungeToast's auto-dismiss timer fire before teardown.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets(
+      'BACKUP-1 regression: Export Backup captures every Hall, not just the active one',
+      (WidgetTester tester) async {
+    // Dev-reported bug: "Import does not support multiple halls/profiles.
+    // All my data is lost" -- root cause was Export only ever serializing
+    // whichever Hall happened to be active, so the other Halls' data was
+    // never in the backup file to begin with.
+    final container = createContainer();
+    addTearDown(container.dispose);
+
+    container.read(mediaProvider.notifier).addToWatchlist(
+          const MediaItem(
+            id: 'movie_grand',
+            title: 'Grand Hall Movie',
+            type: MediaType.movie,
+            rating: 7.0,
+            overview: '',
+            genres: [],
+          ),
+        );
+
+    await container.read(hallProvider.notifier).switchHall('custom_1');
+    container.read(mediaProvider.notifier).addToWatchlist(
+          const MediaItem(
+            id: 'movie_mezzanine',
+            title: 'Mezzanine Hall Movie',
+            type: MediaType.movie,
+            rating: 7.0,
+            overview: '',
+            genres: [],
+          ),
+        );
+    await container.read(hallProvider.notifier).switchHall('common');
+
+    mockFilePicker.savePath = 'mock_export_path.json';
+
+    await tester.pumpWidget(createSettingsScreen(container));
+    await tester.pumpAndSettle();
+
+    await scrollToAndTap(tester, find.byKey(const ValueKey('export_backup_button')));
+    await tester.pumpAndSettle();
+
+    final exportedJson = utf8.decode(mockFilePicker.savedBytes!);
+    final decoded = jsonDecode(exportedJson);
+    final profiles = (decoded['profiles'] as List).cast<Map<String, dynamic>>();
+
+    final grandHall = profiles.firstWhere((p) => p['id'] == 'common');
+    final mezzanineHall = profiles.firstWhere((p) => p['id'] == 'custom_1');
+    expect(
+      grandHall['domains']['movies']['watchlist']['movie_grand']['title'],
+      equals('Grand Hall Movie'),
+    );
+    expect(
+      mezzanineHall['domains']['movies']['watchlist']['movie_mezzanine']['title'],
+      equals('Mezzanine Hall Movie'),
+    );
+
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
   });
@@ -299,6 +369,96 @@ void main() {
     expect(find.text('Backup imported successfully.'), findsOneWidget);
 
     // Let the LoungeToast's auto-dismiss timer fire before teardown.
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets(
+      'BACKUP-1 regression: Import Backup restores a non-active Hall too, not just the active one',
+      (WidgetTester tester) async {
+    Map<String, dynamic> minimalDomain(Map<String, dynamic> watchlist) => {
+          'watching': {},
+          'watchlist': watchlist,
+          'watched': {},
+          'saved': {},
+          'onHold': {},
+          'dropped': {},
+          'watchedEpisodes': {},
+          'startDates': {},
+          'endDates': {},
+          'seasonStartDates': {},
+          'seasonEndDates': {},
+        };
+    Map<String, dynamic> movieItem(String id, String title) => {
+          'id': id,
+          'title': title,
+          'type': 'movie',
+          'rating': 7.0,
+          'genres': [],
+        };
+
+    final container = createContainer();
+    addTearDown(container.dispose);
+
+    final backupJson = jsonEncode({
+      'schema_version': 4,
+      'active_profile_id': 'common',
+      'theme_id': 'screening_room',
+      'profiles': [
+        {
+          'id': 'common',
+          'name': 'The Grand Hall',
+          'iconKey': 'arch',
+          'isCommon': true,
+          'domains': {
+            'movies': minimalDomain({'movie_grand': movieItem('movie_grand', 'Grand Hall Movie')}),
+            'tv': minimalDomain({}),
+            'anime': minimalDomain({}),
+          },
+          'customFolders': [],
+          'watchHistory': {},
+        },
+        {
+          'id': 'custom_1',
+          'name': 'The Mezzanine Hall',
+          'iconKey': 'reel',
+          'isCommon': false,
+          'domains': {
+            'movies': minimalDomain(
+                {'movie_mezzanine': movieItem('movie_mezzanine', 'Mezzanine Hall Movie')}),
+            'tv': minimalDomain({}),
+            'anime': minimalDomain({}),
+          },
+          'customFolders': [],
+          'watchHistory': {},
+        },
+      ],
+    });
+
+    mockFilePicker.pickResult = FilePickerResult([
+      PlatformFile(
+        name: 'multi_hall_backup.json',
+        size: backupJson.length,
+        bytes: Uint8List.fromList(utf8.encode(backupJson)),
+      )
+    ]);
+
+    await tester.pumpWidget(createSettingsScreen(container));
+    await tester.pumpAndSettle();
+
+    await scrollToAndTap(tester, find.byKey(const ValueKey('import_backup_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Backup imported successfully.'), findsOneWidget);
+    // Still sitting in the Grand Hall right after import -- its own data
+    // restored correctly.
+    expect(container.read(mediaProvider).watchlist.containsKey('movie_grand'), isTrue);
+
+    // The regression: switching to the Mezzanine Hall must show ITS
+    // imported data too, not an empty archive.
+    await container.read(hallProvider.notifier).switchHall('custom_1');
+    expect(container.read(mediaProvider).watchlist.containsKey('movie_mezzanine'), isTrue);
+
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
   });

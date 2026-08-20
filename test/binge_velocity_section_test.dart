@@ -16,8 +16,34 @@ void main() {
       (tester) async {
     await pump(tester, const BingeVelocity(averageDays: null, perSeason: []));
 
-    expect(find.text('Not enough season data yet'), findsOneWidget);
+    expect(find.text('Log season progress to calculate'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
     expect(find.byType(BarChart), findsNothing);
+  });
+
+  testWidgets(
+      'a genuinely near-instant average that rounds to a literal 0 hours shows the placeholder, not a bare 0',
+      (tester) async {
+    // Regression: dev feedback -- "0 avg. hours per season" reads as
+    // broken even though a real (just extremely tiny) average was
+    // computed. A handful of minutes between recorded timestamps rounds
+    // to 0 hours, same as truly missing data -- both should read as "not
+    // enough signal", not a literal zero.
+    await pump(
+      tester,
+      const BingeVelocity(
+        averageDays: 0.01, // ~14 minutes -- rounds to 0 hours
+        perSeason: [
+          ShowBingeVelocity(showId: 'tv_1', showTitle: 'Near Instant', seasonNumber: 1, days: 0.01),
+        ],
+      ),
+    );
+
+    // The headline numeral shows the placeholder dash, not a literal "0"
+    // (the per-show chart's own Y-axis legitimately has a real "0" tick at
+    // its origin, so this only checks the headline card specifically).
+    expect(find.text('Log season progress to calculate'), findsOneWidget);
+    expect(find.text('—'), findsOneWidget);
   });
 
   testWidgets('renders the rounded average and a bar per show', (tester) async {
@@ -57,10 +83,10 @@ void main() {
 
     expect(find.text('avg. hours per season'), findsOneWidget);
     expect(find.text('6'), findsOneWidget);
-    expect(find.text('Not enough season data yet'), findsNothing);
+    expect(find.text('Log season progress to calculate'), findsNothing);
   });
 
-  testWidgets('caps the chart to the 10 fastest binges', (tester) async {
+  testWidgets('caps the chart to the 7 fastest binges', (tester) async {
     final perSeason = List.generate(
       15,
       (i) => ShowBingeVelocity(
@@ -73,6 +99,6 @@ void main() {
     await pump(tester, BingeVelocity(averageDays: 8.0, perSeason: perSeason));
 
     final barChart = tester.widget<BarChart>(find.byType(BarChart));
-    expect(barChart.data.barGroups, hasLength(10));
+    expect(barChart.data.barGroups, hasLength(7));
   });
 }

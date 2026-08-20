@@ -35,18 +35,24 @@ class _GlassIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return PressableScale(
       onTap: onPressed,
-      child: ClipOval(
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-          child: Container(
-            width: size,
-            height: size,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      // B4: RepaintBoundary isolates this into its own compositing layer --
+      // BackdropFilter composited underneath PressableScale's own press
+      // AnimatedScale can otherwise render fully black and stay that way
+      // until something forces a full scene recomposite.
+      child: RepaintBoundary(
+        child: ClipOval(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+              ),
+              child: Icon(icon, color: Colors.white, size: iconSize),
             ),
-            child: Icon(icon, color: Colors.white, size: iconSize),
           ),
         ),
       ),
@@ -160,8 +166,11 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
       context,
       "Trailer playback isn't available for this title",
       duration: const Duration(seconds: 4),
-      actionLabel: videoId != null && videoId.isNotEmpty ? 'WATCH ON YOUTUBE' : null,
-      onAction: videoId != null && videoId.isNotEmpty ? () => _launchYouTubeUrl(videoId) : null,
+      actionLabel:
+          videoId != null && videoId.isNotEmpty ? 'WATCH ON YOUTUBE' : null,
+      onAction: videoId != null && videoId.isNotEmpty
+          ? () => _launchYouTubeUrl(videoId)
+          : null,
     );
   }
 
@@ -184,7 +193,8 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
             : 'This title is not available for playback right now.',
         onAddWatchlist: () {
           ref.read(mediaProvider.notifier).addToWatchlist(widget.item);
-          LoungeToast.show(context, 'Added to Watchlist', type: ToastType.success);
+          LoungeToast.show(context, 'Added to Watchlist',
+              type: ToastType.success);
         },
         onWatchOnYouTube: videoId != null && videoId.isNotEmpty
             ? () => _launchYouTubeUrl(videoId)
@@ -252,7 +262,8 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
         title: _effectiveTitle,
         onAddWatchlist: () {
           ref.read(mediaProvider.notifier).addToWatchlist(widget.item);
-          LoungeToast.show(context, 'Added to Watchlist', type: ToastType.success);
+          LoungeToast.show(context, 'Added to Watchlist',
+              type: ToastType.success);
         },
       );
     }
@@ -260,7 +271,9 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (imageUrl != null && imageUrl.isNotEmpty && !widget.item.imageLoadWillFail)
+        if (imageUrl != null &&
+            imageUrl.isNotEmpty &&
+            !widget.item.imageLoadWillFail)
           Image.network(
             imageUrl,
             fit: BoxFit.cover,
@@ -306,7 +319,8 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text('2:30', style: TextStyle(color: Colors.white, fontSize: 12)),
+              const Text('2:30',
+                  style: TextStyle(color: Colors.white, fontSize: 12)),
               const SizedBox(width: 10),
               _GlassIconButton(
                 icon: Icons.fullscreen,

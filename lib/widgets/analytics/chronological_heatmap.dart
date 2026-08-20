@@ -57,7 +57,8 @@ class ChronologicalHeatmap extends StatelessWidget {
                       child: Column(
                         children: week
                             .map((day) => Padding(
-                                  padding: const EdgeInsets.only(bottom: _cellGap),
+                                  padding:
+                                      const EdgeInsets.only(bottom: _cellGap),
                                   child: _DayCell(
                                     day: day,
                                     count: data.dailyCounts[day] ?? 0,
@@ -75,7 +76,8 @@ class ChronologicalHeatmap extends StatelessWidget {
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('Less', style: AppThemes.safeGeist(fontSize: 11, color: colors.sub)),
+            Text('Less',
+                style: AppThemes.safeGeist(fontSize: 11, color: colors.sub)),
             const SizedBox(width: 6),
             for (final alpha in [0.0, 0.35, 0.6, 0.85, 1.0])
               Padding(
@@ -84,13 +86,16 @@ class ChronologicalHeatmap extends StatelessWidget {
                   width: _cellSize,
                   height: _cellSize,
                   decoration: BoxDecoration(
-                    color: alpha == 0.0 ? colors.lineRgba : colors.acc.withValues(alpha: alpha),
+                    color: alpha == 0.0
+                        ? colors.lineRgba
+                        : colors.acc.withValues(alpha: alpha),
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
               ),
             const SizedBox(width: 6),
-            Text('More', style: AppThemes.safeGeist(fontSize: 11, color: colors.sub)),
+            Text('More',
+                style: AppThemes.safeGeist(fontSize: 11, color: colors.sub)),
           ],
         ),
       ],
@@ -112,8 +117,18 @@ class _DayCell extends StatelessWidget {
   });
 
   static const List<String> _months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   @override
@@ -142,6 +157,22 @@ class _DayCell extends StatelessWidget {
 
     return Tooltip(
       message: message,
+      // Stock Tooltip defaults to long-press on touch platforms -- a plain
+      // tap (the only interaction most users try) never reveals it on
+      // Android at all. Tap-to-show still leaves hover-to-show intact on
+      // desktop/web (hover isn't governed by triggerMode).
+      triggerMode: TooltipTriggerMode.tap,
+      // SP-2: stock Tooltip defaults to Flutter's plain light Material
+      // popup regardless of app theme -- jarring against this app's dark
+      // luxury chrome. Themed to match the fl_chart tooltip convention
+      // used elsewhere in Analytics (colors.card2 background, colors.ink
+      // text).
+      decoration: BoxDecoration(
+        color: colors.card2,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.lineRgba),
+      ),
+      textStyle: AppThemes.safeGeist(fontSize: 12, color: colors.ink),
       child: Container(
         width: ChronologicalHeatmap._cellSize,
         height: ChronologicalHeatmap._cellSize,

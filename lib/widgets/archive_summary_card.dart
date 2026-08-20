@@ -15,6 +15,11 @@ class ArchiveSummaryCard extends StatelessWidget {
   final Color statusColor;
   final VoidCallback onTap;
 
+  /// Overrides the big numeral's displayed text without lying about [count]
+  /// being a real zero -- e.g. a placeholder dash when there isn't enough
+  /// data to compute a meaningful value yet.
+  final String? countLabelOverride;
+
   const ArchiveSummaryCard({
     super.key,
     required this.label,
@@ -23,6 +28,7 @@ class ArchiveSummaryCard extends StatelessWidget {
     required this.icon,
     required this.statusColor,
     required this.onTap,
+    this.countLabelOverride,
   });
 
   @override
@@ -102,7 +108,7 @@ class ArchiveSummaryCard extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerRight,
                     child: Text(
-                      '$count',
+                      countLabelOverride ?? '$count',
                       style: GoogleFonts.bodoniModa(
                         fontSize: 34,
                         fontWeight: FontWeight.w400,

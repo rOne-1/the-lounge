@@ -31,7 +31,9 @@ class SeasonalRatingBar extends ConsumerWidget {
 
     final ratings = <int, PersonalRating?>{
       for (var seasonNum = 1; seasonNum <= seasonsCount; seasonNum++)
-        seasonNum: findPrimaryWatchRecord({item.id: watchHistory}, item.id, seasonNum)?.rating,
+        seasonNum:
+            findPrimaryWatchRecord({item.id: watchHistory}, item.id, seasonNum)
+                ?.rating,
     };
 
     final inkColor = context.ambianceColors.ink;
@@ -64,9 +66,27 @@ class SeasonalRatingBar extends ConsumerWidget {
                     message: rating != null
                         ? 'Season $seasonNum: ${rating.label}'
                         : 'Season $seasonNum: not rated',
+                    // Stock Tooltip defaults to long-press on touch
+                    // platforms -- a plain tap never revealed this on
+                    // Android. See chronological_heatmap.dart for the same
+                    // fix and reasoning.
+                    triggerMode: TooltipTriggerMode.tap,
+                    // SP-2: themed to match the app's dark chrome instead
+                    // of Flutter's plain light default popup.
+                    decoration: BoxDecoration(
+                      color: context.ambianceColors.card2,
+                      borderRadius: BorderRadius.circular(8),
+                      border:
+                          Border.all(color: context.ambianceColors.lineRgba),
+                    ),
+                    textStyle:
+                        AppThemes.safeGeist(fontSize: 12, color: inkColor),
                     child: Container(
-                      margin: EdgeInsets.only(right: seasonNum == seasonsCount ? 0 : 2),
-                      color: rating != null ? AppRatingColors.of(rating) : unratedColor,
+                      margin: EdgeInsets.only(
+                          right: seasonNum == seasonsCount ? 0 : 2),
+                      color: rating != null
+                          ? AppRatingColors.of(rating)
+                          : unratedColor,
                     ),
                   ),
                 );
@@ -95,7 +115,9 @@ class SeasonalRatingBar extends ConsumerWidget {
                   height: 7,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: rating != null ? AppRatingColors.of(rating) : unratedColor,
+                    color: rating != null
+                        ? AppRatingColors.of(rating)
+                        : unratedColor,
                   ),
                 ),
                 const SizedBox(width: 4),

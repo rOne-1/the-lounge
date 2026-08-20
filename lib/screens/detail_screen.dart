@@ -113,11 +113,13 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               if (rawItem == null) {
                 return FullScreenErrorWidget(
                   message: 'Failed to load media details.',
-                  onRetry: () => ref.invalidate(mediaDetailsProvider(widget.id)),
+                  onRetry: () =>
+                      ref.invalidate(mediaDetailsProvider(widget.id)),
                 );
               }
               final item = rawItem.copyWith(
-                releaseOrAirDate: rawItem.releaseOrAirDate ?? widget.initialItem?.releaseOrAirDate,
+                releaseOrAirDate: rawItem.releaseOrAirDate ??
+                    widget.initialItem?.releaseOrAirDate,
                 status: rawItem.status ?? widget.initialItem?.status,
               );
               final isLarge = MediaQuery.of(context).size.width > 800;
@@ -156,9 +158,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHero(context, item, isDark)
-              .animate()
-              .fade(duration: 250.ms),
+          _buildHero(context, item, isDark).animate().fade(duration: 250.ms),
           Padding(
             padding: const EdgeInsets.all(18.0),
             child: Column(
@@ -177,7 +177,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                         height: 1.05,
                       ),
                     ),
-                    if (item.tagline != null && item.tagline!.trim().isNotEmpty) ...[
+                    if (item.tagline != null &&
+                        item.tagline!.trim().isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
                         '"${item.tagline}"',
@@ -212,10 +213,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                     SeasonalRatingBar(item: item),
                     _buildWatchHistorySection(context, item, isDark),
                   ],
-                )
-                    .animate(delay: 100.ms)
-                    .fade(duration: 250.ms)
-                    .slideY(
+                ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
                       begin: 0.08,
                       end: 0,
                       curve: AppPhysics.houseSpringCurve,
@@ -234,10 +232,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       _buildNetworksSection(item, isDark),
                       _buildWatchProvidersSection(context, ref, item, isDark),
                     ],
-                  )
-                      .animate(delay: 220.ms)
-                      .fade(duration: 250.ms)
-                      .slideY(
+                  ).animate(delay: 220.ms).fade(duration: 250.ms).slideY(
                         begin: 0.08,
                         end: 0,
                         curve: AppPhysics.houseSpringCurve,
@@ -291,7 +286,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                         height: 1.05,
                       ),
                     ),
-                    if (item.tagline != null && item.tagline!.trim().isNotEmpty) ...[
+                    if (item.tagline != null &&
+                        item.tagline!.trim().isNotEmpty) ...[
                       const SizedBox(height: 8),
                       Text(
                         '"${item.tagline}"',
@@ -326,10 +322,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                     SeasonalRatingBar(item: item),
                     _buildWatchHistorySection(context, item, isDark),
                   ],
-                )
-                    .animate(delay: 100.ms)
-                    .fade(duration: 250.ms)
-                    .slideY(
+                ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
                       begin: 0.08,
                       end: 0,
                       curve: AppPhysics.houseSpringCurve,
@@ -348,10 +341,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       _buildNetworksSection(item, isDark),
                       _buildWatchProvidersSection(context, ref, item, isDark),
                     ],
-                  )
-                      .animate(delay: 220.ms)
-                      .fade(duration: 250.ms)
-                      .slideY(
+                  ).animate(delay: 220.ms).fade(duration: 250.ms).slideY(
                         begin: 0.08,
                         end: 0,
                         curve: AppPhysics.houseSpringCurve,
@@ -390,7 +380,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
     final String ratingStr;
     if (item.voteCount != null && item.voteCount! > 0) {
-      ratingStr = '★ ${item.rating.toStringAsFixed(1)} (${_formatVoteCount(item.voteCount!)})';
+      ratingStr =
+          '★ ${item.rating.toStringAsFixed(1)} (${_formatVoteCount(item.voteCount!)})';
     } else {
       ratingStr = '★ ${item.rating.toStringAsFixed(1)}';
     }
@@ -589,7 +580,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
-  Widget _buildGenreChips(BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
+  Widget _buildGenreChips(
+      BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
     final subColor = context.ambianceColors.sub;
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
@@ -635,7 +627,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
-  Widget _buildKeywordChips(BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
+  Widget _buildKeywordChips(
+      BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
     if (item.keywords == null || item.keywords!.isEmpty) {
       return const SizedBox.shrink();
     }
@@ -678,7 +671,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: phColor,
                   borderRadius: BorderRadius.circular(16),
@@ -701,7 +695,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
-  Widget _buildCollectionBanner(BuildContext context, MediaItem item, bool isDark) {
+  Widget _buildCollectionBanner(
+      BuildContext context, MediaItem item, bool isDark) {
     final collection = item.belongsToCollection;
     if (collection == null) return const SizedBox.shrink();
 
@@ -822,7 +817,6 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
-
   Widget _buildDirectorOrCreatorCredit(
     BuildContext context,
     WidgetRef ref,
@@ -834,7 +828,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
     if (hasDirectors) {
       final hasCreators = item.directors!.any((d) => d.role == 'Creator');
-      final hasMovieDirectors = item.directors!.any((d) => d.role == 'Director');
+      final hasMovieDirectors =
+          item.directors!.any((d) => d.role == 'Director');
       if (hasCreators && !hasMovieDirectors) {
         label = item.directors!.length > 1 ? 'Creators' : 'Created by';
       } else if (hasMovieDirectors && !hasCreators) {
@@ -923,7 +918,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.only(top: 2.0),
-            child: Icon(Icons.video_camera_front_outlined, size: 20, color: subColor),
+            child: Icon(Icons.video_camera_front_outlined,
+                size: 20, color: subColor),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1004,7 +1000,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => DetailScreen(id: similarItem.prefixedId),
+                                builder: (_) =>
+                                    DetailScreen(id: similarItem.prefixedId),
                               ),
                             );
                           },
@@ -1023,8 +1020,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                                     boxShadow: [
                                       BoxShadow(
                                         color: isDark
-                                            ? const Color.fromRGBO(255, 255, 255, 0.05)
-                                            : const Color.fromRGBO(0, 0, 0, 0.08),
+                                            ? const Color.fromRGBO(
+                                                255, 255, 255, 0.05)
+                                            : const Color.fromRGBO(
+                                                0, 0, 0, 0.08),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       )
@@ -1100,7 +1099,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 );
               },
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                 decoration: BoxDecoration(
                   color: phColor,
                   borderRadius: BorderRadius.circular(8),
@@ -1220,14 +1220,16 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                             (item.status!.toLowerCase() == 'unreleased' ||
                                 item.status!.toLowerCase() == 'in production' ||
                                 item.status!.toLowerCase() == 'planned'));
-                    final seasons = ref.watch(tvShowSeasonsProvider(item)).value;
+                    final seasons =
+                        ref.watch(tvShowSeasonsProvider(item)).value;
                     return _buildStatusToggle(
                       'Watched',
                       inWatched,
                       watchedColor,
                       () {
                         if (isUnreleased) {
-                          LoungeToast.show(context, 'This title has not been released yet.');
+                          LoungeToast.show(
+                              context, 'This title has not been released yet.');
                           return;
                         }
                         // PERS-RATE-1: auto-prompt for a rating the moment a
@@ -1236,11 +1238,15 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                         // than trusting the pre-toggle `inWatched` closure,
                         // since a TV show can land in Watching instead if
                         // unreleased episodes remain).
-                        final wasWatched =
-                            ref.read(mediaProvider).watchedList.containsKey(item.id);
+                        final wasWatched = ref
+                            .read(mediaProvider)
+                            .watchedList
+                            .containsKey(item.id);
                         notifier.toggleWatched(item, seasons: seasons);
-                        final isNowWatched =
-                            ref.read(mediaProvider).watchedList.containsKey(item.id);
+                        final isNowWatched = ref
+                            .read(mediaProvider)
+                            .watchedList
+                            .containsKey(item.id);
                         if (!wasWatched && isNowWatched) {
                           final hasRating = findPrimaryWatchRecord(
                                 ref.read(mediaProvider).watchHistory,
@@ -1274,7 +1280,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             // Padding wrapper here) so it contributes zero extra space when
             // the item isn't Watched yet and the pill renders nothing.
             Consumer(
-              builder: (context, ref, _) => PersonalRatingPill(item: item, expanded: true),
+              builder: (context, ref, _) =>
+                  PersonalRatingPill(item: item, expanded: true),
             ),
             const SizedBox(height: 8),
             // Secondary status bar (On-Hold & Dropped options)
@@ -1330,9 +1337,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   ) {
     final inkColor = context.ambianceColors.ink;
     final accentColor = context.ambianceColors.acc;
-    final borderColor = isDark
-        ? accentColor.withAlpha(50)
-        : accentColor.withAlpha(50);
+    final borderColor =
+        isDark ? accentColor.withAlpha(50) : accentColor.withAlpha(50);
 
     return PressableScale(
       onTap: () => _playTrailer(context, item),
@@ -1537,7 +1543,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   ),
                 ],
               )
-            : context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(12)))
+            : context.ambianceColors.primaryButtonDecoration
+                .copyWith(borderRadius: BorderRadius.circular(12)))
         : BoxDecoration(
             color: context.ambianceColors.card2,
             borderRadius: BorderRadius.circular(12),
@@ -1597,6 +1604,15 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     if (isDisabled) {
       return Tooltip(
         message: 'This title has not been released yet.',
+        // SP-2: themed to match the app's dark chrome instead of
+        // Flutter's plain light default popup.
+        decoration: BoxDecoration(
+          color: context.ambianceColors.card2,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: context.ambianceColors.lineRgba),
+        ),
+        textStyle: AppThemes.safeGeist(
+            fontSize: 12, color: context.ambianceColors.ink),
         child: Opacity(
           opacity: 0.5,
           child: toggleWidget,
@@ -1607,7 +1623,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     return toggleWidget;
   }
 
-  Widget _buildCastStrip(BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
+  Widget _buildCastStrip(
+      BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
     if (item.cast.isEmpty) return const SizedBox.shrink();
 
     final inkColor = context.ambianceColors.ink;
@@ -1654,7 +1671,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
               return PressableScale(
                 onTap: () {
-                  final pId = castMember != null ? int.tryParse(castMember.id) : null;
+                  final pId =
+                      castMember != null ? int.tryParse(castMember.id) : null;
                   final pName = castMember?.name ?? castName;
                   ref.read(discoverFilterProvider.notifier).setPerson(
                         personId: pId,
@@ -1705,7 +1723,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
-  Widget _buildTrailersSection(BuildContext context, MediaItem item, bool isDark) {
+  Widget _buildTrailersSection(
+      BuildContext context, MediaItem item, bool isDark) {
     final trailers = item.trailers;
     if (trailers == null || trailers.isEmpty) return const SizedBox.shrink();
 
@@ -1769,7 +1788,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                                 fit: BoxFit.cover,
                                 fallback: Container(
                                   color: phColor,
-                                  child: Icon(Icons.movie_outlined, color: subColor),
+                                  child: Icon(Icons.movie_outlined,
+                                      color: subColor),
                                 ),
                               ),
                               Center(
@@ -1815,14 +1835,17 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                                             horizontal: 6, vertical: 2),
                                         decoration: BoxDecoration(
                                           color: accColor.withAlpha(230),
-                                          borderRadius: BorderRadius.circular(4),
+                                          borderRadius:
+                                              BorderRadius.circular(4),
                                         ),
                                         child: Text(
                                           'Official',
                                           style: AppThemes.safeGeist(
                                             fontSize: 10,
                                             fontWeight: FontWeight.w700,
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                           ),
                                         ),
                                       ),
@@ -1906,10 +1929,13 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       orElse: () => defaultRegions,
     );
 
-    final hasSelected = availableRegions.any((r) => r['code'] == selectedCountry);
+    final hasSelected =
+        availableRegions.any((r) => r['code'] == selectedCountry);
     final currentCountry = hasSelected
         ? selectedCountry
-        : (availableRegions.isNotEmpty ? availableRegions.first['code']! : 'US');
+        : (availableRegions.isNotEmpty
+            ? availableRegions.first['code']!
+            : 'US');
 
     final countryProviders = item.getWatchProvidersForCountry(currentCountry);
 
@@ -1947,7 +1973,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                     notifier.setWatchProvidersCountry(newCountry);
                   }
                 },
-                items: availableRegions.map<LoungeDropdownItem<String>>((region) {
+                items:
+                    availableRegions.map<LoungeDropdownItem<String>>((region) {
                   final code = region['code'] ?? 'US';
                   return LoungeDropdownItem<String>(value: code, label: code);
                 }).toList(),
@@ -2078,7 +2105,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.replay_rounded, size: 16, color: context.ambianceColors.ink),
+                      Icon(Icons.replay_rounded,
+                          size: 16, color: context.ambianceColors.ink),
                       const SizedBox(width: 8),
                       Text(
                         'Add Rewatch',
@@ -2166,7 +2194,8 @@ class _ExpandableOverviewTextState extends State<ExpandableOverviewText> {
                 widget.text,
                 style: widget.style,
                 maxLines: _isExpanded ? null : widget.maxLinesCollapsed,
-                overflow: _isExpanded ? TextOverflow.clip : TextOverflow.ellipsis,
+                overflow:
+                    _isExpanded ? TextOverflow.clip : TextOverflow.ellipsis,
               ),
             ),
             if (isOverflowing) ...[
@@ -2264,7 +2293,8 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
     final seasonsCount = widget.item.seasonsCount ?? 1;
 
     final seasonAsync = ref.watch(
-      tvSeasonDetailsProvider((tvId: widget.item.id, seasonNumber: _selectedSeason)),
+      tvSeasonDetailsProvider(
+          (tvId: widget.item.id, seasonNumber: _selectedSeason)),
     );
     final allSeasonsAsync = ref.watch(tvShowSeasonsProvider(widget.item));
 
@@ -2324,7 +2354,8 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                         'Season $seasonNum',
                         style: AppThemes.safeGeist(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                          fontWeight:
+                              isSelected ? FontWeight.w600 : FontWeight.w500,
                           color: isSelected
                               ? (Theme.of(context).colorScheme.onPrimary)
                               : subColor,
@@ -2392,11 +2423,12 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                   separatorBuilder: (_, __) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final episode = visibleEpisodes[index];
-                    final isWatched = ref.read(mediaProvider.notifier).isEpisodeWatched(
-                          widget.item.id,
-                          episode.seasonNumber,
-                          episode.episodeNumber,
-                        );
+                    final isWatched =
+                        ref.read(mediaProvider.notifier).isEpisodeWatched(
+                              widget.item.id,
+                              episode.seasonNumber,
+                              episode.episodeNumber,
+                            );
 
                     return Container(
                       padding: const EdgeInsets.all(10),
@@ -2404,9 +2436,7 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                         color: phColor,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: isWatched
-                              ? accColor.withAlpha(128)
-                              : lineRgba,
+                          color: isWatched ? accColor.withAlpha(128) : lineRgba,
                         ),
                       ),
                       child: Row(
@@ -2487,6 +2517,18 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                   : (isWatched
                                       ? 'Mark as unwatched'
                                       : 'Mark as watched'),
+                              // SP-2: themed to match the app's dark chrome
+                              // instead of Flutter's plain light default
+                              // popup.
+                              decoration: BoxDecoration(
+                                color: context.ambianceColors.card2,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                    color: context.ambianceColors.lineRgba),
+                              ),
+                              textStyle: AppThemes.safeGeist(
+                                  fontSize: 12,
+                                  color: context.ambianceColors.ink),
                               child: Opacity(
                                 opacity: isEpisodeUnaired ? 0.4 : 1.0,
                                 child: StatusPulseRing(
@@ -2496,19 +2538,22 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                   child: PressableScale(
                                     onTap: isEpisodeUnaired
                                         ? () {
-                                            LoungeToast.show(context, 'This episode has not aired yet.');
+                                            LoungeToast.show(context,
+                                                'This episode has not aired yet.');
                                           }
                                         : () {
                                             final totalEpisodes = widget
                                                     .item.episodesCount ??
-                                                ((widget.item.seasonsCount ?? 1) *
+                                                ((widget.item.seasonsCount ??
+                                                        1) *
                                                     allEpisodes.length);
 
                                             final showId = widget.item.id;
-                                            final seasonNum = episode.seasonNumber;
+                                            final seasonNum =
+                                                episode.seasonNumber;
                                             final wasSeasonComplete = ref
-                                                    .read(mediaProvider)
-                                                    .seasonEndDates[showId]
+                                                        .read(mediaProvider)
+                                                        .seasonEndDates[showId]
                                                     ?[seasonNum] !=
                                                 null;
 
@@ -2517,10 +2562,13 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                                 .toggleEpisodeWatched(
                                                   showId: showId,
                                                   seasonNumber: seasonNum,
-                                                  episodeNumber: episode.episodeNumber,
+                                                  episodeNumber:
+                                                      episode.episodeNumber,
                                                   showItem: widget.item,
-                                                  totalEpisodeCount: totalEpisodes,
-                                                  seasons: allSeasonsAsync.value,
+                                                  totalEpisodeCount:
+                                                      totalEpisodes,
+                                                  seasons:
+                                                      allSeasonsAsync.value,
                                                 );
 
                                             // PERS-RATE-1: auto-prompt the
@@ -2528,18 +2576,21 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                             // (not necessarily the whole
                                             // show) newly completes.
                                             final isNowSeasonComplete = ref
-                                                    .read(mediaProvider)
-                                                    .seasonEndDates[showId]
+                                                        .read(mediaProvider)
+                                                        .seasonEndDates[showId]
                                                     ?[seasonNum] !=
                                                 null;
                                             if (!wasSeasonComplete &&
                                                 isNowSeasonComplete) {
-                                              final hasRating = findPrimaryWatchRecord(
-                                                    ref.read(mediaProvider).watchHistory,
-                                                    showId,
-                                                    seasonNum,
-                                                  ) !=
-                                                  null;
+                                              final hasRating =
+                                                  findPrimaryWatchRecord(
+                                                        ref
+                                                            .read(mediaProvider)
+                                                            .watchHistory,
+                                                        showId,
+                                                        seasonNum,
+                                                      ) !=
+                                                      null;
                                               if (!hasRating) {
                                                 showLoungeRatingSheet(
                                                   context,
@@ -2567,8 +2618,10 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                         ),
                                       ),
                                       child: AnimatedSwitcher(
-                                        duration: AppPhysics.houseSpringDuration,
-                                        switchInCurve: AppPhysics.houseSpringCurve,
+                                        duration:
+                                            AppPhysics.houseSpringDuration,
+                                        switchInCurve:
+                                            AppPhysics.houseSpringCurve,
                                         switchOutCurve: Curves.easeOut,
                                         transitionBuilder: (child, animation) =>
                                             ScaleTransition(
@@ -2579,10 +2632,13 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                           isWatched
                                               ? Icons.check
                                               : Icons.check_outlined,
-                                          key: ValueKey('episode-check-$isWatched'),
+                                          key: ValueKey(
+                                              'episode-check-$isWatched'),
                                           size: 16,
                                           color: isWatched
-                                              ? (Theme.of(context).colorScheme.onPrimary)
+                                              ? (Theme.of(context)
+                                                  .colorScheme
+                                                  .onPrimary)
                                               : subColor,
                                         ),
                                       ),
@@ -2647,4 +2703,3 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
     );
   }
 }
-

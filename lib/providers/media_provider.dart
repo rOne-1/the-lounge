@@ -120,6 +120,21 @@ class MediaState {
   }
 }
 
+/// BACKUP-2: true while a backup import (or account reset) is actively
+/// running, regardless of which import path handled it (legacy single-hall
+/// or multi-hall). Analytics generation reads this to refuse computing
+/// against data that's still mid-restore rather than silently generating a
+/// misleading partial result.
+class IsDataImportingNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
+
+final isDataImportingProvider =
+    NotifierProvider<IsDataImportingNotifier, bool>(IsDataImportingNotifier.new);
+
 class MediaNotifier extends Notifier<MediaState> {
   static const _watchProvidersCountryKey = 'watch_providers_country';
   static const _watchlistKey = 'the_lounge_watchlist';

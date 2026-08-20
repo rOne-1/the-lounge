@@ -206,6 +206,30 @@ class HallNotifier extends Notifier<HallState> {
     }
   }
 
+  /// BACKUP-1: persists every hall from an imported multi-hall backup and
+  /// refreshes both this provider's and mediaProvider's state to reflect
+  /// it -- a plain [saveHall] loop alone would leave the two providers'
+  /// in-memory caches stale (same reactivity gap [switchHall] closes for a
+  /// live hall switch).
+  Future<void> applyImportedHalls(List<HallSpace> halls) async {
+    if (halls.isEmpty) return;
+    for (final hall in halls) {
+      await _storageService.saveHall(_prefs, hall);
+    }
+
+    final stillActiveId =
+        halls.any((h) => h.id == state.activeHallId) ? state.activeHallId : halls.first.id;
+    await _storageService.saveActiveHallId(_prefs, stillActiveId);
+
+    state = state.copyWith(halls: halls, activeHallId: stillActiveId);
+    await ref.read(mediaProvider.notifier).loadForHall(stillActiveId);
+
+    try {
+      ref.invalidate(discoverMoviesDeckProvider);
+      ref.invalidate(discoverTvDeckProvider);
+    } catch (_) {}
+  }
+
   Future<void> updateActiveHall(HallSpace Function(HallSpace current) updater) async {
     final current = state.activeHall;
     final updatedHall = updater(current);
