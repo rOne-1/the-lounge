@@ -9,6 +9,7 @@ import '../providers/analytics_provider.dart';
 import '../providers/media_provider.dart';
 import '../utils/export_helper.dart';
 import '../utils/relative_time.dart';
+import '../widgets/analytics/abandoned_shows_section.dart';
 import '../widgets/analytics/analytics_share_card.dart';
 import '../widgets/analytics/binge_velocity_section.dart';
 import '../widgets/analytics/cast_constellations_section.dart';
@@ -20,6 +21,7 @@ import '../widgets/analytics/language_distribution_section.dart';
 import '../widgets/analytics/rating_divergence_section.dart';
 import '../widgets/analytics/studio_affinity_section.dart';
 import '../widgets/analytics/viewing_rhythm_section.dart';
+import '../widgets/analytics/watchlist_funnel_section.dart';
 import '../widgets/archive_summary_card.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/lounge_toast.dart';
@@ -455,6 +457,28 @@ class _AnalyticsResults extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               DiscoverFunnelSection(swipeRatio: result.discoverSwipeRatio),
+              const SizedBox(height: 20),
+              Text(
+                'Watchlist Funnel',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              WatchlistFunnelSection(funnel: result.watchlistFunnel),
+              const SizedBox(height: 20),
+              Text(
+                'Shelf-Life Drop-Offs',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              AbandonedShowsSection(shows: result.abandonedShows),
             ],
           ),
         ),

@@ -60,10 +60,12 @@ class AnalyticsNotifier extends Notifier<AnalyticsState> {
         watchedEpisodes: mediaState.watchedEpisodes,
         seasonStartDates: mediaState.seasonStartDates,
         seasonEndDates: mediaState.seasonEndDates,
-        // EXP-FUNNEL-2: already-tracked counts, no new state read here.
+        // EXP-FUNNEL-2: an already-tracked count, no new state read here.
         skippedCount: ref.read(skippedMediaIdsProvider).length,
-        watchlistCount: mediaState.watchlist.length,
-        maybeListCount: mediaState.maybeList.length,
+        watchlist: mediaState.watchlist,
+        maybeList: mediaState.maybeList,
+        startDates: mediaState.startDates,
+        watchingList: mediaState.watchingList,
       );
       final result = await runAnalyticsCompute(input);
       state = state.copyWith(

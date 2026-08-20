@@ -146,6 +146,9 @@ void main() {
           discoverSwipeRatio: DiscoverSwipeRatio(
               skippedCount: 0, watchlistedCount: 0, savedCount: 0),
           studioAffinity: StudioAffinity([]),
+          watchlistFunnel: WatchlistFunnel(
+              convertedCount: 0, averageBacklogDays: null, pendingCount: 0),
+          abandonedShows: [],
         ),
         generatedAt: DateTime(2026, 1, 1),
       );
@@ -224,6 +227,19 @@ void main() {
             savedCount: 1,
           ),
           studioAffinity: StudioAffinity([NameCount(name: 'A24', count: 2)]),
+          watchlistFunnel: WatchlistFunnel(
+            convertedCount: 3,
+            averageBacklogDays: 12.0,
+            pendingCount: 2,
+          ),
+          abandonedShows: [
+            AbandonedShow(
+              showId: 'tv_2',
+              showTitle: 'Stalled Show',
+              watchedEpisodeCount: 2,
+              totalEpisodes: 10,
+            ),
+          ],
         ),
         generatedAt: DateTime(2026, 1, 1),
       );
@@ -305,6 +321,9 @@ void main() {
           discoverSwipeRatio: DiscoverSwipeRatio(
               skippedCount: 0, watchlistedCount: 0, savedCount: 0),
           studioAffinity: StudioAffinity([]),
+          watchlistFunnel: WatchlistFunnel(
+              convertedCount: 0, averageBacklogDays: null, pendingCount: 0),
+          abandonedShows: [],
         ),
         generatedAt: DateTime(2026, 1, 1),
       );

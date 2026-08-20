@@ -17,13 +17,27 @@ class AnalyticsInput {
   final Map<String, Map<int, DateTime>> seasonStartDates;
   final Map<String, Map<int, DateTime>> seasonEndDates;
 
-  /// EXP-FUNNEL-2: plain counts, not the full skip/watchlist/maybe maps --
-  /// Discover Swipe Ratio only ever needs totals, and keeping AnalyticsInput
-  /// to primitives+MediaItem/WatchRecord types is cheaper to hand across
-  /// the `compute()` isolate boundary than carrying whole extra maps over.
+  /// EXP-FUNNEL-2: plain counts, not the full skip map -- Discover Swipe
+  /// Ratio only ever needs a total, and keeping AnalyticsInput to
+  /// primitives+MediaItem/WatchRecord types is cheaper to hand across the
+  /// `compute()` isolate boundary than carrying the whole skip map over.
   final int skippedCount;
-  final int watchlistCount;
-  final int maybeListCount;
+
+  /// EXP-FUNNEL-1: the full Watchlist/Maybe maps (not just counts) --
+  /// needed to filter by `addedDate` (only items added after EXP-DATA-1
+  /// shipped carry one) for the pending-backlog count.
+  final Map<String, MediaItem> watchlist;
+  final Map<String, MediaItem> maybeList;
+
+  /// EXP-FUNNEL-1: per-media start date, needed alongside `addedDate` to
+  /// compute real backlog time for converted (now-Watched) titles.
+  final Map<String, DateTime> startDates;
+
+  /// EXP-FUNNEL-3: shows currently in Watching status -- a show fully in
+  /// [watchedList] already passed the app's own completeness check, so it
+  /// isn't a meaningful abandonment candidate; only Watching shows that
+  /// stalled are.
+  final Map<String, MediaItem> watchingList;
 
   const AnalyticsInput({
     required this.watchedList,
@@ -32,8 +46,10 @@ class AnalyticsInput {
     required this.seasonStartDates,
     required this.seasonEndDates,
     this.skippedCount = 0,
-    this.watchlistCount = 0,
-    this.maybeListCount = 0,
+    this.watchlist = const {},
+    this.maybeList = const {},
+    this.startDates = const {},
+    this.watchingList = const {},
   });
 }
 
@@ -170,6 +186,43 @@ class RuntimePreferences {
   });
 }
 
+/// EXP-FUNNEL-1: honest counts instead of an unknowable-from-current-data
+/// percentage (see the expansion triage doc's judgment call) --
+/// `convertedCount` only covers titles added *after* `addedDate` started
+/// being stamped, so this understates lifetime conversions, never
+/// overstates them.
+class WatchlistFunnel {
+  final int convertedCount;
+  final double? averageBacklogDays;
+  final int pendingCount;
+
+  const WatchlistFunnel({
+    required this.convertedCount,
+    required this.averageBacklogDays,
+    required this.pendingCount,
+  });
+}
+
+/// EXP-FUNNEL-3: one TV show that looks abandoned -- stalled in Watching
+/// status, meaningfully behind its known episode count, with no watch
+/// activity in the idle window (see [computeAbandonedShows]).
+class AbandonedShow {
+  final String showId;
+  final String showTitle;
+  final int watchedEpisodeCount;
+  final int totalEpisodes;
+
+  const AbandonedShow({
+    required this.showId,
+    required this.showTitle,
+    required this.watchedEpisodeCount,
+    required this.totalEpisodes,
+  });
+
+  double get completionFraction =>
+      totalEpisodes == 0 ? 0 : watchedEpisodeCount / totalEpisodes;
+}
+
 /// EXP-GLOBAL-3: a recurring production company/studio with its watched
 /// count.
 class StudioAffinity {
@@ -212,6 +265,8 @@ class AnalyticsResult {
   final RuntimePreferences runtimePreferences;
   final DiscoverSwipeRatio discoverSwipeRatio;
   final StudioAffinity studioAffinity;
+  final WatchlistFunnel watchlistFunnel;
+  final List<AbandonedShow> abandonedShows;
 
   const AnalyticsResult({
     required this.heatmap,
@@ -228,6 +283,8 @@ class AnalyticsResult {
     required this.runtimePreferences,
     required this.discoverSwipeRatio,
     required this.studioAffinity,
+    required this.watchlistFunnel,
+    required this.abandonedShows,
   });
 }
 
@@ -496,6 +553,90 @@ RuntimePreferences computeRuntimePreferences(AnalyticsInput input) {
   );
 }
 
+/// EXP-FUNNEL-1: converted = watched titles with both `addedDate` and a
+/// `startDates` entry (backlog time is `startDate - addedDate`). Pending =
+/// current Watchlist/Maybe items with `addedDate` set. Items without
+/// `addedDate` (added before EXP-DATA-1 shipped) are excluded from both
+/// counts entirely, not counted as 0 -- there's no way to know their real
+/// backlog time.
+WatchlistFunnel computeWatchlistFunnel(AnalyticsInput input) {
+  var convertedCount = 0;
+  final backlogDays = <double>[];
+  for (final entry in input.watchedList.entries) {
+    final addedDate = entry.value.addedDate;
+    final startDate = input.startDates[entry.key];
+    if (addedDate == null || startDate == null) continue;
+    convertedCount++;
+    final days = startDate.difference(addedDate).inHours / 24.0;
+    if (days >= 0) backlogDays.add(days);
+  }
+
+  final pendingCount =
+      input.watchlist.values.where((item) => item.addedDate != null).length +
+          input.maybeList.values.where((item) => item.addedDate != null).length;
+
+  final averageBacklogDays = backlogDays.isEmpty
+      ? null
+      : backlogDays.reduce((a, b) => a + b) / backlogDays.length;
+
+  return WatchlistFunnel(
+    convertedCount: convertedCount,
+    averageBacklogDays: averageBacklogDays,
+    pendingCount: pendingCount,
+  );
+}
+
+/// EXP-FUNNEL-3: a Watching-status show counts as abandoned when its
+/// completion is meaningfully under 100% (below [completionThreshold]) and
+/// its most recent logged watch activity is older than [idleWindow] (90
+/// days, per the expansion triage doc's locked decision). Shows with no
+/// watch-history activity at all are excluded -- there's no real "last
+/// activity" to measure idleness from.
+List<AbandonedShow> computeAbandonedShows(
+  AnalyticsInput input, {
+  DateTime? now,
+  Duration idleWindow = const Duration(days: 90),
+  double completionThreshold = 0.9,
+}) {
+  final effectiveNow = now ?? DateTime.now();
+  final results = <AbandonedShow>[];
+
+  for (final entry in input.watchingList.entries) {
+    final id = entry.key;
+    final item = entry.value;
+    if (item.type != MediaType.tv) continue;
+
+    final totalEpisodes = item.episodesCount;
+    if (totalEpisodes == null || totalEpisodes <= 0) continue;
+
+    final watchedCount = input.watchedEpisodes[id]?.length ?? 0;
+    final completion = watchedCount / totalEpisodes;
+    if (completion >= completionThreshold) continue;
+
+    final records = input.watchHistory[id];
+    if (records == null || records.isEmpty) continue;
+    DateTime? lastActivity;
+    for (final record in records) {
+      final date = record.date ?? record.recordedAt;
+      if (lastActivity == null || date.isAfter(lastActivity)) {
+        lastActivity = date;
+      }
+    }
+    if (lastActivity == null) continue;
+    if (effectiveNow.difference(lastActivity) < idleWindow) continue;
+
+    results.add(AbandonedShow(
+      showId: id,
+      showTitle: item.title,
+      watchedEpisodeCount: watchedCount,
+      totalEpisodes: totalEpisodes,
+    ));
+  }
+
+  results.sort((a, b) => a.completionFraction.compareTo(b.completionFraction));
+  return results;
+}
+
 /// EXP-GLOBAL-3: tallies `productionCompanyNames` across every watched
 /// title, reusing the same [_tally] helper as cast/director rankings.
 StudioAffinity computeStudioAffinity(AnalyticsInput input) {
@@ -511,8 +652,8 @@ StudioAffinity computeStudioAffinity(AnalyticsInput input) {
 DiscoverSwipeRatio computeDiscoverSwipeRatio(AnalyticsInput input) {
   return DiscoverSwipeRatio(
     skippedCount: input.skippedCount,
-    watchlistedCount: input.watchlistCount,
-    savedCount: input.maybeListCount,
+    watchlistedCount: input.watchlist.length,
+    savedCount: input.maybeList.length,
   );
 }
 
@@ -536,6 +677,8 @@ AnalyticsResult computeAnalytics(AnalyticsInput input) {
     runtimePreferences: computeRuntimePreferences(input),
     discoverSwipeRatio: computeDiscoverSwipeRatio(input),
     studioAffinity: computeStudioAffinity(input),
+    watchlistFunnel: computeWatchlistFunnel(input),
+    abandonedShows: computeAbandonedShows(input),
   );
 }
 

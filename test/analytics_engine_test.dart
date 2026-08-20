@@ -673,6 +673,215 @@ void main() {
     });
   });
 
+  group('computeWatchlistFunnel', () {
+    test(
+        'converted: watched titles with both addedDate and startDate; '
+        'backlog days averaged', () {
+      final items = {
+        'movie_1': MediaItem(
+          id: 'movie_1',
+          title: 'Movie 1',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          addedDate: DateTime(2026, 1, 1),
+        ),
+        'movie_2': MediaItem(
+          id: 'movie_2',
+          title: 'Movie 2',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          addedDate: DateTime(2026, 1, 1),
+        ),
+        // No addedDate -- added before EXP-DATA-1 shipped, must be
+        // excluded entirely, not counted as instant conversion.
+        'movie_3': const MediaItem(
+          id: 'movie_3',
+          title: 'Movie 3',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+        ),
+      };
+      final input = AnalyticsInput(
+        watchedList: items,
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+        startDates: {
+          'movie_1': DateTime(2026, 1, 11), // 10 days later
+          'movie_2': DateTime(2026, 1, 31), // 30 days later
+          'movie_3': DateTime(2026, 1, 5),
+        },
+      );
+
+      final result = computeWatchlistFunnel(input);
+      expect(result.convertedCount, 2);
+      expect(result.averageBacklogDays, 20.0);
+    });
+
+    test('pending: current watchlist/maybe items with addedDate set', () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+        watchlist: {
+          'movie_1': MediaItem(
+            id: 'movie_1',
+            title: 'Movie 1',
+            type: MediaType.movie,
+            rating: 7.0,
+            overview: '',
+            genres: const [],
+            addedDate: DateTime(2026, 1, 1),
+          ),
+          // No addedDate -- excluded from the pending count.
+          'movie_2': const MediaItem(
+            id: 'movie_2',
+            title: 'Movie 2',
+            type: MediaType.movie,
+            rating: 7.0,
+            overview: '',
+            genres: [],
+          ),
+        },
+        maybeList: {
+          'movie_3': MediaItem(
+            id: 'movie_3',
+            title: 'Movie 3',
+            type: MediaType.movie,
+            rating: 7.0,
+            overview: '',
+            genres: const [],
+            addedDate: DateTime(2026, 1, 1),
+          ),
+        },
+      );
+
+      final result = computeWatchlistFunnel(input);
+      expect(result.pendingCount, 2);
+    });
+  });
+
+  group('computeAbandonedShows', () {
+    MediaItem tvShow(String id, {int? episodesCount}) => MediaItem(
+          id: id,
+          title: id,
+          type: MediaType.tv,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          episodesCount: episodesCount,
+        );
+
+    test('flags a show under the completion threshold, idle past the window',
+        () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchHistory: {
+          'tv_1': [
+            WatchRecord(
+              date: DateTime(2026, 1, 1),
+              isFirstWatch: true,
+              recordedAt: DateTime(2026, 1, 1),
+            ),
+          ],
+        },
+        watchedEpisodes: {
+          'tv_1': {'S1E1', 'S1E2'},
+        },
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+        watchingList: {'tv_1': tvShow('tv_1', episodesCount: 20)},
+      );
+
+      final result = computeAbandonedShows(input, now: DateTime(2026, 6, 1));
+      expect(result, hasLength(1));
+      expect(result.single.showId, 'tv_1');
+      expect(result.single.watchedEpisodeCount, 2);
+      expect(result.single.totalEpisodes, 20);
+    });
+
+    test('does not flag a show still within the idle window', () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchHistory: {
+          'tv_1': [
+            WatchRecord(
+              date: DateTime(2026, 5, 20),
+              isFirstWatch: true,
+              recordedAt: DateTime(2026, 5, 20),
+            ),
+          ],
+        },
+        watchedEpisodes: {
+          'tv_1': {'S1E1', 'S1E2'},
+        },
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+        watchingList: {'tv_1': tvShow('tv_1', episodesCount: 20)},
+      );
+
+      final result = computeAbandonedShows(input, now: DateTime(2026, 6, 1));
+      expect(result, isEmpty);
+    });
+
+    test('does not flag a show near completion', () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchHistory: {
+          'tv_1': [
+            WatchRecord(
+              date: DateTime(2026, 1, 1),
+              isFirstWatch: true,
+              recordedAt: DateTime(2026, 1, 1),
+            ),
+          ],
+        },
+        watchedEpisodes: {
+          'tv_1': {for (var i = 1; i <= 19; i++) 'S1E$i'},
+        },
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+        watchingList: {'tv_1': tvShow('tv_1', episodesCount: 20)},
+      );
+
+      final result = computeAbandonedShows(input, now: DateTime(2026, 6, 1));
+      expect(result, isEmpty);
+    });
+
+    test('excludes shows with no episodesCount known (never backfilled)', () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchHistory: {
+          'tv_1': [
+            WatchRecord(
+              date: DateTime(2026, 1, 1),
+              isFirstWatch: true,
+              recordedAt: DateTime(2026, 1, 1),
+            ),
+          ],
+        },
+        watchedEpisodes: {
+          'tv_1': {'S1E1'},
+        },
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+        watchingList: {'tv_1': tvShow('tv_1')},
+      );
+
+      final result = computeAbandonedShows(input, now: DateTime(2026, 6, 1));
+      expect(result, isEmpty);
+    });
+  });
+
   group('computeStudioAffinity', () {
     test('tallies productionCompanyNames across watched titles, sorted desc',
         () {
@@ -711,16 +920,26 @@ void main() {
   });
 
   group('computeDiscoverSwipeRatio', () {
-    test('reflects the counts passed in on AnalyticsInput directly', () {
-      const input = AnalyticsInput(
-        watchedList: {},
-        watchHistory: {},
-        watchedEpisodes: {},
-        seasonStartDates: {},
-        seasonEndDates: {},
+    test('reflects the skip count and watchlist/maybe sizes on AnalyticsInput',
+        () {
+      MediaItem stub(String id) => MediaItem(
+            id: id,
+            title: id,
+            type: MediaType.movie,
+            rating: 7.0,
+            overview: '',
+            genres: const [],
+          );
+
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
         skippedCount: 12,
-        watchlistCount: 5,
-        maybeListCount: 3,
+        watchlist: {for (var i = 0; i < 5; i++) 'w_$i': stub('w_$i')},
+        maybeList: {for (var i = 0; i < 3; i++) 'm_$i': stub('m_$i')},
       );
 
       final result = computeDiscoverSwipeRatio(input);

@@ -46,6 +46,9 @@ void main() {
         discoverSwipeRatio: DiscoverSwipeRatio(
             skippedCount: 0, watchlistedCount: 0, savedCount: 0),
         studioAffinity: StudioAffinity([]),
+        watchlistFunnel: WatchlistFunnel(
+            convertedCount: 0, averageBacklogDays: null, pendingCount: 0),
+        abandonedShows: [],
       ),
     );
 
@@ -86,6 +89,9 @@ void main() {
         discoverSwipeRatio: DiscoverSwipeRatio(
             skippedCount: 0, watchlistedCount: 0, savedCount: 0),
         studioAffinity: StudioAffinity([]),
+        watchlistFunnel: WatchlistFunnel(
+            convertedCount: 0, averageBacklogDays: null, pendingCount: 0),
+        abandonedShows: [],
       ),
     );
 
