@@ -42,7 +42,8 @@ void main() {
             200);
       });
 
-      final service = TmdbApiService(token: 'eyJ_secret_jwt_token', client: client);
+      final service =
+          TmdbApiService(token: 'eyJ_secret_jwt_token', client: client);
       await service.getTrendingMovies();
 
       expect(authHeader, equals('Bearer eyJ_secret_jwt_token'));
@@ -80,25 +81,80 @@ void main() {
       await service.getTvWatchProviders('1399');
       await service.getTvSeasonDetails('1399', 1);
 
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/configuration?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/trending/movie/week?api_key=valid_token&page=2&include_adult=false'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/trending/tv/week?api_key=valid_token&page=1&include_adult=false'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/movie/popular?api_key=valid_token&page=1&include_adult=false'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/tv/popular?api_key=valid_token&page=1&include_adult=false'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/discover/movie?api_key=valid_token&page=1&include_adult=false&with_genres=28&sort_by=popularity.desc'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/discover/tv?api_key=valid_token&page=1&include_adult=false&with_genres=18'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/genre/movie/list?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/genre/tv/list?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/search/multi?api_key=valid_token&query=inception&page=1&include_adult=false'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/movie/550?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/tv/1399?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/movie/550/credits?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/tv/1399/credits?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/movie/550/videos?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/tv/1399/videos?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/movie/550/watch/providers?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/tv/1399/watch/providers?api_key=valid_token'));
-      expect(requestedUrls, contains('https://api.themoviedb.org/3/tv/1399/season/1?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/configuration?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/trending/movie/week?api_key=valid_token&page=2&include_adult=false'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/trending/tv/week?api_key=valid_token&page=1&include_adult=false'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/movie/popular?api_key=valid_token&page=1&include_adult=false'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/tv/popular?api_key=valid_token&page=1&include_adult=false'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/discover/movie?api_key=valid_token&page=1&include_adult=false&with_genres=28&sort_by=popularity.desc'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/discover/tv?api_key=valid_token&page=1&include_adult=false&with_genres=18'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/genre/movie/list?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/genre/tv/list?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/search/multi?api_key=valid_token&query=inception&page=1&include_adult=false'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/movie/550?api_key=valid_token'));
+      expect(requestedUrls,
+          contains('https://api.themoviedb.org/3/tv/1399?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/movie/550/credits?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/tv/1399/credits?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/movie/550/videos?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/tv/1399/videos?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/movie/550/watch/providers?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/tv/1399/watch/providers?api_key=valid_token'));
+      expect(
+          requestedUrls,
+          contains(
+              'https://api.themoviedb.org/3/tv/1399/season/1?api_key=valid_token'));
     });
 
     test('filterSearchResults separates direct titles vs person filmographies',
@@ -156,8 +212,7 @@ void main() {
           if (attempts < 3) {
             throw const SocketException('Connection reset by peer');
           }
-          return http.Response(
-              jsonEncode({'page': 1, 'results': []}), 200);
+          return http.Response(jsonEncode({'page': 1, 'results': []}), 200);
         });
 
         final service = TmdbApiService(token: 'valid_token', client: client);
@@ -413,8 +468,7 @@ void main() {
         return http.Response(jsonEncode({'results': []}), 200);
       });
 
-      final service =
-          TmdbApiService(token: 'valid_token', client: mockClient);
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
       final repo = TmdbMovieRepository(apiService: service);
 
       final trending = await repo.getTrendingMovies();
@@ -425,15 +479,18 @@ void main() {
       expect(trending.first.rating, equals(8.4));
       expect(
         trending.first.posterUrl,
-        equals('https://image.tmdb.org/t/p/w342/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'),
+        equals(
+            'https://image.tmdb.org/t/p/w342/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'),
       );
       expect(
         trending.first.detailPosterUrl,
-        equals('https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'),
+        equals(
+            'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg'),
       );
       expect(
         trending.first.backdropUrl,
-        equals('https://image.tmdb.org/t/p/w780/hZkgoQYus5vesz7cgEz7Ieb3y2m.jpg'),
+        equals(
+            'https://image.tmdb.org/t/p/w780/hZkgoQYus5vesz7cgEz7Ieb3y2m.jpg'),
       );
 
       final details = await repo.getMediaDetails('550');
@@ -446,7 +503,8 @@ void main() {
       expect(details.voteCount, equals(25000));
       expect(details.imdbId, equals('tt0137523'));
       expect(details.belongsToCollection, isNotNull);
-      expect(details.belongsToCollection!.name, equals('Fight Club Collection'));
+      expect(
+          details.belongsToCollection!.name, equals('Fight Club Collection'));
       expect(
         details.belongsToCollection!.posterUrl,
         equals('https://image.tmdb.org/t/p/w500/fc_poster.jpg'),
@@ -458,7 +516,8 @@ void main() {
       expect(details.keywords?.length, equals(2));
       expect(details.keywords?.first.name, equals('insomnia'));
       expect(details.productionCompanies?.length, equals(1));
-      expect(details.productionCompanies?.first.name, equals('Regency Enterprises'));
+      expect(details.productionCompanies?.first.name,
+          equals('Regency Enterprises'));
       expect(
         details.productionCompanies?.first.logoUrl,
         equals('https://image.tmdb.org/t/p/w185/logo.png'),
@@ -472,7 +531,8 @@ void main() {
       expect(details.castMembers.first.character, equals('Tyler Durden'));
       expect(
         details.castMembers.first.profileUrl,
-        equals('https://image.tmdb.org/t/p/w185/cckcYc2v0yh1tc9FjFqP2vHObux.jpg'),
+        equals(
+            'https://image.tmdb.org/t/p/w185/cckcYc2v0yh1tc9FjFqP2vHObux.jpg'),
       );
     });
 
@@ -513,8 +573,7 @@ void main() {
         return http.Response(jsonEncode({'results': []}), 200);
       });
 
-      final service =
-          TmdbApiService(token: 'valid_token', client: mockClient);
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
       final repo = TmdbMovieRepository(apiService: service);
 
       final details = await repo.getMediaDetails('tv_94605');
@@ -522,7 +581,8 @@ void main() {
       expect(details!.runtime, equals(51));
     });
 
-    test('Configured repository parses multi-country flatrate, rent, and buy providers',
+    test(
+        'Configured repository parses multi-country flatrate, rent, and buy providers',
         () async {
       final mockClient = MockClient((request) async {
         if (request.url.path.contains('/movie/100')) {
@@ -533,16 +593,28 @@ void main() {
                 'watch/providers': {
                   'results': {
                     'US': {
-                      'flatrate': [{'provider_name': 'Netflix'}],
-                      'rent': [{'provider_name': 'Apple TV'}],
-                      'buy': [{'provider_name': 'Amazon Video'}]
+                      'flatrate': [
+                        {'provider_name': 'Netflix'}
+                      ],
+                      'rent': [
+                        {'provider_name': 'Apple TV'}
+                      ],
+                      'buy': [
+                        {'provider_name': 'Amazon Video'}
+                      ]
                     },
                     'GB': {
-                      'flatrate': [{'provider_name': 'BBC iPlayer'}],
-                      'rent': [{'provider_name': 'Rakuten TV'}]
+                      'flatrate': [
+                        {'provider_name': 'BBC iPlayer'}
+                      ],
+                      'rent': [
+                        {'provider_name': 'Rakuten TV'}
+                      ]
                     },
                     'CA': {
-                      'flatrate': [{'provider_name': 'Crave'}]
+                      'flatrate': [
+                        {'provider_name': 'Crave'}
+                      ]
                     }
                   }
                 }
@@ -559,25 +631,47 @@ void main() {
       expect(details, isNotNull);
 
       final usProviders = details!.getWatchProvidersForCountry('US');
-      expect(usProviders, contains(const WatchProviderInfo(providerName: 'Netflix', category: 'Stream')));
-      expect(usProviders, contains(const WatchProviderInfo(providerName: 'Apple TV', category: 'Rent')));
-      expect(usProviders, contains(const WatchProviderInfo(providerName: 'Amazon Video', category: 'Buy')));
+      expect(
+          usProviders,
+          contains(const WatchProviderInfo(
+              providerName: 'Netflix', category: 'Stream')));
+      expect(
+          usProviders,
+          contains(const WatchProviderInfo(
+              providerName: 'Apple TV', category: 'Rent')));
+      expect(
+          usProviders,
+          contains(const WatchProviderInfo(
+              providerName: 'Amazon Video', category: 'Buy')));
 
       final gbProviders = details.getWatchProvidersForCountry('GB');
-      expect(gbProviders, contains(const WatchProviderInfo(providerName: 'BBC iPlayer', category: 'Stream')));
-      expect(gbProviders, contains(const WatchProviderInfo(providerName: 'Rakuten TV', category: 'Rent')));
+      expect(
+          gbProviders,
+          contains(const WatchProviderInfo(
+              providerName: 'BBC iPlayer', category: 'Stream')));
+      expect(
+          gbProviders,
+          contains(const WatchProviderInfo(
+              providerName: 'Rakuten TV', category: 'Rent')));
 
       final caProviders = details.getWatchProvidersForCountry('CA');
-      expect(caProviders, contains(const WatchProviderInfo(providerName: 'Crave', category: 'Stream')));
+      expect(
+          caProviders,
+          contains(const WatchProviderInfo(
+              providerName: 'Crave', category: 'Stream')));
     });
 
-    test('TF-22: getUpcomingMovies filters out already-released titles TMDB still lists as upcoming',
+    test(
+        'TF-22: getUpcomingMovies filters out already-released titles TMDB still lists as upcoming',
         () async {
       final now = DateTime.now();
       final futureDate =
           now.add(const Duration(days: 30)).toIso8601String().split('T').first;
-      final pastDate =
-          now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
+      final pastDate = now
+          .subtract(const Duration(days: 5))
+          .toIso8601String()
+          .split('T')
+          .first;
 
       final mockClient = MockClient((request) async {
         if (request.url.path.contains('/discover/movie')) {
@@ -624,8 +718,11 @@ void main() {
         'entire real page can come back with zero titles still upcoming)',
         () async {
       final now = DateTime.now();
-      final pastDate =
-          now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
+      final pastDate = now
+          .subtract(const Duration(days: 5))
+          .toIso8601String()
+          .split('T')
+          .first;
       final futureDate =
           now.add(const Duration(days: 30)).toIso8601String().split('T').first;
 
@@ -650,8 +747,16 @@ void main() {
               jsonEncode({
                 'page': 1,
                 'results': [
-                  {'id': 1, 'title': 'Already Released A', 'release_date': pastDate},
-                  {'id': 2, 'title': 'Already Released B', 'release_date': pastDate},
+                  {
+                    'id': 1,
+                    'title': 'Already Released A',
+                    'release_date': pastDate
+                  },
+                  {
+                    'id': 2,
+                    'title': 'Already Released B',
+                    'release_date': pastDate
+                  },
                 ]
               }),
               200);
@@ -700,19 +805,26 @@ void main() {
 
       final upcoming = await repo.getUpcomingMovies();
 
-      expect(upcoming.map((m) => m.title), contains('Anticipated Sequel (6+ months out)'));
+      expect(upcoming.map((m) => m.title),
+          contains('Anticipated Sequel (6+ months out)'));
       expect(capturedUri, isNotNull);
       expect(capturedUri!.path, contains('/discover/movie'));
-      expect(capturedUri!.queryParameters['sort_by'], equals('popularity.desc'));
-      expect(capturedUri!.queryParameters.containsKey('primary_release_date.gte'), isTrue);
+      expect(
+          capturedUri!.queryParameters['sort_by'], equals('popularity.desc'));
+      expect(
+          capturedUri!.queryParameters.containsKey('primary_release_date.gte'),
+          isTrue);
     });
 
     test(
         'TF-22 regression: returns empty rather than raw already-released data '
         'when every nearby page is entirely already-released', () async {
       final now = DateTime.now();
-      final pastDate =
-          now.subtract(const Duration(days: 5)).toIso8601String().split('T').first;
+      final pastDate = now
+          .subtract(const Duration(days: 5))
+          .toIso8601String()
+          .split('T')
+          .first;
 
       final mockClient = MockClient((request) async {
         if (request.url.path.contains('/discover/movie')) {
@@ -768,7 +880,8 @@ void main() {
       expect(regions[2], equals({'code': 'BR', 'name': 'Brazil'}));
     });
 
-    test('searchMedia preserves TMDB relevance order and excludes low-relevance noise items',
+    test(
+        'searchMedia preserves TMDB relevance order and excludes low-relevance noise items',
         () async {
       final mockClient = MockClient((request) async {
         if (request.url.path.contains('/search/multi')) {
@@ -831,8 +944,7 @@ void main() {
 
     test(
         'B1: searchMedia fetches the real filmography when the top result is a person, '
-        'instead of known_for + unrelated title-text matches',
-        () async {
+        'instead of known_for + unrelated title-text matches', () async {
       final mockClient = MockClient((request) async {
         if (request.url.path.contains('/search/multi')) {
           return http.Response(
@@ -1171,7 +1283,8 @@ void main() {
     });
   });
 
-  group('LANG-2 (2nd pass, 2026-08-19): fixed-list methods route through '
+  group(
+      'LANG-2 (2nd pass, 2026-08-19): fixed-list methods route through '
       '/discover with server-side with_original_language when a language is '
       'given -- the actual fix for the dev-reported bug (a client-side '
       'filter/backfill over TMDB\'s globally-weighted, English-dominated '
@@ -1184,7 +1297,8 @@ void main() {
     String findUrl(List<String> requestedUrls, String pathSegment) =>
         requestedUrls.firstWhere((u) => u.contains(pathSegment));
 
-    test('getTrendingMovies(originalLanguage: ...) hits /discover/movie with '
+    test(
+        'getTrendingMovies(originalLanguage: ...) hits /discover/movie with '
         'with_original_language, not /trending/movie/week', () async {
       final requestedUrls = <String>[];
       final client = MockClient((request) async {
@@ -1197,12 +1311,14 @@ void main() {
 
       await repo.getTrendingMovies(originalLanguage: 'hi');
 
-      expect(requestedUrls.any((u) => u.contains('/trending/movie/week')), isFalse);
+      expect(requestedUrls.any((u) => u.contains('/trending/movie/week')),
+          isFalse);
       final url = findUrl(requestedUrls, '/discover/movie');
       expect(url, contains('with_original_language=hi'));
     });
 
-    test('getTrendingMovies() with no language still hits the real dedicated '
+    test(
+        'getTrendingMovies() with no language still hits the real dedicated '
         'endpoint unchanged (regression guard: unlocked halls must not '
         'route through /discover)', () async {
       final requestedUrls = <String>[];
@@ -1216,11 +1332,13 @@ void main() {
 
       await repo.getTrendingMovies();
 
-      expect(requestedUrls.any((u) => u.contains('/trending/movie/week')), isTrue);
+      expect(
+          requestedUrls.any((u) => u.contains('/trending/movie/week')), isTrue);
       expect(requestedUrls.any((u) => u.contains('/discover/movie')), isFalse);
     });
 
-    test('getPopularMovies/getTrendingTvShows/getTopRatedTvShows all route '
+    test(
+        'getPopularMovies/getTrendingTvShows/getTopRatedTvShows all route '
         'through /discover with the language too (systemic, not one '
         'method patched in isolation)', () async {
       final requestedUrls = <String>[];
@@ -1236,14 +1354,16 @@ void main() {
       await repo.getTrendingTvShows(originalLanguage: 'ta');
       await repo.getTopRatedTvShows(originalLanguage: 'ta');
 
-      final discoverUrls = requestedUrls.where((u) => u.contains('/discover/')).toList();
+      final discoverUrls =
+          requestedUrls.where((u) => u.contains('/discover/')).toList();
       expect(discoverUrls, hasLength(3));
       for (final url in discoverUrls) {
         expect(url, contains('with_original_language=ta'));
       }
     });
 
-    test('getTopRatedMovies(originalLanguage: ...) sorts by vote_average.desc '
+    test(
+        'getTopRatedMovies(originalLanguage: ...) sorts by vote_average.desc '
         'with a vote_count.gte floor (avoids a single high-scoring, '
         'near-unvoted title dominating "top rated")', () async {
       final requestedUrls = <String>[];
@@ -1263,7 +1383,8 @@ void main() {
       expect(url, contains('vote_count.gte=50'));
     });
 
-    test('getNowPlayingMovies(originalLanguage: ...) approximates the '
+    test(
+        'getNowPlayingMovies(originalLanguage: ...) approximates the '
         'now_playing rolling window via primary_release_date.gte/lte on '
         '/discover/movie', () async {
       final requestedUrls = <String>[];
@@ -1280,13 +1401,15 @@ void main() {
       final url = findUrl(requestedUrls, '/discover/movie');
       final now = DateTime.now();
       final expectedLte = formatTmdbDate(now);
-      final expectedGte = formatTmdbDate(now.subtract(const Duration(days: 45)));
+      final expectedGte =
+          formatTmdbDate(now.subtract(const Duration(days: 45)));
       expect(url, contains('with_original_language=te'));
       expect(url, contains('primary_release_date.gte=$expectedGte'));
       expect(url, contains('primary_release_date.lte=$expectedLte'));
     });
 
-    test('getUpcomingMovies(originalLanguage: ...) keeps its existing '
+    test(
+        'getUpcomingMovies(originalLanguage: ...) keeps its existing '
         'discover-based date-widening logic (DATA-1) and adds '
         'with_original_language alongside it', () async {
       final requestedUrls = <String>[];
@@ -1305,7 +1428,8 @@ void main() {
       expect(url, contains('primary_release_date.gte='));
     });
 
-    test('getAiringTodayTvShows(originalLanguage: ...) scopes air_date.gte/'
+    test(
+        'getAiringTodayTvShows(originalLanguage: ...) scopes air_date.gte/'
         'lte to today only, on /discover/tv', () async {
       final requestedUrls = <String>[];
       final client = MockClient((request) async {
@@ -1325,7 +1449,8 @@ void main() {
       expect(url, contains('air_date.lte=$today'));
     });
 
-    test('getOnTheAirTvShows(originalLanguage: ...) widens air_date.gte/lte '
+    test(
+        'getOnTheAirTvShows(originalLanguage: ...) widens air_date.gte/lte '
         'to a ~7-day window (wider than Airing Today\'s single-day window), '
         'on /discover/tv', () async {
       final requestedUrls = <String>[];
@@ -1358,8 +1483,11 @@ void main() {
       // ongoing TV shows by first_air_date (routinely years in the past
       // for a long-running show), not by when the next episode actually
       // airs.
-      final nextEpisodeDate =
-          DateTime.now().add(const Duration(days: 3)).toIso8601String().split('T').first;
+      final nextEpisodeDate = DateTime.now()
+          .add(const Duration(days: 3))
+          .toIso8601String()
+          .split('T')
+          .first;
       final client = MockClient((request) async {
         if (request.url.path.contains('/tv/on_the_air')) {
           return http.Response(
@@ -1391,13 +1519,18 @@ void main() {
       expect(results.first.nextEpisodeAirDate, DateTime.parse(nextEpisodeDate));
     });
 
-    test('a show with no next_episode_to_air in the response leaves nextEpisodeAirDate null',
+    test(
+        'a show with no next_episode_to_air in the response leaves nextEpisodeAirDate null',
         () async {
       final client = MockClient((request) async {
         return http.Response(
             jsonEncode({
               'results': [
-                {'id': 11, 'name': 'No Next Episode Info', 'first_air_date': '2020-01-01'},
+                {
+                  'id': 11,
+                  'name': 'No Next Episode Info',
+                  'first_air_date': '2020-01-01'
+                },
               ],
             }),
             200);
@@ -1413,5 +1546,3 @@ void main() {
     });
   });
 }
-
-

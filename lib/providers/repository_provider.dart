@@ -58,7 +58,8 @@ final movieRepositoryProvider = Provider<MovieRepository>((ref) {
         'app will show a configuration-error state instead.',
         name: 'RepositoryProvider',
       );
-      return AnimeFilteredMovieRepository(TmdbMovieRepository(apiService: apiService));
+      return AnimeFilteredMovieRepository(
+          TmdbMovieRepository(apiService: apiService));
     }
     developer.log(
       'TMDB_READ_ACCESS_TOKEN not found or default placeholder used. Falling back to MockMovieRepository.',
@@ -67,13 +68,15 @@ final movieRepositoryProvider = Provider<MovieRepository>((ref) {
     return AnimeFilteredMovieRepository(MockMovieRepository());
   }
 
-  return AnimeFilteredMovieRepository(TmdbMovieRepository(apiService: apiService));
+  return AnimeFilteredMovieRepository(
+      TmdbMovieRepository(apiService: apiService));
 });
 
 /// Provider indicating whether the app is currently running in mock repository mode.
 final isUsingMockRepositoryProvider = Provider<bool>((ref) {
   final wrapped = ref.watch(movieRepositoryProvider);
-  final repo = wrapped is AnimeFilteredMovieRepository ? wrapped.inner : wrapped;
+  final repo =
+      wrapped is AnimeFilteredMovieRepository ? wrapped.inner : wrapped;
   if (repo is MockMovieRepository) return true;
   if (repo is TmdbMovieRepository) return !repo.isConfigured;
   return false;
@@ -106,19 +109,22 @@ final shouldShowConfigurationErrorProvider = Provider<bool>((ref) {
 /// around.
 final trendingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
   return repo.getTrendingMovies(originalLanguage: lockedLanguageCode);
 });
 
 final trendingTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
   return repo.getTrendingTvShows(originalLanguage: lockedLanguageCode);
 });
 
 final popularMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
   return repo.getPopularMovies(originalLanguage: lockedLanguageCode);
 });
 
@@ -136,38 +142,46 @@ final watchProviderRegionsProvider =
 
 final topRatedMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
   return repo.getTopRatedMovies(originalLanguage: lockedLanguageCode);
 });
 
 final topRatedTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
   return repo.getTopRatedTvShows(originalLanguage: lockedLanguageCode);
 });
 
 final nowPlayingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final country = ref.watch(mediaProvider.select((s) => s.watchProvidersCountry));
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return repo.getNowPlayingMovies(region: country, originalLanguage: lockedLanguageCode);
+  final country =
+      ref.watch(mediaProvider.select((s) => s.watchProvidersCountry));
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  return repo.getNowPlayingMovies(
+      region: country, originalLanguage: lockedLanguageCode);
 });
 
 final airingTodayTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
   return repo.getAiringTodayTvShows(originalLanguage: lockedLanguageCode);
 });
 
 final upcomingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
   return repo.getUpcomingMovies(originalLanguage: lockedLanguageCode);
 });
 
 final onTheAirTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
   return repo.getOnTheAirTvShows(originalLanguage: lockedLanguageCode);
 });
 
@@ -183,28 +197,33 @@ final tvSeasonDetailsProvider =
 /// store from the generic TmdbLocalCacheService.
 final episodeSkeletonCacheServiceProvider =
     Provider<EpisodeSkeletonCacheService>((ref) {
-  return EpisodeSkeletonCacheService(prefs: ref.watch(sharedPreferencesProvider));
+  return EpisodeSkeletonCacheService(
+      prefs: ref.watch(sharedPreferencesProvider));
 });
 
 final tvShowSeasonsProvider =
     FutureProvider.family<List<TvSeason>, MediaItem>((ref, item) async {
+  // PERF-STAMPEDE-1: this provider is watched unconditionally from every
+  // DetailScreen's status toggles, movies included -- without bailing out
+  // here first, a movie would fall through to seasonsCount ??= 1 below and
+  // unconditionally fire getTvSeasonDetails(movieId, 1), a request that can
+  // only ever 404 (movie and TV ids are separate TMDB id spaces). Confirmed
+  // live: every movie viewed during a TV-free test session still produced a
+  // /tv/{movieId}/season/1 call in the error log.
+  if (item.type != MediaType.tv) return const [];
+
   final repo = ref.watch(movieRepositoryProvider);
   // TV-1: lightweight MediaItem objects from search/discover/trending
   // often arrive with seasonsCount == null. Defaulting that straight to 1
   // silently truncated every multi-season show to Season 1 only, so once
   // Season 1 was fully watched, getNextUnwatchedEpisode had nothing left
   // to advance to and TvContinueWatchingCard showed a false "Done". Fetch
-  // full details first to get the real season count before looping --
-  // gated to TV items only, since this provider is also watched
-  // unconditionally from DetailScreen's status toggles for movies, which
-  // never have a seasonsCount and would otherwise trigger a pointless
-  // getMediaDetails call on every item.
+  // full details first to get the real season count before looping.
   var seasonsCount = item.seasonsCount;
-  if (seasonsCount == null && item.type == MediaType.tv) {
+  if (seasonsCount == null) {
     final fullDetails = await repo.getMediaDetails(item.id);
     seasonsCount = fullDetails?.seasonsCount ?? 1;
   }
-  seasonsCount ??= 1;
   // PERF-SEASONS-1: bounded-concurrent instead of one-at-a-time -- a
   // sequential await-in-a-loop here meant every TV detail screen (and every
   // Continue Watching card) blocked on N full network round trips for an
@@ -346,7 +365,8 @@ final discoverFilterProvider =
 /// The override takes precedence over the user's own language chip
 /// selection in the Search/Browse filter sheet, matching "pre-set and lock"
 /// from the Hall Architecture triage's LANG-2 spec.
-DiscoverFilterParams applyHallLanguageLock(DiscoverFilterParams params, String? lockedLanguageCode) {
+DiscoverFilterParams applyHallLanguageLock(
+    DiscoverFilterParams params, String? lockedLanguageCode) {
   if (lockedLanguageCode == null || lockedLanguageCode.isEmpty) return params;
   return params.copyWith(originalLanguage: lockedLanguageCode);
 }
@@ -355,8 +375,10 @@ final discoverMediaProvider =
     FutureProvider.family<List<MediaItem>, bool>((ref, isMovies) async {
   final repo = ref.watch(movieRepositoryProvider);
   final filterParams = ref.watch(discoverFilterProvider);
-  final lockedLanguageCode = ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  final effectiveParams = applyHallLanguageLock(filterParams, lockedLanguageCode);
+  final lockedLanguageCode =
+      ref.watch(activeHallSpaceProvider).lockedLanguageCode;
+  final effectiveParams =
+      applyHallLanguageLock(filterParams, lockedLanguageCode);
   return repo.discoverMedia(isMovies: isMovies, params: effectiveParams);
 });
 
@@ -417,6 +439,3 @@ final similarMediaProvider =
   final rawList = await repo.getSimilarMedia(id);
   return rawList.where((item) => !isExcluded(item)).toList();
 });
-
-
-

@@ -23,7 +23,8 @@ Future<List<R>> mapBounded<T, R>(
     }
   }
 
-  final workerCount = maxConcurrent < items.length ? maxConcurrent : items.length;
+  final workerCount =
+      maxConcurrent < items.length ? maxConcurrent : items.length;
   await Future.wait(List.generate(workerCount, (_) => worker()));
   return results.cast<R>();
 }

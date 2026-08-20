@@ -28,6 +28,25 @@ class _ToggleableRepository extends MockMovieRepository {
   }
 }
 
+/// PERF-STAMPEDE-1: counts calls instead of serving real data, so a test can
+/// assert a movie never reaches either TV-specific method at all.
+class _CountingRepository extends MockMovieRepository {
+  int getTvSeasonDetailsCalls = 0;
+  int getMediaDetailsCalls = 0;
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async {
+    getTvSeasonDetailsCalls++;
+    return null;
+  }
+
+  @override
+  Future<MediaItem?> getMediaDetails(String id) async {
+    getMediaDetailsCalls++;
+    return super.getMediaDetails(id);
+  }
+}
+
 void main() {
   setUp(() {
     SharedPreferences.setMockInitialValues({});
@@ -125,7 +144,9 @@ void main() {
       sharedPreferencesProvider.overrideWithValue(prefs),
     ]);
     addTearDown(offlineContainer.dispose);
-    offlineContainer.read(mediaProvider.notifier).addToWatchingList(trackedShow);
+    offlineContainer
+        .read(mediaProvider.notifier)
+        .addToWatchingList(trackedShow);
 
     final seasons =
         await offlineContainer.read(tvShowSeasonsProvider(trackedShow).future);
@@ -161,5 +182,37 @@ void main() {
     expect(
         EpisodeSkeletonCacheService(prefs: prefs).getSkeleton('tv-untracked'),
         isNull);
+  });
+
+  test(
+      'PERF-STAMPEDE-1: a movie never reaches getTvSeasonDetails or '
+      'getMediaDetails -- this provider is watched unconditionally from '
+      'every DetailScreen, movies included, so without an early bail-out '
+      'every movie viewed would fire a getTvSeasonDetails(movieId, 1) call '
+      'that can only ever 404 (movie and TV ids are separate TMDB id '
+      'spaces); confirmed live in a real error log from a TV-free session',
+      () async {
+    final repo = _CountingRepository();
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(overrides: [
+      movieRepositoryProvider.overrideWithValue(repo),
+      sharedPreferencesProvider.overrideWithValue(prefs),
+    ]);
+    addTearDown(container.dispose);
+
+    const movie = MediaItem(
+      id: 'movie-1',
+      title: 'A Movie',
+      type: MediaType.movie,
+      rating: 7.0,
+      overview: '',
+      genres: [],
+    );
+
+    final seasons = await container.read(tvShowSeasonsProvider(movie).future);
+
+    expect(seasons, isEmpty);
+    expect(repo.getTvSeasonDetailsCalls, 0);
+    expect(repo.getMediaDetailsCalls, 0);
   });
 }

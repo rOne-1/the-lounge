@@ -31,7 +31,6 @@ bool isTransientNetworkError(Object error) {
       s.contains('host lookup failed');
 }
 
-
 /// Container for search results filtered client-side into title matches vs person filmographies.
 class SearchFilterResult {
   final List<Map<String, dynamic>> titles;
@@ -88,7 +87,9 @@ class TmdbApiService {
     Map<String, dynamic>? queryParameters,
   ]) async {
     final Map<String, String> stringParams = {};
-    if (token != null && token!.trim().isNotEmpty && !token!.trim().startsWith('eyJ')) {
+    if (token != null &&
+        token!.trim().isNotEmpty &&
+        !token!.trim().startsWith('eyJ')) {
       stringParams['api_key'] = token!.trim();
     }
     if (queryParameters != null) {
@@ -114,7 +115,7 @@ class TmdbApiService {
     const maxAttempts = 3;
     const retryDelay = Duration(milliseconds: 500);
 
-    for (var attempt = 1; ; attempt++) {
+    for (var attempt = 1;; attempt++) {
       // E6: every TMDB request funnels through this single method, making it
       // the one place to track total calls/failures for the session.
       ApiCallTracker.instance.recordCall();
@@ -128,7 +129,8 @@ class TmdbApiService {
             endpoint: path,
             uri: uri,
             statusCode: response.statusCode,
-            error: 'TMDB API Request Failed [$path]: Status ${response.statusCode}',
+            error:
+                'TMDB API Request Failed [$path]: Status ${response.statusCode}',
             responseBody: response.body,
             queryParams: queryParameters,
           );
@@ -139,7 +141,9 @@ class TmdbApiService {
       } catch (e) {
         final isRealApiFailure = e is Exception &&
             e.toString().startsWith('Exception: TMDB API Request Failed');
-        if (!isRealApiFailure && isTransientNetworkError(e) && attempt < maxAttempts) {
+        if (!isRealApiFailure &&
+            isTransientNetworkError(e) &&
+            attempt < maxAttempts) {
           await Future.delayed(retryDelay * attempt);
           continue;
         }
@@ -244,7 +248,6 @@ class TmdbApiService {
       'include_adult': false,
     });
   }
-
 
   /// GET /3/discover/movie
   Future<Map<String, dynamic>> discoverMovies({
@@ -442,7 +445,8 @@ class TmdbApiService {
   /// while preserving natural TMDB relevance/popularity ordering and excluding search noise.
   SearchFilterResult filterSearchResults(Map<String, dynamic> searchResponse) {
     final results =
-        (searchResponse['results'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+        (searchResponse['results'] as List?)?.cast<Map<String, dynamic>>() ??
+            [];
     final List<Map<String, dynamic>> titles = [];
     final List<Map<String, dynamic>> personFilmographies = [];
     final List<Map<String, dynamic>> allOrdered = [];
@@ -555,20 +559,28 @@ class TmdbApiService {
     return _get(TmdbEndpoints.watchProviderRegions);
   }
 
-  Future<Map<String, dynamic>> getMovieRecommendations(String id, {int page = 1}) async {
-    return _get(TmdbEndpoints.movieRecommendations(id), {'page': page, 'include_adult': false});
+  Future<Map<String, dynamic>> getMovieRecommendations(String id,
+      {int page = 1}) async {
+    return _get(TmdbEndpoints.movieRecommendations(id),
+        {'page': page, 'include_adult': false});
   }
 
-  Future<Map<String, dynamic>> getTvRecommendations(String id, {int page = 1}) async {
-    return _get(TmdbEndpoints.tvRecommendations(id), {'page': page, 'include_adult': false});
+  Future<Map<String, dynamic>> getTvRecommendations(String id,
+      {int page = 1}) async {
+    return _get(TmdbEndpoints.tvRecommendations(id),
+        {'page': page, 'include_adult': false});
   }
 
-  Future<Map<String, dynamic>> getSimilarMovies(String id, {int page = 1}) async {
-    return _get(TmdbEndpoints.similarMovies(id), {'page': page, 'include_adult': false});
+  Future<Map<String, dynamic>> getSimilarMovies(String id,
+      {int page = 1}) async {
+    return _get(TmdbEndpoints.similarMovies(id),
+        {'page': page, 'include_adult': false});
   }
 
-  Future<Map<String, dynamic>> getSimilarTvShows(String id, {int page = 1}) async {
-    return _get(TmdbEndpoints.similarTvShows(id), {'page': page, 'include_adult': false});
+  Future<Map<String, dynamic>> getSimilarTvShows(String id,
+      {int page = 1}) async {
+    return _get(TmdbEndpoints.similarTvShows(id),
+        {'page': page, 'include_adult': false});
   }
 
   /// GET /3/collection/{collection_id}
