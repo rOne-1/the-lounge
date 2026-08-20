@@ -10,6 +10,7 @@ import '../providers/media_provider.dart';
 import '../utils/export_helper.dart';
 import '../utils/relative_time.dart';
 import '../widgets/analytics/abandoned_shows_section.dart';
+import '../widgets/analytics/analytics_legend_sheet.dart';
 import '../widgets/analytics/analytics_share_card.dart';
 import '../widgets/analytics/binge_velocity_section.dart';
 import '../widgets/analytics/cast_constellations_section.dart';
@@ -240,12 +241,39 @@ class _AnalyticsResults extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
-                    child: Text(
-                      state.generatedAt != null
-                          ? 'Updated ${formatRelativeTime(state.generatedAt!)}'
-                          : '',
-                      style: AppThemes.safeGeist(
-                          fontSize: 12.5, color: colors.sub),
+                    child: Row(
+                      children: [
+                        PressableScale(
+                          onTap: () => showAnalyticsLegendSheet(context),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.info_outline,
+                                  color: colors.sub, size: 15),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Legend',
+                                style: AppThemes.safeGeist(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w500,
+                                  color: colors.sub,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Flexible(
+                          child: Text(
+                            state.generatedAt != null
+                                ? 'Updated ${formatRelativeTime(state.generatedAt!)}'
+                                : '',
+                            overflow: TextOverflow.ellipsis,
+                            style: AppThemes.safeGeist(
+                                fontSize: 12.5, color: colors.sub),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   PressableScale(

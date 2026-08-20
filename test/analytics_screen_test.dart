@@ -292,6 +292,75 @@ void main() {
       expect(find.text('Global Footprint'), findsOneWidget);
       expect(find.text('Discover Selectivity'), findsOneWidget);
     });
+
+    testWidgets('EXP-LEGEND-1: Legend trigger opens a glossary sheet',
+        (tester) async {
+      final prefs = await mockPrefs();
+      final seeded = AnalyticsState(
+        result: const AnalyticsResult(
+          heatmap: HeatmapData({}),
+          timeInvestment: TimeInvestment(movieMinutes: 120, tvMinutes: 270),
+          bingeVelocity: BingeVelocity(averageDays: 3.0, perSeason: []),
+          castRanking: [],
+          directorRanking: [],
+          ratingDivergence: [],
+          genreFrequency: {},
+          decadeDistribution: DecadeDistribution({}),
+          temporalDistanceIndex: TemporalDistanceIndex(null),
+          languageDistribution: LanguageDistribution({}),
+          dayOfWeekDistribution:
+              DayOfWeekDistribution(movieCounts: {}, tvCounts: {}),
+          runtimePreferences: RuntimePreferences(
+            averageMinutes: 0.0,
+            shortCount: 0,
+            standardCount: 0,
+            epicCount: 0,
+          ),
+          discoverSwipeRatio: DiscoverSwipeRatio(
+            skippedCount: 0,
+            watchlistedCount: 0,
+            savedCount: 0,
+          ),
+          studioAffinity: StudioAffinity([]),
+          watchlistFunnel: WatchlistFunnel(
+            convertedCount: 0,
+            averageBacklogDays: null,
+            pendingCount: 0,
+          ),
+          abandonedShows: [],
+        ),
+        generatedAt: DateTime(2026, 1, 1),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          analyticsProvider.overrideWith(() => _SeededNotifier(seeded)),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: AnalyticsScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('What these mean'), findsNothing);
+
+      await tester.tap(find.text('Legend'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('What these mean'), findsOneWidget);
+      expect(find.text('Watchlist Funnel'), findsWidgets);
+      expect(find.text('Shelf-Life Drop-Offs'), findsWidgets);
+
+      await tester.tap(find.text('Got it'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('What these mean'), findsNothing);
+    });
   });
 
   group('ANLY-SHARE-1: image export', () {
