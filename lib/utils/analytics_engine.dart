@@ -61,11 +61,22 @@ class HeatmapData {
 
 /// ANLY-TEMPORAL-2: total minutes watched, movies and TV kept separate.
 /// TV is a documented estimate (SP-3) -- see [computeTimeInvestment].
+/// movieCount/tvCount are the headline numeral on the Analytics cards
+/// (EXP-CLARITY-2: dev-reported that a big number under a "Movies" label
+/// must be a title count, matching every other card in the app -- hours
+/// belongs in the subtitle, not the numeral).
 class TimeInvestment {
   final int movieMinutes;
   final int tvMinutes;
+  final int movieCount;
+  final int tvCount;
 
-  const TimeInvestment({required this.movieMinutes, required this.tvMinutes});
+  const TimeInvestment({
+    required this.movieMinutes,
+    required this.tvMinutes,
+    required this.movieCount,
+    required this.tvCount,
+  });
 
   int get totalMinutes => movieMinutes + tvMinutes;
 }
@@ -311,9 +322,16 @@ HeatmapData computeHeatmap(AnalyticsInput input) {
 TimeInvestment computeTimeInvestment(AnalyticsInput input) {
   var movieMinutes = 0;
   var tvMinutes = 0;
+  var movieCount = 0;
+  var tvCount = 0;
   for (final entry in input.watchedList.entries) {
     final item = entry.value;
     final runtime = item.runtime;
+    if (item.type == MediaType.movie) {
+      movieCount++;
+    } else {
+      tvCount++;
+    }
     if (runtime == null || runtime <= 0) continue;
     if (item.type == MediaType.movie) {
       movieMinutes += runtime;
@@ -322,7 +340,12 @@ TimeInvestment computeTimeInvestment(AnalyticsInput input) {
       tvMinutes += watchedCount * runtime;
     }
   }
-  return TimeInvestment(movieMinutes: movieMinutes, tvMinutes: tvMinutes);
+  return TimeInvestment(
+    movieMinutes: movieMinutes,
+    tvMinutes: tvMinutes,
+    movieCount: movieCount,
+    tvCount: tvCount,
+  );
 }
 
 /// ANLY-TEMPORAL-3: per show, per season, `seasonEndDates - seasonStartDates`

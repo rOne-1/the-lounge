@@ -113,6 +113,8 @@ void main() {
       final result = computeTimeInvestment(input);
       expect(result.movieMinutes, 120);
       expect(result.tvMinutes, 0);
+      expect(result.movieCount, 1);
+      expect(result.tvCount, 0);
     });
 
     test('TV is watchedEpisodeCount * runtime (documented estimate)', () {
@@ -130,9 +132,15 @@ void main() {
       expect(result.tvMinutes, 45 * 3);
       expect(result.movieMinutes, 0);
       expect(result.totalMinutes, 135);
+      expect(result.tvCount, 1);
+      expect(result.movieCount, 0);
     });
 
-    test('items with no runtime contribute nothing (not a crash)', () {
+    test(
+        'items with no runtime contribute no minutes, but EXP-CLARITY-2: '
+        'still count toward movieCount/tvCount -- the headline numeral is a '
+        'title count and must reflect every watched title, not just the '
+        'ones TMDB happened to return a runtime for', () {
       const noRuntime = MediaItem(
         id: 'movie_2',
         title: 'No Runtime',
@@ -151,6 +159,7 @@ void main() {
 
       final result = computeTimeInvestment(input);
       expect(result.totalMinutes, 0);
+      expect(result.movieCount, 1);
     });
   });
 

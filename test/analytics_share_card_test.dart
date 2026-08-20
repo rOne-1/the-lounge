@@ -27,7 +27,8 @@ void main() {
       tester,
       const AnalyticsResult(
         heatmap: HeatmapData({}),
-        timeInvestment: TimeInvestment(movieMinutes: 120, tvMinutes: 60),
+        timeInvestment: TimeInvestment(
+            movieMinutes: 120, tvMinutes: 60, movieCount: 1, tvCount: 1),
         bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
         castRanking: [NameCount(name: 'Alice', count: 3)],
         directorRanking: [NameCount(name: 'Nolan', count: 2)],
@@ -70,7 +71,8 @@ void main() {
       tester,
       const AnalyticsResult(
         heatmap: HeatmapData({}),
-        timeInvestment: TimeInvestment(movieMinutes: 0, tvMinutes: 0),
+        timeInvestment: TimeInvestment(
+            movieMinutes: 0, tvMinutes: 0, movieCount: 0, tvCount: 0),
         bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
         castRanking: [],
         directorRanking: [],

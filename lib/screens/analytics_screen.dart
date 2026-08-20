@@ -354,27 +354,26 @@ class _AnalyticsResults extends StatelessWidget {
                   ArchiveSummaryCard(
                     // EXP-CLARITY-1: this numeral is hours, not a title
                     // count -- every other ArchiveSummaryCard in the app
-                    // puts an item count in this exact slot, so a bare
-                    // "Movies" label reads as "66 movies watched" when it
-                    // actually means "66 hours" (dev-reported confusion:
-                    // "36 movies in all shelves but analytics show 66
-                    // movies"). Label spells out the unit to remove that
-                    // ambiguity.
-                    label: 'Movie Hours',
+                    // puts an item count in this exact slot -- the first
+                    // fix here (relabeling to "Movie Hours") only patched
+                    // the label around a numeral that was still hours, not
+                    // a count. Dev feedback was explicit: the numeral
+                    // itself must be the count, matching every other card.
+                    label: 'Movies',
                     subtitle: movieHours == 1
                         ? '1 hour watched'
                         : '$movieHours hours watched',
-                    count: movieHours,
+                    count: result.timeInvestment.movieCount,
                     icon: Icons.local_movies_rounded,
                     statusColor: colors.acc,
                     onTap: () {},
                   ),
                   ArchiveSummaryCard(
-                    label: 'TV Hours',
+                    label: 'TV Shows',
                     subtitle: tvHours == 1
                         ? '~1 hour watched (estimate)'
                         : '~$tvHours hours watched (estimate)',
-                    count: tvHours,
+                    count: result.timeInvestment.tvCount,
                     icon: Icons.live_tv_rounded,
                     statusColor: colors.acc,
                     onTap: () {},

@@ -127,7 +127,8 @@ void main() {
       final seeded = AnalyticsState(
         result: const AnalyticsResult(
           heatmap: HeatmapData({}),
-          timeInvestment: TimeInvestment(movieMinutes: 0, tvMinutes: 0),
+          timeInvestment: TimeInvestment(
+              movieMinutes: 0, tvMinutes: 0, movieCount: 0, tvCount: 0),
           bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
           castRanking: [],
           directorRanking: [],
@@ -185,7 +186,8 @@ void main() {
       final seeded = AnalyticsState(
         result: const AnalyticsResult(
           heatmap: HeatmapData({}),
-          timeInvestment: TimeInvestment(movieMinutes: 120, tvMinutes: 270),
+          timeInvestment: TimeInvestment(
+              movieMinutes: 120, tvMinutes: 270, movieCount: 1, tvCount: 1),
           bingeVelocity: BingeVelocity(
             averageDays: 3.0,
             perSeason: [
@@ -262,8 +264,8 @@ void main() {
       expect(find.text('Generate Analytics'), findsNothing);
       expect(find.byType(CircularProgressIndicator), findsNothing);
       expect(find.text('Temporal'), findsOneWidget);
-      expect(find.text('Movie Hours'), findsOneWidget);
-      expect(find.text('TV Hours'), findsOneWidget);
+      expect(find.text('Movies'), findsOneWidget);
+      expect(find.text('TV Shows'), findsOneWidget);
       expect(find.text('2 hours watched'), findsOneWidget);
       expect(find.text('~5 hours watched (estimate)'), findsOneWidget);
       expect(find.byType(ChronologicalHeatmap), findsOneWidget);
@@ -299,7 +301,8 @@ void main() {
       final seeded = AnalyticsState(
         result: const AnalyticsResult(
           heatmap: HeatmapData({}),
-          timeInvestment: TimeInvestment(movieMinutes: 120, tvMinutes: 270),
+          timeInvestment: TimeInvestment(
+              movieMinutes: 120, tvMinutes: 270, movieCount: 1, tvCount: 1),
           bingeVelocity: BingeVelocity(averageDays: 3.0, perSeason: []),
           castRanking: [],
           directorRanking: [],
@@ -371,7 +374,8 @@ void main() {
       final seeded = AnalyticsState(
         result: const AnalyticsResult(
           heatmap: HeatmapData({}),
-          timeInvestment: TimeInvestment(movieMinutes: 120, tvMinutes: 0),
+          timeInvestment: TimeInvestment(
+              movieMinutes: 120, tvMinutes: 0, movieCount: 1, tvCount: 0),
           bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
           castRanking: [],
           directorRanking: [],
