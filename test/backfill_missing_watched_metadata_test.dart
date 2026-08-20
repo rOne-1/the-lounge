@@ -44,7 +44,8 @@ void main() {
     genres: [],
   );
 
-  test('backfills runtime/cast/director for a Watched title missing them', () async {
+  test('backfills runtime/cast/director for a Watched title missing them',
+      () async {
     final fakeRepo = _FakeDetailsRepository({
       'movie_1': const MediaItem(
         id: 'movie_1',
@@ -68,7 +69,8 @@ void main() {
 
     final notifier = container.read(mediaProvider.notifier);
     notifier.addToWatchedList(thinItem);
-    expect(container.read(mediaProvider).watchedList['movie_1']?.runtime, isNull);
+    expect(
+        container.read(mediaProvider).watchedList['movie_1']?.runtime, isNull);
 
     await notifier.backfillMissingWatchedMetadata();
 
@@ -78,7 +80,56 @@ void main() {
     expect(enriched.director, 'Nolan');
   });
 
-  test('does not overwrite a title that already has complete metadata', () async {
+  test(
+      'EXP-DATA-2: backfills seasonsCount/episodesCount/productionCompanyNames '
+      'for a Watched TV title missing them', () async {
+    const thinTvItem = MediaItem(
+      id: 'tv_1',
+      title: 'A Show',
+      type: MediaType.tv,
+      rating: 7.5,
+      overview: '',
+      genres: [],
+    );
+    final fakeRepo = _FakeDetailsRepository({
+      'tv_1': const MediaItem(
+        id: 'tv_1',
+        title: 'A Show',
+        type: MediaType.tv,
+        rating: 7.5,
+        overview: '',
+        genres: [],
+        runtime: 45,
+        cast: ['Alice'],
+        director: 'Someone',
+        seasonsCount: 3,
+        episodesCount: 24,
+        productionCompanyNames: ['A24'],
+      ),
+    });
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        movieRepositoryProvider.overrideWithValue(fakeRepo),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(mediaProvider.notifier);
+    notifier.addToWatchedList(thinTvItem);
+    expect(container.read(mediaProvider).watchedList['tv_1']?.seasonsCount,
+        isNull);
+
+    await notifier.backfillMissingWatchedMetadata();
+
+    final enriched = container.read(mediaProvider).watchedList['tv_1']!;
+    expect(enriched.seasonsCount, 3);
+    expect(enriched.episodesCount, 24);
+    expect(enriched.productionCompanyNames, ['A24']);
+  });
+
+  test('does not overwrite a title that already has complete metadata',
+      () async {
     const alreadyRich = MediaItem(
       id: 'movie_2',
       title: 'Rich Movie',
@@ -172,7 +223,8 @@ void main() {
     expect(enrichedCount, 2);
   });
 
-  test('a fetch failure for one title does not stop the others from being enriched',
+  test(
+      'a fetch failure for one title does not stop the others from being enriched',
       () async {
     final fakeRepo = _FakeDetailsRepository({
       // movie_1 deliberately absent -> getMediaDetails returns null for it.

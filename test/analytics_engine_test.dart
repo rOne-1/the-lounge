@@ -273,7 +273,8 @@ void main() {
   });
 
   group('computeRatingDivergence', () {
-    test('maps the 4-tier PersonalRating onto weightedRating\'s 0-10 scale', () {
+    test('maps the 4-tier PersonalRating onto weightedRating\'s 0-10 scale',
+        () {
       const item = MediaItem(
         id: 'movie_1',
         title: 'Loved It',
@@ -303,7 +304,8 @@ void main() {
       final points = computeRatingDivergence(input);
       expect(points, hasLength(1));
       expect(points.single.personalPoint, 9.0);
-      expect(points.single.delta, points.single.personalPoint - points.single.weightedRatingValue);
+      expect(points.single.delta,
+          points.single.personalPoint - points.single.weightedRatingValue);
     });
 
     test('titles with no vote count are excluded', () {
@@ -411,6 +413,284 @@ void main() {
       final freq = computeGenreFrequency(input);
       expect(freq['Action'], 2);
       expect(freq['Sci-Fi'], 1);
+    });
+  });
+
+  group('computeDecadeDistribution', () {
+    test('buckets by decade, excludes titles with no release date', () {
+      const item90s = MediaItem(
+        id: 'movie_1',
+        title: '90s Movie',
+        type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: [],
+        releaseOrAirDate: null,
+      );
+      final items = {
+        'movie_1': MediaItem(
+          id: 'movie_1',
+          title: '90s Movie',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          releaseOrAirDate: DateTime(1995, 1, 1),
+        ),
+        'movie_2': MediaItem(
+          id: 'movie_2',
+          title: 'Another 90s Movie',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          releaseOrAirDate: DateTime(1999, 1, 1),
+        ),
+        'movie_3': MediaItem(
+          id: 'movie_3',
+          title: 'Old Movie',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          releaseOrAirDate: DateTime(1965, 1, 1),
+        ),
+        'movie_4': item90s.copyWith(id: 'movie_4', title: 'No Date Movie'),
+      };
+
+      final input = AnalyticsInput(
+        watchedList: items,
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeDecadeDistribution(input);
+      expect(result.counts['1990s'], 2);
+      expect(result.counts['Pre-1970s'], 1);
+      expect(result.counts.values.reduce((a, b) => a + b), 3);
+    });
+  });
+
+  group('computeTemporalDistanceIndex', () {
+    test('averages days between release and first watch', () {
+      final items = {
+        'movie_1': MediaItem(
+          id: 'movie_1',
+          title: 'Movie 1',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          releaseOrAirDate: DateTime(2020, 1, 1),
+        ),
+        'movie_2': MediaItem(
+          id: 'movie_2',
+          title: 'Movie 2',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          releaseOrAirDate: DateTime(2020, 1, 1),
+        ),
+      };
+      final input = AnalyticsInput(
+        watchedList: items,
+        watchHistory: {
+          // 10 days after release.
+          'movie_1': [
+            WatchRecord(date: DateTime(2020, 1, 11), isFirstWatch: true),
+          ],
+          // 30 days after release.
+          'movie_2': [
+            WatchRecord(date: DateTime(2020, 1, 31), isFirstWatch: true),
+          ],
+        },
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeTemporalDistanceIndex(input);
+      expect(result.averageDays, 20.0);
+    });
+
+    test('is null when no title has both a release date and a first watch', () {
+      const input = AnalyticsInput(
+        watchedList: {},
+        watchHistory: {},
+        watchedEpisodes: {},
+        seasonStartDates: {},
+        seasonEndDates: {},
+      );
+      expect(computeTemporalDistanceIndex(input).averageDays, isNull);
+    });
+  });
+
+  group('computeLanguageDistribution', () {
+    test('tallies by originalLanguage, excludes titles with none recorded', () {
+      final items = {
+        'movie_1': MediaItem(
+          id: 'movie_1',
+          title: 'Movie 1',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          originalLanguage: 'en',
+        ),
+        'movie_2': MediaItem(
+          id: 'movie_2',
+          title: 'Movie 2',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+          originalLanguage: 'ko',
+        ),
+        'movie_3': MediaItem(
+          id: 'movie_3',
+          title: 'Movie 3',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: const [],
+        ),
+      };
+      final input = AnalyticsInput(
+        watchedList: items,
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeLanguageDistribution(input);
+      expect(result.counts['en'], 1);
+      expect(result.counts['ko'], 1);
+      expect(result.counts.values.reduce((a, b) => a + b), 2);
+    });
+  });
+
+  group('computeDayOfWeekDistribution', () {
+    test('tallies watch records by weekday, movies and TV kept separate', () {
+      final items = {
+        'movie_1': const MediaItem(
+          id: 'movie_1',
+          title: 'Movie 1',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+        ),
+        'tv_1': const MediaItem(
+          id: 'tv_1',
+          title: 'TV 1',
+          type: MediaType.tv,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+        ),
+      };
+      final input = AnalyticsInput(
+        watchedList: items,
+        watchHistory: {
+          // Monday.
+          'movie_1': [
+            WatchRecord(date: DateTime(2026, 3, 2), isFirstWatch: true)
+          ],
+          // Also Monday.
+          'tv_1': [WatchRecord(date: DateTime(2026, 3, 2), isFirstWatch: true)],
+        },
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeDayOfWeekDistribution(input);
+      expect(result.movieCounts[DateTime.monday], 1);
+      expect(result.tvCounts[DateTime.monday], 1);
+      expect(result.movieCounts[DateTime.tuesday], isNull);
+    });
+  });
+
+  group('computeRuntimePreferences', () {
+    test('buckets movie runtimes into short/standard/epic and averages', () {
+      final items = {
+        'movie_1': const MediaItem(
+          id: 'movie_1',
+          title: 'Short',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+          runtime: 80,
+        ),
+        'movie_2': const MediaItem(
+          id: 'movie_2',
+          title: 'Standard',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+          runtime: 120,
+        ),
+        'movie_3': const MediaItem(
+          id: 'movie_3',
+          title: 'Epic',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+          runtime: 180,
+        ),
+        // TV item with a runtime -- must be excluded (this metric is
+        // movies-only per its own name).
+        'tv_1': const MediaItem(
+          id: 'tv_1',
+          title: 'A Show',
+          type: MediaType.tv,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+          runtime: 45,
+        ),
+      };
+      final input = AnalyticsInput(
+        watchedList: items,
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeRuntimePreferences(input);
+      expect(result.shortCount, 1);
+      expect(result.standardCount, 1);
+      expect(result.epicCount, 1);
+      expect(result.averageMinutes, (80 + 120 + 180) / 3);
+    });
+  });
+
+  group('computeDiscoverSwipeRatio', () {
+    test('reflects the counts passed in on AnalyticsInput directly', () {
+      const input = AnalyticsInput(
+        watchedList: {},
+        watchHistory: {},
+        watchedEpisodes: {},
+        seasonStartDates: {},
+        seasonEndDates: {},
+        skippedCount: 12,
+        watchlistCount: 5,
+        maybeListCount: 3,
+      );
+
+      final result = computeDiscoverSwipeRatio(input);
+      expect(result.skippedCount, 12);
+      expect(result.watchlistedCount, 5);
+      expect(result.savedCount, 3);
+      expect(result.totalInteractions, 20);
     });
   });
 }

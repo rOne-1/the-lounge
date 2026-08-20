@@ -17,12 +17,23 @@ class AnalyticsInput {
   final Map<String, Map<int, DateTime>> seasonStartDates;
   final Map<String, Map<int, DateTime>> seasonEndDates;
 
+  /// EXP-FUNNEL-2: plain counts, not the full skip/watchlist/maybe maps --
+  /// Discover Swipe Ratio only ever needs totals, and keeping AnalyticsInput
+  /// to primitives+MediaItem/WatchRecord types is cheaper to hand across
+  /// the `compute()` isolate boundary than carrying whole extra maps over.
+  final int skippedCount;
+  final int watchlistCount;
+  final int maybeListCount;
+
   const AnalyticsInput({
     required this.watchedList,
     required this.watchHistory,
     required this.watchedEpisodes,
     required this.seasonStartDates,
     required this.seasonEndDates,
+    this.skippedCount = 0,
+    this.watchlistCount = 0,
+    this.maybeListCount = 0,
   });
 }
 
@@ -103,6 +114,81 @@ class RatingDivergencePoint {
   double get delta => personalPoint - weightedRatingValue;
 }
 
+/// EXP-ERA-1: watched-title counts bucketed by decade of
+/// `releaseOrAirDate`. Keys are display-ready labels ("Pre-1970s", "1990s",
+/// ...); titles with no release date are excluded entirely, not bucketed
+/// under a misleading "Unknown" (SP-3).
+class DecadeDistribution {
+  final Map<String, int> counts;
+  const DecadeDistribution(this.counts);
+}
+
+/// EXP-ERA-2: average days between a title's release and when it was
+/// actually (first) watched. Null when no watched title has both a
+/// `releaseOrAirDate` and a real first-watch record.
+class TemporalDistanceIndex {
+  final double? averageDays;
+  const TemporalDistanceIndex(this.averageDays);
+}
+
+/// EXP-GLOBAL-1: watched-title counts by `originalLanguage` code (e.g.
+/// "en", "ko"). Titles with no language recorded are excluded, not
+/// bucketed under "Unknown" (SP-3).
+class LanguageDistribution {
+  final Map<String, int> counts;
+  const LanguageDistribution(this.counts);
+}
+
+/// EXP-RHYTHM-1: watch-log counts by weekday (1=Monday..7=Sunday, matching
+/// `DateTime.weekday`), movies and TV-episode-logging kept separate since
+/// they're different kinds of activity.
+class DayOfWeekDistribution {
+  final Map<int, int> movieCounts;
+  final Map<int, int> tvCounts;
+
+  const DayOfWeekDistribution({
+    required this.movieCounts,
+    required this.tvCounts,
+  });
+}
+
+/// EXP-RHYTHM-2: movie runtime stats. `averageMinutes` is null when no
+/// watched movie has a `runtime`. The 3 buckets are mutually exclusive and
+/// only count movies with a real runtime -- they never sum to the full
+/// watched-movie count if some are missing runtime.
+class RuntimePreferences {
+  final double? averageMinutes;
+  final int shortCount; // < 90 min
+  final int standardCount; // 90-150 min
+  final int epicCount; // > 150 min (2.5h+)
+
+  const RuntimePreferences({
+    required this.averageMinutes,
+    required this.shortCount,
+    required this.standardCount,
+    required this.epicCount,
+  });
+}
+
+/// EXP-FUNNEL-2: Discover deck interaction breakdown. A title can appear in
+/// more than one bucket over its lifetime (skipped once, later
+/// watchlisted) -- this is a snapshot of current standing, not a strict
+/// partition, so percentages are relative to [totalInteractions], not a
+/// claim that every Discover card falls into exactly one bucket forever.
+class DiscoverSwipeRatio {
+  final int skippedCount;
+  final int watchlistedCount;
+  final int savedCount;
+
+  const DiscoverSwipeRatio({
+    required this.skippedCount,
+    required this.watchlistedCount,
+    required this.savedCount,
+  });
+
+  int get totalInteractions => skippedCount + watchlistedCount + savedCount;
+}
+
 /// ANLY-ENGINE-1: the full computed result surfaced by the Analytics screen.
 class AnalyticsResult {
   final HeatmapData heatmap;
@@ -112,6 +198,12 @@ class AnalyticsResult {
   final List<NameCount> directorRanking;
   final List<RatingDivergencePoint> ratingDivergence;
   final Map<String, int> genreFrequency;
+  final DecadeDistribution decadeDistribution;
+  final TemporalDistanceIndex temporalDistanceIndex;
+  final LanguageDistribution languageDistribution;
+  final DayOfWeekDistribution dayOfWeekDistribution;
+  final RuntimePreferences runtimePreferences;
+  final DiscoverSwipeRatio discoverSwipeRatio;
 
   const AnalyticsResult({
     required this.heatmap,
@@ -121,6 +213,12 @@ class AnalyticsResult {
     required this.directorRanking,
     required this.ratingDivergence,
     required this.genreFrequency,
+    required this.decadeDistribution,
+    required this.temporalDistanceIndex,
+    required this.languageDistribution,
+    required this.dayOfWeekDistribution,
+    required this.runtimePreferences,
+    required this.discoverSwipeRatio,
   });
 }
 
@@ -196,8 +294,7 @@ BingeVelocity computeBingeVelocity(AnalyticsInput input) {
 
   final averageDays = perSeason.isEmpty
       ? null
-      : perSeason.map((e) => e.days).reduce((a, b) => a + b) /
-          perSeason.length;
+      : perSeason.map((e) => e.days).reduce((a, b) => a + b) / perSeason.length;
 
   return BingeVelocity(averageDays: averageDays, perSeason: perSeason);
 }
@@ -209,8 +306,9 @@ List<NameCount> _tally(Iterable<String> names) {
     if (trimmed.isEmpty) continue;
     counts[trimmed] = (counts[trimmed] ?? 0) + 1;
   }
-  final result =
-      counts.entries.map((e) => NameCount(name: e.key, count: e.value)).toList();
+  final result = counts.entries
+      .map((e) => NameCount(name: e.key, count: e.value))
+      .toList();
   result.sort((a, b) => b.count.compareTo(a.count));
   return result;
 }
@@ -296,6 +394,109 @@ Map<String, int> computeGenreFrequency(AnalyticsInput input) {
   return counts;
 }
 
+/// EXP-ERA-1: buckets watched titles by decade of `releaseOrAirDate`.
+DecadeDistribution computeDecadeDistribution(AnalyticsInput input) {
+  final counts = <String, int>{};
+  for (final item in input.watchedList.values) {
+    final year = item.releaseOrAirDate?.year;
+    if (year == null) continue;
+    final label = year < 1970 ? 'Pre-1970s' : '${(year ~/ 10) * 10}s';
+    counts[label] = (counts[label] ?? 0) + 1;
+  }
+  return DecadeDistribution(counts);
+}
+
+/// Earliest first-watch record for a title, mirroring
+/// [computeRatingDivergence]'s own first-watch lookup convention.
+WatchRecord? _overallFirstWatch(List<WatchRecord> records) {
+  for (final record in records) {
+    if (record.seasonNumber == null && record.isFirstWatch) return record;
+  }
+  return null;
+}
+
+/// EXP-ERA-2: average days between release and actual (first) watch.
+TemporalDistanceIndex computeTemporalDistanceIndex(AnalyticsInput input) {
+  final deltas = <double>[];
+  for (final entry in input.watchHistory.entries) {
+    final item = input.watchedList[entry.key];
+    final releaseDate = item?.releaseOrAirDate;
+    if (item == null || releaseDate == null) continue;
+
+    final firstWatch = _overallFirstWatch(entry.value);
+    final watchDate = firstWatch?.date ?? firstWatch?.recordedAt;
+    if (watchDate == null) continue;
+
+    final days = watchDate.difference(releaseDate).inHours / 24.0;
+    deltas.add(days);
+  }
+  if (deltas.isEmpty) return const TemporalDistanceIndex(null);
+  return TemporalDistanceIndex(deltas.reduce((a, b) => a + b) / deltas.length);
+}
+
+/// EXP-GLOBAL-1: watched-title counts by `originalLanguage`.
+LanguageDistribution computeLanguageDistribution(AnalyticsInput input) {
+  final counts = <String, int>{};
+  for (final item in input.watchedList.values) {
+    final lang = item.originalLanguage?.trim();
+    if (lang == null || lang.isEmpty) continue;
+    counts[lang] = (counts[lang] ?? 0) + 1;
+  }
+  return LanguageDistribution(counts);
+}
+
+/// EXP-RHYTHM-1: tallies every logged watch (first watches + rewatches) by
+/// weekday, split by the title's media type.
+DayOfWeekDistribution computeDayOfWeekDistribution(AnalyticsInput input) {
+  final movieCounts = <int, int>{};
+  final tvCounts = <int, int>{};
+  for (final entry in input.watchHistory.entries) {
+    final item = input.watchedList[entry.key];
+    if (item == null) continue;
+    final target = item.type == MediaType.movie ? movieCounts : tvCounts;
+    for (final record in entry.value) {
+      final date = record.date ?? record.recordedAt;
+      target[date.weekday] = (target[date.weekday] ?? 0) + 1;
+    }
+  }
+  return DayOfWeekDistribution(movieCounts: movieCounts, tvCounts: tvCounts);
+}
+
+/// EXP-RHYTHM-2: average + bucketed distribution of watched-movie runtimes.
+RuntimePreferences computeRuntimePreferences(AnalyticsInput input) {
+  final runtimes = <int>[];
+  for (final item in input.watchedList.values) {
+    if (item.type != MediaType.movie) continue;
+    final runtime = item.runtime;
+    if (runtime == null || runtime <= 0) continue;
+    runtimes.add(runtime);
+  }
+
+  final shortCount = runtimes.where((r) => r < 90).length;
+  final epicCount = runtimes.where((r) => r > 150).length;
+  final standardCount = runtimes.length - shortCount - epicCount;
+  final average = runtimes.isEmpty
+      ? null
+      : runtimes.reduce((a, b) => a + b) / runtimes.length;
+
+  return RuntimePreferences(
+    averageMinutes: average,
+    shortCount: shortCount,
+    standardCount: standardCount,
+    epicCount: epicCount,
+  );
+}
+
+/// EXP-FUNNEL-2: Discover deck interaction breakdown from already-tracked
+/// counts (skip history, Watchlist/Maybe pile sizes) -- no new tracking.
+DiscoverSwipeRatio computeDiscoverSwipeRatio(AnalyticsInput input) {
+  return DiscoverSwipeRatio(
+    skippedCount: input.skippedCount,
+    watchlistedCount: input.watchlistCount,
+    savedCount: input.maybeListCount,
+  );
+}
+
 /// ANLY-ENGINE-1: the single top-level function passed to `compute()`.
 /// Must stay a plain, isolate-safe, top-level function -- no closures over
 /// BuildContext/providers/Flutter framework types.
@@ -309,6 +510,12 @@ AnalyticsResult computeAnalytics(AnalyticsInput input) {
     directorRanking: rankings.directors,
     ratingDivergence: computeRatingDivergence(input),
     genreFrequency: computeGenreFrequency(input),
+    decadeDistribution: computeDecadeDistribution(input),
+    temporalDistanceIndex: computeTemporalDistanceIndex(input),
+    languageDistribution: computeLanguageDistribution(input),
+    dayOfWeekDistribution: computeDayOfWeekDistribution(input),
+    runtimePreferences: computeRuntimePreferences(input),
+    discoverSwipeRatio: computeDiscoverSwipeRatio(input),
   );
 }
 

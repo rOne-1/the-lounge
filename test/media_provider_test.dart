@@ -52,7 +52,9 @@ void main() {
       container.dispose();
     });
 
-    test('addToWatchedList adds to watchedList and removes from watchlist and maybeList', () {
+    test(
+        'addToWatchedList adds to watchedList and removes from watchlist and maybeList',
+        () {
       final notifier = container.read(mediaProvider.notifier);
 
       // Pre-add item to watchlist
@@ -72,7 +74,43 @@ void main() {
       expect(state.maybeList.containsKey(testItem.id), isFalse);
     });
 
-    test('toggleWatched removes from watchlist and maybeList when marking as watched', () {
+    test(
+        'EXP-DATA-1: addToWatchlist stamps addedDate when unset, never overwrites an existing one',
+        () {
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToWatchlist(testItem);
+      final firstAddedDate =
+          container.read(mediaProvider).watchlist[testItem.id]!.addedDate;
+      expect(firstAddedDate, isNotNull);
+
+      // Moving to Watched then back to Watchlist (e.g. an un-mark) with an
+      // item that already carries an addedDate must not clobber it with
+      // "now" -- addToWatchlist's own early-return-if-already-purely-in-
+      // watchlist guard means a second call with the SAME item.id sitting
+      // untouched in the watchlist is a no-op, so this has to genuinely
+      // route through a different pile first to exercise the stamping
+      // logic at all.
+      final alreadyStamped = testItem.copyWith(addedDate: DateTime(2020, 1, 1));
+      notifier.addToWatchedList(alreadyStamped);
+      notifier.addToWatchlist(alreadyStamped);
+      final secondAddedDate =
+          container.read(mediaProvider).watchlist[testItem.id]!.addedDate;
+      expect(secondAddedDate, equals(DateTime(2020, 1, 1)));
+    });
+
+    test('EXP-DATA-1: addToMaybeList stamps addedDate when unset', () {
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToMaybeList(testItem);
+      final addedDate =
+          container.read(mediaProvider).maybeList[testItem.id]!.addedDate;
+      expect(addedDate, isNotNull);
+    });
+
+    test(
+        'toggleWatched removes from watchlist and maybeList when marking as watched',
+        () {
       final notifier = container.read(mediaProvider.notifier);
 
       notifier.addToWatchlist(testItem);
@@ -89,7 +127,9 @@ void main() {
       expect(state.maybeList.containsKey(testItem.id), isFalse);
     });
 
-    test('un-marking watched does NOT restore prior state in watchlist or maybeList', () {
+    test(
+        'un-marking watched does NOT restore prior state in watchlist or maybeList',
+        () {
       final notifier = container.read(mediaProvider.notifier);
 
       notifier.addToWatchlist(testItem);
@@ -131,7 +171,9 @@ void main() {
       genres: ['Drama'],
     );
 
-    test('toggleEpisodeWatched updates watchedEpisodes state and syncs show watch status when all episodes watched', () {
+    test(
+        'toggleEpisodeWatched updates watchedEpisodes state and syncs show watch status when all episodes watched',
+        () {
       final notifier = container.read(mediaProvider.notifier);
 
       expect(notifier.isEpisodeWatched(tvShowItem.id, 1, 1), isFalse);
@@ -179,7 +221,9 @@ void main() {
       expect(state.watchedList.containsKey(tvShowItem.id), isFalse);
     });
 
-    test('getNextUnwatchedEpisode returns first unwatched TvEpisode sequentially', () {
+    test(
+        'getNextUnwatchedEpisode returns first unwatched TvEpisode sequentially',
+        () {
       final notifier = container.read(mediaProvider.notifier);
 
       const season1 = TvSeason(
@@ -188,7 +232,11 @@ void main() {
         name: 'Season 1',
         episodes: [
           TvEpisode(id: 1001, episodeNumber: 1, seasonNumber: 1, name: 'Pilot'),
-          TvEpisode(id: 1002, episodeNumber: 2, seasonNumber: 1, name: 'Cat\'s in the Bag...'),
+          TvEpisode(
+              id: 1002,
+              episodeNumber: 2,
+              seasonNumber: 1,
+              name: 'Cat\'s in the Bag...'),
         ],
       );
 
@@ -197,14 +245,19 @@ void main() {
         seasonNumber: 2,
         name: 'Season 2',
         episodes: [
-          TvEpisode(id: 1003, episodeNumber: 1, seasonNumber: 2, name: 'Seven Thirty-Seven'),
+          TvEpisode(
+              id: 1003,
+              episodeNumber: 1,
+              seasonNumber: 2,
+              name: 'Seven Thirty-Seven'),
         ],
       );
 
       final seasons = [season1, season2];
 
       // Initially next unwatched is S1E1
-      var nextEp = notifier.getNextUnwatchedEpisode(showId: tvShowItem.id, seasons: seasons);
+      var nextEp = notifier.getNextUnwatchedEpisode(
+          showId: tvShowItem.id, seasons: seasons);
       expect(nextEp?.name, 'Pilot');
 
       // Watch S1E1
@@ -215,7 +268,8 @@ void main() {
         showItem: tvShowItem,
       );
 
-      nextEp = notifier.getNextUnwatchedEpisode(showId: tvShowItem.id, seasons: seasons);
+      nextEp = notifier.getNextUnwatchedEpisode(
+          showId: tvShowItem.id, seasons: seasons);
       expect(nextEp?.name, 'Cat\'s in the Bag...');
 
       // Watch S1E2
@@ -226,7 +280,8 @@ void main() {
         showItem: tvShowItem,
       );
 
-      nextEp = notifier.getNextUnwatchedEpisode(showId: tvShowItem.id, seasons: seasons);
+      nextEp = notifier.getNextUnwatchedEpisode(
+          showId: tvShowItem.id, seasons: seasons);
       expect(nextEp?.name, 'Seven Thirty-Seven');
 
       // Watch S2E1
@@ -237,11 +292,13 @@ void main() {
         showItem: tvShowItem,
       );
 
-      nextEp = notifier.getNextUnwatchedEpisode(showId: tvShowItem.id, seasons: seasons);
+      nextEp = notifier.getNextUnwatchedEpisode(
+          showId: tvShowItem.id, seasons: seasons);
       expect(nextEp, isNull);
     });
 
-    test('removeFromWatchedList and removeFromAllLists clear watchedEpisodes', () {
+    test('removeFromWatchedList and removeFromAllLists clear watchedEpisodes',
+        () {
       final notifier = container.read(mediaProvider.notifier);
 
       notifier.toggleEpisodeWatched(
@@ -270,7 +327,9 @@ void main() {
       expect(state.watchedEpisodes.containsKey(tvShowItem.id), isFalse);
     });
 
-    test('watchingList manual toggle adds/removes item and removes from other lists', () {
+    test(
+        'watchingList manual toggle adds/removes item and removes from other lists',
+        () {
       final notifier = container.read(mediaProvider.notifier);
 
       notifier.addToWatchlist(testItem);
@@ -294,7 +353,9 @@ void main() {
       expect(state.watchingList.containsKey(testItem.id), isFalse);
     });
 
-    test('toggleEpisodeWatched automatically manages watchingList and watchedList based on total episode count', () {
+    test(
+        'toggleEpisodeWatched automatically manages watchingList and watchedList based on total episode count',
+        () {
       final notifier = container.read(mediaProvider.notifier);
 
       // Partial watch -> show moves to watchingList
@@ -358,7 +419,7 @@ void main() {
         ],
       );
       final notifier = localContainer.read(mediaProvider.notifier);
-      
+
       const mixedShow = MediaItem(
         id: 'tv-mixed',
         title: 'Mixed Release Show',
@@ -376,8 +437,18 @@ void main() {
         seasonNumber: 1,
         name: 'Season 1',
         episodes: [
-          TvEpisode(id: 1, episodeNumber: 1, seasonNumber: 1, name: 'Released', airDate: now.subtract(const Duration(days: 1))),
-          TvEpisode(id: 2, episodeNumber: 2, seasonNumber: 1, name: 'Unreleased', airDate: now.add(const Duration(days: 1))),
+          TvEpisode(
+              id: 1,
+              episodeNumber: 1,
+              seasonNumber: 1,
+              name: 'Released',
+              airDate: now.subtract(const Duration(days: 1))),
+          TvEpisode(
+              id: 2,
+              episodeNumber: 2,
+              seasonNumber: 1,
+              name: 'Unreleased',
+              airDate: now.add(const Duration(days: 1))),
         ],
       );
       notifier.addToWatchedList(mixedShow, seasons: [season]);

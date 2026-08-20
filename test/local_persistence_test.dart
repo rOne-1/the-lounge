@@ -25,7 +25,8 @@ void main() {
       expect(json['id'], equals('movie_100'));
       expect(json['title'], equals('Inception'));
       expect(json['type'], equals('movie'));
-      expect(json['posterUrl'], equals('https://image.tmdb.org/t/p/w500/poster.jpg'));
+      expect(json['posterUrl'],
+          equals('https://image.tmdb.org/t/p/w500/poster.jpg'));
       expect(json['rating'], equals(8.8));
     });
 
@@ -42,14 +43,16 @@ void main() {
       expect(restored.id, equals('tv_200'));
       expect(restored.title, equals('Breaking Bad'));
       expect(restored.type, equals(MediaType.tv));
-      expect(restored.posterUrl, equals('https://image.tmdb.org/t/p/w500/bb.jpg'));
+      expect(
+          restored.posterUrl, equals('https://image.tmdb.org/t/p/w500/bb.jpg'));
       expect(restored.rating, equals(9.5));
       expect(restored.overview, isEmpty);
       expect(restored.genres, isEmpty);
       expect(restored.prefixedId, equals('tv_200'));
     });
 
-    test('fromMinimalJson defensively handles string rating and null fields', () {
+    test('fromMinimalJson defensively handles string rating and null fields',
+        () {
       final json = {
         'id': 'movie_300',
         'title': 'The Matrix',
@@ -120,9 +123,35 @@ void main() {
       expect(restored.cast, ['Actor One', 'Actor Two']);
       expect(restored.director, 'Director Name');
     });
+
+    test(
+        'toMinimalJson/fromMinimalJson round-trips seasonsCount, episodesCount, '
+        'and productionCompanyNames (EXP-DATA-2)', () {
+      // Same class of gap as ANLY-DATA-1, for the fields the Analytics
+      // expansion's TV Abandonment Rate and Studio Affinity metrics need.
+      final item = MediaItem(
+        id: 'tv_500',
+        title: 'Season Round Trip',
+        type: MediaType.tv,
+        rating: 7.4,
+        overview: 'Something with season/company metadata.',
+        genres: const ['Drama'],
+        seasonsCount: 4,
+        episodesCount: 40,
+        productionCompanyNames: const ['A24', 'Neon'],
+      );
+
+      final restored = MediaItem.fromMinimalJson(item.toMinimalJson());
+
+      expect(restored.seasonsCount, 4);
+      expect(restored.episodesCount, 40);
+      expect(restored.productionCompanyNames, ['A24', 'Neon']);
+    });
   });
 
-  group('Local Persistence - Section 2: Persist and Restore 4 Status Maps & Episode Progress', () {
+  group(
+      'Local Persistence - Section 2: Persist and Restore 4 Status Maps & Episode Progress',
+      () {
     late SharedPreferences prefs;
 
     const movie1 = MediaItem(
@@ -207,7 +236,8 @@ void main() {
       container.dispose();
     });
 
-    test('restores state from SharedPreferences on provider initialization', () async {
+    test('restores state from SharedPreferences on provider initialization',
+        () async {
       final watchlistData = jsonEncode({
         'movie_1': movie1.toMinimalJson(),
       });
@@ -238,7 +268,8 @@ void main() {
     });
   });
 
-  group('Local Persistence - Section 3: Defensive Parsing & Error Handling', () {
+  group('Local Persistence - Section 3: Defensive Parsing & Error Handling',
+      () {
     late SharedPreferences prefs;
 
     setUp(() async {
@@ -246,7 +277,9 @@ void main() {
       prefs = await SharedPreferences.getInstance();
     });
 
-    test('handles missing, null, empty or corrupted JSON gracefully without crashing', () async {
+    test(
+        'handles missing, null, empty or corrupted JSON gracefully without crashing',
+        () async {
       SharedPreferences.setMockInitialValues({
         'the_lounge_watchlist': 'invalid-json-string{',
         'the_lounge_maybe_list': '',

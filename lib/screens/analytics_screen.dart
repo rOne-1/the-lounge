@@ -13,8 +13,12 @@ import '../widgets/analytics/analytics_share_card.dart';
 import '../widgets/analytics/binge_velocity_section.dart';
 import '../widgets/analytics/cast_constellations_section.dart';
 import '../widgets/analytics/chronological_heatmap.dart';
+import '../widgets/analytics/discover_funnel_section.dart';
+import '../widgets/analytics/era_distribution_section.dart';
 import '../widgets/analytics/genre_dna_section.dart';
+import '../widgets/analytics/language_distribution_section.dart';
 import '../widgets/analytics/rating_divergence_section.dart';
+import '../widgets/analytics/viewing_rhythm_section.dart';
 import '../widgets/archive_summary_card.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/lounge_toast.dart';
@@ -350,6 +354,34 @@ class _AnalyticsResults extends StatelessWidget {
               ChronologicalHeatmap(data: result.heatmap),
               const SizedBox(height: 20),
               BingeVelocitySection(data: result.bingeVelocity),
+              const SizedBox(height: 20),
+              Text(
+                'Era & Cinema History',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              EraDistributionSection(
+                decades: result.decadeDistribution,
+                temporalDistance: result.temporalDistanceIndex,
+              ),
+              const SizedBox(height: 20),
+              Text(
+                'Viewing Rhythm',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              ViewingRhythmSection(
+                dayOfWeek: result.dayOfWeekDistribution,
+                runtimePreferences: result.runtimePreferences,
+              ),
               const SizedBox(height: 28),
               _SectionHeader(title: 'Taste'),
               const SizedBox(height: 16),
@@ -388,6 +420,29 @@ class _AnalyticsResults extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               GenreDnaSection(genreFrequency: result.genreFrequency),
+              const SizedBox(height: 20),
+              Text(
+                'Global Footprint',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              LanguageDistributionSection(
+                  languages: result.languageDistribution),
+              const SizedBox(height: 20),
+              Text(
+                'Discover Selectivity',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              DiscoverFunnelSection(swipeRatio: result.discoverSwipeRatio),
             ],
           ),
         ),

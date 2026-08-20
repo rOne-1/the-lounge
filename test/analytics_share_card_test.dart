@@ -21,7 +21,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders total hours, top genre, top director, and top actor', (tester) async {
+  testWidgets('renders total hours, top genre, top director, and top actor',
+      (tester) async {
     await pump(
       tester,
       const AnalyticsResult(
@@ -32,6 +33,18 @@ void main() {
         directorRanking: [NameCount(name: 'Nolan', count: 2)],
         ratingDivergence: [],
         genreFrequency: {'Drama': 4, 'Comedy': 1},
+        decadeDistribution: DecadeDistribution({}),
+        temporalDistanceIndex: TemporalDistanceIndex(null),
+        languageDistribution: LanguageDistribution({}),
+        dayOfWeekDistribution:
+            DayOfWeekDistribution(movieCounts: {}, tvCounts: {}),
+        runtimePreferences: RuntimePreferences(
+            averageMinutes: null,
+            shortCount: 0,
+            standardCount: 0,
+            epicCount: 0),
+        discoverSwipeRatio: DiscoverSwipeRatio(
+            skippedCount: 0, watchlistedCount: 0, savedCount: 0),
       ),
     );
 
@@ -47,7 +60,8 @@ void main() {
     expect(find.text('Top Actor'), findsOneWidget);
   });
 
-  testWidgets('omits rows with no data instead of showing blank/null values', (tester) async {
+  testWidgets('omits rows with no data instead of showing blank/null values',
+      (tester) async {
     await pump(
       tester,
       const AnalyticsResult(
@@ -58,6 +72,18 @@ void main() {
         directorRanking: [],
         ratingDivergence: [],
         genreFrequency: {},
+        decadeDistribution: DecadeDistribution({}),
+        temporalDistanceIndex: TemporalDistanceIndex(null),
+        languageDistribution: LanguageDistribution({}),
+        dayOfWeekDistribution:
+            DayOfWeekDistribution(movieCounts: {}, tvCounts: {}),
+        runtimePreferences: RuntimePreferences(
+            averageMinutes: null,
+            shortCount: 0,
+            standardCount: 0,
+            epicCount: 0),
+        discoverSwipeRatio: DiscoverSwipeRatio(
+            skippedCount: 0, watchlistedCount: 0, savedCount: 0),
       ),
     );
 

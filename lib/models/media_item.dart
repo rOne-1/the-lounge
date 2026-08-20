@@ -62,7 +62,10 @@ class TvEpisode {
 
   @override
   int get hashCode =>
-      id.hashCode ^ episodeNumber.hashCode ^ seasonNumber.hashCode ^ name.hashCode;
+      id.hashCode ^
+      episodeNumber.hashCode ^
+      seasonNumber.hashCode ^
+      name.hashCode;
 }
 
 class TvSeason {
@@ -104,7 +107,6 @@ class TvSeason {
     );
   }
 }
-
 
 class MediaCastMember {
   final String id;
@@ -360,6 +362,14 @@ class MediaItem {
   final List<MediaKeyword>? keywords;
   final String? imdbId;
   final List<ProductionCompany>? productionCompanies;
+
+  /// EXP-DATA-2: minimal, *persisted* company-name snapshot -- mirrors the
+  /// existing `cast` (names)/`castMembers` (rich, non-persisted) split.
+  /// [productionCompanies] carries logos/ids for live-fetched detail
+  /// views but is never saved to local storage; this is the thin form
+  /// Analytics' Studio/Boutique Label Affinity tally actually needs to
+  /// survive a restart.
+  final List<String> productionCompanyNames;
   final String? originalLanguage;
   final List<String>? spokenLanguages;
   final String? status;
@@ -401,6 +411,7 @@ class MediaItem {
     this.keywords,
     this.imdbId,
     this.productionCompanies,
+    this.productionCompanyNames = const [],
     this.originalLanguage,
     this.spokenLanguages,
     this.status,
@@ -524,6 +535,7 @@ class MediaItem {
     List<MediaKeyword>? keywords,
     String? imdbId,
     List<ProductionCompany>? productionCompanies,
+    List<String>? productionCompanyNames,
     String? originalLanguage,
     List<String>? spokenLanguages,
     String? status,
@@ -566,6 +578,8 @@ class MediaItem {
       keywords: keywords ?? this.keywords,
       imdbId: imdbId ?? this.imdbId,
       productionCompanies: productionCompanies ?? this.productionCompanies,
+      productionCompanyNames:
+          productionCompanyNames ?? this.productionCompanyNames,
       originalLanguage: originalLanguage ?? this.originalLanguage,
       spokenLanguages: spokenLanguages ?? this.spokenLanguages,
       status: status ?? this.status,
@@ -589,6 +603,13 @@ class MediaItem {
       'runtime': runtime,
       'cast': cast,
       'director': director,
+      // EXP-DATA-2: needed by TV Abandonment Rate / Studio Affinity
+      // Analytics metrics -- same TMDB-Details-only availability gap
+      // already solved for runtime/cast/director (see
+      // backfillMissingWatchedMetadata).
+      'seasonsCount': seasonsCount,
+      'episodesCount': episodesCount,
+      'productionCompanyNames': productionCompanyNames,
       if (belongsToCollection != null) ...{
         'collectionId': belongsToCollection!.id,
         'collectionName': belongsToCollection!.name,
@@ -634,11 +655,17 @@ class MediaItem {
         addedDateStr != null ? DateTime.tryParse(addedDateStr) : null;
 
     final rawTitle = json['title'] as String? ?? json['name'] as String? ?? '';
-    final rawPoster = json['posterUrl'] as String? ?? json['poster_path'] as String?;
+    final rawPoster =
+        json['posterUrl'] as String? ?? json['poster_path'] as String?;
 
     final castJson = json['cast'];
     final castList = castJson is List
         ? castJson.whereType<String>().toList()
+        : const <String>[];
+
+    final companyNamesJson = json['productionCompanyNames'];
+    final companyNamesList = companyNamesJson is List
+        ? companyNamesJson.whereType<String>().toList()
         : const <String>[];
 
     return MediaItem(
@@ -649,13 +676,18 @@ class MediaItem {
       posterUrl: rawPoster,
       overview: json['overview'] as String? ?? '',
       genres: genresList,
-      originalLanguage: json['originalLanguage'] as String? ?? json['original_language'] as String?,
+      originalLanguage: json['originalLanguage'] as String? ??
+          json['original_language'] as String?,
       releaseOrAirDate: releaseDate,
       addedDate: addedDate,
-      voteCount: (json['voteCount'] as num? ?? json['vote_count'] as num?)?.toInt(),
+      voteCount:
+          (json['voteCount'] as num? ?? json['vote_count'] as num?)?.toInt(),
       runtime: (json['runtime'] as num?)?.toInt(),
       cast: castList,
       director: json['director'] as String?,
+      seasonsCount: (json['seasonsCount'] as num?)?.toInt(),
+      episodesCount: (json['episodesCount'] as num?)?.toInt(),
+      productionCompanyNames: companyNamesList,
       belongsToCollection: col,
     );
   }

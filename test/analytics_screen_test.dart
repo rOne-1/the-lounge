@@ -12,8 +12,12 @@ import 'package:the_lounge/widgets/analytics/analytics_share_card.dart';
 import 'package:the_lounge/widgets/analytics/binge_velocity_section.dart';
 import 'package:the_lounge/widgets/analytics/cast_constellations_section.dart';
 import 'package:the_lounge/widgets/analytics/chronological_heatmap.dart';
+import 'package:the_lounge/widgets/analytics/discover_funnel_section.dart';
+import 'package:the_lounge/widgets/analytics/era_distribution_section.dart';
 import 'package:the_lounge/widgets/analytics/genre_dna_section.dart';
+import 'package:the_lounge/widgets/analytics/language_distribution_section.dart';
 import 'package:the_lounge/widgets/analytics/rating_divergence_section.dart';
+import 'package:the_lounge/widgets/analytics/viewing_rhythm_section.dart';
 
 // Note on strategy: the actual generate()/compute() round-trip (does it
 // populate result/generatedAt correctly, does regeneration overwrite the
@@ -41,7 +45,8 @@ void main() {
   }
 
   group('ANLY-HUB-2: idle state (SP-1)', () {
-    testWidgets('shows the Generate button and no chart content on open', (tester) async {
+    testWidgets('shows the Generate button and no chart content on open',
+        (tester) async {
       final prefs = await mockPrefs();
       final container = ProviderContainer(
         overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
@@ -93,7 +98,8 @@ void main() {
   });
 
   group('ANLY-HUB-2: generation flow (UI wiring)', () {
-    testWidgets('tapping Generate transitions into the loading state', (tester) async {
+    testWidgets('tapping Generate transitions into the loading state',
+        (tester) async {
       final prefs = await mockPrefs();
       final container = ProviderContainer(
         overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
@@ -115,7 +121,8 @@ void main() {
       expect(container.read(analyticsProvider).isGenerating, isTrue);
     });
 
-    testWidgets('tapping Regenerate transitions back into the loading state', (tester) async {
+    testWidgets('tapping Regenerate transitions back into the loading state',
+        (tester) async {
       final prefs = await mockPrefs();
       final seeded = AnalyticsState(
         result: const AnalyticsResult(
@@ -126,6 +133,18 @@ void main() {
           directorRanking: [],
           ratingDivergence: [],
           genreFrequency: {},
+          decadeDistribution: DecadeDistribution({}),
+          temporalDistanceIndex: TemporalDistanceIndex(null),
+          languageDistribution: LanguageDistribution({}),
+          dayOfWeekDistribution:
+              DayOfWeekDistribution(movieCounts: {}, tvCounts: {}),
+          runtimePreferences: RuntimePreferences(
+              averageMinutes: null,
+              shortCount: 0,
+              standardCount: 0,
+              epicCount: 0),
+          discoverSwipeRatio: DiscoverSwipeRatio(
+              skippedCount: 0, watchlistedCount: 0, savedCount: 0),
         ),
         generatedAt: DateTime(2026, 1, 1),
       );
@@ -155,7 +174,9 @@ void main() {
   });
 
   group('ANLY-HUB-2: results state rendering', () {
-    testWidgets('renders Temporal section content from a seeded AnalyticsResult', (tester) async {
+    testWidgets(
+        'renders Temporal section content from a seeded AnalyticsResult',
+        (tester) async {
       final prefs = await mockPrefs();
       final seeded = AnalyticsState(
         result: const AnalyticsResult(
@@ -183,6 +204,24 @@ void main() {
             ),
           ],
           genreFrequency: {'Drama': 2, 'Action': 1, 'Comedy': 1},
+          decadeDistribution: DecadeDistribution({'2010s': 2, '2020s': 1}),
+          temporalDistanceIndex: TemporalDistanceIndex(30.0),
+          languageDistribution: LanguageDistribution({'en': 3}),
+          dayOfWeekDistribution: DayOfWeekDistribution(
+            movieCounts: {DateTime.monday: 2},
+            tvCounts: {DateTime.tuesday: 1},
+          ),
+          runtimePreferences: RuntimePreferences(
+            averageMinutes: 120.0,
+            shortCount: 1,
+            standardCount: 1,
+            epicCount: 0,
+          ),
+          discoverSwipeRatio: DiscoverSwipeRatio(
+            skippedCount: 5,
+            watchlistedCount: 2,
+            savedCount: 1,
+          ),
         ),
         generatedAt: DateTime(2026, 1, 1),
       );
@@ -226,6 +265,14 @@ void main() {
       );
       expect(find.byType(RatingDivergenceSection), findsOneWidget);
       expect(find.byType(GenreDnaSection), findsOneWidget);
+      expect(find.byType(EraDistributionSection), findsOneWidget);
+      expect(find.byType(ViewingRhythmSection), findsOneWidget);
+      expect(find.byType(LanguageDistributionSection), findsOneWidget);
+      expect(find.byType(DiscoverFunnelSection), findsOneWidget);
+      expect(find.text('Era & Cinema History'), findsOneWidget);
+      expect(find.text('Viewing Rhythm'), findsOneWidget);
+      expect(find.text('Global Footprint'), findsOneWidget);
+      expect(find.text('Discover Selectivity'), findsOneWidget);
     });
   });
 
@@ -243,6 +290,18 @@ void main() {
           directorRanking: [],
           ratingDivergence: [],
           genreFrequency: {},
+          decadeDistribution: DecadeDistribution({}),
+          temporalDistanceIndex: TemporalDistanceIndex(null),
+          languageDistribution: LanguageDistribution({}),
+          dayOfWeekDistribution:
+              DayOfWeekDistribution(movieCounts: {}, tvCounts: {}),
+          runtimePreferences: RuntimePreferences(
+              averageMinutes: null,
+              shortCount: 0,
+              standardCount: 0,
+              epicCount: 0),
+          discoverSwipeRatio: DiscoverSwipeRatio(
+              skippedCount: 0, watchlistedCount: 0, savedCount: 0),
         ),
         generatedAt: DateTime(2026, 1, 1),
       );
