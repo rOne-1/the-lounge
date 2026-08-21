@@ -117,4 +117,39 @@ void main() {
     final revealedGridSize = tester.getSize(gridFinder);
     expect(revealedGridSize, equals(initialGridSize));
   });
+
+  testWidgets(
+      'SEARCH: compact header layer hierarchy decouples BackdropFilter from animated opacity and ancestor compositing',
+      (tester) async {
+    final container = await pumpSearch(tester);
+    addTearDown(container.dispose);
+
+    // Verify BackdropFilter exists in the compact header
+    final backdropFilterFinder = find.byType(BackdropFilter);
+    expect(backdropFilterFinder, findsWidgets);
+
+    // Verify BackdropFilter is NOT a descendant of any AnimatedOpacity (prevents blank render engine glitch)
+    final backdropUnderOpacityFinder = find.ancestor(
+      of: backdropFilterFinder,
+      matching: find.byType(AnimatedOpacity),
+    );
+    expect(backdropUnderOpacityFinder, findsNothing);
+
+    // Verify header AnimatedOpacity (250ms) is a descendant of BackdropFilter
+    final headerAnimatedOpacityFinder = find.descendant(
+      of: backdropFilterFinder.first,
+      matching: find.byWidgetPredicate(
+        (w) => w is AnimatedOpacity && w.duration == const Duration(milliseconds: 250),
+      ),
+    );
+    expect(headerAnimatedOpacityFinder, findsOneWidget);
+
+    // Verify RepaintBoundary is an ancestor of BackdropFilter
+    final repaintBoundaryAncestorFinder = find.ancestor(
+      of: backdropFilterFinder.first,
+      matching: find.byType(RepaintBoundary),
+    );
+    expect(repaintBoundaryAncestorFinder, findsWidgets);
+  });
 }
+

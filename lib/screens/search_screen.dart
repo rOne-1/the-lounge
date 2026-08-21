@@ -741,93 +741,92 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           top: 0,
           left: 0,
           right: 0,
-          child: IgnorePointer(
-            ignoring: !_isChromeVisible,
-            child: AnimatedSlide(
-              offset: _isChromeVisible ? Offset.zero : const Offset(0, -1.0),
-              duration: const Duration(milliseconds: 320),
-              curve: AppPhysics.houseSpringCurve,
-              child: AnimatedOpacity(
-                opacity: _isChromeVisible ? 1.0 : 0.0,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeInOutCubic,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: colors.base.withValues(alpha: isDark ? 0.88 : 0.92),
-                    border: Border(
-                      bottom: BorderSide(
-                        color: colors.lineRgba.withValues(alpha: isDark ? 0.5 : 0.3),
-                      ),
-                    ),
-                  ),
-                  // Isolated in its own compositing layer: this header sits
-                  // inside _PersistentTabView's FadeTransition/ScaleTransition
-                  // (the tab-switch animation wrapping the shell's IndexedStack).
-                  // BackdropFilter composited underneath an animated Opacity/
-                  // Transform ancestor is a known Flutter engine limitation --
-                  // the saveLayer it needs can render fully black and stay that
-                  // way until something forces a full scene re-composite (e.g.
-                  // minimizing/restoring the window). RepaintBoundary forces
-                  // this subtree into its own layer, decoupled from the
-                  // ancestor's animated opacity/scale compositing.
-                  child: RepaintBoundary(
-                    child: ClipRect(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                      child: SafeArea(
-                        bottom: false,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    _headerTitle(isMovies),
-                                    style: GoogleFonts.bodoniModa(
-                                      fontSize: 19,
-                                      fontWeight: FontWeight.w600,
-                                      fontStyle: FontStyle.italic,
-                                      color: inkColor,
-                                    ),
-                                  ),
-                                  PressableScale(
-                                    onTap: () =>
-                                        _showFilterBottomSheet(context, isDark, isMovies),
-                                    child: Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8.0,
-                                        vertical: 12.0,
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.filter_list, color: inkColor, size: 20),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Filters',
-                                            style: AppThemes.safeGeist(
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                              color: inkColor,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+          child: RepaintBoundary(
+            child: IgnorePointer(
+              ignoring: !_isChromeVisible,
+              child: AnimatedSlide(
+                offset: _isChromeVisible ? Offset.zero : const Offset(0, -1.0),
+                duration: const Duration(milliseconds: 320),
+                curve: AppPhysics.houseSpringCurve,
+                child: ClipRect(
+                  // Isolated in its own compositing layer via the outer
+                  // RepaintBoundary: this header sits inside _PersistentTabView's
+                  // FadeTransition/ScaleTransition (the tab-switch animation wrapping
+                  // the shell's IndexedStack). BackdropFilter composited underneath
+                  // an animated Opacity/Transform saveLayer ancestor is a known
+                  // Flutter engine limitation that can render fully black until
+                  // scrolled. RepaintBoundary at the root decouples it from the
+                  // ancestor transitions, and AnimatedOpacity is nested *inside*
+                  // BackdropFilter so BackdropFilter is never under an opacity saveLayer.
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                    child: AnimatedOpacity(
+                      opacity: _isChromeVisible ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 250),
+                      curve: Curves.easeInOutCubic,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: colors.base.withValues(alpha: isDark ? 0.88 : 0.92),
+                          border: Border(
+                            bottom: BorderSide(
+                              color: colors.lineRgba.withValues(alpha: isDark ? 0.5 : 0.3),
                             ),
-                            _buildTopSearchBar(isDark),
-                            if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
-                            _buildActiveFilterChipBar(isDark),
-                          ],
+                          ),
+                        ),
+                        child: SafeArea(
+                          bottom: false,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _headerTitle(isMovies),
+                                      style: GoogleFonts.bodoniModa(
+                                        fontSize: 19,
+                                        fontWeight: FontWeight.w600,
+                                        fontStyle: FontStyle.italic,
+                                        color: inkColor,
+                                      ),
+                                    ),
+                                    PressableScale(
+                                      onTap: () =>
+                                          _showFilterBottomSheet(context, isDark, isMovies),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8.0,
+                                          vertical: 12.0,
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(Icons.filter_list, color: inkColor, size: 20),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              'Filters',
+                                              style: AppThemes.safeGeist(
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.w600,
+                                                color: inkColor,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              _buildTopSearchBar(isDark),
+                              if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
+                              _buildActiveFilterChipBar(isDark),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
                     ),
                   ),
                 ),
