@@ -1912,7 +1912,21 @@ class MediaNotifier extends Notifier<MediaState> {
     }
   }
 
-  Future<void> _enrichWatchedTvShow(MediaItem item) async {
+  /// Item 2 (Beta 3 BETA3-TV-2): bounded background retry so a transient
+  /// network failure doesn't leave the optimistic "all episodes watched"
+  /// fallback placement (from `addToWatchedList`'s no-seasons branch)
+  /// uncorrected until the next monthly `refreshWatchedShowsIfDue` pass (up
+  /// to 30 days later). Purely internal resilience -- no UI change, nothing
+  /// blocks on this. Capped at 3 attempts total, matching this project's
+  /// standing retry-cap convention
+  /// (`local-notes/rules/development_rules_for_antigravity.md` rule 9).
+  /// Deliberately NOT the bigger fix item 1 describes (blocking the UI on
+  /// the season fetch before the optimistic placement happens at all) --
+  /// that's a real UX change gated on explicit product sign-off, not
+  /// something to decide unilaterally here.
+  static const _enrichRetryMaxAttempts = 3;
+
+  Future<void> _enrichWatchedTvShow(MediaItem item, {int attempt = 1}) async {
     if (item.type != MediaType.tv) return;
     try {
       final repo = ref.read(movieRepositoryProvider);
@@ -1962,18 +1976,21 @@ class MediaNotifier extends Notifier<MediaState> {
         }
       }
     } catch (e, stack) {
+      if (attempt < _enrichRetryMaxAttempts) {
+        await Future.delayed(Duration(milliseconds: 500 * attempt));
+        return _enrichWatchedTvShow(item, attempt: attempt + 1);
+      }
       // Notepad item 2: this failure previously vanished with zero trace --
-      // the optimistic "all episodes watched" placement from
-      // addToWatchedList's fallback branch is left uncorrected until the
-      // next refreshWatchedShowsIfDue pass (up to 30 days later), which is
-      // the real, deliberately-scoped-out fix (would need a retry/backoff
-      // scheduler or blocking the UI on the season fetch -- a bigger UX
-      // change, see item 1). Logging at least makes the failure
+      // now retried up to _enrichRetryMaxAttempts times with backoff before
+      // giving up; if every attempt fails, the optimistic placement stays
+      // uncorrected until the next refreshWatchedShowsIfDue pass (up to 30
+      // days later). Logging at least makes the exhausted failure
       // diagnosable (via a future Sentry integration once E6 lands, or the
       // dev console today) instead of disappearing silently.
       developer.log(
-        'Failed to enrich watched status for TV show ${item.id} -- optimistic '
-        'placement stays uncorrected until the next monthly refresh.',
+        'Failed to enrich watched status for TV show ${item.id} after '
+        '$_enrichRetryMaxAttempts attempts -- optimistic placement stays '
+        'uncorrected until the next monthly refresh.',
         name: 'MediaNotifier._enrichWatchedTvShow',
         error: e,
         stackTrace: stack,

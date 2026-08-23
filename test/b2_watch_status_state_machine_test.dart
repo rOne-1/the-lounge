@@ -31,6 +31,29 @@ class SeasonedMockRepository extends MockMovieRepository {
   Future<MediaItem?> getMediaDetails(String id) async => mediaDetailsMap[id];
 }
 
+/// Item 2 regression fixture: fails the first [failCount] calls to
+/// getTvSeasonDetails (simulating a transient network error), then always
+/// returns [successSeason] afterward.
+class FlakyThenSucceedsRepository extends MockMovieRepository {
+  int callCount = 0;
+  final int failCount;
+  final TvSeason successSeason;
+
+  FlakyThenSucceedsRepository({
+    required this.failCount,
+    required this.successSeason,
+  });
+
+  @override
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async {
+    callCount++;
+    if (callCount <= failCount) {
+      throw Exception('transient network failure');
+    }
+    return successSeason;
+  }
+}
+
 TvEpisode _ep(int season, int number, {DateTime? airDate}) => TvEpisode(
       id: season * 100 + number,
       episodeNumber: number,
@@ -454,6 +477,63 @@ void main() {
       expect(state.watchedList.containsKey(show.id), isFalse);
       expect(state.watchedEpisodes[show.id], contains('S1E1'));
       expect(state.watchedEpisodes[show.id], isNot(contains('S1E2')));
+    });
+  });
+
+  group('_enrichWatchedTvShow background retry (item 2)', () {
+    test('a transient failure is retried instead of leaving the optimistic placement uncorrected for up to 30 days', () async {
+      final repo = FlakyThenSucceedsRepository(
+        failCount: 2, // fails attempts 1 and 2, succeeds on attempt 3
+        successSeason: TvSeason(
+          id: 1,
+          seasonNumber: 1,
+          name: 'Season 1',
+          episodes: [_ep(1, 1, airDate: past), _ep(1, 2, airDate: future)],
+        ),
+      );
+      final container = ProviderContainer(overrides: [
+        movieRepositoryProvider.overrideWithValue(repo),
+      ]);
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToWatchedList(show, seasons: null);
+      // 2 failed attempts with backoff (500ms + 1000ms) before the 3rd,
+      // successful attempt -- generous margin for slower CI machines.
+      await Future.delayed(const Duration(milliseconds: 2500));
+
+      final state = container.read(mediaProvider);
+      expect(repo.callCount, 3,
+          reason: 'expected exactly 2 failed attempts + 1 successful retry');
+      // Correction succeeded despite 2 transient failures: the real data
+      // (an unreleased S1E2) correctly keeps the show in Watching rather
+      // than resting on the optimistic fallback's guessed "all watched".
+      expect(state.watchingList.containsKey(show.id), isTrue);
+      expect(state.watchedList.containsKey(show.id), isFalse);
+    });
+
+    test('exhausting all retry attempts still logs and leaves state on the optimistic placement, not stuck in a retry loop', () async {
+      final repo = FlakyThenSucceedsRepository(
+        failCount: 999, // never succeeds
+        successSeason: TvSeason(id: 1, seasonNumber: 1, name: 'Season 1', episodes: []),
+      );
+      final container = ProviderContainer(overrides: [
+        movieRepositoryProvider.overrideWithValue(repo),
+      ]);
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToWatchedList(show, seasons: null);
+      await Future.delayed(const Duration(milliseconds: 2500));
+
+      // Capped at exactly 3 attempts total, per this project's standing
+      // retry cap (development_rules_for_antigravity.md rule 9) -- not an
+      // unbounded retry loop.
+      expect(repo.callCount, 3);
+      final state = container.read(mediaProvider);
+      expect(state.watchedList.containsKey(show.id), isTrue,
+          reason: 'optimistic fallback placement stays uncorrected after '
+              'retries are exhausted, per the documented 30-day fallback');
     });
   });
 
