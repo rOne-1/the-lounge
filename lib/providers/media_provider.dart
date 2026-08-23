@@ -1665,6 +1665,14 @@ class MediaNotifier extends Notifier<MediaState> {
     if (seasons.isEmpty) return;
     if (!state.watchedList.containsKey(showId)) return;
 
+    final showItem = state.watchedList[showId]!;
+    // Item 40: a season entirely missing from this fetch (flaky/rate-limited
+    // request) must never be read as "nothing more to release" -- without
+    // this, a still-airing season silently dropped from the fetch can make
+    // the classifier below wrongly conclude the show is fully caught up and
+    // commit the wrong status transition.
+    if (!_hasCompleteSeasonData(seasons, showItem)) return;
+
     final watchedSet = state.watchedEpisodes[showId] ?? <String>{};
     // No watchedKeys trust exception here, deliberately: for a genuinely
     // Watched show, watchedSet is already exactly its real released set
@@ -1683,7 +1691,6 @@ class MediaNotifier extends Notifier<MediaState> {
       return;
     }
 
-    final showItem = state.watchedList[showId]!;
     final isMidAir =
         newlyReleased.isNotEmpty && classified.unreleased.isNotEmpty;
     _setTvShowStatus(showId, showItem, isMidAir ? 'watching' : 'watchlist',

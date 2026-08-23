@@ -295,6 +295,59 @@ void main() {
       expect(state.watchingList.containsKey(show.id), isTrue);
       expect(state.watchedList.containsKey(show.id), isFalse);
     });
+
+    test('reevaluateShowCompletion (item 40): a season entirely missing from the fetch must not trigger a wrong status mutation', () {
+      final threeSeasonShow = show.copyWith(seasonsCount: 3);
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      // Fully released across all 3 seasons -- legitimately reaches Watched,
+      // with the stored item's seasonsCount already at 3.
+      notifier.addToWatchedList(threeSeasonShow, seasons: [
+        TvSeason(id: 1, seasonNumber: 1, name: 'Season 1', episodes: [_ep(1, 1, airDate: past)]),
+        TvSeason(id: 2, seasonNumber: 2, name: 'Season 2', episodes: [_ep(2, 1, airDate: past)]),
+        TvSeason(id: 3, seasonNumber: 3, name: 'Season 3', episodes: [_ep(3, 1, airDate: past)]),
+      ]);
+      expect(
+        container.read(mediaProvider).watchedList.containsKey(show.id),
+        isTrue,
+        reason: 'test setup must start from a genuinely Watched show',
+      );
+
+      // Ground truth: season 2 gained a new released episode AND season 3
+      // (separately) gained a new unreleased one -- together these should
+      // read as "mid-air" (some new content out, some still coming) ->
+      // Watching. This fetch drops season 3 ENTIRELY (a flaky/rate-limited
+      // request, same failure shape as the sibling call sites above), so
+      // only 2 of 3 seasons come back -- season 3's unreleased episode is
+      // invisible to the classifier without the completeness guard, making
+      // it look like "fully aired, nothing left" (wrongly -> Watchlist)
+      // instead of "mid-air" (correctly -> Watching).
+      final incompleteSeasons = [
+        TvSeason(id: 1, seasonNumber: 1, name: 'Season 1', episodes: [_ep(1, 1, airDate: past)]),
+        TvSeason(
+          id: 2,
+          seasonNumber: 2,
+          name: 'Season 2',
+          episodes: [
+            _ep(2, 1, airDate: past),
+            _ep(2, 2, airDate: past), // new, released, not yet watched
+          ],
+        ),
+        // Season 3 missing entirely -- the flaky-fetch gap.
+      ];
+
+      notifier.reevaluateShowCompletion(showId: show.id, seasons: incompleteSeasons);
+      final state = container.read(mediaProvider);
+
+      // Incomplete data must never be read as "nothing more to release" --
+      // the show must stay exactly where it was rather than committing a
+      // (possibly wrong) status change off a partial fetch.
+      expect(state.watchedList.containsKey(show.id), isTrue);
+      expect(state.watchlist.containsKey(show.id), isFalse);
+      expect(state.watchingList.containsKey(show.id), isFalse);
+    });
   });
 
   group('null/TBA air dates — unreleased by default, trusted once the user watches them',
