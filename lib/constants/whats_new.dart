@@ -2,7 +2,7 @@
 /// the What's New dialog shows once per distinct value of this string
 /// (tracked in SharedPreferences), not once per app version/build number,
 /// so it can be updated independently of pubspec's version field.
-const String kWhatsNewVersion = '0.2.3';
+const String kWhatsNewVersion = '0.3.0';
 
 class WhatsNewSection {
   final String title;
@@ -12,30 +12,35 @@ class WhatsNewSection {
 }
 
 /// Curated, user-facing summary of everything visibly new/fixed since the
-/// last version testers actually saw this dialog for ('0.2.0') -- covers
-/// the v0.2.1 nav-capsule fix, the full Hall Architecture feature set
-/// (v0.2.2), and the Beta 3 follow-up fixes plus Grand Hall aggregation
-/// (v0.2.3). Plain-language only -- no internal ticket IDs, file names, or
+/// last version testers actually saw this dialog for ('0.2.3') -- covers
+/// the full Analytics epic (shipped after v0.2.3), the Beta 3 Launch
+/// Readiness sprint (accessibility sweep, Settings redesign, Detail screen
+/// lazy loading, TV state-machine hardening), and the new theme roster.
+/// Plain-language only -- no internal ticket IDs, file names, or
 /// engineering framing.
 const List<WhatsNewSection> kWhatsNewSections = [
   WhatsNewSection(
     title: 'New',
     items: [
-      'Multiple Halls: create separate spaces for different moods or people. The Mezzanine and Private Screening Halls each keep a fully separate Watchlist, Watching, Watched, and every other shelf -- switch between them anytime from the floating navigation capsule.',
-      'The Grand Hall now shows a combined view of everything in your Mezzanine and Private Screening Halls too, alongside anything you save directly in it. Titles pulled in from another Hall are view-only there -- open that Hall to change their status.',
-      'Each Hall can have its own theme, so switching Halls can also switch your whole look automatically.',
-      'Each Hall can be locked to a single language, so Lobby, Discover, Search, and Calendar only ever show titles in that language while you\'re in it.',
-      'Renamed "Piles" to "Shelves" throughout the app to match the screening-room theme.',
+      'Analytics: a new "Discover Your Habits" hub reachable from the Lobby, with a chronological heatmap and binge-velocity view, taste metrics (favorite cast and directors, how your ratings compare to critics, genre breakdown), franchise completion tracking, a watchlist funnel and shelf-life drop-off chart, studio/label affinity, and a Legend sheet explaining every metric. Results can be exported as a shareable image.',
+      'Settings has a new card-based theme picker, and four new themes to choose from: Orchid Bloom, Tuscany, Gilded Plum, and Riviera. Café Calm has been retired.',
+      'A brief "confirming" indicator now appears on a TV show right after you mark it Watched, while the app double-checks its season data in the background.',
+      'Improved screen reader support throughout the app -- navigation, media cards, the swipe deck, the hall selector, and summary cards now announce themselves properly.',
+      'The Detail screen loads faster -- the sections below the fold now load as you scroll instead of all at once.',
     ],
   ),
   WhatsNewSection(
     title: 'Fixed',
     items: [
-      'Opening Search no longer occasionally shows a black screen that only cleared up after minimizing and reopening the app.',
-      'Discover now strictly excludes anything rated below 4 stars, closing a gap where a low-vote title could occasionally slip past the quality bar.',
-      'The floating navigation pill\'s Settings button and tab switching now work correctly from inside a pushed screen (Archive, Tools, Settings, Detail, Folders, Rewatch Vault, etc.) -- previously they did nothing at all in that case.',
-      'Switching Halls partway through a Discover deck now refreshes the deck instead of continuing to show the previous Hall\'s picks.',
-      'A language-locked Hall\'s Lobby rails (Now Playing, Upcoming, Trending, etc.) and Calendar agenda no longer show almost nothing -- they now correctly surface titles in the locked language instead of getting lost in a mostly-other-language list.',
+      'Calendar no longer shows already-released titles as "upcoming."',
+      'Runtime, cast, and director data now backfills correctly for Watched titles that were added through a list import.',
+      'Fixed a TMDB connection-reset storm caused by a genre-list race condition; failed requests now retry automatically.',
+      'The Movies/TV Shows numeral on the Analytics hub was mislabeled as a title count -- it correctly shows hours, with clearer copy.',
+      'Fixed two separate causes of an occasional blank/black screen when opening Search.',
+      'Discover\'s grid now reliably refreshes when you change a filter, without needing an app restart.',
+      'Importing a partial backup no longer drops any of your 3 standard Halls.',
+      'Switching a Hall\'s language now reactively refreshes shelf items that were already loaded.',
+      'TV shows with incomplete season data on TMDB no longer get incorrectly marked as fully watched.',
     ],
   ),
 ];
