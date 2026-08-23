@@ -331,6 +331,76 @@ void main() {
       expect(tvGenreRequests, 1);
     });
 
+    test(
+        'BETA3-NET-1: concurrent getMediaDetails(id) calls share one '
+        'in-flight fetch instead of firing duplicate requests', () async {
+      var movieDetailRequests = 0;
+      final client = MockClient((request) async {
+        final path = request.url.path;
+        if (path.contains('/movie/42')) {
+          movieDetailRequests++;
+          // Real-world regression: mediaDetailsProvider and
+          // tvShowSeasonsProvider can both fire getMediaDetails(id) in the
+          // same frame when seasonsCount is unknown -- a slow-ish fetch
+          // leaves a wide window for both to race past independently.
+          await Future.delayed(const Duration(milliseconds: 20));
+          return http.Response(
+              jsonEncode({'id': 42, 'title': 'Concurrent Movie'}), 200);
+        }
+        return http.Response(jsonEncode({'genres': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: client);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final results = await Future.wait([
+        repo.getMediaDetails('movie_42'),
+        repo.getMediaDetails('movie_42'),
+        repo.getMediaDetails('movie_42'),
+      ]);
+
+      expect(movieDetailRequests, 1);
+      for (final r in results) {
+        expect(r, isNotNull);
+        expect(r!.title, equals('Concurrent Movie'));
+      }
+    });
+
+    test(
+        'BETA3-NET-1: concurrent getCollectionDetails(id) calls share one '
+        'in-flight fetch instead of firing duplicate requests', () async {
+      var collectionRequests = 0;
+      final client = MockClient((request) async {
+        final path = request.url.path;
+        if (path.contains('/collection/7')) {
+          collectionRequests++;
+          // Mirrors the real collision: collection_screen.dart's
+          // collectionDetailsProvider and analytics_provider.dart's
+          // Franchise Completion metric can both request the same
+          // collection independently.
+          await Future.delayed(const Duration(milliseconds: 20));
+          return http.Response(
+              jsonEncode({'id': 7, 'name': 'Concurrent Collection', 'parts': []}),
+              200);
+        }
+        return http.Response(jsonEncode({'genres': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: client);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final results = await Future.wait([
+        repo.getCollectionDetails(7),
+        repo.getCollectionDetails(7),
+      ]);
+
+      expect(collectionRequests, 1);
+      for (final r in results) {
+        expect(r, isNotNull);
+        expect(r!.name, equals('Concurrent Collection'));
+      }
+    });
+
     test('Network exceptions fall back gracefully without crashing app',
         () async {
       final failingClient = MockClient((request) async {

@@ -661,6 +661,16 @@ class TmdbMovieRepository implements MovieRepository {
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
+    // BETA3-NET-1: at least 2 real independent call sites can fire this for
+    // the same id in the same frame (mediaDetailsProvider and
+    // tvShowSeasonsProvider both call it when seasonsCount is unknown) --
+    // shares one in-flight Future across concurrent callers instead of
+    // issuing duplicate real network requests, same mechanism as
+    // _ensureGenresLoaded/getTvSeasonDetails above.
+    return _deduplicated('media_details:$id', () => _fetchMediaDetails(id));
+  }
+
+  Future<MediaItem?> _fetchMediaDetails(String id) async {
     try {
       await _ensureGenresLoaded();
 
@@ -1808,7 +1818,17 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) async {
+  Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) {
+    // BETA3-NET-1: collection_screen.dart's collectionDetailsProvider and
+    // analytics_provider.dart's Franchise Completion metric can both
+    // request the same collection independently -- dedupe in-flight
+    // requests the same way getTvSeasonDetails/getMediaDetails do above.
+    return _deduplicated('collection_details:$collectionId',
+        () => _fetchCollectionDetails(collectionId));
+  }
+
+  Future<MediaCollectionDetail?> _fetchCollectionDetails(
+      int collectionId) async {
     try {
       final key = cacheService
           .generateKey(TmdbEndpoints.collectionDetails(collectionId), {});
