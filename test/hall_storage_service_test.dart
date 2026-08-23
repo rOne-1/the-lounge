@@ -148,5 +148,26 @@ void main() {
       expect(imported[1].name, 'Hall B');
       expect(imported[2].name, 'Hall C');
     });
+
+    test('importBackupJson v4 preserves standard 3 halls when importing partial profiles', () {
+      final partialBackupJson = jsonEncode({
+        'schema_version': 4,
+        'exported_at': DateTime.now().toIso8601String(),
+        'active_profile_id': 'custom_1',
+        'theme_id': 'midnight_cinema',
+        'profiles': [
+          HallSpace.defaultPrivateScreeningHall().copyWith(name: 'Imported Screening').toJson(),
+          HallSpace.defaultMezzanineHall().copyWith(name: 'Imported Mezzanine').toJson(),
+        ],
+      });
+
+      final imported = service.importBackupJson(partialBackupJson);
+      expect(imported.length, 3);
+      final ids = imported.map((h) => h.id).toList();
+      expect(ids, containsAll(['common', 'custom_1', 'custom_2']));
+      expect(imported.firstWhere((h) => h.id == 'common').name, 'The Grand Hall');
+      expect(imported.firstWhere((h) => h.id == 'custom_1').name, 'Imported Mezzanine');
+      expect(imported.firstWhere((h) => h.id == 'custom_2').name, 'Imported Screening');
+    });
   });
 }

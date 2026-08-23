@@ -66,12 +66,21 @@ class HallStorageService {
       } catch (_) {}
     }
 
+    final defaultHalls = [
+      HallSpace.defaultGrandHall(),
+      HallSpace.defaultMezzanineHall(),
+      HallSpace.defaultPrivateScreeningHall(),
+    ];
+
     if (manifestList.isEmpty) {
-      manifestList = [
-        HallSpace.defaultGrandHall().toJson(),
-        HallSpace.defaultMezzanineHall().toJson(),
-        HallSpace.defaultPrivateScreeningHall().toJson(),
-      ];
+      manifestList = defaultHalls.map((h) => h.toJson()).toList();
+    } else {
+      final existingIds = manifestList.map((m) => m['id']?.toString()).toSet();
+      for (final def in defaultHalls) {
+        if (!existingIds.contains(def.id)) {
+          manifestList.add(def.toJson());
+        }
+      }
     }
 
     final halls = <HallSpace>[];
@@ -504,13 +513,33 @@ class HallStorageService {
     final version = json['schema_version'] as int? ?? 1;
 
     if (version >= 4 && json['profiles'] is List) {
-      final halls = <HallSpace>[];
+      final importedHalls = <HallSpace>[];
       for (final p in json['profiles'] as List) {
         if (p is Map) {
-          halls.add(HallSpace.fromJson(Map<String, dynamic>.from(p)));
+          importedHalls.add(HallSpace.fromJson(Map<String, dynamic>.from(p)));
         }
       }
-      return halls;
+      final defaultHalls = [
+        HallSpace.defaultGrandHall(),
+        HallSpace.defaultMezzanineHall(),
+        HallSpace.defaultPrivateScreeningHall(),
+      ];
+      final Map<String, HallSpace> hallMap = {
+        for (final def in defaultHalls) def.id: def,
+      };
+      for (final imported in importedHalls) {
+        hallMap[imported.id] = imported;
+      }
+      final result = <HallSpace>[];
+      for (final def in defaultHalls) {
+        result.add(hallMap[def.id]!);
+      }
+      for (final imported in importedHalls) {
+        if (!defaultHalls.any((d) => d.id == imported.id)) {
+          result.add(imported);
+        }
+      }
+      return result;
     }
 
     // Legacy format (v1-v3): import as Grand Hall
