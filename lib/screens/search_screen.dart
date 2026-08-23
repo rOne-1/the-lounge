@@ -559,6 +559,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       }
     });
 
+    ref.listen(activeHallSpaceProvider.select((h) => h.lockedLanguageCode), (previous, next) {
+      if (previous != next && mounted) {
+        setState(() {
+          _currentPage = 1;
+          _hasMore = true;
+          _accumulatedItems.clear();
+        });
+        _showChrome();
+      }
+    });
+
     ref.listen(searchGenreProvider, (previous, next) {
       if (next != 'All') {
         final genreId = getGenreIdForName(next);
@@ -989,7 +1000,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return discoverAsync.when(
       data: (items) {
-        if (_accumulatedItems.isEmpty && items.isNotEmpty) {
+        if (_currentPage == 1) {
+          _accumulatedItems
+            ..clear()
+            ..addAll(items);
+        } else if (_accumulatedItems.isEmpty && items.isNotEmpty) {
           _accumulatedItems.addAll(items);
         }
 
