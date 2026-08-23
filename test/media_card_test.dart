@@ -195,6 +195,41 @@ void main() {
 
       handle.dispose();
     });
+
+    testWidgets('item 1: shows a pending/confirming indicator for an unconfirmed Watched TV show', (tester) async {
+      final tvItem = MediaItem(
+        id: 'tv-pending',
+        title: 'Pending Show',
+        type: MediaType.tv,
+        rating: 7.5,
+        overview: '',
+        genres: const [],
+      );
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          mediaProvider.overrideWith(() => _PendingWatchedMediaNotifier(tvItem)),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: MediaCard(item: tvItem, isDark: true, width: 120, height: 180, onTap: () {}),
+            ),
+          ),
+        ),
+      ));
+      await tester.pump();
+
+      expect(find.byIcon(Icons.sync_rounded), findsOneWidget);
+      expect(find.byIcon(Icons.check_circle_rounded), findsNothing);
+      final semantics =
+          tester.getSemantics(find.bySemanticsLabel(RegExp('Pending Show')));
+      expect(semantics.label, contains('Watched, confirming'));
+
+      handle.dispose();
+    });
   });
 }
 
@@ -206,5 +241,19 @@ class _WatchlistedMediaNotifier extends MediaNotifier {
   MediaState build() {
     final base = super.build();
     return base.copyWith(watchlist: {item.id: item});
+  }
+}
+
+class _PendingWatchedMediaNotifier extends MediaNotifier {
+  final MediaItem item;
+  _PendingWatchedMediaNotifier(this.item);
+
+  @override
+  MediaState build() {
+    final base = super.build();
+    return base.copyWith(
+      watchedList: {item.id: item},
+      pendingWatchConfirmation: {item.id},
+    );
   }
 }

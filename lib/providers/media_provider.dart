@@ -62,6 +62,17 @@ class MediaState {
   /// name of the Hall it actually lives in, for UI messaging.
   final Map<String, String> readOnlySourceHallName;
 
+  /// Item 1: TV show ids whose Watched placement is still the optimistic
+  /// fallback guess (addToWatchedList's no-seasons branch), not yet
+  /// confirmed by real per-episode data from `_enrichWatchedTvShow`. UI
+  /// surfaces this as a subtle "confirming" indicator rather than either
+  /// blocking the action outright or showing a plain, potentially-wrong
+  /// "Watched" with no caveat. Cleared once the background correction
+  /// resolves (or the show leaves Watched/Watching entirely); deliberately
+  /// not persisted -- a cold restart already reflects whatever the last
+  /// successful save captured, so there's nothing meaningful left pending.
+  final Set<String> pendingWatchConfirmation;
+
   const MediaState({
     this.watchlist = const {},
     this.maybeList = const {},
@@ -79,6 +90,7 @@ class MediaState {
     this.customFolders = const {},
     this.readOnlyMediaIds = const {},
     this.readOnlySourceHallName = const {},
+    this.pendingWatchConfirmation = const {},
   });
 
   MediaState copyWith({
@@ -98,6 +110,7 @@ class MediaState {
     Map<String, UserFolder>? customFolders,
     Set<String>? readOnlyMediaIds,
     Map<String, String>? readOnlySourceHallName,
+    Set<String>? pendingWatchConfirmation,
   }) {
     return MediaState(
       watchlist: watchlist ?? this.watchlist,
@@ -116,6 +129,8 @@ class MediaState {
       seasonEndDates: seasonEndDates ?? this.seasonEndDates,
       customFolders: customFolders ?? this.customFolders,
       readOnlyMediaIds: readOnlyMediaIds ?? this.readOnlyMediaIds,
+      pendingWatchConfirmation:
+          pendingWatchConfirmation ?? this.pendingWatchConfirmation,
       readOnlySourceHallName:
           readOnlySourceHallName ?? this.readOnlySourceHallName,
     );
@@ -1188,6 +1203,8 @@ class MediaNotifier extends Notifier<MediaState> {
     // A show can only rest in Watched once every episode is released.
     // Defaults to true for movies (no episode concept).
     bool targetIsWatched = true;
+    // Item 1: set only by the optimistic no-seasons fallback branch below.
+    bool becomesPendingConfirmation = false;
 
     // PERS-RATE-1 bugfix: mirrors _setTvShowStatus's per-season completion
     // bookkeeping. Populated below only in the `seasons != null` branch --
@@ -1254,6 +1271,7 @@ class MediaNotifier extends Notifier<MediaState> {
         // Optimistic placement using estimated episode counts; corrected
         // below once real season data (incl. unreleased episodes) arrives.
         targetIsWatched = true;
+        becomesPendingConfirmation = true;
         _enrichWatchedTvShow(item);
       }
     }
@@ -1291,6 +1309,17 @@ class MediaNotifier extends Notifier<MediaState> {
       newEndDates.remove(item.id);
     }
 
+    // Item 1: mark pending on the optimistic fallback path; clear it if
+    // this call is instead confirming with real season data (a direct
+    // Watched toggle can arrive after an earlier optimistic placement).
+    final newPendingWatchConfirmation =
+        Set<String>.from(state.pendingWatchConfirmation);
+    if (becomesPendingConfirmation) {
+      newPendingWatchConfirmation.add(item.id);
+    } else {
+      newPendingWatchConfirmation.remove(item.id);
+    }
+
     state = state.copyWith(
       watchlist: newWatchlist,
       maybeList: newMaybeList,
@@ -1299,6 +1328,7 @@ class MediaNotifier extends Notifier<MediaState> {
       droppedList: newDroppedList,
       onHoldList: newOnHoldList,
       watchedEpisodes: newWatchedEpisodes,
+      pendingWatchConfirmation: newPendingWatchConfirmation,
       startDates: newStartDates,
       endDates: newEndDates,
       seasonStartDates: newSeasonStartDates,
@@ -1360,6 +1390,8 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(id);
     final newSeasonEndDates = _cloneSeasonDateMap(state.seasonEndDates)
       ..remove(id);
+    final newPendingWatchConfirmation =
+        Set<String>.from(state.pendingWatchConfirmation)..remove(id);
 
     state = state.copyWith(
       watchedList: newWatchedList,
@@ -1368,6 +1400,7 @@ class MediaNotifier extends Notifier<MediaState> {
       endDates: newEndDates,
       seasonStartDates: newSeasonStartDates,
       seasonEndDates: newSeasonEndDates,
+      pendingWatchConfirmation: newPendingWatchConfirmation,
     );
     _saveToPrefs();
   }
@@ -1764,6 +1797,8 @@ class MediaNotifier extends Notifier<MediaState> {
       ..remove(id);
     final newSeasonEndDates = _cloneSeasonDateMap(state.seasonEndDates)
       ..remove(id);
+    final newPendingWatchConfirmation =
+        Set<String>.from(state.pendingWatchConfirmation)..remove(id);
 
     state = state.copyWith(
       watchlist: newWatchlist,
@@ -1777,6 +1812,7 @@ class MediaNotifier extends Notifier<MediaState> {
       endDates: newEndDates,
       seasonStartDates: newSeasonStartDates,
       seasonEndDates: newSeasonEndDates,
+      pendingWatchConfirmation: newPendingWatchConfirmation,
     );
     _saveToPrefs();
   }
@@ -1973,6 +2009,16 @@ class MediaNotifier extends Notifier<MediaState> {
               _hasCompleteSeasonData(seasons, item);
           final target = shouldBeWatched ? 'watched' : 'watching';
           _setTvShowStatus(item.id, currentItem, target, seasons: seasons);
+
+          // Item 1: real per-episode data has now landed -- the status
+          // above (whichever it settled on) is no longer just a guess.
+          if (state.pendingWatchConfirmation.contains(item.id)) {
+            final clearedPending =
+                Set<String>.from(state.pendingWatchConfirmation)
+                  ..remove(item.id);
+            state =
+                state.copyWith(pendingWatchConfirmation: clearedPending);
+          }
         }
       }
     } catch (e, stack) {

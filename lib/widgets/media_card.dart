@@ -91,7 +91,9 @@ class MediaCard extends ConsumerWidget {
         final ratingStr = (showRatingBadge && item.rating > 0)
             ? ', rated ${item.rating.toStringAsFixed(1)}'
             : '';
-        final statusStr = statusInfo != null ? ', ${statusInfo.label}' : '';
+        final statusStr = statusInfo != null
+            ? ', ${statusInfo.label}${statusInfo.isPending ? ', confirming' : ''}'
+            : '';
         final semanticLabel =
             '${item.title}$yearStr, $typeStr$ratingStr$statusStr';
 
@@ -143,7 +145,10 @@ class MediaCard extends ConsumerWidget {
                         accentColor: statusInfo.color,
                         borderRadius: 8,
                         child: _StatusChip(
-                            icon: statusInfo.icon, color: statusInfo.color),
+                          icon: statusInfo.icon,
+                          color: statusInfo.color,
+                          isPending: statusInfo.isPending,
+                        ),
                       ),
                     ),
                   if (badge != null) badge!,
@@ -205,9 +210,13 @@ class MediaCard extends ConsumerWidget {
   }
 
   _StatusInfo? _resolveStatus(MediaState mediaState) {
+    // Item 1: an optimistic TV Watched/Watching placement not yet
+    // confirmed by real per-episode data.
+    final isPending = mediaState.pendingWatchConfirmation.contains(item.id);
     if (mediaState.watchingList.containsKey(item.id)) {
       return _StatusInfo(
-          Icons.play_circle_fill_rounded, AppStatusColors.watching, 'Watching');
+          Icons.play_circle_fill_rounded, AppStatusColors.watching, 'Watching',
+          isPending: isPending);
     }
     if (mediaState.watchlist.containsKey(item.id)) {
       return _StatusInfo(
@@ -218,7 +227,8 @@ class MediaCard extends ConsumerWidget {
     }
     if (mediaState.watchedList.containsKey(item.id)) {
       return _StatusInfo(
-          Icons.check_circle_rounded, AppStatusColors.watched, 'Watched');
+          Icons.check_circle_rounded, AppStatusColors.watched, 'Watched',
+          isPending: isPending);
     }
     return null;
   }
@@ -228,14 +238,26 @@ class _StatusInfo {
   final IconData icon;
   final Color color;
   final String label;
-  const _StatusInfo(this.icon, this.color, this.label);
+  final bool isPending;
+  const _StatusInfo(this.icon, this.color, this.label,
+      {this.isPending = false});
 }
 
 class _StatusChip extends StatelessWidget {
   final IconData icon;
   final Color color;
 
-  const _StatusChip({required this.icon, required this.color});
+  /// Item 1: a TV show's Watched/Watching placement can still be the
+  /// optimistic fallback guess, not yet confirmed by real per-episode
+  /// data -- swaps to a sync glyph at reduced opacity instead of silently
+  /// showing a status that might still flip once the real data lands.
+  final bool isPending;
+
+  const _StatusChip({
+    required this.icon,
+    required this.color,
+    this.isPending = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -245,7 +267,14 @@ class _StatusChip extends StatelessWidget {
         color: context.ambianceColors.scrim,
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, size: 12, color: color),
+      child: Opacity(
+        opacity: isPending ? 0.75 : 1.0,
+        child: Icon(
+          isPending ? Icons.sync_rounded : icon,
+          size: 12,
+          color: color,
+        ),
+      ),
     );
   }
 }

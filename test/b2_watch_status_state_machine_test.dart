@@ -148,15 +148,46 @@ void main() {
       notifier.addToWatchedList(show, seasons: null);
 
       // Immediately after the synchronous call, the estimate-based path
-      // optimistically places the show in Watched.
+      // optimistically places the show in Watched -- and item 1's pending
+      // indicator flags it as not yet confirmed by real data.
       var state = container.read(mediaProvider);
       expect(state.watchedList.containsKey(show.id), isTrue);
+      expect(state.pendingWatchConfirmation, contains(show.id));
 
       await Future.delayed(const Duration(milliseconds: 100));
 
       state = container.read(mediaProvider);
       expect(state.watchingList.containsKey(show.id), isTrue);
       expect(state.watchedList.containsKey(show.id), isFalse);
+      // Real data has landed and the status settled -- no longer pending.
+      expect(state.pendingWatchConfirmation, isNot(contains(show.id)));
+    });
+
+    test('item 1: pending confirmation clears if the show is removed before the background correction lands', () async {
+      final repo = SeasonedMockRepository(seasonsMap: {
+        show.id: [
+          TvSeason(
+            id: 1,
+            seasonNumber: 1,
+            name: 'Season 1',
+            episodes: [_ep(1, 1, airDate: past)],
+          ),
+        ],
+      });
+      final container = ProviderContainer(overrides: [
+        movieRepositoryProvider.overrideWithValue(repo),
+      ]);
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToWatchedList(show, seasons: null);
+      expect(container.read(mediaProvider).pendingWatchConfirmation,
+          contains(show.id));
+
+      notifier.removeFromWatchedList(show.id);
+
+      expect(container.read(mediaProvider).pendingWatchConfirmation,
+          isNot(contains(show.id)));
     });
   });
 

@@ -70,6 +70,10 @@ class QuickStatusSheet extends ConsumerWidget {
     final inOnHold = mediaState.onHoldList.containsKey(item.id);
     final inDropped = mediaState.droppedList.containsKey(item.id);
     final inWatched = mediaState.watchedList.containsKey(item.id);
+    // Item 1: an optimistic TV Watched/Watching placement not yet
+    // confirmed by real per-episode data.
+    final isPendingConfirmation =
+        mediaState.pendingWatchConfirmation.contains(item.id);
 
     // Active status details
     String? activeStatusLabel;
@@ -77,7 +81,8 @@ class QuickStatusSheet extends ConsumerWidget {
     Color? activeBadgeColor;
 
     if (inWatching) {
-      activeStatusLabel = 'Watching';
+      activeStatusLabel =
+          isPendingConfirmation ? 'Watching · Confirming' : 'Watching';
       activeStatusIcon = Icons.play_circle_fill_rounded;
       activeBadgeColor = AppStatusColors.watching;
     } else if (inWatchlist) {
@@ -89,7 +94,8 @@ class QuickStatusSheet extends ConsumerWidget {
       activeStatusIcon = Icons.archive_rounded;
       activeBadgeColor = AppStatusColors.save;
     } else if (inWatched) {
-      activeStatusLabel = 'Watched';
+      activeStatusLabel =
+          isPendingConfirmation ? 'Watched · Confirming' : 'Watched';
       activeStatusIcon = Icons.check_circle_rounded;
       activeBadgeColor = AppStatusColors.watched;
     } else if (inOnHold) {
@@ -313,7 +319,9 @@ class QuickStatusSheet extends ConsumerWidget {
                 }),
               ),
               _StatusPill(
-                label: 'Watching',
+                label: inWatching && isPendingConfirmation
+                    ? 'Watching · Confirming'
+                    : 'Watching',
                 icon: inWatching
                     ? Icons.play_circle_fill_rounded
                     : Icons.play_circle_outline_rounded,
@@ -349,7 +357,9 @@ class QuickStatusSheet extends ConsumerWidget {
                 }),
               ),
               _StatusPill(
-                label: 'Watched',
+                label: inWatched && isPendingConfirmation
+                    ? 'Watched · Confirming'
+                    : 'Watched',
                 icon: inWatched
                     ? Icons.check_circle_rounded
                     : Icons.check_circle_outline_rounded,
