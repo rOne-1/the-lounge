@@ -4,9 +4,12 @@ import 'package:the_lounge/themes/ambiance_colors.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/reading_room_theme.dart';
 import 'package:the_lounge/themes/midnight_cinema_theme.dart';
-import 'package:the_lounge/themes/cafe_calm_theme.dart';
 import 'package:the_lounge/themes/alpine_chalet_theme.dart';
 import 'package:the_lounge/themes/violet_dusk_theme.dart';
+import 'package:the_lounge/themes/orchid_bloom_theme.dart';
+import 'package:the_lounge/themes/tuscany_theme.dart';
+import 'package:the_lounge/themes/gilded_plum_theme.dart';
+import 'package:the_lounge/themes/riviera_theme.dart';
 
 // Tests the AmbianceColors instances directly (not through AppTheme.themeData)
 // so this stays independent of google_fonts asset loading in the test sandbox.
@@ -20,12 +23,15 @@ void main() {
     'Screening Room': srAmbianceColors,
     'Reading Room': rrAmbianceColors,
     'Midnight Cinema': mcAmbianceColors,
-    'Cafe Calm': ccAmbianceColors,
     'Alpine Chalet': acAmbianceColors,
     'Violet Dusk': vdAmbianceColors,
+    'Orchid Bloom': obAmbianceColors,
+    'Tuscany': tsAmbianceColors,
+    'Gilded Plum': gpAmbianceColors,
+    'Riviera': rvAmbianceColors,
   };
 
-  group('Semantic token coverage across all 6 themes', () {
+  group('Semantic token coverage across all 9 themes', () {
     for (final entry in allAmbianceColors.entries) {
       test('${entry.key} populates all new semantic tokens with non-transparent values', () {
         final colors = entry.value;
