@@ -538,7 +538,7 @@ class MockMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async {
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async {
     await Future.delayed(const Duration(milliseconds: 100));
     if (page > 1) return [];
     return _mockData.where((m) => m.type == MediaType.movie).skip(2).toList();

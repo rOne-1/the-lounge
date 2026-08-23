@@ -173,9 +173,15 @@ final airingTodayTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {
 
 final upcomingMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
   final repo = ref.watch(movieRepositoryProvider);
+  // BETA3-NET-2: region-tailor the same way nowPlayingMoviesProvider above
+  // already does, reusing the existing watchProvidersCountry preference
+  // rather than introducing a separate region source.
+  final country =
+      ref.watch(mediaProvider.select((s) => s.watchProvidersCountry));
   final lockedLanguageCode =
       ref.watch(activeHallSpaceProvider).lockedLanguageCode;
-  return repo.getUpcomingMovies(originalLanguage: lockedLanguageCode);
+  return repo.getUpcomingMovies(
+      region: country, originalLanguage: lockedLanguageCode);
 });
 
 final onTheAirTvShowsProvider = FutureProvider<List<MediaItem>>((ref) async {

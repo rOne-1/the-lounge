@@ -476,11 +476,12 @@ class TmdbMovieRepository implements MovieRepository {
 
   @override
   Future<List<MediaItem>> getUpcomingMovies(
-      {int page = 1, String? originalLanguage}) async {
+      {int page = 1, String? region, String? originalLanguage}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getUpcomingMovies(page: page);
+        return fallbackRepository!
+            .getUpcomingMovies(page: page, region: region);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
@@ -489,6 +490,8 @@ class TmdbMovieRepository implements MovieRepository {
       final now = DateTime.now();
       final todayStr = formatTmdbDate(now);
       final hasLock = originalLanguage != null && originalLanguage.isNotEmpty;
+      final activeRegion =
+          (region != null && region.isNotEmpty) ? region : 'US';
 
       Future<List<MediaItem>> fetchFilteredPage(int p) async {
         // DATA-1: TMDB's /movie/upcoming is a narrow regional theatrical
@@ -509,6 +512,7 @@ class TmdbMovieRepository implements MovieRepository {
           'include_adult': false,
           'sort_by': 'popularity.desc',
           'primary_release_date.gte': todayStr,
+          'region': activeRegion,
           if (hasLock) 'with_original_language': originalLanguage,
         });
         Map<String, dynamic>? res = await cacheService.get(key);
@@ -519,6 +523,7 @@ class TmdbMovieRepository implements MovieRepository {
             extraParams: {
               'primary_release_date.gte': todayStr,
               'vote_count.gte': 0,
+              'region': activeRegion,
               if (hasLock) 'with_original_language': originalLanguage,
             },
           );
@@ -561,7 +566,8 @@ class TmdbMovieRepository implements MovieRepository {
     } catch (e, stack) {
       _logError('Failed to fetch upcoming movies from TMDB API.', e, stack);
       if (fallbackRepository != null) {
-        return fallbackRepository!.getUpcomingMovies(page: page);
+        return fallbackRepository!
+            .getUpcomingMovies(page: page, region: region);
       }
       rethrow;
     }

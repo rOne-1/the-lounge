@@ -887,6 +887,31 @@ void main() {
     });
 
     test(
+        'BETA3-NET-2: getUpcomingMovies passes region in the /discover/movie '
+        'query when provided, and defaults to US when omitted', () async {
+      Uri? capturedUri;
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/discover/movie')) {
+          capturedUri = request.url;
+          return http.Response(jsonEncode({'page': 1, 'results': []}), 200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      await repo.getUpcomingMovies(region: 'GB');
+      expect(capturedUri, isNotNull);
+      expect(capturedUri!.queryParameters['region'], equals('GB'));
+
+      capturedUri = null;
+      await repo.getUpcomingMovies();
+      expect(capturedUri, isNotNull);
+      expect(capturedUri!.queryParameters['region'], equals('US'));
+    });
+
+    test(
         'TF-22 regression: returns empty rather than raw already-released data '
         'when every nearby page is entirely already-released', () async {
       final now = DateTime.now();

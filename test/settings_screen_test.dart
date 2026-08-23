@@ -724,7 +724,7 @@ class _InstantEmptyRepository extends MockMovieRepository {
       [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
 
   @override
   Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => [];
@@ -791,7 +791,7 @@ class _SingleMovieResetRepository extends MockMovieRepository {
       [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
 
   @override
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];

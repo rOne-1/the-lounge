@@ -4,7 +4,7 @@ import 'package:animations/animations.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/hall_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../providers/repository_provider.dart';
+import '../providers/media_provider.dart';
 import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
@@ -60,7 +60,12 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     // fetch-then-filter left the agenda near-empty for a locked regional
     // language with few/no matches in the raw global chart.
     final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
-    final movies = await repo.getUpcomingMovies(originalLanguage: lockedLanguageCode);
+    // BETA3-NET-2: same watchProvidersCountry region source used
+    // app-wide for region-tailored TMDB lists.
+    final country =
+        ref.read(mediaProvider.select((s) => s.watchProvidersCountry));
+    final movies = await repo.getUpcomingMovies(
+        region: country, originalLanguage: lockedLanguageCode);
     final tvShows = await repo.getOnTheAirTvShows(originalLanguage: lockedLanguageCode);
 
     // Belt-and-suspenders (matches getUpcomingMovies' own "server-side

@@ -55,7 +55,7 @@ class CachingTestRepository extends MockMovieRepository {
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => tvShows;
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => movies;
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => movies;
 
   @override
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => tvShows;

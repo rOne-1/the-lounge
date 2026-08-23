@@ -63,7 +63,7 @@ class _MixedLanguageRepository extends MockMovieRepository {
   Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async =>
       _filtered('getTopRatedMovies', originalLanguage);
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async =>
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async =>
       _filtered('getUpcomingMovies', originalLanguage);
   @override
   Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async =>

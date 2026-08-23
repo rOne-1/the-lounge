@@ -51,7 +51,7 @@ class FailingMovieRepository extends MockMovieRepository {
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => throw errorToThrow;
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => throw errorToThrow;
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => throw errorToThrow;
 
   @override
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => throw errorToThrow;
@@ -109,7 +109,7 @@ class EmptyMovieRepository extends MockMovieRepository {
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
 
   @override
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => [];

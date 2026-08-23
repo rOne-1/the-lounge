@@ -16,7 +16,11 @@ abstract class MovieRepository {
   Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage});
   Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage});
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage});
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage});
+  // BETA3-NET-2: region, when provided, is passed as /discover/movie's own
+  // `region` param -- it biases which release date TMDB uses to evaluate
+  // the primary_release_date.gte filter for a title with region-specific
+  // release dates, the same way getNowPlayingMovies' region already works.
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage});
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage});
   Future<MediaItem?> getMediaDetails(String id);
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber);

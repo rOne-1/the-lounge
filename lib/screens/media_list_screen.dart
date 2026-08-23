@@ -6,7 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../models/media_item.dart';
 import '../constants.dart';
 import '../providers/hall_provider.dart';
-import '../providers/repository_provider.dart';
+import '../providers/media_provider.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
@@ -71,8 +71,13 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
       return repo.getAiringTodayTvShows(
           page: page, originalLanguage: lockedLanguageCode);
     } else if (t.contains('upcoming')) {
+      // BETA3-NET-2: same watchProvidersCountry region source as
+      // nowPlayingMoviesProvider/upcomingMoviesProvider, threaded through
+      // to Load More's later pages too.
+      final country =
+          ref.read(mediaProvider.select((s) => s.watchProvidersCountry));
       return repo.getUpcomingMovies(
-          page: page, originalLanguage: lockedLanguageCode);
+          page: page, region: country, originalLanguage: lockedLanguageCode);
     } else if (t.contains('on the air')) {
       return repo.getOnTheAirTvShows(
           page: page, originalLanguage: lockedLanguageCode);

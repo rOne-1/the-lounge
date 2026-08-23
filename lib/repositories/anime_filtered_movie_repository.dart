@@ -59,8 +59,8 @@ class AnimeFilteredMovieRepository implements MovieRepository {
           .excludingAnime();
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async =>
-      (await inner.getUpcomingMovies(page: page, originalLanguage: originalLanguage))
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async =>
+      (await inner.getUpcomingMovies(page: page, region: region, originalLanguage: originalLanguage))
           .excludingAnime();
 
   @override

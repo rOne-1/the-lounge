@@ -43,7 +43,7 @@ class MockWatchingRepository extends MockMovieRepository {
   Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.tv).toList();
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.movie).toList();
+  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.movie).toList();
 
   @override
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => items.values.where((i) => i.type == MediaType.tv).toList();
