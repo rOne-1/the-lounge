@@ -34,7 +34,6 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
   int _currentPage = 1;
   bool _isLoadingMore = false;
   bool _hasMore = true;
-  bool _initialLoaded = false;
   // B8/TF-23: distinct from `_currentPage > 1` -- a list that exhausts on
   // the very first "Load More" tap never advances _currentPage, but the
   // user still made an attempt and deserves the explicit "reached the end"
@@ -141,6 +140,17 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
     final bgColor = context.ambianceColors.base;
     final pillColor = context.ambianceColors.pill;
 
+    ref.listen(activeHallSpaceProvider.select((h) => h.lockedLanguageCode),
+        (previous, next) {
+      if (previous != next && mounted) {
+        setState(() {
+          _currentPage = 1;
+          _hasMore = true;
+          _accumulatedItems.clear();
+        });
+      }
+    });
+
     final itemsAsync = ref.watch(widget.itemsProvider);
     final width = MediaQuery.of(context).size.width;
     final crossAxisCount = width > 900 ? 5 : (width > 600 ? 4 : 3);
@@ -202,9 +212,11 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
           ),
           body: itemsAsync.when(
             data: (initialItems) {
-              if (!_initialLoaded) {
-                _initialLoaded = true;
-                _accumulatedItems.clear();
+              if (_currentPage == 1) {
+                _accumulatedItems
+                  ..clear()
+                  ..addAll(initialItems);
+              } else if (_accumulatedItems.isEmpty && initialItems.isNotEmpty) {
                 _accumulatedItems.addAll(initialItems);
               }
 
@@ -334,9 +346,9 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                     message.isNotEmpty ? message : 'Failed to load media list.',
                 onRetry: () {
                   setState(() {
-                    _initialLoaded = false;
                     _currentPage = 1;
                     _hasMore = true;
+                    _accumulatedItems.clear();
                   });
                   ref.invalidate(widget.itemsProvider);
                 },
