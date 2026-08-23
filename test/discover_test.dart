@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -237,6 +238,48 @@ void main() {
     expect(state.watchedList.containsKey('4'), isFalse);
 
     expect(find.text('No titles in recommendations'), findsOneWidget);
+  });
+
+  testWidgets(
+      'BETA3-A11Y-2: SwipeCard exposes a title/year/type/rating label and '
+      'skip/save/watchlist/watched custom semantic actions', (WidgetTester tester) async {
+    GoogleFonts.config.allowRuntimeFetching = false;
+    final mockRepo = TestRepository();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(mockRepo),
+      ],
+    );
+    addTearDown(container.dispose);
+    final handle = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: DiscoverScreen(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tapAt(const Offset(100, 100)); // dismiss legend overlay
+    await tester.pumpAndSettle();
+
+    final semantics =
+        tester.getSemantics(find.bySemanticsLabel(RegExp('Movie 1, Movie')));
+    expect(semantics.label, contains('Movie 1'));
+
+    final actionIds =
+        semantics.getSemanticsData().customSemanticsActionIds ?? const <int>[];
+    final actionLabels = actionIds
+        .map((id) => CustomSemanticsAction.getAction(id)?.label)
+        .toSet();
+    expect(actionLabels,
+        equals({'Skip', 'Save for later', 'Add to watchlist', 'Mark watched'}));
+
+    handle.dispose();
   });
 
   testWidgets('Tapping Discover card navigates to DetailScreen',

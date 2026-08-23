@@ -48,8 +48,13 @@ void main() {
         // Title/overview text sits on the deck card's own permanent dark
         // photographic backdrop regardless of app ambiance — legible by
         // design in every theme, not an ambiance-color violation.
-        'color: const Color.fromRGBO(255, 255, 255, 0.8)',
-        'color: const Color.fromRGBO(255, 255, 255, 0.72)), maxLines: 2, overflow: TextOverflow.ellipsis),',
+        // Allowlisted by the color literal + trailing paren only (not the
+        // full original single line) so a dart format reflow that moves
+        // this onto its own line -- as it did after BETA3-A11Y-2 wrapped
+        // SwipeCard in a Semantics widget -- doesn't re-break this match,
+        // same lesson as detail_screen.dart's wrapped-ternary entries above.
+        'const Color.fromRGBO(255, 255, 255, 0.8)),',
+        'color: const Color.fromRGBO(255, 255, 255, 0.72)),',
       ],
       'lib/screens/shell_screen.dart': [],
       'lib/screens/lobby_screen.dart': [],

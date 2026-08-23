@@ -36,6 +36,38 @@ void main() {
     expect(tapped, isTrue);
   });
 
+  testWidgets('BETA3-A11Y-2: groups numeral, label, and subtitle into one announcement',
+      (tester) async {
+    final handle = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: ArchiveSummaryCard(
+              label: 'Watched',
+              subtitle: '47 titles',
+              count: 47,
+              icon: Icons.check_circle_rounded,
+              statusColor: AppStatusColors.watched,
+              onTap: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final semantics =
+        tester.getSemantics(find.bySemanticsLabel(RegExp('Watched')));
+    expect(semantics.label, contains('47'));
+    expect(semantics.label, contains('Watched'));
+    expect(semantics.label, contains('47 titles'));
+    expect(semantics.flagsCollection.isButton, isTrue);
+
+    handle.dispose();
+  });
+
   testWidgets('WatchingHeroCard renders title, count, and responds to tap',
       (tester) async {
     bool tapped = false;

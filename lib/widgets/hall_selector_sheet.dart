@@ -60,7 +60,9 @@ class HallSelectorSheet extends ConsumerWidget {
     final activeId = hallState.activeHallId;
 
     int countForType(Map<String, dynamic> itemsMap, MediaType targetType) =>
-        itemsMap.values.where((m) => m is MediaItem && m.type == targetType).length;
+        itemsMap.values
+            .where((m) => m is MediaItem && m.type == targetType)
+            .length;
 
     return DragToDismissSheet(
       isDark: isDark,
@@ -70,7 +72,9 @@ class HallSelectorSheet extends ConsumerWidget {
           20,
           8,
           20,
-          24 + MediaQuery.of(context).viewInsets.bottom + MediaQuery.of(context).padding.bottom,
+          24 +
+              MediaQuery.of(context).viewInsets.bottom +
+              MediaQuery.of(context).padding.bottom,
         ),
         decoration: BoxDecoration(
           color: colors.card,
@@ -153,6 +157,29 @@ class HallSelectorSheet extends ConsumerWidget {
               final subtitleText =
                   '$movieCount ${movieCount == 1 ? "movie" : "movies"} · $tvCount ${tvCount == 1 ? "show" : "shows"}';
 
+              // BETA3-A11Y-2: one merged announcement (name, theme,
+              // language lock, active state) instead of the name/MAIN
+              // badge/subtitle being read as separate disconnected
+              // fragments -- multi-Hall switching needs this context.
+              final effectiveThemeId = hall.themeId ??
+                  (hall.id == 'common'
+                      ? 'screening_room'
+                      : (hall.id == 'custom_1'
+                          ? 'midnight_cinema'
+                          : 'reading_room'));
+              final themeName = allThemes
+                  .firstWhere((t) => t.id == effectiveThemeId,
+                      orElse: () => allThemes.first)
+                  .displayName;
+              final languageLockStr = hall.lockedLanguageCode != null &&
+                      hall.lockedLanguageName != null
+                  ? ', locked to ${hall.lockedLanguageName}'
+                  : '';
+              final hallSemanticLabel =
+                  '${hall.name}${hall.isCommon ? ", main hall" : ""}, '
+                  '$themeName theme, $subtitleText$languageLockStr'
+                  '${isActive ? ", active" : ""}';
+
               return Padding(
                 padding: const EdgeInsets.only(bottom: 10.0),
                 child: PressableScale(
@@ -163,7 +190,8 @@ class HallSelectorSheet extends ConsumerWidget {
                   child: AnimatedContainer(
                     duration: AppPhysics.houseSpringDuration,
                     curve: AppPhysics.houseSpringCurve,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(
                       color: isActive
                           ? colors.acc.withValues(alpha: isDark ? 0.14 : 0.08)
@@ -185,7 +213,8 @@ class HallSelectorSheet extends ConsumerWidget {
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: isActive
-                                ? colors.acc.withValues(alpha: isDark ? 0.25 : 0.15)
+                                ? colors.acc
+                                    .withValues(alpha: isDark ? 0.25 : 0.15)
                                 : colors.card,
                             border: Border.all(
                               color: isActive ? colors.acc : colors.lineRgba,
@@ -201,57 +230,63 @@ class HallSelectorSheet extends ConsumerWidget {
 
                         // Name & Details
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      hall.name,
-                                      style: AppThemes.safeGeist(
-                                        fontSize: 15,
-                                        fontWeight: isActive
-                                            ? FontWeight.w600
-                                            : FontWeight.w500,
-                                        color: colors.ink,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (hall.isCommon) ...[
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: colors.acc
-                                            .withValues(alpha: isDark ? 0.18 : 0.10),
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
+                          child: Semantics(
+                            label: hallSemanticLabel,
+                            selected: isActive,
+                            excludeSemantics: true,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
                                       child: Text(
-                                        'MAIN',
+                                        hall.name,
                                         style: AppThemes.safeGeist(
-                                          fontSize: 9.5,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 0.6,
-                                          color: colors.acc,
+                                          fontSize: 15,
+                                          fontWeight: isActive
+                                              ? FontWeight.w600
+                                              : FontWeight.w500,
+                                          color: colors.ink,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    if (hall.isCommon) ...[
+                                      const SizedBox(width: 6),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: colors.acc.withValues(
+                                              alpha: isDark ? 0.18 : 0.10),
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          'MAIN',
+                                          style: AppThemes.safeGeist(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.6,
+                                            color: colors.acc,
+                                          ),
                                         ),
                                       ),
-                                    ),
+                                    ],
                                   ],
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                subtitleText,
-                                style: AppThemes.safeGeist(
-                                  fontSize: 12,
-                                  color: colors.sub,
                                 ),
-                              ),
-                            ],
+                                const SizedBox(height: 2),
+                                Text(
+                                  subtitleText,
+                                  style: AppThemes.safeGeist(
+                                    fontSize: 12,
+                                    color: colors.sub,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
 
@@ -266,7 +301,8 @@ class HallSelectorSheet extends ConsumerWidget {
                                   size: 18,
                                   color: colors.sub,
                                 ),
-                                onPressed: () => _promptCustomizeHall(context, ref, hall),
+                                onPressed: () =>
+                                    _promptCustomizeHall(context, ref, hall),
                                 splashRadius: 18,
                               ),
                               const SizedBox(width: 2),
@@ -284,7 +320,8 @@ class HallSelectorSheet extends ConsumerWidget {
                               size: 18,
                               color: colors.sub,
                             ),
-                            onPressed: () => _promptCustomizeHall(context, ref, hall),
+                            onPressed: () =>
+                                _promptCustomizeHall(context, ref, hall),
                             splashRadius: 18,
                           ),
                       ],
@@ -299,10 +336,13 @@ class HallSelectorSheet extends ConsumerWidget {
     );
   }
 
-  void _promptCustomizeHall(BuildContext context, WidgetRef ref, HallSpace hall) {
+  void _promptCustomizeHall(
+      BuildContext context, WidgetRef ref, HallSpace hall) {
     final textController = TextEditingController(text: hall.name);
     String selectedThemeId = hall.themeId ??
-        (hall.id == 'common' ? 'screening_room' : (hall.id == 'custom_1' ? 'midnight_cinema' : 'reading_room'));
+        (hall.id == 'common'
+            ? 'screening_room'
+            : (hall.id == 'custom_1' ? 'midnight_cinema' : 'reading_room'));
     String? selectedLanguageCode = hall.lockedLanguageCode;
     String? selectedLanguageName = hall.lockedLanguageName;
     final colors = context.ambianceColors;
@@ -379,14 +419,17 @@ class HallSelectorSheet extends ConsumerWidget {
                             });
                           },
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
                               color: isThemeSelected
                                   ? colors.acc.withValues(alpha: 0.15)
                                   : colors.base,
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                color: isThemeSelected ? colors.acc : colors.lineRgba,
+                                color: isThemeSelected
+                                    ? colors.acc
+                                    : colors.lineRgba,
                                 width: isThemeSelected ? 1.5 : 1.0,
                               ),
                             ),
@@ -400,7 +443,8 @@ class HallSelectorSheet extends ConsumerWidget {
                                     color: theme.colors.acc,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: theme.colors.ink.withValues(alpha: 0.3),
+                                      color: theme.colors.ink
+                                          .withValues(alpha: 0.3),
                                       width: 1,
                                     ),
                                   ),
@@ -410,7 +454,9 @@ class HallSelectorSheet extends ConsumerWidget {
                                   theme.displayName,
                                   style: AppThemes.safeGeist(
                                     fontSize: 11.5,
-                                    fontWeight: isThemeSelected ? FontWeight.w600 : FontWeight.w400,
+                                    fontWeight: isThemeSelected
+                                        ? FontWeight.w600
+                                        : FontWeight.w400,
                                     color: colors.ink,
                                   ),
                                 ),
@@ -433,7 +479,8 @@ class HallSelectorSheet extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       'Restricts Lobby, Discover, Search, and Calendar in this hall to one original language.',
-                      style: AppThemes.safeGeist(fontSize: 11, color: colors.sub),
+                      style:
+                          AppThemes.safeGeist(fontSize: 11, color: colors.sub),
                     ),
                     const SizedBox(height: 10),
                     Wrap(
@@ -454,7 +501,8 @@ class HallSelectorSheet extends ConsumerWidget {
                           ),
                         ),
                         ...supportedLanguages.map((lang) {
-                          final isSelected = selectedLanguageCode == lang['code'];
+                          final isSelected =
+                              selectedLanguageCode == lang['code'];
                           return PressableScale(
                             onTap: () {
                               setDialogState(() {
@@ -486,9 +534,13 @@ class HallSelectorSheet extends ConsumerWidget {
                   onPressed: () {
                     final newName = textController.text.trim();
                     if (newName.isNotEmpty) {
-                      ref.read(hallProvider.notifier).renameHall(hall.id, newName);
+                      ref
+                          .read(hallProvider.notifier)
+                          .renameHall(hall.id, newName);
                     }
-                    ref.read(hallProvider.notifier).updateHallTheme(hall.id, selectedThemeId);
+                    ref
+                        .read(hallProvider.notifier)
+                        .updateHallTheme(hall.id, selectedThemeId);
                     ref.read(hallProvider.notifier).updateHallLanguage(
                           hall.id,
                           selectedLanguageCode,

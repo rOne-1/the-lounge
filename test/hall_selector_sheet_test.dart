@@ -149,4 +149,51 @@ void main() {
     // Other halls should display "0 movies · 0 shows"
     expect(find.text('0 movies · 0 shows'), findsNWidgets(2));
   });
+
+  testWidgets('BETA3-A11Y-2: announces active Hall, theme, language lock, and counts as one label',
+      (WidgetTester tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+    final handle = tester.ensureSemantics();
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: Scaffold(
+            body: HallSelectorSheet(),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final grandHallLabel = find.bySemanticsLabel(RegExp('The Grand Hall.*active'));
+    expect(grandHallLabel, findsOneWidget);
+    final semantics = tester.getSemantics(grandHallLabel);
+    expect(semantics.label, contains('main hall'));
+    expect(semantics.label, contains('theme'));
+    expect(semantics.label, contains('0 movies'));
+
+    // The non-active Mezzanine Hall should NOT be announced as active.
+    final mezzanineLabel =
+        tester.getSemantics(find.bySemanticsLabel(RegExp('The Mezzanine Hall.*')));
+    expect(mezzanineLabel.label, isNot(contains(', active')));
+
+    // Set a language lock on the active Hall and confirm it's announced.
+    await container
+        .read(hallProvider.notifier)
+        .updateHallLanguage('common', 'ja', 'Japanese');
+    await tester.pumpAndSettle();
+
+    final lockedLabel = tester.getSemantics(
+        find.bySemanticsLabel(RegExp('The Grand Hall.*active')));
+    expect(lockedLabel.label, contains('locked to Japanese'));
+
+    handle.dispose();
+  });
 }

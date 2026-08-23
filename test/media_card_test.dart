@@ -175,6 +175,26 @@ void main() {
       expect(find.text('Inception'), findsOneWidget);
       expect(find.text('Action'), findsOneWidget);
     });
+
+    testWidgets('BETA3-A11Y-2: announces title, year, medium type, rating, and status as one label', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(wrapWatchlisted(
+        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180, onTap: () {}),
+        ratedItem,
+      ));
+      await tester.pump();
+
+      final semantics =
+          tester.getSemantics(find.bySemanticsLabel(RegExp('Inception')));
+      expect(semantics.label, contains('Inception'));
+      expect(semantics.label, contains('2010'));
+      expect(semantics.label, contains('Movie'));
+      expect(semantics.label, contains('rated 8.8'));
+      expect(semantics.label, contains('Watchlist'));
+
+      handle.dispose();
+    });
   });
 }
 

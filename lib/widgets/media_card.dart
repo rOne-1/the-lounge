@@ -81,59 +81,80 @@ class MediaCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       closedBuilder: (context, openContainer) {
+        // BETA3-A11Y-2: one merged announcement (title, year, medium type,
+        // rating) instead of an unlabeled image -- MediaCard is the core
+        // tile across every rail/grid/list in the app.
+        final yearStr = item.releaseOrAirDate?.year != null
+            ? ', ${item.releaseOrAirDate!.year}'
+            : '';
+        final typeStr = item.type == MediaType.movie ? 'Movie' : 'TV Show';
+        final ratingStr = (showRatingBadge && item.rating > 0)
+            ? ', rated ${item.rating.toStringAsFixed(1)}'
+            : '';
+        final statusStr = statusInfo != null ? ', ${statusInfo.label}' : '';
+        final semanticLabel =
+            '${item.title}$yearStr, $typeStr$ratingStr$statusStr';
+
         return PressableScale(
           onTap: onTap ?? openContainer,
-          onLongPress: onLongPress ?? () => showQuickStatusSheet(context, ref, item),
-          child: Container(
-            width: width,
-            height: height,
-            decoration: BoxDecoration(
-              color: phColor,
-              borderRadius: BorderRadius.circular(borderRadius),
-              border: Border.all(color: lineRgba),
-              boxShadow: [
-                BoxShadow(
-                  color: surfaceHighlight,
-                  blurRadius: 0,
-                  spreadRadius: 0,
-                  offset: const Offset(0, 1),
-                  blurStyle: BlurStyle.inner,
-                ),
-              ],
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                MediaImage(
-                  item: item,
-                  fit: fit,
-                  showFallbackTitle: !showTitle,
-                ),
-                if (showRatingBadge && item.rating > 0)
-                  Positioned(
-                    top: 6,
-                    right: 6,
-                    child: _RatingBadge(rating: item.rating),
+          onLongPress:
+              onLongPress ?? () => showQuickStatusSheet(context, ref, item),
+          child: Semantics(
+            label: semanticLabel,
+            excludeSemantics: true,
+            child: Container(
+              width: width,
+              height: height,
+              decoration: BoxDecoration(
+                color: phColor,
+                borderRadius: BorderRadius.circular(borderRadius),
+                border: Border.all(color: lineRgba),
+                boxShadow: [
+                  BoxShadow(
+                    color: surfaceHighlight,
+                    blurRadius: 0,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 1),
+                    blurStyle: BlurStyle.inner,
                   ),
-                if (statusInfo != null)
-                  Positioned(
-                    top: 6,
-                    left: 6,
-                    child: StatusPulseRing(
-                      isSelected: true,
-                      accentColor: statusInfo.color,
-                      borderRadius: 8,
-                      child: _StatusChip(icon: statusInfo.icon, color: statusInfo.color),
+                ],
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  MediaImage(
+                    item: item,
+                    fit: fit,
+                    showFallbackTitle: !showTitle,
+                  ),
+                  if (showRatingBadge && item.rating > 0)
+                    Positioned(
+                      top: 6,
+                      right: 6,
+                      child: _RatingBadge(rating: item.rating),
                     ),
-                  ),
-                if (badge != null) badge!,
-              ],
+                  if (statusInfo != null)
+                    Positioned(
+                      top: 6,
+                      left: 6,
+                      child: StatusPulseRing(
+                        isSelected: true,
+                        accentColor: statusInfo.color,
+                        borderRadius: 8,
+                        child: _StatusChip(
+                            icon: statusInfo.icon, color: statusInfo.color),
+                      ),
+                    ),
+                  if (badge != null) badge!,
+                ],
+              ),
             ),
           ),
         );
       },
-      openBuilder: (context, _) => DetailScreen(id: item.prefixedId, initialItem: item),
+      openBuilder: (context, _) =>
+          DetailScreen(id: item.prefixedId, initialItem: item),
     );
 
     if (!showTitle && !showSubtitle) {
@@ -185,16 +206,19 @@ class MediaCard extends ConsumerWidget {
 
   _StatusInfo? _resolveStatus(MediaState mediaState) {
     if (mediaState.watchingList.containsKey(item.id)) {
-      return _StatusInfo(Icons.play_circle_fill_rounded, AppStatusColors.watching);
+      return _StatusInfo(
+          Icons.play_circle_fill_rounded, AppStatusColors.watching, 'Watching');
     }
     if (mediaState.watchlist.containsKey(item.id)) {
-      return _StatusInfo(Icons.bookmark_rounded, AppStatusColors.watchlist);
+      return _StatusInfo(
+          Icons.bookmark_rounded, AppStatusColors.watchlist, 'Watchlist');
     }
     if (mediaState.maybeList.containsKey(item.id)) {
-      return _StatusInfo(Icons.archive_rounded, AppStatusColors.save);
+      return _StatusInfo(Icons.archive_rounded, AppStatusColors.save, 'Saved');
     }
     if (mediaState.watchedList.containsKey(item.id)) {
-      return _StatusInfo(Icons.check_circle_rounded, AppStatusColors.watched);
+      return _StatusInfo(
+          Icons.check_circle_rounded, AppStatusColors.watched, 'Watched');
     }
     return null;
   }
@@ -203,7 +227,8 @@ class MediaCard extends ConsumerWidget {
 class _StatusInfo {
   final IconData icon;
   final Color color;
-  const _StatusInfo(this.icon, this.color);
+  final String label;
+  const _StatusInfo(this.icon, this.color, this.label);
 }
 
 class _StatusChip extends StatelessWidget {

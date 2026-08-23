@@ -1,5 +1,6 @@
 import '../constants.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'dart:math' as math;
@@ -50,7 +51,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   }
 
   void _onSwipe(MediaItem item, String direction) {
-
     final notifier = ref.read(mediaProvider.notifier);
     if (direction == 'Left') {
       ref.read(skippedMediaIdsProvider.notifier).add(item.id);
@@ -72,9 +72,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         _activeSwipeDirection = null;
         _cardKeys.remove(item.id);
       });
-      
-      final isMovies = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies;
-      final deckNotifier = isMovies ? ref.read(discoverMoviesDeckProvider.notifier) : ref.read(discoverTvDeckProvider.notifier);
+
+      final isMovies = ref.read(navigationProvider).activeMediaType ==
+          MediaTypeToggle.movies;
+      final deckNotifier = isMovies
+          ? ref.read(discoverMoviesDeckProvider.notifier)
+          : ref.read(discoverTvDeckProvider.notifier);
       deckNotifier.popCard(item, direction);
     }
   }
@@ -82,7 +85,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   void _triggerSwipe(String direction) {
     final navState = ref.read(navigationProvider);
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
-    final deckState = ref.read(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider);
+    final deckState = ref
+        .read(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider);
     final pool = deckState.pool;
 
     if (pool.isEmpty || _isSwiping) return;
@@ -112,13 +116,14 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
   Widget build(BuildContext context) {
     final navState = ref.watch(navigationProvider);
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
-    final deckState = ref.watch(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider);
+    final deckState = ref
+        .watch(isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider);
     final pool = deckState.pool;
     final loading = deckState.isLoading;
     final error = deckState.error;
 
     final isDark = context.ambianceColors.isDark;
-    
+
     final subColor = context.ambianceColors.sub;
     final accColor = context.ambianceColors.acc;
 
@@ -132,7 +137,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         message: message.isNotEmpty
             ? message
             : 'Failed to load recommendations. Please check your connection.',
-        onRetry: () => ref.read(isMovies ? discoverMoviesDeckProvider.notifier : discoverTvDeckProvider.notifier).loadPool(isReload: true),
+        onRetry: () => ref
+            .read(isMovies
+                ? discoverMoviesDeckProvider.notifier
+                : discoverTvDeckProvider.notifier)
+            .loadPool(isReload: true),
       );
     }
 
@@ -176,28 +185,38 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   children: [
                     // Back cards
                     Positioned(
-                      top: 26, left: 8, right: 8, bottom: 20,
+                      top: 26,
+                      left: 8,
+                      right: 8,
+                      bottom: 20,
                       child: Transform.scale(
                         scale: 0.92,
                         child: Container(
                           decoration: BoxDecoration(
                             color: context.ambianceColors.card2,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: context.ambianceColors.lineRgba.withValues(alpha: 0.1)),
+                            border: Border.all(
+                                color: context.ambianceColors.lineRgba
+                                    .withValues(alpha: 0.1)),
                           ),
                           child: Opacity(opacity: isDark ? 0.5 : 0.6),
                         ),
                       ),
                     ),
                     Positioned(
-                      top: 16, left: 4, right: 4, bottom: 20,
+                      top: 16,
+                      left: 4,
+                      right: 4,
+                      bottom: 20,
                       child: Transform.scale(
                         scale: 0.96,
                         child: Container(
                           decoration: BoxDecoration(
                             color: context.ambianceColors.card,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: context.ambianceColors.lineRgba.withValues(alpha: 0.14)),
+                            border: Border.all(
+                                color: context.ambianceColors.lineRgba
+                                    .withValues(alpha: 0.14)),
                           ),
                           child: Opacity(opacity: isDark ? 0.7 : 0.8),
                         ),
@@ -215,7 +234,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                   deckState.canManuallyReloadToday
                                       ? Icons.movie_filter_outlined
                                       : Icons.nightlight_round,
-                                  size: 64, color: subColor),
+                                  size: 64,
+                                  color: subColor),
                               const SizedBox(height: 16),
                               Text(
                                 deckState.canManuallyReloadToday
@@ -246,7 +266,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                       ? null
                                       : () => ref
                                           .read(isMovies
-                                              ? discoverMoviesDeckProvider.notifier
+                                              ? discoverMoviesDeckProvider
+                                                  .notifier
                                               : discoverTvDeckProvider.notifier)
                                           .manualReload(),
                                   icon: loading
@@ -255,7 +276,9 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                           height: 16,
                                           child: CircularProgressIndicator(
                                             strokeWidth: 2,
-                                            color: Theme.of(context).colorScheme.onPrimary,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onPrimary,
                                           ),
                                         )
                                       : const Icon(Icons.refresh),
@@ -274,10 +297,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           item: item,
                           isInteractive: isTop,
                           onSwipe: (dir) => _onSwipe(item, dir),
-                          onDirectionChanged: isTop ? _onDirectionChanged : null,
+                          onDirectionChanged:
+                              isTop ? _onDirectionChanged : null,
                           isDark: isDark,
                           accColor: accColor,
-                          entryDirection: isUndone ? deckState.undoneDirection : null,
+                          entryDirection:
+                              isUndone ? deckState.undoneDirection : null,
                         );
                       }),
                   ],
@@ -298,11 +323,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                   (mediaState.watchedList.containsKey(topItem.prefixedId) ||
                       mediaState.watchedList.containsKey(topItem.id));
               final isSkipped = topItem != null &&
-                  (ref.watch(skippedMediaIdsProvider).containsKey(topItem.prefixedId) ||
-                      ref.watch(skippedMediaIdsProvider).containsKey(topItem.id));
+                  (ref
+                          .watch(skippedMediaIdsProvider)
+                          .containsKey(topItem.prefixedId) ||
+                      ref
+                          .watch(skippedMediaIdsProvider)
+                          .containsKey(topItem.id));
 
               return Padding(
-                padding: EdgeInsets.fromLTRB(0, 14.0, 0, 14.0 + MediaQuery.of(context).padding.bottom),
+                padding: EdgeInsets.fromLTRB(
+                    0, 14.0, 0, 14.0 + MediaQuery.of(context).padding.bottom),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -326,7 +356,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         icon: Icons.star_border,
                         activeIcon: Icons.star,
                         color: AppStatusColors.save,
-                        borderColor: AppStatusColors.save.withValues(alpha: 0.55),
+                        borderColor:
+                            AppStatusColors.save.withValues(alpha: 0.55),
                         direction: 'Right',
                         onTap: () => _triggerSwipe('Right'),
                         isDark: isDark,
@@ -350,7 +381,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       button: _buildActionButton(
                         icon: Icons.check,
                         color: AppStatusColors.watched,
-                        borderColor: AppStatusColors.watched.withValues(alpha: 0.55),
+                        borderColor:
+                            AppStatusColors.watched.withValues(alpha: 0.55),
                         direction: 'Up',
                         onTap: () => _triggerSwipe('Up'),
                         isDark: isDark,
@@ -464,19 +496,17 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
           width: 54,
           height: 54,
           decoration: context.ambianceColors.primaryButtonDecoration.copyWith(
-                  border: isActive
-                      ? Border.all(color: Colors.white, width: 2)
-                      : null,
-                  boxShadow: isActive
-                      ? [
-                          BoxShadow(
-                            color: glowColor.withValues(alpha: 0.6),
-                            blurRadius: 16,
-                            spreadRadius: 3,
-                          ),
-                        ]
-                      : null,
-                ),
+            border: isActive ? Border.all(color: Colors.white, width: 2) : null,
+            boxShadow: isActive
+                ? [
+                    BoxShadow(
+                      color: glowColor.withValues(alpha: 0.6),
+                      blurRadius: 16,
+                      spreadRadius: 3,
+                    ),
+                  ]
+                : null,
+          ),
           child: Icon(
             isActive ? Icons.bookmark : Icons.bookmark_border,
             color: Theme.of(context).colorScheme.onPrimary,
@@ -492,9 +522,12 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
     final subColor = context.ambianceColors.sub;
     final borderColor = context.ambianceColors.lineRgba;
     final backdropColor = context.ambianceColors.base.withValues(alpha: 0.85);
-    
+
     // Instead of using hardcoded sheetBgColors, we can reuse base and card colors
-    final sheetBgColors = [context.ambianceColors.base, context.ambianceColors.card];
+    final sheetBgColors = [
+      context.ambianceColors.base,
+      context.ambianceColors.card
+    ];
     final innerShadowColor = context.ambianceColors.surfaceHighlight;
     final btnTextColor = Theme.of(context).colorScheme.onPrimary;
 
@@ -539,7 +572,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         end: Alignment.bottomCenter,
                         colors: sheetBgColors,
                       ),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+                      borderRadius:
+                          const BorderRadius.vertical(top: Radius.circular(36)),
                       border: Border(top: BorderSide(color: borderColor)),
                       boxShadow: [
                         BoxShadow(
@@ -576,16 +610,19 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           isDark: isDark,
                           icon: Icons.arrow_back,
                           title: 'Swipe left — Skip for now',
-                          subtitle: 'Won\'t reappear for 6 months — skip it 6 times and it\'s gone for good',
+                          subtitle:
+                              'Won\'t reappear for 6 months — skip it 6 times and it\'s gone for good',
                           color: context.ambianceColors.sub,
-                          bgColor: context.ambianceColors.sub.withValues(alpha: 0.16),
+                          bgColor: context.ambianceColors.sub
+                              .withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
                           isDark: isDark,
                           icon: Icons.arrow_forward,
                           title: 'Swipe right — Save for later',
-                          subtitle: 'A "maybe" bookmark → lands in your Saved archive',
+                          subtitle:
+                              'A "maybe" bookmark → lands in your Saved archive',
                           color: AppStatusColors.save,
                           bgColor: AppStatusColors.save.withValues(alpha: 0.16),
                         ),
@@ -596,7 +633,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           title: 'Swipe down — Add to watchlist',
                           subtitle: 'A committed pick you intend to watch',
                           color: AppStatusColors.watchlist,
-                          bgColor: AppStatusColors.watchlist.withValues(alpha: 0.16),
+                          bgColor:
+                              AppStatusColors.watchlist.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -605,7 +643,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           title: 'Swipe up — Already watched',
                           subtitle: 'Logs to Watched history',
                           color: AppStatusColors.watched,
-                          bgColor: AppStatusColors.watched.withValues(alpha: 0.16),
+                          bgColor:
+                              AppStatusColors.watched.withValues(alpha: 0.16),
                         ),
                         const SizedBox(height: 12),
                         _buildLegendItem(
@@ -614,7 +653,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           title: 'Tap — Open full details',
                           subtitle: 'The complete Movie / TV detail view',
                           color: context.ambianceColors.ink,
-                          bgColor: context.ambianceColors.ink.withValues(alpha: 0.08),
+                          bgColor: context.ambianceColors.ink
+                              .withValues(alpha: 0.08),
                         ),
                         const SizedBox(height: 22),
                         PressableScale(
@@ -622,7 +662,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(12),
-                            decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(12)),
+                            decoration: context
+                                .ambianceColors.primaryButtonDecoration
+                                .copyWith(
+                                    borderRadius: BorderRadius.circular(12)),
                             alignment: Alignment.center,
                             child: Text(
                               'Got it — start swiping',
@@ -720,7 +763,8 @@ class SwipeCard extends ConsumerStatefulWidget {
   ConsumerState<SwipeCard> createState() => _SwipeCardState();
 }
 
-class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProviderStateMixin {
+class _SwipeCardState extends ConsumerState<SwipeCard>
+    with SingleTickerProviderStateMixin {
   Offset _dragOffset = Offset.zero;
   double _angle = 0;
   late AnimationController _motionController;
@@ -745,7 +789,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
           h = s.height;
         }
       } catch (_) {}
-      
+
       switch (widget.entryDirection) {
         case 'Left':
           _dragOffset = Offset(-w * 1.2, 0);
@@ -832,7 +876,8 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
     if (!_isFlyingOff || _hasTriggeredComplete || !mounted) return;
     final size = MediaQuery.maybeOf(context)?.size;
     if (size != null) {
-      if (_dragOffset.dx.abs() > size.width * 0.7 || _dragOffset.dy.abs() > size.height * 0.7) {
+      if (_dragOffset.dx.abs() > size.width * 0.7 ||
+          _dragOffset.dy.abs() > size.height * 0.7) {
         _triggerFlyOffComplete();
       }
     }
@@ -875,7 +920,8 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
     _updateActiveDirection();
   }
 
-  void flyOff(String direction, VoidCallback onComplete, {Offset velocity = Offset.zero}) {
+  void flyOff(String direction, VoidCallback onComplete,
+      {Offset velocity = Offset.zero}) {
     if (_isFlyingOff) return;
     _isFlyingOff = true;
     _flyOffDirection = direction;
@@ -930,8 +976,10 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
     final borderColor = context.ambianceColors.lineRgba;
 
     const double commitThreshold = 100.0;
-    final bool isHorizontalDominant = _dragOffset.dx.abs() > _dragOffset.dy.abs();
-    final double dragDistance = isHorizontalDominant ? _dragOffset.dx.abs() : _dragOffset.dy.abs();
+    final bool isHorizontalDominant =
+        _dragOffset.dx.abs() > _dragOffset.dy.abs();
+    final double dragDistance =
+        isHorizontalDominant ? _dragOffset.dx.abs() : _dragOffset.dy.abs();
     double hintOpacity = (dragDistance / commitThreshold).clamp(0.0, 1.0);
 
     String? activeDirection;
@@ -1021,12 +1069,14 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
             fit: BoxFit.cover,
             showFallbackTitle: false,
           ),
-          if (widget.item.releaseDate != null && widget.item.releaseDate!.isAfter(DateTime.now()))
+          if (widget.item.releaseDate != null &&
+              widget.item.releaseDate!.isAfter(DateTime.now()))
             Positioned(
               top: 14,
               left: 14,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: context.ambianceColors.danger,
                   borderRadius: BorderRadius.circular(8),
@@ -1049,7 +1099,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
                 ),
               ),
             ),
-          
+
           // Soft Edge Glow / Tint overlay
           if (hintOpacity > 0 && activeColor != null)
             Positioned.fill(
@@ -1063,7 +1113,8 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: activeColor.withValues(alpha: 0.35 * hintOpacity),
+                        color:
+                            activeColor.withValues(alpha: 0.35 * hintOpacity),
                         blurRadius: 24,
                         spreadRadius: 4,
                       ),
@@ -1089,52 +1140,84 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
           // Proportional Edge hints (Icon + Label)
           if (hintOpacity > 0 && activeDirection == 'Up' && activeColor != null)
             Positioned(
-              top: 14, left: 0, right: 0,
+              top: 14,
+              left: 0,
+              right: 0,
               child: Opacity(
                 opacity: hintOpacity,
                 child: Column(
                   children: [
                     Icon(Icons.check, color: activeColor),
-                    Text('Watched', style: AppThemes.safeGeist(fontSize: 10, fontWeight: FontWeight.w600, color: activeColor, backgroundColor: Colors.black54)),
+                    Text('Watched',
+                        style: AppThemes.safeGeist(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: activeColor,
+                            backgroundColor: Colors.black54)),
                   ],
                 ),
               ),
             ),
-          if (hintOpacity > 0 && activeDirection == 'Down' && activeColor != null)
+          if (hintOpacity > 0 &&
+              activeDirection == 'Down' &&
+              activeColor != null)
             Positioned(
-              bottom: 82, left: 0, right: 0,
+              bottom: 82,
+              left: 0,
+              right: 0,
               child: Opacity(
                 opacity: hintOpacity,
                 child: Column(
                   children: [
-                    Text('Watchlist', style: AppThemes.safeGeist(fontSize: 10, fontWeight: FontWeight.w600, color: activeColor, backgroundColor: Colors.black54)),
+                    Text('Watchlist',
+                        style: AppThemes.safeGeist(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: activeColor,
+                            backgroundColor: Colors.black54)),
                     Icon(Icons.bookmark, color: activeColor),
                   ],
                 ),
               ),
             ),
-          if (hintOpacity > 0 && activeDirection == 'Left' && activeColor != null)
+          if (hintOpacity > 0 &&
+              activeDirection == 'Left' &&
+              activeColor != null)
             Positioned(
-              top: 250, left: 12,
+              top: 250,
+              left: 12,
               child: Opacity(
                 opacity: hintOpacity,
                 child: Row(
                   children: [
                     Icon(Icons.close, color: activeColor),
                     const SizedBox(width: 4),
-                    Text('Skip', style: AppThemes.safeGeist(fontSize: 10, fontWeight: FontWeight.w600, color: activeColor, backgroundColor: Colors.black54)),
+                    Text('Skip',
+                        style: AppThemes.safeGeist(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: activeColor,
+                            backgroundColor: Colors.black54)),
                   ],
                 ),
               ),
             ),
-          if (hintOpacity > 0 && activeDirection == 'Right' && activeColor != null)
+          if (hintOpacity > 0 &&
+              activeDirection == 'Right' &&
+              activeColor != null)
             Positioned(
-              top: 250, right: 12,
+              top: 250,
+              right: 12,
               child: Opacity(
                 opacity: hintOpacity,
                 child: Row(
                   children: [
-                    Text('Saved', style: AppThemes.safeGeist(fontSize: 10, fontWeight: FontWeight.w600, color: activeColor, backgroundColor: Colors.black54)),
+                    Text('Saved',
+                        style: AppThemes.safeGeist(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: activeColor,
+                            backgroundColor: Colors.black54)),
                     const SizedBox(width: 4),
                     Icon(Icons.star, color: activeColor),
                   ],
@@ -1149,11 +1232,11 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(18, 22, 18, 16),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, context.ambianceColors.scrim],
-                )
-              ),
+                  gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, context.ambianceColors.scrim],
+              )),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -1161,31 +1244,66 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
                   Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(color: widget.accColor, borderRadius: BorderRadius.circular(5)),
-                        child: Text('★ ${widget.item.rating}', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onPrimary)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                            color: widget.accColor,
+                            borderRadius: BorderRadius.circular(5)),
+                        child: Text('★ ${widget.item.rating}',
+                            style: AppThemes.safeGeist(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    Theme.of(context).colorScheme.onPrimary)),
                       ),
                       const SizedBox(width: 8),
                       Flexible(
                         child: Builder(builder: (context) {
-                          final yearStr = widget.item.releaseDate != null ? widget.item.releaseDate!.year.toString() : '';
-                          final genreStr = widget.item.genres.isNotEmpty ? widget.item.genres.take(2).join(', ') : '';
-                          final metaText = [if (yearStr.isNotEmpty) yearStr, if (genreStr.isNotEmpty) genreStr].join(' · ');
+                          final yearStr = widget.item.releaseDate != null
+                              ? widget.item.releaseDate!.year.toString()
+                              : '';
+                          final genreStr = widget.item.genres.isNotEmpty
+                              ? widget.item.genres.take(2).join(', ')
+                              : '';
+                          final metaText = [
+                            if (yearStr.isNotEmpty) yearStr,
+                            if (genreStr.isNotEmpty) genreStr
+                          ].join(' · ');
                           return Text(
                             metaText.isNotEmpty ? metaText : 'Discover',
                             overflow: TextOverflow.ellipsis,
-                            style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: const Color.fromRGBO(255, 255, 255, 0.8)),
+                            style: AppThemes.safeGeist(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                                color:
+                                    const Color.fromRGBO(255, 255, 255, 0.8)),
                           );
                         }),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(widget.item.title, style: GoogleFonts.bodoniModa(fontSize: 27, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic, color: Colors.white, height: 1.02)),
+                  Text(widget.item.title,
+                      style: GoogleFonts.bodoniModa(
+                          fontSize: 27,
+                          fontWeight: FontWeight.w600,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.white,
+                          height: 1.02)),
                   const SizedBox(height: 5),
-                  Text(widget.item.overview, style: AppThemes.safeGeist(fontSize: 12, height: 1.45, color: const Color.fromRGBO(255, 255, 255, 0.72)), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  Text(widget.item.overview,
+                      style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          height: 1.45,
+                          color: const Color.fromRGBO(255, 255, 255, 0.72)),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 8),
-                  Text('Tap for full details ↗', style: AppThemes.safeGeist(fontSize: 11, fontWeight: FontWeight.w500, color: widget.accColor)),
+                  Text('Tap for full details ↗',
+                      style: AppThemes.safeGeist(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                          color: widget.accColor)),
                 ],
               ),
             ),
@@ -1196,65 +1314,97 @@ class _SwipeCardState extends ConsumerState<SwipeCard> with SingleTickerProvider
 
     if (!widget.isInteractive) return card;
 
-    return OpenContainer(
-      transitionDuration: AppPhysics.houseSpringDuration,
-      closedElevation: 0,
-      openElevation: 0,
-      closedColor: Colors.transparent,
-      openColor: context.ambianceColors.base,
-      middleColor: Colors.transparent,
-      closedShape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
-      ),
-      closedBuilder: (context, openContainer) {
-        return PressableScale(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: openContainer,
-            onLongPress: () => showQuickStatusSheet(context, ref, widget.item),
-            onPanUpdate: (details) {
-              if (_isFlyingOff) return;
-              if (_motionController.isAnimating) {
-                _motionController.stop();
-              }
-              setState(() {
-                _dragOffset += details.delta;
-                _angle = _dragOffset.dx / 300 * (math.pi / 8);
-              });
-            },
-            onPanEnd: (details) {
-              if (_isFlyingOff) return;
-              final velocity = details.velocity.pixelsPerSecond;
-              final isHorizontalDominant = _dragOffset.dx.abs() > _dragOffset.dy.abs();
+    // BETA3-A11Y-2: distinct from the existing tap-button row (motor
+    // accessibility only) -- this card is purely gesture-driven otherwise,
+    // so a screen-reader user has no way to skip/save/watchlist/watch a
+    // title without these explicit custom actions.
+    final item = widget.item;
+    final yearStr = item.releaseOrAirDate?.year != null
+        ? ', ${item.releaseOrAirDate!.year}'
+        : '';
+    final typeStr = item.type == MediaType.movie ? 'Movie' : 'TV Show';
+    final ratingStr =
+        item.rating > 0 ? ', rated ${item.rating.toStringAsFixed(1)}' : '';
+    final cardSemanticLabel = '${item.title}$yearStr, $typeStr$ratingStr';
 
-              if (isHorizontalDominant) {
-                if (_dragOffset.dx > 100 || velocity.dx > 500) {
-                  flyOff('Right', () => widget.onSwipe('Right'), velocity: velocity);
-                } else if (_dragOffset.dx < -100 || velocity.dx < -500) {
-                  flyOff('Left', () => widget.onSwipe('Left'), velocity: velocity);
-                } else {
-                  _settleSpring(velocity: velocity);
-                }
-              } else {
-                if (_dragOffset.dy > 100 || velocity.dy > 500) {
-                  flyOff('Down', () => widget.onSwipe('Down'), velocity: velocity);
-                } else if (_dragOffset.dy < -100 || velocity.dy < -500) {
-                  flyOff('Up', () => widget.onSwipe('Up'), velocity: velocity);
-                } else {
-                  _settleSpring(velocity: velocity);
-                }
-              }
-            },
-            child: Transform.translate(
-              offset: _dragOffset,
-              child: Transform.rotate(angle: _angle, child: card),
-            ),
-          ),
-        );
+    return Semantics(
+      label: cardSemanticLabel,
+      customSemanticsActions: {
+        const CustomSemanticsAction(label: 'Skip'): () =>
+            flyOff('Left', () => widget.onSwipe('Left')),
+        const CustomSemanticsAction(label: 'Save for later'): () =>
+            flyOff('Right', () => widget.onSwipe('Right')),
+        const CustomSemanticsAction(label: 'Add to watchlist'): () =>
+            flyOff('Down', () => widget.onSwipe('Down')),
+        const CustomSemanticsAction(label: 'Mark watched'): () =>
+            flyOff('Up', () => widget.onSwipe('Up')),
       },
-      openBuilder: (context, _) => DetailScreen(
-        id: widget.item.prefixedId,
-        initialItem: widget.item,
+      child: OpenContainer(
+        transitionDuration: AppPhysics.houseSpringDuration,
+        closedElevation: 0,
+        openElevation: 0,
+        closedColor: Colors.transparent,
+        openColor: context.ambianceColors.base,
+        middleColor: Colors.transparent,
+        closedShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
+        closedBuilder: (context, openContainer) {
+          return PressableScale(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: openContainer,
+              onLongPress: () =>
+                  showQuickStatusSheet(context, ref, widget.item),
+              onPanUpdate: (details) {
+                if (_isFlyingOff) return;
+                if (_motionController.isAnimating) {
+                  _motionController.stop();
+                }
+                setState(() {
+                  _dragOffset += details.delta;
+                  _angle = _dragOffset.dx / 300 * (math.pi / 8);
+                });
+              },
+              onPanEnd: (details) {
+                if (_isFlyingOff) return;
+                final velocity = details.velocity.pixelsPerSecond;
+                final isHorizontalDominant =
+                    _dragOffset.dx.abs() > _dragOffset.dy.abs();
+
+                if (isHorizontalDominant) {
+                  if (_dragOffset.dx > 100 || velocity.dx > 500) {
+                    flyOff('Right', () => widget.onSwipe('Right'),
+                        velocity: velocity);
+                  } else if (_dragOffset.dx < -100 || velocity.dx < -500) {
+                    flyOff('Left', () => widget.onSwipe('Left'),
+                        velocity: velocity);
+                  } else {
+                    _settleSpring(velocity: velocity);
+                  }
+                } else {
+                  if (_dragOffset.dy > 100 || velocity.dy > 500) {
+                    flyOff('Down', () => widget.onSwipe('Down'),
+                        velocity: velocity);
+                  } else if (_dragOffset.dy < -100 || velocity.dy < -500) {
+                    flyOff('Up', () => widget.onSwipe('Up'),
+                        velocity: velocity);
+                  } else {
+                    _settleSpring(velocity: velocity);
+                  }
+                }
+              },
+              child: Transform.translate(
+                offset: _dragOffset,
+                child: Transform.rotate(angle: _angle, child: card),
+              ),
+            ),
+          );
+        },
+        openBuilder: (context, _) => DetailScreen(
+          id: widget.item.prefixedId,
+          initialItem: widget.item,
+        ),
       ),
     );
   }
