@@ -1,3 +1,4 @@
+import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -68,6 +69,56 @@ void main() {
       expect(find.text('On-Hold'), findsOneWidget);
       expect(find.text('Dropped'), findsOneWidget);
       expect(find.text('Watched'), findsOneWidget);
+    });
+
+    testWidgets('BETA3-A11Y-1: status pills expose a button role, correct label, and selected state', (WidgetTester tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+        ],
+      );
+      addTearDown(container.dispose);
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Consumer(
+                  builder: (context, ref, child) {
+                    return ElevatedButton(
+                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      child: const Text('Open Sheet'),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      final watchlistLabel = find.bySemanticsLabel('Watchlist');
+      expect(watchlistLabel, findsOneWidget);
+      var watchlistSemantics = tester.getSemantics(watchlistLabel);
+      expect(watchlistSemantics.flagsCollection.isButton, isTrue);
+      expect(watchlistSemantics.flagsCollection.isSelected, isNot(Tristate.isTrue));
+
+      await tester.tap(find.text('Watchlist'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      watchlistSemantics = tester.getSemantics(find.bySemanticsLabel('Watchlist'));
+      expect(watchlistSemantics.flagsCollection.isSelected, Tristate.isTrue);
+
+      handle.dispose();
     });
 
     testWidgets('is wrapped in DragToDismissSheet and a fling-down dismisses it (DS-3)', (WidgetTester tester) async {

@@ -1,3 +1,4 @@
+import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -146,6 +147,43 @@ void main() {
       await tester.pump();
 
       expect(calls.any((c) => c.method == 'HapticFeedback.vibrate'), isFalse);
+    });
+
+    testWidgets('BETA3-A11Y-1: exposes a button semantic role, respecting enabled/disabled state', (tester) async {
+      final handle = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PressableScale(
+              onTap: () {},
+              child: const Text('Tap me'),
+            ),
+          ),
+        ),
+      );
+
+      final semantics = tester.getSemantics(find.byType(PressableScale));
+      expect(semantics.flagsCollection.isButton, isTrue);
+      expect(semantics.flagsCollection.isEnabled, isNot(Tristate.isFalse));
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: PressableScale(
+              enabled: false,
+              onTap: () {},
+              child: const Text('Tap me'),
+            ),
+          ),
+        ),
+      );
+
+      final disabledSemantics = tester.getSemantics(find.byType(PressableScale));
+      expect(disabledSemantics.flagsCollection.isButton, isTrue);
+      expect(disabledSemantics.flagsCollection.isEnabled, Tristate.isFalse);
+
+      handle.dispose();
     });
   });
 }

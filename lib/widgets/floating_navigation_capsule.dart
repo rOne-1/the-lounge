@@ -515,6 +515,11 @@ class _ExpandedContent extends ConsumerWidget {
                 key: const ValueKey('floating_nav_profile_button'),
                 icon: _iconForHall(activeHall.iconKey),
                 label: activeHall.name,
+                // BETA3-A11Y-1: explicit active-Hall announcement -- the
+                // bare Hall name alone (e.g. "The Grand Hall") doesn't
+                // convey that this button switches Halls or which one is
+                // currently active.
+                semanticLabel: 'Switch Hall, current Hall: ${activeHall.name}',
                 onTap: onProfileSelector,
               ),
               const SizedBox(width: 8),
@@ -568,36 +573,45 @@ class _DestinationPill extends StatelessWidget {
     final ambiance = context.ambianceColors;
     final color = isSelected ? ambiance.acc : ambiance.sub;
 
-    return PressableScale(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AnimatedContainer(
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: isSelected ? ambiance.pill : Colors.transparent,
-              shape: BoxShape.circle,
+    // BETA3-A11Y-1: one explicit merged announcement ("Lobby tab, selected")
+    // instead of the icon (no label) and Text being read as two separate,
+    // disconnected fragments.
+    return Semantics(
+      label: '$label tab',
+      selected: isSelected,
+      button: true,
+      excludeSemantics: true,
+      child: PressableScale(
+        onTap: onTap,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AnimatedContainer(
+              duration: AppPhysics.houseSpringDuration,
+              curve: AppPhysics.houseSpringCurve,
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: isSelected ? ambiance.pill : Colors.transparent,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Icon(icon, color: color, size: 19),
             ),
-            alignment: Alignment.center,
-            child: Icon(icon, color: color, size: 19),
-          ),
-          const SizedBox(height: 3),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: AppThemes.safeGeist(
-              fontSize: 9,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-              color: color,
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: AppThemes.safeGeist(
+                fontSize: 9,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: color,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -616,23 +630,29 @@ class _MediaTypeRow extends StatelessWidget {
 
     Widget segment(String label, bool selected, VoidCallback onTap) {
       return Expanded(
-        child: PressableScale(
-          onTap: onTap,
-          child: AnimatedContainer(
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
-            height: 34,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: selected ? ambiance.acc : Colors.transparent,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              label,
-              style: AppThemes.safeGeist(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
-                color: selected ? onAccColor : ambiance.sub,
+        child: Semantics(
+          label: label,
+          selected: selected,
+          button: true,
+          excludeSemantics: true,
+          child: PressableScale(
+            onTap: onTap,
+            child: AnimatedContainer(
+              duration: AppPhysics.houseSpringDuration,
+              curve: AppPhysics.houseSpringCurve,
+              height: 34,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: selected ? ambiance.acc : Colors.transparent,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                label,
+                style: AppThemes.safeGeist(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: selected ? onAccColor : ambiance.sub,
+                ),
               ),
             ),
           ),
@@ -662,6 +682,7 @@ class _UtilityAction extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
   final bool enabled;
+  final String? semanticLabel;
 
   const _UtilityAction({
     super.key,
@@ -669,6 +690,7 @@ class _UtilityAction extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.enabled = true,
+    this.semanticLabel,
   });
 
   @override
@@ -677,46 +699,52 @@ class _UtilityAction extends StatelessWidget {
     final color = enabled ? ambiance.ink : ambiance.sub.withValues(alpha: 0.4);
 
     return Expanded(
-      child: PressableScale(
+      child: Semantics(
+        label: semanticLabel ?? label,
+        button: true,
         enabled: enabled,
-        onTap: onTap ?? () {},
-        child: AnimatedOpacity(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
-          opacity: enabled ? 1.0 : 0.45,
-          child: Container(
-            height: 40,
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: ambiance.pill,
-              border: Border.all(color: ambiance.lineRgba),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color, size: 14),
-                const SizedBox(width: 4),
-                Flexible(
-                  child: AnimatedSwitcher(
-                    duration: AppPhysics.houseSpringDuration,
-                    switchInCurve: AppPhysics.houseSpringCurve,
-                    switchOutCurve: Curves.easeOut,
-                    child: Text(
-                      label,
-                      key: ValueKey(label),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppThemes.safeGeist(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: color,
+        excludeSemantics: semanticLabel != null,
+        child: PressableScale(
+          enabled: enabled,
+          onTap: onTap ?? () {},
+          child: AnimatedOpacity(
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            opacity: enabled ? 1.0 : 0.45,
+            child: Container(
+              height: 40,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: ambiance.pill,
+                border: Border.all(color: ambiance.lineRgba),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: color, size: 14),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: AnimatedSwitcher(
+                      duration: AppPhysics.houseSpringDuration,
+                      switchInCurve: AppPhysics.houseSpringCurve,
+                      switchOutCurve: Curves.easeOut,
+                      child: Text(
+                        label,
+                        key: ValueKey(label),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppThemes.safeGeist(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: color,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

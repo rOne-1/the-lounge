@@ -1,5 +1,6 @@
 // Regression coverage for IA-1/NAV-3: the floating navigation capsule that
 // replaces ShellScreen's fixed top bar and bottom nav bar.
+import 'dart:ui' show Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -96,6 +97,39 @@ void main() {
     expect(find.byKey(const ValueKey('floating_nav_tab_calendar')), findsOneWidget);
     expect(find.text('Movies'), findsOneWidget);
     expect(find.text('TV'), findsOneWidget);
+  });
+
+  testWidgets(
+      'BETA3-A11Y-1: expanded tab destinations expose a selected semantic, '
+      'and the Hall shortcut announces the active Hall by name', (tester) async {
+    final handle = tester.ensureSemantics();
+    final container = await pumpShell(tester);
+    addTearDown(container.dispose);
+
+    await tester.tap(capsuleFinder);
+    await tester.pumpAndSettle();
+
+    final lobbyTab =
+        find.byKey(const ValueKey('floating_nav_tab_lobby'));
+    final discoverTab =
+        find.byKey(const ValueKey('floating_nav_tab_discover'));
+
+    // Lobby is the initial tab -- selected. Discover is not.
+    expect(tester.getSemantics(lobbyTab).flagsCollection.isSelected,
+        Tristate.isTrue);
+    expect(
+        tester.getSemantics(discoverTab).flagsCollection.isSelected,
+        isNot(Tristate.isTrue));
+
+    final hallButton =
+        find.byKey(const ValueKey('floating_nav_profile_button'));
+    final hallSemantics = tester.getSemantics(hallButton);
+    expect(hallSemantics.flagsCollection.isButton, isTrue);
+    expect(hallSemantics.label, contains('Switch Hall'));
+    expect(hallSemantics.label,
+        contains(container.read(activeHallSpaceProvider).name));
+
+    handle.dispose();
   });
 
   testWidgets('selecting a tab destination switches the active view and collapses the capsule',

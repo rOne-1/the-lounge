@@ -256,7 +256,8 @@ class QuickStatusSheet extends ConsumerWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.lock_outline_rounded, size: 14, color: context.ambianceColors.sub),
+                  Icon(Icons.lock_outline_rounded,
+                      size: 14, color: context.ambianceColors.sub),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -375,7 +376,8 @@ class QuickStatusSheet extends ConsumerWidget {
               key: const ValueKey('quick_status_add_to_folder'),
               onTap: () => guardEdit(context, () {
                 Navigator.of(context).pop();
-                showFolderPickerSheet(context, ref, mediaId: item.id, mediaTitle: item.title);
+                showFolderPickerSheet(context, ref,
+                    mediaId: item.id, mediaTitle: item.title);
               }),
               borderRadius: BorderRadius.circular(12),
               child: Container(
@@ -388,7 +390,8 @@ class QuickStatusSheet extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.folder_outlined, size: 16, color: context.ambianceColors.ink),
+                    Icon(Icons.folder_outlined,
+                        size: 16, color: context.ambianceColors.ink),
                     const SizedBox(width: 8),
                     Text(
                       'Add to Folder',
@@ -426,63 +429,71 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderColor = isActive
-        ? activeColor
-        : context.ambianceColors.lineRgba;
+    final borderColor =
+        isActive ? activeColor : context.ambianceColors.lineRgba;
     final bgColor = isActive
         ? activeColor.withValues(alpha: 0.15)
         : context.ambianceColors.pill;
-    final contentColor =
-        isActive ? activeColor : context.ambianceColors.ink;
+    final contentColor = isActive ? activeColor : context.ambianceColors.ink;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        splashColor: context.ambianceColors.acc.withValues(alpha: 0.2),
-        child: AnimatedContainer(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: borderColor,
-              width: isActive ? 1.5 : 1.0,
+    // BETA3-A11Y-1: one explicit merged announcement per status pill
+    // ("Watching, selected" / "Watching") instead of the icon (no label),
+    // Text, and conditional checkmark icon being read as separate
+    // disconnected fragments.
+    return Semantics(
+      label: label,
+      selected: isActive,
+      button: true,
+      excludeSemantics: true,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          splashColor: context.ambianceColors.acc.withValues(alpha: 0.2),
+          child: AnimatedContainer(
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: borderColor,
+                width: isActive ? 1.5 : 1.0,
+              ),
             ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                size: 18,
-                color: contentColor,
-              ),
-              const SizedBox(width: 8),
-              Flexible(
-                child: Text(
-                  label,
-                  style: AppThemes.safeGeist(
-                    fontSize: 13,
-                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-                    color: contentColor,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if (isActive) ...[
-                const SizedBox(width: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
                 Icon(
-                  Icons.check_rounded,
-                  size: 14,
-                  color: activeColor,
+                  icon,
+                  size: 18,
+                  color: contentColor,
                 ),
+                const SizedBox(width: 8),
+                Flexible(
+                  child: Text(
+                    label,
+                    style: AppThemes.safeGeist(
+                      fontSize: 13,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                      color: contentColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (isActive) ...[
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.check_rounded,
+                    size: 14,
+                    color: activeColor,
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

@@ -61,21 +61,30 @@ class _PressableScaleState extends State<PressableScale> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: widget.behavior,
-      onTapDown: _handleTapDown,
-      onTapUp: _handleTapUp,
-      onTapCancel: _handleTapCancel,
-      onTap: widget.enabled ? widget.onTap : null,
-      onLongPress: widget.enabled ? widget.onLongPress : null,
-      child: AnimatedScale(
-        scale: _isPressed && widget.enabled ? widget.scaleAmount : 1.0,
-        // Immediate on the way down, house-spring snap-back on release —
-        // the same damped spring curve, just played over a shorter window
-        // while compressing so the tap reads as instant rather than mushy.
-        duration: _isPressed ? widget.pressDuration : widget.releaseDuration,
-        curve: widget.curve,
-        child: widget.child,
+    // BETA3-A11Y-1: universal tap wrapper used app-wide -- one button:true
+    // role here covers nearly every button/icon/action pill in the app,
+    // without needing every call site to opt in individually. Descendant
+    // Text/Icon semantics still merge in as the announced label; this only
+    // adds the button role + enabled state on top.
+    return Semantics(
+      button: true,
+      enabled: widget.enabled,
+      child: GestureDetector(
+        behavior: widget.behavior,
+        onTapDown: _handleTapDown,
+        onTapUp: _handleTapUp,
+        onTapCancel: _handleTapCancel,
+        onTap: widget.enabled ? widget.onTap : null,
+        onLongPress: widget.enabled ? widget.onLongPress : null,
+        child: AnimatedScale(
+          scale: _isPressed && widget.enabled ? widget.scaleAmount : 1.0,
+          // Immediate on the way down, house-spring snap-back on release —
+          // the same damped spring curve, just played over a shorter window
+          // while compressing so the tap reads as instant rather than mushy.
+          duration: _isPressed ? widget.pressDuration : widget.releaseDuration,
+          curve: widget.curve,
+          child: widget.child,
+        ),
       ),
     );
   }
