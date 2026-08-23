@@ -326,6 +326,8 @@ void main() {
 
       final keywordChip = find.text('#historical fiction');
       await tester.scrollUntilVisible(keywordChip, 200, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(keywordChip);
+      await tester.pump(const Duration(milliseconds: 500));
       expect(keywordChip, findsOneWidget);
 
       await tester.tap(keywordChip);

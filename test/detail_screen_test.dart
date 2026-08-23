@@ -192,8 +192,7 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Verify Title
       expect(find.text('Inception'), findsAtLeastNWidgets(1));
@@ -210,7 +209,11 @@ void main() {
       expect(find.text('148 min'), findsOneWidget);
       expect(find.text('Jul 16, 2010'), findsOneWidget);
 
-      // Verify Watch providers
+      // BETA3-PERF-1: watch providers is below the fold, lazily built by
+      // the sliver list -- scroll to it before asserting.
+      await tester.scrollUntilVisible(find.text('Where to Watch'), 200,
+          scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
       expect(find.text('Where to Watch'), findsOneWidget);
       expect(find.text('Netflix'), findsOneWidget);
       expect(find.text('Amazon Prime'), findsOneWidget);
@@ -239,8 +242,7 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       final genreChip = find.ancestor(
         of: find.text('Sci-Fi'),
@@ -249,9 +251,9 @@ void main() {
       expect(genreChip, findsOneWidget);
 
       await tester.scrollUntilVisible(genreChip, 100, scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
       await tester.tap(genreChip);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       expect(container.read(searchGenreProvider), equals('Sci-Fi'));
     });
@@ -319,8 +321,7 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Verify Seasons & Episodes section is rendered
       expect(find.text('Seasons & Episodes'), findsOneWidget);
@@ -331,6 +332,7 @@ void main() {
 
       // Tap first episode watched toggle button
       await tester.scrollUntilVisible(checkmarkIcons.first, 100, scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
       await tester.tap(checkmarkIcons.first);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
@@ -363,8 +365,13 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      // BETA3-PERF-1: the country dropdown lives in the watch providers
+      // section, below the fold and lazily built by the sliver list.
+      await tester.scrollUntilVisible(find.text('US'), 200,
+          scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
 
       // Default country should be US
       expect(find.text('US'), findsOneWidget);
@@ -372,15 +379,13 @@ void main() {
 
       // Ensure the dropdown is scrolled into view and tapped
       await tester.ensureVisible(find.text('US'));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('US'));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Tap GB from dropdown menu
       await tester.tap(find.text('GB').last);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Verify state and preference update
       expect(container.read(mediaProvider).watchProvidersCountry, equals('GB'));
@@ -405,8 +410,11 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(find.text('Where to Watch'), 200,
+          scrollable: find.byType(Scrollable).first);
+      await tester.pumpAndSettle();
 
       expect(find.text('Where to Watch'), findsOneWidget);
       expect(
@@ -437,13 +445,23 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       expect(find.text('Inception'), findsAtLeastNWidgets(1));
       expect(find.text('★ 8.8'), findsOneWidget);
       expect(find.text('Action'), findsOneWidget);
       expect(find.text('148 min'), findsOneWidget);
+
+      // BETA3-PERF-1: the large layout's right-hand pane is its own
+      // CustomScrollView (the hero pane's own Scrollable has no meaningful
+      // scroll extent) -- target it explicitly, not find.byType(Scrollable).first.
+      final rightPaneScrollable = find.descendant(
+        of: find.byType(CustomScrollView),
+        matching: find.byType(Scrollable),
+      );
+      await tester.scrollUntilVisible(find.text('Where to Watch'), 200,
+          scrollable: rightPaneScrollable.first);
+      await tester.pumpAndSettle();
       expect(find.text('Where to Watch'), findsOneWidget);
     });
   });
@@ -483,8 +501,7 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Find status toggle buttons
       final watchlistFinder = find.text('Watchlist');
@@ -500,25 +517,22 @@ void main() {
       // Pulse animation should be running
       await tester.pump(const Duration(milliseconds: 150));
       // Settle animation
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Tap Saved button to activate it
       final saveFinder = find.text('Saved');
       await tester.tap(saveFinder);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Tap Watching button to activate it
       final watchingFinder = find.text('Watching');
       await tester.tap(watchingFinder);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Tap Watched button to activate it
       final watchedFinder = find.text('Watched');
       await tester.tap(watchedFinder);
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
     });
 
     testWidgets('Section 5: ExpandableOverviewText expands/collapses with AnimatedSize and AnimatedRotation',
@@ -539,8 +553,7 @@ void main() {
         ),
       );
 
-      await tester.pump(const Duration(milliseconds: 500));
-      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pumpAndSettle();
 
       // Verify ExpandableOverviewText and AnimatedSize / AnimatedRotation exist
       expect(find.byType(ExpandableOverviewText), findsOneWidget);
@@ -556,6 +569,8 @@ void main() {
       expect(animatedRotationBefore.turns, equals(0.0));
 
       // Tap 'Show more'
+      await tester.ensureVisible(showMoreFinder);
+      await tester.pumpAndSettle();
       await tester.tap(showMoreFinder);
       await tester.pump(); // Start animation
 
@@ -573,8 +588,11 @@ void main() {
       expect(animatedRotationAfter.turns, equals(0.5));
 
       // Tap 'Show less' to collapse again
-      await tester.tap(find.text('Show less'));
-      await tester.pump(const Duration(milliseconds: 500));
+      final showLessFinder = find.text('Show less');
+      await tester.ensureVisible(showLessFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(showLessFinder);
+      await tester.pumpAndSettle();
 
       expect(find.text('Show more'), findsOneWidget);
       final animatedRotationCollapsed = tester.widget<AnimatedRotation>(

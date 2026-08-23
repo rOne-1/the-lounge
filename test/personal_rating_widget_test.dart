@@ -75,7 +75,7 @@ void main() {
     var guard = 0;
     while ((center.dy < 100 || center.dy > 550) && guard < 10) {
       final delta = center.dy > 550 ? -150.0 : 150.0;
-      await tester.drag(find.byType(SingleChildScrollView).first, Offset(0, delta));
+      await tester.drag(find.byType(Scrollable).first, Offset(0, delta));
       await tester.pumpAndSettle();
       center = tester.getCenter(finder);
       guard++;

@@ -145,6 +145,44 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// BETA3-PERF-1: the below-the-fold sections (director/creator credit,
+  /// cast strip, trailers, similar titles, keywords, networks, watch
+  /// providers) as deferred builder closures, not already-built widgets --
+  /// paired with a SliverList.builder below, this means none of these
+  /// sections (and none of the network/image loads their MediaCard/rail
+  /// content triggers) are even constructed until they scroll near the
+  /// viewport, not just laid out. Deliberately NOT wrapped in its own
+  /// .animate() fade/slide per item (unlike the eager section above): a
+  /// separate flutter_animate instance per lazily-built sliver item left a
+  /// pending Timer if the screen was disposed (e.g. rapid tap-then-pop
+  /// navigation in a test) before that item's delayed entrance finished,
+  /// tripping flutter_test's "Timer still pending after dispose" invariant
+  /// -- confirmed live by reproducing and removing it. The scroll itself
+  /// already reveals each section, which reads as a reasonable entrance on
+  /// its own without stacking a second animation on top.
+  List<Widget Function()> _belowFoldSectionBuilders(
+    BuildContext context,
+    WidgetRef ref,
+    MediaItem item,
+    bool isDark,
+  ) {
+    return [
+      () => _buildDirectorOrCreatorCredit(context, ref, item, isDark),
+      () => _buildCastStrip(context, ref, item, isDark),
+      () => _buildTrailersSection(context, item, isDark),
+      () => _buildSimilarTitlesSection(context, ref, item, isDark),
+      () => Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 22),
+              _buildKeywordChips(context, ref, item, isDark),
+              _buildNetworksSection(item, isDark),
+              _buildWatchProvidersSection(context, ref, item, isDark),
+            ],
+          ),
+    ];
+  }
+
   Widget _buildCompactLayout(
     BuildContext context,
     WidgetRef ref,
@@ -153,96 +191,88 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   ) {
     final inkColor = context.ambianceColors.ink;
     final subColor = context.ambianceColors.sub;
+    final belowFold = _isTransitionComplete
+        ? _belowFoldSectionBuilders(context, ref, item, isDark)
+        : const <Widget Function()>[];
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHero(context, item, isDark).animate().fade(duration: 250.ms),
-          Padding(
-            padding: const EdgeInsets.all(18.0),
+    return CustomScrollView(
+      slivers: [
+        SliverToBoxAdapter(
+          child: _buildHero(context, item, isDark)
+              .animate()
+              .fade(duration: 250.ms),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+          sliver: SliverToBoxAdapter(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      style: GoogleFonts.bodoniModa(
-                        fontSize: 30,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        color: inkColor,
-                        height: 1.05,
-                      ),
+                Text(
+                  item.title,
+                  style: GoogleFonts.bodoniModa(
+                    fontSize: 30,
+                    fontWeight: FontWeight.w600,
+                    fontStyle: FontStyle.italic,
+                    color: inkColor,
+                    height: 1.05,
+                  ),
+                ),
+                if (item.tagline != null &&
+                    item.tagline!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    '"${item.tagline}"',
+                    style: GoogleFonts.bodoniModa(
+                      fontSize: 16,
+                      fontStyle: FontStyle.italic,
+                      color: subColor,
                     ),
-                    if (item.tagline != null &&
-                        item.tagline!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        '"${item.tagline}"',
-                        style: GoogleFonts.bodoniModa(
-                          fontSize: 16,
-                          fontStyle: FontStyle.italic,
-                          color: subColor,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 12),
-                    _buildMetaRow(item, isDark),
-                    if (item.genres.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      _buildGenreChips(context, ref, item, isDark),
-                    ],
-                    if (item.belongsToCollection != null)
-                      _buildCollectionBanner(context, item, isDark),
-                    const SizedBox(height: 18),
-                    _buildActionButtons(context, ref, item, isDark),
-                    const SizedBox(height: 22),
-                    ExpandableOverviewText(
-                      text: item.overview,
-                      style: AppThemes.safeGeist(
-                        fontSize: 14,
-                        height: 1.5,
-                        color: subColor,
-                      ),
-                      isDark: isDark,
-                    ),
-                    _buildSeasonsSection(context, ref, item, isDark),
-                    SeasonalRatingBar(item: item),
-                    _buildWatchHistorySection(context, item, isDark),
-                  ],
-                ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
-                      begin: 0.08,
-                      end: 0,
-                      curve: AppPhysics.houseSpringCurve,
-                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
+                _buildMetaRow(item, isDark),
+                if (item.genres.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  _buildGenreChips(context, ref, item, isDark),
+                ],
+                if (item.belongsToCollection != null)
+                  _buildCollectionBanner(context, item, isDark),
+                const SizedBox(height: 18),
+                _buildActionButtons(context, ref, item, isDark),
                 const SizedBox(height: 22),
-                if (_isTransitionComplete)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildDirectorOrCreatorCredit(context, ref, item, isDark),
-                      _buildCastStrip(context, ref, item, isDark),
-                      _buildTrailersSection(context, item, isDark),
-                      _buildSimilarTitlesSection(context, ref, item, isDark),
-                      const SizedBox(height: 22),
-                      _buildKeywordChips(context, ref, item, isDark),
-                      _buildNetworksSection(item, isDark),
-                      _buildWatchProvidersSection(context, ref, item, isDark),
-                    ],
-                  ).animate(delay: 220.ms).fade(duration: 250.ms).slideY(
-                        begin: 0.08,
-                        end: 0,
-                        curve: AppPhysics.houseSpringCurve,
-                      ),
-                const SizedBox(height: 24),
+                ExpandableOverviewText(
+                  text: item.overview,
+                  style: AppThemes.safeGeist(
+                    fontSize: 14,
+                    height: 1.5,
+                    color: subColor,
+                  ),
+                  isDark: isDark,
+                ),
+                _buildSeasonsSection(context, ref, item, isDark),
+                SeasonalRatingBar(item: item),
+                _buildWatchHistorySection(context, item, isDark),
               ],
+            ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
+                  begin: 0.08,
+                  end: 0,
+                  curve: AppPhysics.houseSpringCurve,
+                ),
+          ),
+        ),
+        if (belowFold.isNotEmpty)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 18.0),
+            sliver: SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => belowFold[index](),
+                childCount: belowFold.length,
+              ),
             ),
           ),
-        ],
-      ),
+        const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
+      ],
     );
   }
 
@@ -268,88 +298,86 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         ),
         Expanded(
           flex: 1,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.title,
-                      style: GoogleFonts.bodoniModa(
-                        fontSize: 34,
-                        fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
-                        color: inkColor,
-                        height: 1.05,
-                      ),
-                    ),
-                    if (item.tagline != null &&
-                        item.tagline!.trim().isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        '"${item.tagline}"',
-                        style: GoogleFonts.bodoniModa(
-                          fontSize: 18,
-                          fontStyle: FontStyle.italic,
-                          color: subColor,
+          child: Builder(builder: (paneContext) {
+            final belowFold = _isTransitionComplete
+                ? _belowFoldSectionBuilders(paneContext, ref, item, isDark)
+                : const <Widget Function()>[];
+
+            return CustomScrollView(
+              slivers: [
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(32, 32, 32, 0),
+                  sliver: SliverToBoxAdapter(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.title,
+                          style: GoogleFonts.bodoniModa(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w600,
+                            fontStyle: FontStyle.italic,
+                            color: inkColor,
+                            height: 1.05,
+                          ),
                         ),
+                        if (item.tagline != null &&
+                            item.tagline!.trim().isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            '"${item.tagline}"',
+                            style: GoogleFonts.bodoniModa(
+                              fontSize: 18,
+                              fontStyle: FontStyle.italic,
+                              color: subColor,
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 14),
+                        _buildMetaRow(item, isDark),
+                        if (item.genres.isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          _buildGenreChips(paneContext, ref, item, isDark),
+                        ],
+                        if (item.belongsToCollection != null)
+                          _buildCollectionBanner(paneContext, item, isDark),
+                        const SizedBox(height: 24),
+                        _buildActionButtons(paneContext, ref, item, isDark),
+                        const SizedBox(height: 24),
+                        ExpandableOverviewText(
+                          text: item.overview,
+                          style: AppThemes.safeGeist(
+                            fontSize: 15,
+                            height: 1.5,
+                            color: subColor,
+                          ),
+                          isDark: isDark,
+                        ),
+                        _buildSeasonsSection(paneContext, ref, item, isDark),
+                        SeasonalRatingBar(item: item),
+                        _buildWatchHistorySection(paneContext, item, isDark),
+                      ],
+                    ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
+                          begin: 0.08,
+                          end: 0,
+                          curve: AppPhysics.houseSpringCurve,
+                        ),
+                  ),
+                ),
+                if (belowFold.isNotEmpty)
+                  SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) => belowFold[index](),
+                        childCount: belowFold.length,
                       ),
-                    ],
-                    const SizedBox(height: 14),
-                    _buildMetaRow(item, isDark),
-                    if (item.genres.isNotEmpty) ...[
-                      const SizedBox(height: 14),
-                      _buildGenreChips(context, ref, item, isDark),
-                    ],
-                    if (item.belongsToCollection != null)
-                      _buildCollectionBanner(context, item, isDark),
-                    const SizedBox(height: 24),
-                    _buildActionButtons(context, ref, item, isDark),
-                    const SizedBox(height: 24),
-                    ExpandableOverviewText(
-                      text: item.overview,
-                      style: AppThemes.safeGeist(
-                        fontSize: 15,
-                        height: 1.5,
-                        color: subColor,
-                      ),
-                      isDark: isDark,
                     ),
-                    _buildSeasonsSection(context, ref, item, isDark),
-                    SeasonalRatingBar(item: item),
-                    _buildWatchHistorySection(context, item, isDark),
-                  ],
-                ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
-                      begin: 0.08,
-                      end: 0,
-                      curve: AppPhysics.houseSpringCurve,
-                    ),
-                const SizedBox(height: 24),
-                if (_isTransitionComplete)
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildDirectorOrCreatorCredit(context, ref, item, isDark),
-                      _buildCastStrip(context, ref, item, isDark),
-                      _buildTrailersSection(context, item, isDark),
-                      _buildSimilarTitlesSection(context, ref, item, isDark),
-                      const SizedBox(height: 24),
-                      _buildKeywordChips(context, ref, item, isDark),
-                      _buildNetworksSection(item, isDark),
-                      _buildWatchProvidersSection(context, ref, item, isDark),
-                    ],
-                  ).animate(delay: 220.ms).fade(duration: 250.ms).slideY(
-                        begin: 0.08,
-                        end: 0,
-                        curve: AppPhysics.houseSpringCurve,
-                      ),
-                const SizedBox(height: 24),
+                  ),
+                const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
               ],
-            ),
-          ),
+            );
+          }),
         ),
       ],
     );

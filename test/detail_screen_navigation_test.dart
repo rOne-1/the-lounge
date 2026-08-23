@@ -91,9 +91,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
 
-    await tester.ensureVisible(find.text('Christopher Nolan'));
+    // BETA3-PERF-1: director credit is below the fold, lazily built by the
+    // sliver list -- scrollUntilVisible (not ensureVisible, which requires
+    // the element to already exist) brings it into range first.
+    final directorFinder = find.text('Christopher Nolan');
+    await tester.scrollUntilVisible(directorFinder, 200,
+        scrollable: find.byType(Scrollable).first);
     await tester.pump(const Duration(milliseconds: 500));
-    await tester.tap(find.text('Christopher Nolan'));
+    await tester.tap(directorFinder);
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump(const Duration(milliseconds: 500));
 
