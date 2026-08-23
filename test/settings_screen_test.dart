@@ -11,12 +11,9 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/hall_provider.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
-import 'package:the_lounge/constants.dart';
-import 'package:the_lounge/themes/app_theme.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/reading_room_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
-import 'package:the_lounge/widgets/animated_segmented_control.dart';
 import 'package:the_lounge/widgets/lounge_dialog.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
@@ -123,7 +120,12 @@ void main() {
   // Scrolls a target into the ListView's built/cached range before tapping
   // it -- needed for buttons that sit below the default test viewport.
   Future<void> scrollToAndTap(WidgetTester tester, Finder finder) async {
-    await tester.scrollUntilVisible(finder, 300);
+    // BETA3-SETTINGS-1: the ambiance card carousel added a second, nested
+    // Scrollable (horizontal), so the default scrollable resolution no
+    // longer finds exactly one -- target the outer vertical ListView
+    // explicitly (first in the Element tree, since it's the ancestor).
+    await tester.scrollUntilVisible(finder, 300,
+        scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
     await tester.tap(finder);
   }
@@ -140,21 +142,28 @@ void main() {
     expect(find.text('Settings'), findsOneWidget);
     expect(find.text('AMBIANCE'), findsOneWidget);
 
-    final switchFinder = find.byType(AnimatedSegmentedControl<AppTheme>);
-    expect(switchFinder, findsOneWidget);
+    // BETA3-SETTINGS-1: card-based theme selector replaced the segmented
+    // control -- each theme card carries a stable key.
+    final readingCardFinder = find.byKey(const ValueKey('theme_card_reading_room'));
+    expect(readingCardFinder, findsOneWidget);
 
-    await tester.tap(find.text('Reading'));
+    await tester.tap(readingCardFinder);
     await tester.pumpAndSettle();
 
     expect(container.read(ambianceProvider), equals(readingRoomTheme));
 
     // Later sections sit below the default test viewport's built/cached
-    // range -- scroll to bring them into the tree.
-    await tester.scrollUntilVisible(find.text('DATA MANAGEMENT'), 300);
+    // range -- scroll to bring them into the tree. The main vertical
+    // ListView is the outer Scrollable; the ambiance card carousel added a
+    // second, nested (horizontal) one, so it must be targeted explicitly.
+    final mainScrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.text('DATA MANAGEMENT'), 300,
+        scrollable: mainScrollable);
     await tester.pumpAndSettle();
     expect(find.text('DATA MANAGEMENT'), findsOneWidget);
 
-    await tester.scrollUntilVisible(find.text('ABOUT'), 300);
+    await tester.scrollUntilVisible(find.text('ABOUT'), 300,
+        scrollable: mainScrollable);
     await tester.pumpAndSettle();
     expect(find.text('ABOUT'), findsOneWidget);
   });
@@ -168,8 +177,11 @@ void main() {
     await tester.pumpAndSettle();
 
     // The Debug section sits at the bottom of the ListView, below the
-    // default viewport + cache extent in the test surface.
-    await tester.scrollUntilVisible(find.text('DEBUG'), 300);
+    // default viewport + cache extent in the test surface. The ambiance
+    // card carousel added a second (horizontal) Scrollable, so the outer
+    // vertical ListView must be targeted explicitly.
+    await tester.scrollUntilVisible(find.text('DEBUG'), 300,
+        scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
 
     expect(find.text('DEBUG'), findsOneWidget);
@@ -206,8 +218,6 @@ void main() {
     await tester.pumpAndSettle();
 
     final exportBtn = find.byKey(const ValueKey('export_backup_button'));
-    expect(exportBtn, findsOneWidget);
-
     await scrollToAndTap(tester, exportBtn);
     await tester.pumpAndSettle();
 
@@ -304,9 +314,7 @@ void main() {
     await tester.pumpAndSettle();
 
     final shareBtn = find.byKey(const ValueKey('share_backup_button'));
-    expect(shareBtn, findsOneWidget);
-
-    await tester.tap(shareBtn);
+    await scrollToAndTap(tester, shareBtn);
     await tester.pumpAndSettle();
 
     expect(mockSharePlatform.shareCalled, isTrue);
@@ -357,8 +365,6 @@ void main() {
     await tester.pumpAndSettle();
 
     final importBtn = find.byKey(const ValueKey('import_backup_button'));
-    expect(importBtn, findsOneWidget);
-
     await scrollToAndTap(tester, importBtn);
     await tester.pumpAndSettle();
 
@@ -563,7 +569,8 @@ void main() {
     // This button sits below the default test viewport's built/cached
     // range -- scroll it into view before interacting.
     final resetBtn = find.byKey(const ValueKey('reset_account_button'));
-    await tester.scrollUntilVisible(resetBtn, 300);
+    await tester.scrollUntilVisible(resetBtn, 300,
+        scrollable: find.byType(Scrollable).first);
     await tester.pumpAndSettle();
     await tester.tap(resetBtn);
     await tester.pumpAndSettle();
