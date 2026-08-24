@@ -16,6 +16,7 @@ import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/hall_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
+import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 
 void main() {
   setUp(() {
@@ -253,5 +254,28 @@ void main() {
     // simulation's own settle tolerance, not asserted precisely here.
     expect(endTopLeft.dx, lessThan(startTopLeft.dx - 150));
     expect(endTopLeft.dx, lessThan(100));
+  });
+
+  testWidgets('expanded capsule has theme surface fill for high contrast in light mode Orchid Bloom',
+      (tester) async {
+    final container = await pumpShell(tester);
+    addTearDown(container.dispose);
+
+    await container.read(ambianceProvider.notifier).setTheme(orchidBloomTheme.id);
+    await tester.pumpAndSettle();
+
+    // Tap to expand
+    await tester.tap(capsuleFinder);
+    await tester.pumpAndSettle();
+
+    // Find the AnimatedContainer for the capsule body
+    final animatedContainers = tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer));
+    final capsuleBodyContainer = animatedContainers.firstWhere(
+      (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(28),
+    );
+
+    final decoration = capsuleBodyContainer.decoration as BoxDecoration;
+    expect(decoration.color, isNotNull, reason: 'Expanded capsule must have a solid/frosted background color');
+    expect(decoration.color!.a, greaterThan(0.8), reason: 'Surface fill must have high opacity for contrast over scrim');
   });
 }

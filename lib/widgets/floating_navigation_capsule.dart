@@ -308,6 +308,7 @@ class _CapsuleBody extends ConsumerWidget {
       width: expanded ? expandedWidth : collapsedSize,
       height: expanded ? expandedHeight : collapsedSize,
       decoration: BoxDecoration(
+        color: ambiance.card2.withValues(alpha: ambiance.isDark ? 0.82 : 0.95),
         borderRadius: BorderRadius.circular(expanded ? 28 : 999),
         border: Border.all(color: ambiance.surfaceHighlight, width: 1),
         boxShadow: ambiance.ambientGlowShadow,

@@ -176,12 +176,12 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       glow2: Color.lerp(glow2, other.glow2, t)!,
       background: BoxDecoration.lerp(background, other.background, t)!,
       primaryButtonDecoration: BoxDecoration.lerp(primaryButtonDecoration, other.primaryButtonDecoration, t)!,
-      grainOpacity: grainOpacity + (other.grainOpacity - grainOpacity) * t,
+      grainOpacity: (grainOpacity + (other.grainOpacity - grainOpacity) * t.clamp(0.0, 1.0)).clamp(0.0, 1.0),
       grainTint: Color.lerp(grainTint, other.grainTint, t)!,
-      cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, t) ?? cardShadow,
+      cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, t.clamp(0.0, 1.0)) ?? cardShadow,
       ambientGlowShadow:
-          BoxShadow.lerpList(ambientGlowShadow, other.ambientGlowShadow, t) ?? ambientGlowShadow,
-      dialogShadow: BoxShadow.lerpList(dialogShadow, other.dialogShadow, t) ?? dialogShadow,
+          BoxShadow.lerpList(ambientGlowShadow, other.ambientGlowShadow, t.clamp(0.0, 1.0)) ?? ambientGlowShadow,
+      dialogShadow: BoxShadow.lerpList(dialogShadow, other.dialogShadow, t.clamp(0.0, 1.0)) ?? dialogShadow,
       signatureMotif: t < 0.5 ? signatureMotif : other.signatureMotif,
       isDark: t < 0.5 ? isDark : other.isDark,
     );
