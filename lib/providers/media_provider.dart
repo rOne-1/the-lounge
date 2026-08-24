@@ -171,6 +171,36 @@ class MediaNotifier extends Notifier<MediaState> {
 
   HallStorageService get _storageService => HallStorageService();
 
+  /// TH-58: the mutation-boundary half of the id-normalization fix --
+  /// [MediaItem.fromJson]/[TmdbMovieRepository]'s construction site both
+  /// already guarantee a domain-prefixed id, but a [MediaItem] can also
+  /// reach this notifier hand-constructed (mocks, tests, or any future
+  /// caller) without passing through either. Normalizing here, at every
+  /// shelf-mutating entry point, closes that gap so no unprefixed id can
+  /// ever enter a shelf map regardless of where the item came from -- and
+  /// so an item's id is stable from the moment it's added, rather than
+  /// silently changing the next time it round-trips through a save/reload.
+  MediaItem _normalizedItem(MediaItem item) {
+    final normalized = normalizeMediaId(item.id, item.type);
+    return normalized == item.id ? item : item.copyWith(id: normalized);
+  }
+
+  // TH-58: removeFrom* below take a bare id, not a MediaItem, so they have
+  // no MediaType to normalize with the way _normalizedItem does. Callers
+  // that source the id from a not-yet-normalized MediaItem (e.g. a
+  // DiscoverDeckNotifier pool item built straight from a repository
+  // response, never round-tripped through save/load) would otherwise pass
+  // the raw, unprefixed id and silently miss the actual movie_/tv_-prefixed
+  // key the shelf map is stored under. Resolve defensively against the map
+  // itself instead of trusting the caller.
+  String? _resolveStoredId<T>(Map<String, T> map, String id) {
+    if (map.containsKey(id)) return id;
+    if (id.startsWith('movie_') || id.startsWith('tv_')) return null;
+    if (map.containsKey('movie_$id')) return 'movie_$id';
+    if (map.containsKey('tv_$id')) return 'tv_$id';
+    return null;
+  }
+
   @override
   MediaState build() {
     String initialCountry = 'US';
@@ -216,6 +246,7 @@ class MediaNotifier extends Notifier<MediaState> {
     Map<String, DateTime> endDates,
     Map<String, Map<int, DateTime>> seasonStartDates,
     Map<String, Map<int, DateTime>> seasonEndDates,
+    Map<String, String> idMigration,
   }) _loadCombinedDomainArchive(SharedPreferences prefs, String hallId) {
     final movieKey =
         HallStorageService.domainStorageKey(hallId, MediumDomain.movies);
@@ -223,11 +254,18 @@ class MediaNotifier extends Notifier<MediaState> {
     final animeKey =
         HallStorageService.domainStorageKey(hallId, MediumDomain.anime);
 
+    // TH-58: shared across all 3 domains -- Hall-level id-keyed data
+    // (watchHistory, UserFolder.mediaIds) that isn't itself domain-split
+    // needs the combined legacy-id -> resolved-id translation to stay in
+    // sync with the now-normalized shelf/domain-archive ids.
+    final idMigration = <String, String>{};
+
     DomainArchive parseDomain(String? raw) {
       if (raw == null || raw.isEmpty) return const DomainArchive();
       try {
         return DomainArchive.fromJson(
-            Map<String, dynamic>.from(jsonDecode(raw) as Map));
+            Map<String, dynamic>.from(jsonDecode(raw) as Map),
+            idMigration: idMigration);
       } catch (_) {
         return const DomainArchive();
       }
@@ -273,6 +311,7 @@ class MediaNotifier extends Notifier<MediaState> {
         ...tvArchive.seasonStartDates,
         ...animeArchive.seasonStartDates,
       },
+      idMigration: idMigration,
       seasonEndDates: <String, Map<int, DateTime>>{
         ...movieArchive.seasonEndDates,
         ...tvArchive.seasonEndDates,
@@ -389,8 +428,10 @@ class MediaNotifier extends Notifier<MediaState> {
         rawAnime != null ||
         hallId != 'common') {
       final combined = _loadCombinedDomainArchive(prefs, hallId);
-      final customFolders = _parseCustomFolders(prefs, foldersKey);
-      final watchHistory = _parseWatchHistory(prefs, historyKey);
+      final customFolders = _reKeyedFolders(
+          _parseCustomFolders(prefs, foldersKey), combined.idMigration);
+      final watchHistory = _reKeyedWatchHistory(
+          _parseWatchHistory(prefs, historyKey), combined.idMigration);
 
       final ownState = MediaState(
         watchProvidersCountry: country,
@@ -482,6 +523,7 @@ class MediaNotifier extends Notifier<MediaState> {
     required MediaItem item,
     required ArchiveShelfKind shelf,
   }) async {
+    item = _normalizedItem(item);
     final prefs = ref.read(sharedPreferencesProvider);
     final activeHallId = _storageService.getActiveHallId(prefs);
 
@@ -703,7 +745,12 @@ class MediaNotifier extends Notifier<MediaState> {
         decoded.forEach((k, v) {
           try {
             if (v is Map<String, dynamic>) {
-              result[k] = MediaItem.fromMinimalJson(v);
+              // TH-58: key by the item's own (normalized) id, matching
+              // parseMap's fix in DomainArchive.fromJson -- see that
+              // comment for why keying by the raw JSON key `k` instead
+              // would desync from item.id lookups elsewhere.
+              final item = MediaItem.fromMinimalJson(v);
+              if (item.id.isNotEmpty) result[item.id] = item;
             }
           } catch (_) {}
         });
@@ -750,6 +797,33 @@ class MediaNotifier extends Notifier<MediaState> {
     } catch (_) {
       return {};
     }
+  }
+
+  /// TH-58: watchHistory is Hall-level, not domain-split, so it can't
+  /// self-heal its own keys' type the way a DomainArchive can -- it needs
+  /// the migration table built from parsing the (already type-aware)
+  /// domain archives instead.
+  Map<String, List<WatchRecord>> _reKeyedWatchHistory(
+      Map<String, List<WatchRecord>> history, Map<String, String> idMigration) {
+    if (idMigration.isEmpty) return history;
+    final out = <String, List<WatchRecord>>{};
+    history.forEach((k, v) => out[idMigration[k] ?? k] = v);
+    return out;
+  }
+
+  /// TH-58: same reasoning as [_reKeyedWatchHistory] -- folder membership
+  /// is Hall-level, not domain-split.
+  Map<String, UserFolder> _reKeyedFolders(
+      Map<String, UserFolder> folders, Map<String, String> idMigration) {
+    if (idMigration.isEmpty) return folders;
+    return folders.map((folderId, folder) => MapEntry(
+          folderId,
+          folder.copyWith(
+            mediaIds: [
+              for (final id in folder.mediaIds) idMigration[id] ?? id
+            ],
+          ),
+        ));
   }
 
   Map<String, dynamic> _watchHistoryToJson(
@@ -917,6 +991,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void addToWatchlist(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
         !state.watchingList.containsKey(item.id) &&
@@ -962,16 +1037,18 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromWatchlist(String id) {
-    if (!state.watchlist.containsKey(id)) return;
+    final key = _resolveStoredId(state.watchlist, id);
+    if (key == null) return;
 
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
-      ..remove(id);
+      ..remove(key);
 
     state = state.copyWith(watchlist: newWatchlist);
     _saveToPrefs();
   }
 
   void toggleWatchlist(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.watchlist.containsKey(item.id)) {
       removeFromWatchlist(item.id);
     } else {
@@ -980,6 +1057,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void addToMaybeList(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.maybeList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
         !state.watchingList.containsKey(item.id) &&
@@ -1020,16 +1098,18 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromMaybeList(String id) {
-    if (!state.maybeList.containsKey(id)) return;
+    final key = _resolveStoredId(state.maybeList, id);
+    if (key == null) return;
 
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
-      ..remove(id);
+      ..remove(key);
 
     state = state.copyWith(maybeList: newMaybeList);
     _saveToPrefs();
   }
 
   void toggleMaybe(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.maybeList.containsKey(item.id)) {
       removeFromMaybeList(item.id);
     } else {
@@ -1040,6 +1120,7 @@ class MediaNotifier extends Notifier<MediaState> {
   void toggleMaybeList(MediaItem item) => toggleMaybe(item);
 
   void addToWatchingList(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.watchingList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
@@ -1079,16 +1160,18 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromWatchingList(String id) {
-    if (!state.watchingList.containsKey(id)) return;
+    final key = _resolveStoredId(state.watchingList, id);
+    if (key == null) return;
 
     final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
-      ..remove(id);
+      ..remove(key);
 
     state = state.copyWith(watchingList: newWatchingList);
     _saveToPrefs();
   }
 
   void toggleWatching(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.watchingList.containsKey(item.id)) {
       removeFromWatchingList(item.id);
     } else {
@@ -1276,6 +1359,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void addToWatchedList(MediaItem item, {List<TvSeason>? seasons}) {
+    item = _normalizedItem(item);
     if (state.watchedList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
@@ -1465,10 +1549,10 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromWatchedList(String id) {
-    if (!state.watchedList.containsKey(id) &&
-        !state.watchedEpisodes.containsKey(id)) {
-      return;
-    }
+    final id0 = _resolveStoredId(state.watchedList, id) ??
+        _resolveStoredId(state.watchedEpisodes, id);
+    if (id0 == null) return;
+    id = id0;
 
     final newWatchedList = Map<String, MediaItem>.from(state.watchedList)
       ..remove(id);
@@ -1504,6 +1588,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void toggleWatched(MediaItem item, {List<TvSeason>? seasons}) {
+    item = _normalizedItem(item);
     if (state.watchedList.containsKey(item.id)) {
       removeFromWatchedList(item.id);
     } else {
@@ -1515,6 +1600,7 @@ class MediaNotifier extends Notifier<MediaState> {
       toggleWatched(item, seasons: seasons);
 
   void addToDroppedList(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.droppedList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
@@ -1550,16 +1636,18 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromDroppedList(String id) {
-    if (!state.droppedList.containsKey(id)) return;
+    final key = _resolveStoredId(state.droppedList, id);
+    if (key == null) return;
 
     final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
-      ..remove(id);
+      ..remove(key);
 
     state = state.copyWith(droppedList: newDroppedList);
     _saveToPrefs();
   }
 
   void toggleDropped(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.droppedList.containsKey(item.id)) {
       removeFromDroppedList(item.id);
     } else {
@@ -1570,6 +1658,7 @@ class MediaNotifier extends Notifier<MediaState> {
   void toggleDroppedList(MediaItem item) => toggleDropped(item);
 
   void addToOnHoldList(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.onHoldList.containsKey(item.id) &&
         !state.watchlist.containsKey(item.id) &&
         !state.maybeList.containsKey(item.id) &&
@@ -1605,16 +1694,18 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromOnHoldList(String id) {
-    if (!state.onHoldList.containsKey(id)) return;
+    final key = _resolveStoredId(state.onHoldList, id);
+    if (key == null) return;
 
     final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
-      ..remove(id);
+      ..remove(key);
 
     state = state.copyWith(onHoldList: newOnHoldList);
     _saveToPrefs();
   }
 
   void toggleOnHold(MediaItem item) {
+    item = _normalizedItem(item);
     if (state.onHoldList.containsKey(item.id)) {
       removeFromOnHoldList(item.id);
     } else {
@@ -1632,6 +1723,11 @@ class MediaNotifier extends Notifier<MediaState> {
     int? totalEpisodeCount,
     List<TvSeason>? seasons,
   }) {
+    // TH-58: showId/showItem.id are meant to be the same identifier by
+    // convention -- normalize showItem and derive showId from it, so a
+    // caller can't accidentally desync the two.
+    showItem = _normalizedItem(showItem);
+    showId = showItem.id;
     final key = 'S${seasonNumber}E$episodeNumber';
     final currentMap = Map<String, Set<String>>.from(
       state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
@@ -1709,6 +1805,9 @@ class MediaNotifier extends Notifier<MediaState> {
     required MediaItem showItem,
     required List<TvSeason> seasons,
   }) {
+    // TH-58: see toggleEpisodeWatched's identical comment.
+    showItem = _normalizedItem(showItem);
+    showId = showItem.id;
     final season = seasons.firstWhere(
       (s) => s.seasonNumber == seasonNumber,
       orElse: () =>

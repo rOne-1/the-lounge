@@ -53,7 +53,7 @@ void main() {
   });
 
   const trackedShow = MediaItem(
-    id: 'tv-tracked',
+    id: 'tv_tracked',
     title: 'Tracked Show',
     type: MediaType.tv,
     rating: 8.0,
@@ -63,7 +63,7 @@ void main() {
   );
 
   const untrackedShow = MediaItem(
-    id: 'tv-untracked',
+    id: 'tv_untracked',
     title: 'Untracked Show',
     type: MediaType.tv,
     rating: 8.0,
@@ -94,7 +94,7 @@ void main() {
   test('online fetch for a tracked show saves a skeleton for later offline use',
       () async {
     final repo = _ToggleableRepository({
-      'tv-tracked': [realSeason1, realSeason2],
+      'tv_tracked': [realSeason1, realSeason2],
     });
     final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(overrides: [
@@ -111,7 +111,7 @@ void main() {
     expect(seasons[0].episodes.map((e) => e.name), ['Real Ep 1', 'Real Ep 2']);
 
     final skeletonService = EpisodeSkeletonCacheService(prefs: prefs);
-    final saved = skeletonService.getSkeleton('tv-tracked');
+    final saved = skeletonService.getSkeleton('tv_tracked');
     expect(saved, isNotNull);
     expect(saved!.length, 2);
     expect(saved[0].episodes.map((e) => e.episodeNumber), [1, 2]);
@@ -122,7 +122,7 @@ void main() {
       'going offline afterwards falls back to the saved skeleton (real '
       'per-season structure), not the crude single-season guess', () async {
     final repo = _ToggleableRepository({
-      'tv-tracked': [realSeason1, realSeason2],
+      'tv_tracked': [realSeason1, realSeason2],
     });
     final prefs = await SharedPreferences.getInstance();
 
@@ -180,7 +180,7 @@ void main() {
     expect(seasons.length, 1);
     expect(seasons[0].episodes.length, 5); // from episodesCount, old fallback
     expect(
-        EpisodeSkeletonCacheService(prefs: prefs).getSkeleton('tv-untracked'),
+        EpisodeSkeletonCacheService(prefs: prefs).getSkeleton('tv_untracked'),
         isNull);
   });
 

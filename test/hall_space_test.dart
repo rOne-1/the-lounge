@@ -49,7 +49,7 @@ void main() {
 
   group('NOMEN-1: DomainArchive & HallSpace serialization', () {
     const sampleMovie = MediaItem(
-      id: 'movie-1',
+      id: 'movie_1',
       title: 'Inception',
       type: MediaType.movie,
       rating: 8.8,
@@ -59,32 +59,32 @@ void main() {
 
     test('DomainArchive serialization and shelf lookup', () {
       final archive = DomainArchive(
-        watchlist: const {'movie-1': sampleMovie},
-        watched: const {'movie-1': sampleMovie},
-        watchedEpisodes: const {'tv-1': {'S1E1', 'S1E2'}},
-        startDates: {'movie-1': DateTime(2026, 1, 1)},
-        endDates: {'movie-1': DateTime(2026, 1, 2)},
+        watchlist: const {'movie_1': sampleMovie},
+        watched: const {'movie_1': sampleMovie},
+        watchedEpisodes: const {'tv_1': {'S1E1', 'S1E2'}},
+        startDates: {'movie_1': DateTime(2026, 1, 1)},
+        endDates: {'movie_1': DateTime(2026, 1, 2)},
         seasonStartDates: {
-          'tv-1': {1: DateTime(2026, 1, 1)}
+          'tv_1': {1: DateTime(2026, 1, 1)}
         },
         seasonEndDates: {
-          'tv-1': {1: DateTime(2026, 1, 10)}
+          'tv_1': {1: DateTime(2026, 1, 10)}
         },
       );
 
       expect(archive.isEmpty, isFalse);
       expect(archive.isNotEmpty, isTrue);
       expect(archive.totalCount, 2);
-      expect(archive.shelf(ArchiveShelfKind.watchlist)['movie-1']?.title, 'Inception');
+      expect(archive.shelf(ArchiveShelfKind.watchlist)['movie_1']?.title, 'Inception');
       expect(archive.shelf(ArchiveShelfKind.watching).isEmpty, isTrue);
 
       final json = archive.toJson();
       final reconstructed = DomainArchive.fromJson(json);
 
-      expect(reconstructed.watchlist['movie-1']?.title, 'Inception');
-      expect(reconstructed.watchedEpisodes['tv-1']?.contains('S1E1'), isTrue);
-      expect(reconstructed.startDates['movie-1'], DateTime(2026, 1, 1));
-      expect(reconstructed.seasonStartDates['tv-1']?[1], DateTime(2026, 1, 1));
+      expect(reconstructed.watchlist['movie_1']?.title, 'Inception');
+      expect(reconstructed.watchedEpisodes['tv_1']?.contains('S1E1'), isTrue);
+      expect(reconstructed.startDates['movie_1'], DateTime(2026, 1, 1));
+      expect(reconstructed.seasonStartDates['tv_1']?[1], DateTime(2026, 1, 1));
     });
 
     test('HallSpace default instances & full serialization', () {
@@ -110,7 +110,7 @@ void main() {
         id: 'f-1',
         name: 'Sci-Fi Hits',
         createdAt: DateTime(2026, 2, 1),
-        mediaIds: const ['movie-1'],
+        mediaIds: const ['movie_1'],
       );
 
       final record = WatchRecord(
@@ -123,11 +123,11 @@ void main() {
         name: 'The Velvet Cinema',
         customFolders: [folder],
         watchHistory: {
-          'movie-1': [record]
+          'movie_1': [record]
         },
         domains: {
           MediumDomain.movies: const DomainArchive(
-            watchlist: {'movie-1': sampleMovie},
+            watchlist: {'movie_1': sampleMovie},
           ),
         },
       );
@@ -138,8 +138,8 @@ void main() {
       expect(fromJson.name, 'The Velvet Cinema');
       expect(fromJson.customFolders.length, 1);
       expect(fromJson.customFolders.first.name, 'Sci-Fi Hits');
-      expect(fromJson.watchHistory['movie-1']?.length, 1);
-      expect(fromJson.domainArchive(MediumDomain.movies).watchlist['movie-1']?.title, 'Inception');
+      expect(fromJson.watchHistory['movie_1']?.length, 1);
+      expect(fromJson.domainArchive(MediumDomain.movies).watchlist['movie_1']?.title, 'Inception');
       expect(fromJson.domainArchive(MediumDomain.tv).isEmpty, isTrue);
     });
   });

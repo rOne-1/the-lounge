@@ -27,7 +27,7 @@ void main() {
   });
 
   final movie1 = MediaItem(
-    id: 'movie-1',
+    id: 'movie_1',
     title: 'Alpha',
     type: MediaType.movie,
     rating: 7.0,
@@ -36,7 +36,7 @@ void main() {
     genres: const ['Action'],
   );
   final movie2 = MediaItem(
-    id: 'movie-2',
+    id: 'movie_2',
     title: 'Beta',
     type: MediaType.movie,
     rating: 6.5,

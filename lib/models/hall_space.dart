@@ -302,17 +302,40 @@ class DomainArchive {
         ),
       };
 
-  factory DomainArchive.fromJson(Map<String, dynamic> json) {
+  /// [idMigration] is an optional output parameter (Dart has no `out`
+  /// params, so a caller-supplied mutable map is used instead): populated
+  /// with `legacyRawId -> resolvedPrefixedId` for every item whose
+  /// persisted key didn't already match its own (now-normalized) id --
+  /// i.e. every title that predates domain-prefixed ids. Callers that also
+  /// need to re-key id-keyed data *outside* this archive (Hall-level
+  /// `watchHistory`, `UserFolder.mediaIds`) can merge these across all 3
+  /// domains and apply the same translation there.
+  factory DomainArchive.fromJson(Map<String, dynamic> json,
+      {Map<String, String>? idMigration}) {
     Map<String, MediaItem> parseMap(dynamic mapRaw) {
       if (mapRaw is! Map) return {};
       final out = <String, MediaItem>{};
       for (final entry in mapRaw.entries) {
+        Map<String, dynamic>? itemJson;
         if (entry.value is Map<String, dynamic>) {
-          out[entry.key.toString()] =
-              MediaItem.fromJson(entry.value as Map<String, dynamic>);
+          itemJson = entry.value as Map<String, dynamic>;
         } else if (entry.value is Map) {
-          out[entry.key.toString()] = MediaItem.fromJson(
-              Map<String, dynamic>.from(entry.value as Map));
+          itemJson = Map<String, dynamic>.from(entry.value as Map);
+        }
+        if (itemJson == null) continue;
+        final item = MediaItem.fromJson(itemJson);
+        if (item.id.isEmpty) continue;
+        // TH-58: key by the item's own (normalized) id, not the raw
+        // persisted JSON key -- for legacy data these used to be
+        // identical (both the bare TMDB numeric id), but
+        // MediaItem.fromJson now self-heals `item.id` to be
+        // domain-prefixed. Keying by the raw JSON key here instead would
+        // silently desync the map's keys from every `item.id` lookup
+        // elsewhere in the app.
+        out[item.id] = item;
+        final rawKey = entry.key.toString();
+        if (idMigration != null && rawKey != item.id) {
+          idMigration[rawKey] = item.id;
         }
       }
       return out;
@@ -359,18 +382,37 @@ class DomainArchive {
       return out;
     }
 
+    // Shelves must be parsed first -- they're what builds idMigration,
+    // which the per-title auxiliary maps below need to re-key themselves
+    // (they have no MediaItem/type of their own to self-heal from).
+    final watching = parseMap(json['watching']);
+    final watchlist = parseMap(json['watchlist']);
+    final watched = parseMap(json['watched']);
+    final saved = parseMap(json['saved'] ?? json['maybeList']);
+    final onHold = parseMap(json['onHold']);
+    final dropped = parseMap(json['dropped']);
+
+    Map<String, T> reKeyed<T>(Map<String, T> parsed) {
+      if (idMigration == null || idMigration.isEmpty) return parsed;
+      final out = <String, T>{};
+      parsed.forEach((k, v) {
+        out[idMigration[k] ?? k] = v;
+      });
+      return out;
+    }
+
     return DomainArchive(
-      watching: parseMap(json['watching']),
-      watchlist: parseMap(json['watchlist']),
-      watched: parseMap(json['watched']),
-      saved: parseMap(json['saved'] ?? json['maybeList']),
-      onHold: parseMap(json['onHold']),
-      dropped: parseMap(json['dropped']),
-      watchedEpisodes: parseEpisodes(json['watchedEpisodes']),
-      startDates: parseDates(json['startDates']),
-      endDates: parseDates(json['endDates']),
-      seasonStartDates: parseSeasonDates(json['seasonStartDates']),
-      seasonEndDates: parseSeasonDates(json['seasonEndDates']),
+      watching: watching,
+      watchlist: watchlist,
+      watched: watched,
+      saved: saved,
+      onHold: onHold,
+      dropped: dropped,
+      watchedEpisodes: reKeyed(parseEpisodes(json['watchedEpisodes'])),
+      startDates: reKeyed(parseDates(json['startDates'])),
+      endDates: reKeyed(parseDates(json['endDates'])),
+      seasonStartDates: reKeyed(parseSeasonDates(json['seasonStartDates'])),
+      seasonEndDates: reKeyed(parseSeasonDates(json['seasonEndDates'])),
     );
   }
 }

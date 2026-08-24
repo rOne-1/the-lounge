@@ -7,7 +7,7 @@ import 'movie_repository.dart';
 class MockMovieRepository implements MovieRepository {
   final List<MediaItem> _mockData = [
     MediaItem(
-      id: '1',
+      id: 'movie_1',
       title: 'Inception',
       type: MediaType.movie,
       rating: 8.8,
@@ -65,7 +65,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '2',
+      id: 'tv_2',
       title: 'Stranger Things',
       type: MediaType.tv,
       rating: 8.7,
@@ -111,7 +111,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '3',
+      id: 'movie_3',
       title: 'The Dark Knight',
       type: MediaType.movie,
       rating: 9.0,
@@ -154,7 +154,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '4',
+      id: 'tv_4',
       title: 'Breaking Bad',
       type: MediaType.tv,
       rating: 9.5,
@@ -188,7 +188,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '5',
+      id: 'movie_5',
       title: 'The Room',
       type: MediaType.movie,
       rating: 3.6,
@@ -206,7 +206,7 @@ class MockMovieRepository implements MovieRepository {
       cast: ['Tommy Wiseau', 'Greg Sestero', 'Juliette Danielle'],
     ),
     MediaItem(
-      id: '6',
+      id: 'movie_6',
       title: 'Missing Image Movie',
       type: MediaType.movie,
       rating: 7.0,
@@ -224,7 +224,7 @@ class MockMovieRepository implements MovieRepository {
       cast: ['John Doe', 'Jane Smith'],
     ),
     MediaItem(
-      id: '7',
+      id: 'movie_7',
       title: 'The Matrix',
       type: MediaType.movie,
       rating: 8.7,
@@ -248,7 +248,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '8',
+      id: 'tv_8',
       title: 'The Office',
       type: MediaType.tv,
       rating: 8.9,
@@ -268,7 +268,7 @@ class MockMovieRepository implements MovieRepository {
       cast: ['Steve Carell', 'Rainn Wilson', 'John Krasinski', 'Jenna Fischer'],
     ),
     MediaItem(
-      id: '9',
+      id: 'movie_9',
       title: 'Interstellar',
       type: MediaType.movie,
       rating: 8.6,
@@ -292,7 +292,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '10',
+      id: 'tv_10',
       title: 'Game of Thrones',
       type: MediaType.tv,
       rating: 9.3,
@@ -312,7 +312,7 @@ class MockMovieRepository implements MovieRepository {
       cast: ['Emilia Clarke', 'Kit Harington', 'Peter Dinklage', 'Lena Headey'],
     ),
     MediaItem(
-      id: '11',
+      id: 'movie_11',
       title: 'Avatar',
       type: MediaType.movie,
       rating: 7.9,
@@ -336,7 +336,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '12',
+      id: 'tv_12',
       title: 'The Mandalorian',
       type: MediaType.tv,
       rating: 8.7,
@@ -361,7 +361,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '13',
+      id: 'movie_13',
       title: 'Pulp Fiction',
       type: MediaType.movie,
       rating: 8.9,
@@ -385,7 +385,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '14',
+      id: 'tv_14',
       title: 'Friends',
       type: MediaType.tv,
       rating: 8.9,
@@ -412,7 +412,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '15',
+      id: 'movie_15',
       title: 'Fight Club',
       type: MediaType.movie,
       rating: 8.8,
@@ -430,7 +430,7 @@ class MockMovieRepository implements MovieRepository {
       cast: ['Edward Norton', 'Brad Pitt', 'Helena Bonham Carter', 'Meat Loaf'],
     ),
     MediaItem(
-      id: '16',
+      id: 'tv_16',
       title: 'Better Call Saul',
       type: MediaType.tv,
       rating: 8.9,
@@ -455,7 +455,7 @@ class MockMovieRepository implements MovieRepository {
       ],
     ),
     MediaItem(
-      id: '17',
+      id: 'movie_17',
       title: 'Spider-Man: Across the Spider-Verse',
       type: MediaType.movie,
       rating: 8.8,
@@ -594,9 +594,16 @@ class MockMovieRepository implements MovieRepository {
   @override
   Future<MediaItem?> getMediaDetails(String id) async {
     await Future.delayed(const Duration(milliseconds: 500));
+    // TH-58: _mockData ids are all domain-prefixed now, so a caller passing
+    // a bare numeric id (or an already-prefixed one for the other domain)
+    // needs both movie_/tv_ variants tried, not just the literal/clean id.
     final cleanId = id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
     try {
-      return _mockData.firstWhere((m) => m.id == id || m.id == cleanId);
+      return _mockData.firstWhere((m) =>
+          m.id == id ||
+          m.id == cleanId ||
+          m.id == 'movie_$cleanId' ||
+          m.id == 'tv_$cleanId');
     } catch (e) {
       return null;
     }

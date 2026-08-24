@@ -331,8 +331,9 @@ void main() {
 
       final state = container.read(mediaProvider);
       expect(state.watchlist.length, equals(1));
-      expect(state.watchlist.containsKey('valid_1'), isTrue);
-      expect(state.watchlist['valid_1']?.title, equals('Valid Title'));
+      // TH-58: self-healed to a domain-prefixed id on load.
+      expect(state.watchlist.containsKey('movie_valid_1'), isTrue);
+      expect(state.watchlist['movie_valid_1']?.title, equals('Valid Title'));
 
       container.dispose();
     });

@@ -474,7 +474,7 @@ void main() {
     addTearDown(container.dispose);
 
     final existingMovie = MediaItem(
-      id: 'existing_movie',
+      id: 'movie_existing_movie',
       title: 'Existing Title',
       type: MediaType.movie,
       rating: 5.0,
@@ -529,7 +529,7 @@ void main() {
     await tester.tap(cancelBtn);
     await tester.pumpAndSettle();
 
-    expect(container.read(mediaProvider).watchlist.containsKey('existing_movie'), isTrue);
+    expect(container.read(mediaProvider).watchlist.containsKey('movie_existing_movie'), isTrue);
     expect(container.read(mediaProvider).watchlist.containsKey('new_movie'), isFalse);
 
     await tester.tap(importBtn);
@@ -539,7 +539,7 @@ void main() {
     await tester.tap(confirmBtn);
     await tester.pumpAndSettle();
 
-    expect(container.read(mediaProvider).watchlist.containsKey('existing_movie'), isFalse);
+    expect(container.read(mediaProvider).watchlist.containsKey('movie_existing_movie'), isFalse);
     expect(container.read(mediaProvider).watchlist.containsKey('new_movie'), isTrue);
     expect(find.text('Backup imported successfully.'), findsOneWidget);
 

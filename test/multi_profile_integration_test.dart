@@ -22,7 +22,7 @@ void main() {
 
   group('HALL INTEGRATION: Deep HallStorageService <-> MediaProvider wiring', () {
     final movieA = const MediaItem(
-      id: 'movie-A',
+      id: 'movie_A',
       title: 'Inception',
       type: MediaType.movie,
       rating: 8.8,
@@ -31,7 +31,7 @@ void main() {
     );
 
     final showB = const MediaItem(
-      id: 'tv-B',
+      id: 'tv_B',
       title: 'Severance',
       type: MediaType.tv,
       rating: 8.9,
@@ -56,21 +56,21 @@ void main() {
 
       // Add Movie A to The Grand Hall's Watchlist
       mediaNotifier.addToWatchlist(movieA);
-      expect(container.read(mediaProvider).watchlist.containsKey('movie-A'), isTrue);
-      expect(container.read(mediaProvider).watchlist['movie-A']?.title, 'Inception');
+      expect(container.read(mediaProvider).watchlist.containsKey('movie_A'), isTrue);
+      expect(container.read(mediaProvider).watchlist['movie_A']?.title, 'Inception');
 
       // Step 2: Switch to The Mezzanine Hall
       await hallNotifier.switchHall('custom_1');
       expect(container.read(hallProvider).activeHallId, 'custom_1');
 
       // Assert The Mezzanine Hall is clean (Movie A is NOT present)
-      expect(container.read(mediaProvider).watchlist.containsKey('movie-A'), isFalse);
+      expect(container.read(mediaProvider).watchlist.containsKey('movie_A'), isFalse);
       expect(container.read(mediaProvider).watchlist.isEmpty, isTrue);
 
       // Step 3: Add TV Show B to The Mezzanine Hall's Watching list
       mediaNotifier.addToWatchingList(showB);
-      expect(container.read(mediaProvider).watchingList.containsKey('tv-B'), isTrue);
-      expect(container.read(mediaProvider).watchingList['tv-B']?.title, 'Severance');
+      expect(container.read(mediaProvider).watchingList.containsKey('tv_B'), isTrue);
+      expect(container.read(mediaProvider).watchingList['tv_B']?.title, 'Severance');
 
       // Step 4: Switch back to The Grand Hall
       await hallNotifier.switchHall('common');
@@ -80,11 +80,11 @@ void main() {
       // an aggregate of the other Halls too, so TV Show B (native to the
       // Mezzanine Hall) is also visible here -- but marked read-only, not
       // treated as if it were natively saved in the Grand Hall.
-      expect(container.read(mediaProvider).watchlist.containsKey('movie-A'), isTrue);
-      expect(container.read(mediaProvider).watchingList.containsKey('tv-B'), isTrue);
-      expect(container.read(mediaProvider).readOnlyMediaIds.contains('tv-B'), isTrue);
-      expect(container.read(mediaProvider).readOnlyMediaIds.contains('movie-A'), isFalse);
-      expect(container.read(mediaProvider).readOnlySourceHallName['tv-B'],
+      expect(container.read(mediaProvider).watchlist.containsKey('movie_A'), isTrue);
+      expect(container.read(mediaProvider).watchingList.containsKey('tv_B'), isTrue);
+      expect(container.read(mediaProvider).readOnlyMediaIds.contains('tv_B'), isTrue);
+      expect(container.read(mediaProvider).readOnlyMediaIds.contains('movie_A'), isFalse);
+      expect(container.read(mediaProvider).readOnlySourceHallName['tv_B'],
           'The Mezzanine Hall');
 
       // ORG-AGG-1: aggregated titles must never get silently duplicated
@@ -96,15 +96,15 @@ void main() {
       final grandMovieRaw = prefs.getString(
         HallStorageService.domainStorageKey('common', MediumDomain.tv),
       );
-      expect(grandMovieRaw == null || !grandMovieRaw.contains('tv-B'), isTrue);
+      expect(grandMovieRaw == null || !grandMovieRaw.contains('tv_B'), isTrue);
 
       // Switch back to The Mezzanine Hall: TV Show B is present natively,
       // Movie A (native to the Grand Hall only) is NOT present -- the
       // Mezzanine Hall itself is not part of any aggregate and stays fully
       // isolated.
       await hallNotifier.switchHall('custom_1');
-      expect(container.read(mediaProvider).watchingList.containsKey('tv-B'), isTrue);
-      expect(container.read(mediaProvider).watchlist.containsKey('movie-A'), isFalse);
+      expect(container.read(mediaProvider).watchingList.containsKey('tv_B'), isTrue);
+      expect(container.read(mediaProvider).watchlist.containsKey('movie_A'), isFalse);
       expect(container.read(mediaProvider).readOnlyMediaIds.isEmpty, isTrue);
     });
 
@@ -114,7 +114,7 @@ void main() {
       final grandHall = HallSpace.defaultGrandHall().copyWith(
         domains: {
           MediumDomain.movies: DomainArchive(
-            watchlist: {'movie-A': movieA},
+            watchlist: {'movie_A': movieA},
           ),
           MediumDomain.tv: const DomainArchive(),
           MediumDomain.anime: const DomainArchive(),
@@ -126,7 +126,7 @@ void main() {
         domains: {
           MediumDomain.movies: const DomainArchive(),
           MediumDomain.tv: DomainArchive(
-            watching: {'tv-B': showB},
+            watching: {'tv_B': showB},
           ),
           MediumDomain.anime: const DomainArchive(),
         },
@@ -151,11 +151,11 @@ void main() {
       expect(freshHalls.length, 3);
 
       final restoredGrandHall = freshHalls.firstWhere((h) => h.id == 'common');
-      expect(restoredGrandHall.domainArchive(MediumDomain.movies).watchlist.containsKey('movie-A'), isTrue);
+      expect(restoredGrandHall.domainArchive(MediumDomain.movies).watchlist.containsKey('movie_A'), isTrue);
 
       final restoredMezzanineHall = freshHalls.firstWhere((h) => h.id == 'custom_1');
       expect(restoredMezzanineHall.name, 'Sci-Fi Fan');
-      expect(restoredMezzanineHall.domainArchive(MediumDomain.tv).watching.containsKey('tv-B'), isTrue);
+      expect(restoredMezzanineHall.domainArchive(MediumDomain.tv).watching.containsKey('tv_B'), isTrue);
     });
   });
 }

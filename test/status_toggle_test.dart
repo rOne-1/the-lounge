@@ -7,7 +7,7 @@ void main() {
   group('MediaNotifier Status Toggles Independence', () {
     late ProviderContainer container;
     const item = MediaItem(
-      id: 'item-1',
+      id: 'movie_item_1',
       title: 'Dune: Part Two',
       type: MediaType.movie,
       rating: 8.5,

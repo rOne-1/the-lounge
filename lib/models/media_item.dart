@@ -3,6 +3,22 @@ enum MediaType {
   tv,
 }
 
+/// The single source of truth for how a [MediaItem.id] must be shaped:
+/// domain-prefixed ("movie_123"/"tv_123"), never TMDB's bare numeric id.
+/// TMDB's movie and TV id spaces are independent, so a movie and a TV show
+/// can legitimately share the same raw numeric id -- every shelf map in
+/// this app (`MediaState.watchlist`/`watchingList`/etc.) is a single
+/// combined `Map<String, MediaItem>` spanning movies, TV, and anime, so an
+/// unprefixed id is a real collision risk there. Idempotent (an
+/// already-prefixed id passes through unchanged), so it's safe to call on
+/// data that might already be correct -- this is what makes it usable both
+/// for fresh construction and for self-healing legacy persisted data that
+/// predates this normalization.
+String normalizeMediaId(String id, MediaType type) {
+  if (id.startsWith('movie_') || id.startsWith('tv_')) return id;
+  return '${type == MediaType.tv ? 'tv' : 'movie'}_$id';
+}
+
 class TvEpisode {
   final int id;
   final int episodeNumber;
@@ -492,12 +508,7 @@ class MediaItem {
   }
 
   /// Returns the ID strictly type-prefixed (e.g. "movie_123" or "tv_123").
-  String get prefixedId {
-    if (id.startsWith('movie_') || id.startsWith('tv_')) {
-      return id;
-    }
-    return '${type == MediaType.tv ? 'tv' : 'movie'}_$id';
-  }
+  String get prefixedId => normalizeMediaId(id, type);
 
   MediaItem copyWith({
     String? id,
@@ -668,8 +679,14 @@ class MediaItem {
         ? companyNamesJson.whereType<String>().toList()
         : const <String>[];
 
+    final rawId = json['id']?.toString() ?? '';
+
     return MediaItem(
-      id: (json['id']?.toString() ?? ''),
+      // Self-heals legacy persisted data written before ids were
+      // domain-prefixed -- see [normalizeMediaId]. A no-op for anything
+      // already prefixed (all fresh TMDB fetches, and any already-migrated
+      // persisted data).
+      id: rawId.isEmpty ? rawId : normalizeMediaId(rawId, mediaType),
       title: rawTitle,
       type: mediaType,
       rating: ratingVal,

@@ -16,7 +16,7 @@ class _InstantRepository extends MockMovieRepository {
 }
 
 MediaItem _movie(int i) => MediaItem(
-      id: 'movie-$i',
+      id: 'movie_$i',
       title: 'Movie $i',
       type: MediaType.movie,
       rating: 7.0,
@@ -25,7 +25,7 @@ MediaItem _movie(int i) => MediaItem(
     );
 
 MediaItem _tvShow(int i) => MediaItem(
-      id: 'tv-$i',
+      id: 'tv_$i',
       title: 'Show $i',
       type: MediaType.tv,
       rating: 7.0,
@@ -76,7 +76,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final state = container.read(mediaProvider);
-      expect(state.watchlist.containsKey('movie-0'), isTrue);
+      expect(state.watchlist.containsKey('movie_0'), isTrue);
       expect(find.text('Movie 1'), findsOneWidget);
     });
 
@@ -87,9 +87,9 @@ void main() {
       await tester.pumpAndSettle();
 
       final state = container.read(mediaProvider);
-      expect(state.maybeList.containsKey('movie-0'), isTrue);
-      expect(state.watchlist.containsKey('movie-0'), isFalse);
-      expect(state.droppedList.containsKey('movie-0'), isFalse);
+      expect(state.maybeList.containsKey('movie_0'), isTrue);
+      expect(state.watchlist.containsKey('movie_0'), isFalse);
+      expect(state.droppedList.containsKey('movie_0'), isFalse);
       expect(find.text('Movie 1'), findsOneWidget);
     });
 
@@ -100,7 +100,7 @@ void main() {
       await tester.pumpAndSettle();
 
       final state = container.read(mediaProvider);
-      expect(state.droppedList.containsKey('movie-0'), isTrue);
+      expect(state.droppedList.containsKey('movie_0'), isTrue);
       expect(find.text('Movie 1'), findsOneWidget);
     });
 

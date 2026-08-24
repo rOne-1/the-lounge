@@ -26,7 +26,7 @@ void main() {
   });
 
   final testMovie = MediaItem(
-    id: 'movie-rate-1',
+    id: 'movie_rate_1',
     title: 'The Rating Test',
     type: MediaType.movie,
     rating: 7.5,

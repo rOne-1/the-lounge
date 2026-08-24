@@ -68,7 +68,7 @@ void main() {
   final future = now.add(const Duration(days: 10));
 
   const show = MediaItem(
-    id: 'tv-b2',
+    id: 'tv_b2',
     title: 'Test Show',
     type: MediaType.tv,
     seasonsCount: 1,

@@ -337,9 +337,10 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
-      // Verify episode is marked watched in mediaProvider
+      // Verify episode is marked watched in mediaProvider. TH-58: the
+      // show's id is self-healed to a domain-prefixed form.
       final mediaState = container.read(mediaProvider);
-      expect(mediaState.watchedEpisodes['tv-1']?.contains('S1E1'), isTrue);
+      expect(mediaState.watchedEpisodes['tv_tv-1']?.contains('S1E1'), isTrue);
     });
 
     testWidgets('country selector dropdown updates provider state and preferences',

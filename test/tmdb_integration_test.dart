@@ -274,7 +274,7 @@ void main() {
 
       final details = await repo.getMediaDetails('1');
       expect(details, isNotNull);
-      expect(details!.id, equals('1'));
+      expect(details!.id, equals('movie_1'));
 
       final searchResults = await repo.searchMedia('Inception');
       expect(searchResults, isNotEmpty);
@@ -543,7 +543,7 @@ void main() {
 
       final trending = await repo.getTrendingMovies();
       expect(trending.length, equals(1));
-      expect(trending.first.id, equals('550'));
+      expect(trending.first.id, equals('movie_550'));
       expect(trending.first.title, equals('Fight Club'));
       expect(trending.first.type, equals(MediaType.movie));
       expect(trending.first.rating, equals(8.4));
@@ -565,7 +565,7 @@ void main() {
 
       final details = await repo.getMediaDetails('550');
       expect(details, isNotNull);
-      expect(details!.id, equals('550'));
+      expect(details!.id, equals('movie_550'));
       expect(details.title, equals('Fight Club'));
       expect(details.tagline, equals('Mischief. Mayhem. Soap.'));
       expect(details.director, equals('David Fincher'));
@@ -1031,9 +1031,9 @@ void main() {
 
       final results = await repo.searchMedia('test');
       expect(results.length, equals(2));
-      expect(results[0].id, equals('1'));
+      expect(results[0].id, equals('movie_1'));
       expect(results[0].title, equals('High Relevance Movie'));
-      expect(results[1].id, equals('4'));
+      expect(results[1].id, equals('movie_4'));
       expect(results[1].title, equals('Actor Major Hit'));
     });
 

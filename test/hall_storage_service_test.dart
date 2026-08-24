@@ -32,7 +32,7 @@ void main() {
 
     test('saveHall & loadHall hermetically isolates domain data', () async {
       final movie = const MediaItem(
-        id: 'm-100',
+        id: 'movie_100',
         title: 'Interstellar',
         type: MediaType.movie,
         rating: 8.7,
@@ -40,7 +40,7 @@ void main() {
         genres: ['Sci-Fi'],
       );
       final tv = const MediaItem(
-        id: 't-200',
+        id: 'tv_200',
         title: 'Severance',
         type: MediaType.tv,
         rating: 8.9,
@@ -51,8 +51,8 @@ void main() {
       final custom1 = HallSpace.defaultMezzanineHall().copyWith(
         name: 'Sci-Fi Screening Room',
         domains: {
-          MediumDomain.movies: DomainArchive(watchlist: {'m-100': movie}),
-          MediumDomain.tv: DomainArchive(watching: {'t-200': tv}),
+          MediumDomain.movies: DomainArchive(watchlist: {'movie_100': movie}),
+          MediumDomain.tv: DomainArchive(watching: {'tv_200': tv}),
           MediumDomain.anime: const DomainArchive(),
         },
       );
@@ -61,8 +61,8 @@ void main() {
 
       final loadedCustom1 = await service.loadHall(prefs, 'custom_1');
       expect(loadedCustom1.name, 'Sci-Fi Screening Room');
-      expect(loadedCustom1.domainArchive(MediumDomain.movies).watchlist['m-100']?.title, 'Interstellar');
-      expect(loadedCustom1.domainArchive(MediumDomain.tv).watching['t-200']?.title, 'Severance');
+      expect(loadedCustom1.domainArchive(MediumDomain.movies).watchlist['movie_100']?.title, 'Interstellar');
+      expect(loadedCustom1.domainArchive(MediumDomain.tv).watching['tv_200']?.title, 'Severance');
 
       // Grand Hall remains untouched and empty
       final loadedCommon = await service.loadHall(prefs, 'common');
@@ -71,6 +71,10 @@ void main() {
     });
 
     test('migrateLegacyToCommonIfNeeded splits legacy media into Movies & TV archives', () async {
+      // TH-58: legacy-persisted raw ids ('movie-1'/'tv-1', not yet
+      // domain-prefixed) -- this test specifically exercises that the
+      // migration self-heals them, so the fixtures deliberately do NOT
+      // use the new prefixed form the way other tests' fixtures do.
       final legacyMovie = const MediaItem(
         id: 'movie-1',
         title: 'The Dark Knight',
@@ -106,12 +110,16 @@ void main() {
       final halls = await service.loadAllHalls(prefs);
       final common = halls.firstWhere((p) => p.id == 'common');
 
-      expect(common.domainArchive(MediumDomain.movies).watchlist.containsKey('movie-1'), isTrue);
-      expect(common.domainArchive(MediumDomain.movies).watchlist.containsKey('tv-1'), isFalse);
+      // Self-healed to domain-prefixed ids on load -- the legacy raw keys
+      // ('movie-1'/'tv-1') no longer appear anywhere.
+      expect(common.domainArchive(MediumDomain.movies).watchlist.containsKey('movie_movie-1'), isTrue);
+      expect(common.domainArchive(MediumDomain.movies).watchlist.containsKey('movie-1'), isFalse);
+      expect(common.domainArchive(MediumDomain.movies).watchlist.containsKey('tv_tv-1'), isFalse);
 
-      expect(common.domainArchive(MediumDomain.tv).watchlist.containsKey('tv-1'), isTrue);
-      expect(common.domainArchive(MediumDomain.tv).watchlist.containsKey('movie-1'), isFalse);
-      expect(common.domainArchive(MediumDomain.tv).watchedEpisodes['tv-1']?.contains('S1E1'), isTrue);
+      expect(common.domainArchive(MediumDomain.tv).watchlist.containsKey('tv_tv-1'), isTrue);
+      expect(common.domainArchive(MediumDomain.tv).watchlist.containsKey('tv-1'), isFalse);
+      expect(common.domainArchive(MediumDomain.tv).watchlist.containsKey('movie_movie-1'), isFalse);
+      expect(common.domainArchive(MediumDomain.tv).watchedEpisodes['tv_tv-1']?.contains('S1E1'), isTrue);
     });
 
     test('exportFullBackupJson & importBackupJson v4 schema', () {
@@ -120,8 +128,8 @@ void main() {
           domains: {
             MediumDomain.movies: const DomainArchive(
               watchlist: {
-                'm-1': MediaItem(
-                  id: 'm-1',
+                'movie_1': MediaItem(
+                  id: 'movie_1',
                   title: 'Arrival',
                   type: MediaType.movie,
                   rating: 8.0,
@@ -144,7 +152,7 @@ void main() {
 
       final imported = service.importBackupJson(jsonString);
       expect(imported.length, 3);
-      expect(imported[0].domainArchive(MediumDomain.movies).watchlist['m-1']?.title, 'Arrival');
+      expect(imported[0].domainArchive(MediumDomain.movies).watchlist['movie_1']?.title, 'Arrival');
       expect(imported[1].name, 'Hall B');
       expect(imported[2].name, 'Hall C');
     });

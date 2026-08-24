@@ -208,7 +208,7 @@ void main() {
 
     // Verify provider state
     var state = container.read(mediaProvider);
-    expect(state.maybeList.containsKey('1'), isTrue);
+    expect(state.maybeList.containsKey('movie_1'), isTrue);
 
     // Verify Movie 2 is now displayed
     expect(find.text('Movie 2'), findsOneWidget);
@@ -218,14 +218,14 @@ void main() {
     await tester.pumpAndSettle();
 
     state = container.read(mediaProvider);
-    expect(state.watchlist.containsKey('2'), isTrue);
+    expect(state.watchlist.containsKey('movie_2'), isTrue);
 
     // Simulate Up swipe (Watched) (we used check)
     await tester.tap(find.byIcon(Icons.check).last);
     await tester.pumpAndSettle();
 
     state = container.read(mediaProvider);
-    expect(state.watchedList.containsKey('3'), isTrue);
+    expect(state.watchedList.containsKey('movie_3'), isTrue);
 
     // Simulate Left swipe (Skip) (we used close)
     await tester.tap(find.byIcon(Icons.close).last);
@@ -233,9 +233,9 @@ void main() {
 
     // Verify it was skipped (not in any list)
     state = container.read(mediaProvider);
-    expect(state.watchlist.containsKey('4'), isFalse);
-    expect(state.maybeList.containsKey('4'), isFalse);
-    expect(state.watchedList.containsKey('4'), isFalse);
+    expect(state.watchlist.containsKey('movie_4'), isFalse);
+    expect(state.maybeList.containsKey('movie_4'), isFalse);
+    expect(state.watchedList.containsKey('movie_4'), isFalse);
 
     expect(find.text('No titles in recommendations'), findsOneWidget);
   });
@@ -776,8 +776,8 @@ void main() {
 
     expect(find.text('Movie 2'), findsOneWidget);
     final mediaState = container.read(mediaProvider);
-    expect(mediaState.maybeList.containsKey('1'), isTrue); // Movie 1 remains saved
-    expect(mediaState.watchlist.containsKey('2'), isFalse); // Movie 2 undone
+    expect(mediaState.maybeList.containsKey('movie_1'), isTrue); // Movie 1 remains saved
+    expect(mediaState.watchlist.containsKey('movie_2'), isFalse); // Movie 2 undone
   });
 
   testWidgets(

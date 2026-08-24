@@ -36,7 +36,7 @@ void main() {
   group('MediaNotifier logic tests', () {
     late ProviderContainer container;
     const testItem = MediaItem(
-      id: 'movie-100',
+      id: 'movie_100',
       title: 'Inception',
       type: MediaType.movie,
       rating: 8.8,
@@ -163,7 +163,7 @@ void main() {
     });
 
     const tvShowItem = MediaItem(
-      id: 'tv-200',
+      id: 'tv_200',
       title: 'Breaking Bad',
       type: MediaType.tv,
       rating: 9.5,
@@ -421,7 +421,7 @@ void main() {
       final notifier = localContainer.read(mediaProvider.notifier);
 
       const mixedShow = MediaItem(
-        id: 'tv-mixed',
+        id: 'tv_mixed',
         title: 'Mixed Release Show',
         type: MediaType.tv,
         seasonsCount: 1,
@@ -454,13 +454,13 @@ void main() {
       notifier.addToWatchedList(mixedShow, seasons: [season]);
       var state = localContainer.read(mediaProvider);
 
-      expect(state.watchedEpisodes['tv-mixed']?.contains('S1E1'), isTrue);
-      expect(state.watchedEpisodes['tv-mixed']?.contains('S1E2'), isFalse);
+      expect(state.watchedEpisodes['tv_mixed']?.contains('S1E1'), isTrue);
+      expect(state.watchedEpisodes['tv_mixed']?.contains('S1E2'), isFalse);
 
       // B2: a show may never rest in Watched while unreleased episodes
       // remain — it should have landed in Watching instead.
-      expect(state.watchingList.containsKey('tv-mixed'), isTrue);
-      expect(state.watchedList.containsKey('tv-mixed'), isFalse);
+      expect(state.watchingList.containsKey('tv_mixed'), isTrue);
+      expect(state.watchedList.containsKey('tv_mixed'), isFalse);
 
       // Cleanup for second part (item may be in watchingList, not watchedList)
       notifier.removeFromAllLists(mixedShow.id);
@@ -471,10 +471,10 @@ void main() {
       await Future.delayed(const Duration(milliseconds: 100));
 
       state = localContainer.read(mediaProvider);
-      expect(state.watchedEpisodes['tv-mixed']?.contains('S1E1'), isTrue);
-      expect(state.watchedEpisodes['tv-mixed']?.contains('S1E2'), isFalse);
-      expect(state.watchingList.containsKey('tv-mixed'), isTrue);
-      expect(state.watchedList.containsKey('tv-mixed'), isFalse);
+      expect(state.watchedEpisodes['tv_mixed']?.contains('S1E1'), isTrue);
+      expect(state.watchedEpisodes['tv_mixed']?.contains('S1E2'), isFalse);
+      expect(state.watchingList.containsKey('tv_mixed'), isTrue);
+      expect(state.watchedList.containsKey('tv_mixed'), isFalse);
     });
   });
 }

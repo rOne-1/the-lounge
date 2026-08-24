@@ -1538,7 +1538,10 @@ class TmdbMovieRepository implements MovieRepository {
     final status = json['status'] as String?;
 
     return MediaItem(
-      id: rawId,
+      // Domain-prefixed from the moment of construction -- see
+      // normalizeMediaId's doc comment for why (TMDB's movie/TV id spaces
+      // are independent and can collide in this app's combined shelf maps).
+      id: rawId.isEmpty ? rawId : normalizeMediaId(rawId, type),
       title: title,
       type: type,
       rating: rating,

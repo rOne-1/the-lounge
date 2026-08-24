@@ -23,7 +23,7 @@ void main() {
   });
 
   final testItem = MediaItem(
-    id: 'movie-101',
+    id: 'movie_101',
     title: 'Inception',
     type: MediaType.movie,
     rating: 8.8,
@@ -152,18 +152,18 @@ void main() {
         HallStorageService.domainStorageKey('custom_1', MediumDomain.movies),
       );
       expect(raw, isNotNull);
-      expect(raw!.contains('movie-101'), isTrue);
+      expect(raw!.contains('movie_101'), isTrue);
       final grandHallRaw = prefs.getString(
         HallStorageService.domainStorageKey('common', MediumDomain.movies),
       );
-      expect(grandHallRaw == null || !grandHallRaw.contains('movie-101'), isTrue);
+      expect(grandHallRaw == null || !grandHallRaw.contains('movie_101'), isTrue);
 
       // HALL-SYNC-1: since the active Hall is the Grand Hall (which
       // aggregates every other Hall), the save is immediately visible --
       // as a read-only aggregated title, not a native one.
       final state = container.read(mediaProvider);
-      expect(state.watchlist.containsKey('movie-101'), isTrue);
-      expect(state.readOnlyMediaIds.contains('movie-101'), isTrue);
+      expect(state.watchlist.containsKey('movie_101'), isTrue);
+      expect(state.readOnlyMediaIds.contains('movie_101'), isTrue);
     });
 
     testWidgets('BETA3-A11Y-1: status pills expose a button role, correct label, and selected state', (WidgetTester tester) async {

@@ -22,8 +22,11 @@ void main() {
 
   late SharedPreferences prefs;
 
+  // TH-58: ids are given already domain-prefixed (matching what every
+  // real construction site produces now) so the fixtures exercise the
+  // same shape production code actually sees.
   final movieNative = const MediaItem(
-    id: 'movie-native',
+    id: 'movie_native',
     title: 'Native To Grand Hall',
     type: MediaType.movie,
     rating: 7.5,
@@ -32,7 +35,7 @@ void main() {
   );
 
   final movieMezzanine = const MediaItem(
-    id: 'movie-mezzanine',
+    id: 'movie_mezzanine',
     title: 'From The Mezzanine',
     type: MediaType.movie,
     rating: 8.1,
@@ -41,7 +44,7 @@ void main() {
   );
 
   final showPrivate = const MediaItem(
-    id: 'tv-private',
+    id: 'tv_private',
     title: 'From Private Screening',
     type: MediaType.tv,
     rating: 8.4,
@@ -50,7 +53,7 @@ void main() {
   );
 
   final movieConflict = const MediaItem(
-    id: 'movie-conflict',
+    id: 'movie_conflict',
     title: 'Own Version Wins',
     type: MediaType.movie,
     rating: 6.0,
@@ -59,7 +62,7 @@ void main() {
   );
 
   final movieConflictMezzanineVersion = const MediaItem(
-    id: 'movie-conflict',
+    id: 'movie_conflict',
     title: 'Mezzanine Version Should Be Shadowed',
     type: MediaType.movie,
     rating: 9.9,
@@ -92,13 +95,13 @@ void main() {
 
   test('Grand Hall aggregates Mezzanine + Private Screening, own data wins on conflict', () async {
     await seedHall('custom_1', movieWatchlist: {
-      'movie-mezzanine': movieMezzanine,
-      'movie-conflict': movieConflictMezzanineVersion,
+      'movie_mezzanine': movieMezzanine,
+      'movie_conflict': movieConflictMezzanineVersion,
     });
-    await seedHall('custom_2', tvWatching: {'tv-private': showPrivate});
+    await seedHall('custom_2', tvWatching: {'tv_private': showPrivate});
     await seedHall('common', movieWatchlist: {
-      'movie-native': movieNative,
-      'movie-conflict': movieConflict,
+      'movie_native': movieNative,
+      'movie_conflict': movieConflict,
     });
 
     final container = ProviderContainer(
@@ -113,24 +116,24 @@ void main() {
     final state = container.read(mediaProvider);
 
     // Union: native + both other halls' titles all visible.
-    expect(state.watchlist.containsKey('movie-native'), isTrue);
-    expect(state.watchlist.containsKey('movie-mezzanine'), isTrue);
-    expect(state.watchingList.containsKey('tv-private'), isTrue);
+    expect(state.watchlist.containsKey('movie_native'), isTrue);
+    expect(state.watchlist.containsKey('movie_mezzanine'), isTrue);
+    expect(state.watchingList.containsKey('tv_private'), isTrue);
 
     // Own data wins on id conflict.
-    expect(state.watchlist['movie-conflict']?.title, 'Own Version Wins');
+    expect(state.watchlist['movie_conflict']?.title, 'Own Version Wins');
 
     // Read-only bookkeeping: only the genuinely-aggregated ids are marked.
-    expect(state.readOnlyMediaIds.contains('movie-native'), isFalse);
-    expect(state.readOnlyMediaIds.contains('movie-conflict'), isFalse);
-    expect(state.readOnlyMediaIds.contains('movie-mezzanine'), isTrue);
-    expect(state.readOnlyMediaIds.contains('tv-private'), isTrue);
-    expect(state.readOnlySourceHallName['movie-mezzanine'], 'The Mezzanine Hall');
-    expect(state.readOnlySourceHallName['tv-private'], 'The Private Screening Hall');
+    expect(state.readOnlyMediaIds.contains('movie_native'), isFalse);
+    expect(state.readOnlyMediaIds.contains('movie_conflict'), isFalse);
+    expect(state.readOnlyMediaIds.contains('movie_mezzanine'), isTrue);
+    expect(state.readOnlyMediaIds.contains('tv_private'), isTrue);
+    expect(state.readOnlySourceHallName['movie_mezzanine'], 'The Mezzanine Hall');
+    expect(state.readOnlySourceHallName['tv_private'], 'The Private Screening Hall');
   });
 
   test('Aggregated titles never get persisted into the Grand Hall\'s own storage', () async {
-    await seedHall('custom_1', movieWatchlist: {'movie-mezzanine': movieMezzanine});
+    await seedHall('custom_1', movieWatchlist: {'movie_mezzanine': movieMezzanine});
 
     final container = ProviderContainer(
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
@@ -139,7 +142,7 @@ void main() {
 
     final notifier = container.read(mediaProvider.notifier);
     await notifier.loadFromPrefs();
-    expect(container.read(mediaProvider).watchlist.containsKey('movie-mezzanine'), isTrue);
+    expect(container.read(mediaProvider).watchlist.containsKey('movie_mezzanine'), isTrue);
 
     // A completely unrelated native save while the aggregated title is
     // sitting in the merged in-memory state.
@@ -149,15 +152,15 @@ void main() {
       HallStorageService.domainStorageKey('common', MediumDomain.movies),
     );
     expect(grandMovieRaw, isNotNull);
-    expect(grandMovieRaw!.contains('movie-mezzanine'), isFalse,
+    expect(grandMovieRaw!.contains('movie_mezzanine'), isFalse,
         reason: 'aggregated Mezzanine title must not leak into the Grand Hall\'s own archive');
-    expect(grandMovieRaw.contains('movie-native'), isTrue);
+    expect(grandMovieRaw.contains('movie_native'), isTrue);
 
     // And it's untouched in its real home.
     final mezzanineRaw = prefs.getString(
       HallStorageService.domainStorageKey('custom_1', MediumDomain.movies),
     );
-    expect(mezzanineRaw!.contains('movie-mezzanine'), isTrue);
+    expect(mezzanineRaw!.contains('movie_mezzanine'), isTrue);
   });
 
   group('HALL-SAVE-1: saveToHallShelf', () {
@@ -181,21 +184,21 @@ void main() {
       );
 
       // The active (but unrelated) Hall's own in-memory state is untouched.
-      expect(container.read(mediaProvider).watchlist.containsKey('movie-mezzanine'), isFalse);
+      expect(container.read(mediaProvider).watchlist.containsKey('movie_mezzanine'), isFalse);
 
       // But it genuinely landed in the Mezzanine Hall's own storage.
       final raw = prefs.getString(
         HallStorageService.domainStorageKey('custom_1', MediumDomain.movies),
       );
       expect(raw, isNotNull);
-      expect(raw!.contains('movie-mezzanine'), isTrue);
+      expect(raw!.contains('movie_mezzanine'), isTrue);
 
       // Loading (not switching, to avoid pulling in the theme/ambiance
       // machinery this plain-`test()` file isn't set up for) the Mezzanine
       // Hall directly on mediaProvider confirms it's really there, on the
       // right shelf.
       await notifier.loadForHall('custom_1');
-      expect(container.read(mediaProvider).watchlist.containsKey('movie-mezzanine'), isTrue);
+      expect(container.read(mediaProvider).watchlist.containsKey('movie_mezzanine'), isTrue);
     });
 
     test('HALL-SYNC-1: saving to another Hall while viewing the Grand Hall reflects immediately, no reload needed', () async {
@@ -207,7 +210,7 @@ void main() {
 
       // Load fresh into the Grand Hall (the default active Hall).
       await notifier.loadFromPrefs();
-      expect(container.read(mediaProvider).watchingList.containsKey('tv-private'), isFalse);
+      expect(container.read(mediaProvider).watchingList.containsKey('tv_private'), isFalse);
 
       // Save a TV show into the Private Screening Hall while still "in"
       // the Grand Hall -- this is exactly the cross-hall save + Grand Hall
@@ -221,9 +224,9 @@ void main() {
       // No loadForHall/switchHall call in between -- state must already
       // reflect it.
       final state = container.read(mediaProvider);
-      expect(state.watchingList.containsKey('tv-private'), isTrue);
-      expect(state.readOnlyMediaIds.contains('tv-private'), isTrue);
-      expect(state.readOnlySourceHallName['tv-private'], 'The Private Screening Hall');
+      expect(state.watchingList.containsKey('tv_private'), isTrue);
+      expect(state.readOnlyMediaIds.contains('tv_private'), isTrue);
+      expect(state.readOnlySourceHallName['tv_private'], 'The Private Screening Hall');
     });
 
     test('a shelf change replaces any prior shelf placement for that title in the target Hall', () async {
@@ -246,8 +249,8 @@ void main() {
 
       await notifier.loadForHall('custom_1');
       final state = container.read(mediaProvider);
-      expect(state.watchedList.containsKey('movie-mezzanine'), isTrue);
-      expect(state.watchlist.containsKey('movie-mezzanine'), isFalse);
+      expect(state.watchedList.containsKey('movie_mezzanine'), isTrue);
+      expect(state.watchlist.containsKey('movie_mezzanine'), isFalse);
     });
 
     test('saving to the currently-active Hall delegates to the normal full-featured mutation path', () async {
@@ -264,13 +267,13 @@ void main() {
         shelf: ArchiveShelfKind.watchlist,
       );
 
-      expect(container.read(mediaProvider).watchlist.containsKey('movie-native'), isTrue);
+      expect(container.read(mediaProvider).watchlist.containsKey('movie_native'), isTrue);
     });
   });
 
   test('Non-Grand halls are never aggregated', () async {
-    await seedHall('custom_1', movieWatchlist: {'movie-mezzanine': movieMezzanine});
-    await seedHall('custom_2', tvWatching: {'tv-private': showPrivate});
+    await seedHall('custom_1', movieWatchlist: {'movie_mezzanine': movieMezzanine});
+    await seedHall('custom_2', tvWatching: {'tv_private': showPrivate});
 
     final container = ProviderContainer(
       overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
@@ -281,8 +284,8 @@ void main() {
     await hallNotifier.switchHall('custom_1');
 
     final state = container.read(mediaProvider);
-    expect(state.watchlist.containsKey('movie-mezzanine'), isTrue);
-    expect(state.watchingList.containsKey('tv-private'), isFalse);
+    expect(state.watchlist.containsKey('movie_mezzanine'), isTrue);
+    expect(state.watchingList.containsKey('tv_private'), isFalse);
     expect(state.readOnlyMediaIds.isEmpty, isTrue);
   });
 }

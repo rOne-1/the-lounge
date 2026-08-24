@@ -89,7 +89,7 @@ void main() {
   });
 
   final testMovie = MediaItem(
-    id: 'movie-10',
+    id: 'movie_10',
     title: 'Inception',
     type: MediaType.movie,
     rating: 8.8,
@@ -98,7 +98,7 @@ void main() {
   );
 
   final testTvShow = MediaItem(
-    id: 'tv-20',
+    id: 'tv_20',
     title: 'Severance',
     type: MediaType.tv,
     rating: 8.7,
@@ -135,7 +135,7 @@ void main() {
   testWidgets(
       'LoungeScreen shows the 3-group landing page, and the Watching pile card opens its ArchiveShelfScreen',
       (WidgetTester tester) async {
-    final mockRepo = MockWatchingRepository(items: {'movie-10': testMovie, 'tv-20': testTvShow});
+    final mockRepo = MockWatchingRepository(items: {'movie_10': testMovie, 'tv_20': testTvShow});
     final prefs = await SharedPreferences.getInstance();
 
     final container = ProviderContainer(
@@ -181,8 +181,8 @@ void main() {
 
   testWidgets('Section 2 & 3: LobbyScreen Continue Watching rail strictly uses watchingList & Next Episode Banner shows real data for TV', (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(
-      items: {'tv-20': testTvShow},
-      seasonsMap: {'tv-20': testSeasons},
+      items: {'tv_20': testTvShow},
+      seasonsMap: {'tv_20': testSeasons},
     );
     final prefs = await SharedPreferences.getInstance();
 
@@ -235,7 +235,7 @@ void main() {
     // Lightweight MediaItem exactly as search/discover/trending endpoints
     // hand it over -- no seasonsCount at all.
     final lightweightShow = MediaItem(
-      id: 'tv-30',
+      id: 'tv_30',
       title: 'Multi Season Show',
       type: MediaType.tv,
       rating: 8.0,
@@ -270,8 +270,8 @@ void main() {
     ];
 
     final mockRepo = MockWatchingRepository(
-      items: {'tv-30': fullShowDetails},
-      seasonsMap: {'tv-30': threeSeasons},
+      items: {'tv_30': fullShowDetails},
+      seasonsMap: {'tv_30': threeSeasons},
     );
     final prefs = await SharedPreferences.getInstance();
 
@@ -330,8 +330,8 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     final mockRepo = MockWatchingRepository(
-      items: {'tv-20': testTvShow},
-      seasonsMap: {'tv-20': testSeasons},
+      items: {'tv_20': testTvShow},
+      seasonsMap: {'tv_20': testSeasons},
     );
     final prefs = await SharedPreferences.getInstance();
 
@@ -373,8 +373,8 @@ void main() {
 
   testWidgets('LobbyScreen hides Next Episode banner when no TV show is in watchingList', (WidgetTester tester) async {
     final mockRepo = MockWatchingRepository(
-      items: {'tv-20': testTvShow},
-      seasonsMap: {'tv-20': testSeasons},
+      items: {'tv_20': testTvShow},
+      seasonsMap: {'tv_20': testSeasons},
     );
     final prefs = await SharedPreferences.getInstance();
 

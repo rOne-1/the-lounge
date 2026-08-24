@@ -317,6 +317,12 @@ class HallStorageService {
         prefs.containsKey(_legacyOnHoldListKey);
 
     if (hasLegacyData) {
+      // TH-58: shared across every parseMap call below so the per-title
+      // auxiliary maps (watchedEpisodes/startDates/etc., which have no
+      // MediaItem/type of their own to self-heal from) can be re-keyed to
+      // match once shelf items resolve their normalized id.
+      final idMigration = <String, String>{};
+
       Map<String, MediaItem> parseMap(String key) {
         final raw = prefs.getString(key);
         if (raw == null || raw.isEmpty) return {};
@@ -326,8 +332,16 @@ class HallStorageService {
           final out = <String, MediaItem>{};
           for (final entry in decoded.entries) {
             if (entry.value is Map) {
-              out[entry.key.toString()] = MediaItem.fromJson(
+              final item = MediaItem.fromJson(
                   Map<String, dynamic>.from(entry.value as Map));
+              if (item.id.isEmpty) continue;
+              // Key by the item's own normalized id, not the raw legacy
+              // JSON key -- see DomainArchive.fromJson's identical fix for
+              // why (media_item.dart's fromJson now self-heals `id` to be
+              // domain-prefixed).
+              out[item.id] = item;
+              final rawKey = entry.key.toString();
+              if (rawKey != item.id) idMigration[rawKey] = item.id;
             }
           }
           return out;
@@ -404,11 +418,24 @@ class HallStorageService {
       final watchedList = parseMap(_legacyWatchedListKey);
       final droppedList = parseMap(_legacyDroppedListKey);
       final onHoldList = parseMap(_legacyOnHoldListKey);
-      final watchedEpisodes = parseEpisodes(_legacyWatchedEpisodesKey);
-      final startDates = parseDates(_legacyStartDatesKey);
-      final endDates = parseDates(_legacyEndDatesKey);
-      final seasonStartDates = parseSeasonDates(_legacySeasonStartDatesKey);
-      final seasonEndDates = parseSeasonDates(_legacySeasonEndDatesKey);
+
+      // TH-58: re-key using the migration table built above, now that
+      // every shelf has been parsed and every legacy raw id resolved.
+      Map<String, T> reKeyed<T>(Map<String, T> parsed) {
+        if (idMigration.isEmpty) return parsed;
+        final out = <String, T>{};
+        parsed.forEach((k, v) => out[idMigration[k] ?? k] = v);
+        return out;
+      }
+
+      final watchedEpisodes =
+          reKeyed(parseEpisodes(_legacyWatchedEpisodesKey));
+      final startDates = reKeyed(parseDates(_legacyStartDatesKey));
+      final endDates = reKeyed(parseDates(_legacyEndDatesKey));
+      final seasonStartDates =
+          reKeyed(parseSeasonDates(_legacySeasonStartDatesKey));
+      final seasonEndDates =
+          reKeyed(parseSeasonDates(_legacySeasonEndDatesKey));
 
       // Partition movies vs TV into DomainArchive
       Map<String, MediaItem> filterType(
@@ -448,7 +475,13 @@ class HallStorageService {
           final decoded = jsonDecode(foldersRaw);
           if (decoded is List) {
             for (final f in decoded) {
-              folders.add(UserFolder.fromJson(Map<String, dynamic>.from(f as Map)));
+              final folder = UserFolder.fromJson(Map<String, dynamic>.from(f as Map));
+              // TH-58: folder membership is keyed by media id too.
+              folders.add(idMigration.isEmpty
+                  ? folder
+                  : folder.copyWith(mediaIds: [
+                      for (final id in folder.mediaIds) idMigration[id] ?? id
+                    ]));
             }
           }
         } catch (_) {}
@@ -461,7 +494,9 @@ class HallStorageService {
           final decoded = jsonDecode(histRaw) as Map<String, dynamic>;
           for (final entry in decoded.entries) {
             if (entry.value is List) {
-              history[entry.key] = (entry.value as List)
+              // TH-58: watch history is also keyed by media id.
+              final key = idMigration[entry.key] ?? entry.key;
+              history[key] = (entry.value as List)
                   .map((r) => WatchRecord.fromJson(Map<String, dynamic>.from(r as Map)))
                   .toList();
             }
