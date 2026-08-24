@@ -79,6 +79,10 @@ class AtmosphericEmptyState extends StatelessWidget {
                     style: AppThemes.safeGeist(fontSize: 13, height: 1.4, color: ambiance.sub),
                   ),
                 ],
+                if (ambiance.signatureMotif != null) ...[
+                  const SizedBox(height: 16),
+                  ambiance.signatureMotif!(context),
+                ],
                 if (actions != null) ...[
                   const SizedBox(height: 22),
                   Wrap(

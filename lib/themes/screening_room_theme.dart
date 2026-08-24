@@ -46,6 +46,62 @@ BoxDecoration screeningRoomBackground() {
   );
 }
 
+Widget screeningRoomMotif(BuildContext context) {
+  final colors = context.ambianceColors;
+  return Center(
+    child: SizedBox(
+      height: 20,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 48,
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  colors.acc.withValues(alpha: 0.0),
+                  colors.acc.withValues(alpha: 0.6),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Transform.rotate(
+            angle: 0.785398, // 45 degrees
+            child: Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: colors.acc,
+                boxShadow: [
+                  BoxShadow(
+                    color: colors.acc.withValues(alpha: 0.5),
+                    blurRadius: 4,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            width: 48,
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  colors.acc.withValues(alpha: 0.6),
+                  colors.acc.withValues(alpha: 0.0),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 final AmbianceColors srAmbianceColors = AmbianceColors(
   base: _srBase,
   card: _srCard,
@@ -74,6 +130,7 @@ final AmbianceColors srAmbianceColors = AmbianceColors(
   cardShadow: _srShadows.cardShadow,
   ambientGlowShadow: _srShadows.ambientGlowShadow,
   dialogShadow: _srShadows.dialogShadow,
+  signatureMotif: screeningRoomMotif,
   isDark: true,
 );
 
@@ -82,6 +139,7 @@ final AppTheme screeningRoomTheme = AppTheme(
   displayName: 'Screening Room',
   description: 'Classic dark theme with warm golden accents.',
   colors: srAmbianceColors,
+  signatureMotif: screeningRoomMotif,
   isDark: true,
   themeData: ThemeData(
     brightness: Brightness.dark,

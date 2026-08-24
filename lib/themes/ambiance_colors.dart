@@ -60,6 +60,9 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
   /// THEME-DEPTH-3: elevation for dialogs/sheets/panels.
   final List<BoxShadow> dialogShadow;
 
+  /// THEME-DEPTH-4: Bespoke signature decorative motif builder for this theme.
+  final WidgetBuilder? signatureMotif;
+
   final bool isDark;
 
   const AmbianceColors({
@@ -87,6 +90,7 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     required this.cardShadow,
     required this.ambientGlowShadow,
     required this.dialogShadow,
+    this.signatureMotif,
     required this.isDark,
   });
 
@@ -116,6 +120,7 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     List<BoxShadow>? cardShadow,
     List<BoxShadow>? ambientGlowShadow,
     List<BoxShadow>? dialogShadow,
+    WidgetBuilder? signatureMotif,
     bool? isDark,
   }) {
     return AmbianceColors(
@@ -143,6 +148,7 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       cardShadow: cardShadow ?? this.cardShadow,
       ambientGlowShadow: ambientGlowShadow ?? this.ambientGlowShadow,
       dialogShadow: dialogShadow ?? this.dialogShadow,
+      signatureMotif: signatureMotif ?? this.signatureMotif,
       isDark: isDark ?? this.isDark,
     );
   }
@@ -176,6 +182,7 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       ambientGlowShadow:
           BoxShadow.lerpList(ambientGlowShadow, other.ambientGlowShadow, t) ?? ambientGlowShadow,
       dialogShadow: BoxShadow.lerpList(dialogShadow, other.dialogShadow, t) ?? dialogShadow,
+      signatureMotif: t < 0.5 ? signatureMotif : other.signatureMotif,
       isDark: t < 0.5 ? isDark : other.isDark,
     );
   }

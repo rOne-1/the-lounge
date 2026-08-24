@@ -21,6 +21,45 @@ BoxDecoration midnightCinemaBackground() {
   );
 }
 
+Widget midnightCinemaMotif(BuildContext context) {
+  final colors = context.ambianceColors;
+  final bulbColors = [
+    colors.acc, // Cyan
+    colors.starRating, // Neon Magenta
+    colors.acc,
+    colors.starRating,
+    colors.acc,
+  ];
+  return Center(
+    child: SizedBox(
+      height: 20,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < bulbColors.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Container(
+              width: 5,
+              height: 5,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: bulbColors[i],
+                boxShadow: [
+                  BoxShadow(
+                    color: bulbColors[i].withValues(alpha: 0.6),
+                    blurRadius: 5,
+                    spreadRadius: 1,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
 final AmbianceColors mcAmbianceColors = AmbianceColors(
   base: const Color(0xFF0A1128),
   card: const Color(0xFF101F42),
@@ -49,6 +88,7 @@ final AmbianceColors mcAmbianceColors = AmbianceColors(
   cardShadow: _mcShadows.cardShadow,
   ambientGlowShadow: _mcShadows.ambientGlowShadow,
   dialogShadow: _mcShadows.dialogShadow,
+  signatureMotif: midnightCinemaMotif,
   isDark: true,
 );
 
@@ -57,6 +97,7 @@ final AppTheme midnightCinemaTheme = AppTheme(
   displayName: 'Midnight Cinema',
   description: 'Deep blue hues with vibrant neon accents.',
   colors: mcAmbianceColors,
+  signatureMotif: midnightCinemaMotif,
   isDark: true,
   themeData: ThemeData(
     brightness: Brightness.dark,

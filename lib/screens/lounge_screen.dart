@@ -287,6 +287,8 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
 
               // 4. Memory Moments Section ("Forgotten Favorites" & "On This Day")
               const MemoryMomentsSection(),
+              const SizedBox(height: 36),
+              const SignatureMotif(),
             ],
           ),
         ),

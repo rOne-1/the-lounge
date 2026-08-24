@@ -52,6 +52,64 @@ BoxDecoration orchidBloomBackground() {
   );
 }
 
+class _OrchidBloomPainter extends CustomPainter {
+  final Color color;
+  const _OrchidBloomPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final fillPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final midY = size.height / 2;
+    final midX = size.width / 2;
+
+    // Left stem & petal curve
+    final leftPath = Path();
+    leftPath.moveTo(midX - 45, midY);
+    leftPath.quadraticBezierTo(midX - 25, midY - 6, midX - 10, midY);
+    canvas.drawPath(leftPath, paint);
+
+    // Right stem & petal curve
+    final rightPath = Path();
+    rightPath.moveTo(midX + 45, midY);
+    rightPath.quadraticBezierTo(midX + 25, midY - 6, midX + 10, midY);
+    canvas.drawPath(rightPath, paint);
+
+    // Center bud / petal
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(midX, midY - 1), width: 5, height: 8),
+      fillPaint,
+    );
+    // Small flanking leaf dots
+    canvas.drawCircle(Offset(midX - 20, midY - 4), 1.5, fillPaint);
+    canvas.drawCircle(Offset(midX + 20, midY - 4), 1.5, fillPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _OrchidBloomPainter oldDelegate) => oldDelegate.color != color;
+}
+
+Widget orchidBloomMotif(BuildContext context) {
+  final colors = context.ambianceColors;
+  return Center(
+    child: SizedBox(
+      width: 120,
+      height: 20,
+      child: CustomPaint(
+        painter: _OrchidBloomPainter(color: colors.acc.withValues(alpha: 0.7)),
+      ),
+    ),
+  );
+}
+
 final AmbianceColors obAmbianceColors = AmbianceColors(
   base: _obBase,
   card: _obCard,
@@ -80,6 +138,7 @@ final AmbianceColors obAmbianceColors = AmbianceColors(
   cardShadow: _obShadows.cardShadow,
   ambientGlowShadow: _obShadows.ambientGlowShadow,
   dialogShadow: _obShadows.dialogShadow,
+  signatureMotif: orchidBloomMotif,
   isDark: false,
 );
 
@@ -88,6 +147,7 @@ final AppTheme orchidBloomTheme = AppTheme(
   displayName: 'Orchid Bloom',
   description: 'Airy lavender and amethyst, for daylight viewing with a violet hush.',
   colors: obAmbianceColors,
+  signatureMotif: orchidBloomMotif,
   isDark: false,
   themeData: ThemeData(
     brightness: Brightness.light,

@@ -11,6 +11,9 @@ class AppTheme {
   final ThemeData themeData;
   final bool isDark;
 
+  /// THEME-DEPTH-4: Bespoke signature decorative motif builder for this theme.
+  final WidgetBuilder? signatureMotif;
+
   const AppTheme({
     required this.id,
     required this.displayName,
@@ -18,6 +21,7 @@ class AppTheme {
     required this.colors,
     required this.themeData,
     required this.isDark,
+    this.signatureMotif,
   });
 }
 

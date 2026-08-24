@@ -272,6 +272,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               ),
             ),
           ),
+        const SliverToBoxAdapter(
+          child: Padding(
+            padding: EdgeInsets.only(top: 24, bottom: 16),
+            child: SignatureMotif(),
+          ),
+        ),
         const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
       ],
     );
@@ -375,6 +381,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       ),
                     ),
                   ),
+                const SliverToBoxAdapter(
+                  child: Padding(
+                    padding: EdgeInsets.only(top: 24, bottom: 16),
+                    child: SignatureMotif(),
+                  ),
+                ),
                 const SliverPadding(padding: EdgeInsets.only(bottom: 24)),
               ],
             );

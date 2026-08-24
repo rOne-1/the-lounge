@@ -8,6 +8,7 @@ export 'themes/ambiance_colors.dart';
 export 'themes/app_theme.dart';
 export 'themes/theme_registry.dart';
 export 'themes/typography.dart';
+export 'widgets/signature_motif.dart';
 
 class AppThemes {
   static TextStyle safeGeist({

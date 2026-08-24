@@ -46,6 +46,66 @@ BoxDecoration tuscanyBackground() {
   );
 }
 
+class _TuscanyFlourishPainter extends CustomPainter {
+  final Color color;
+  const _TuscanyFlourishPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final fillPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final midX = size.width / 2;
+    final midY = size.height / 2;
+
+    // Left scroll flourish
+    final leftPath = Path()
+      ..moveTo(midX - 42, midY + 3)
+      ..cubicTo(midX - 32, midY - 6, midX - 18, midY + 4, midX - 6, midY);
+    canvas.drawPath(leftPath, paint);
+
+    // Right scroll flourish
+    final rightPath = Path()
+      ..moveTo(midX + 42, midY + 3)
+      ..cubicTo(midX + 32, midY - 6, midX + 18, midY + 4, midX + 6, midY);
+    canvas.drawPath(rightPath, paint);
+
+    // Center wrought-iron crest / sunburst seed
+    canvas.drawCircle(Offset(midX, midY), 2.5, fillPaint);
+
+    // Small radiating rays
+    final rayPaint = Paint()
+      ..color = color.withValues(alpha: 0.7)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(Offset(midX, midY - 4), Offset(midX, midY - 8), rayPaint);
+    canvas.drawLine(Offset(midX - 4, midY - 3), Offset(midX - 7, midY - 6), rayPaint);
+    canvas.drawLine(Offset(midX + 4, midY - 3), Offset(midX + 7, midY - 6), rayPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TuscanyFlourishPainter oldDelegate) => oldDelegate.color != color;
+}
+
+Widget tuscanyMotif(BuildContext context) {
+  final colors = context.ambianceColors;
+  return Center(
+    child: SizedBox(
+      width: 110,
+      height: 20,
+      child: CustomPaint(
+        painter: _TuscanyFlourishPainter(color: colors.acc.withValues(alpha: 0.75)),
+      ),
+    ),
+  );
+}
+
 final AmbianceColors tsAmbianceColors = AmbianceColors(
   base: _tsBase,
   card: _tsCard,
@@ -74,6 +134,7 @@ final AmbianceColors tsAmbianceColors = AmbianceColors(
   cardShadow: _tsShadows.cardShadow,
   ambientGlowShadow: _tsShadows.ambientGlowShadow,
   dialogShadow: _tsShadows.dialogShadow,
+  signatureMotif: tuscanyMotif,
   isDark: true,
 );
 
@@ -82,6 +143,7 @@ final AppTheme tuscanyTheme = AppTheme(
   displayName: 'Tuscany',
   description: 'Sun-baked terracotta and aged wine, cooled by dusk slate.',
   colors: tsAmbianceColors,
+  signatureMotif: tuscanyMotif,
   isDark: true,
   themeData: ThemeData(
     brightness: Brightness.dark,

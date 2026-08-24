@@ -38,6 +38,72 @@ BoxDecoration violetDuskBackground() {
   );
 }
 
+class _VioletDuskChevronPainter extends CustomPainter {
+  final Color color;
+  const _VioletDuskChevronPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.miter;
+
+    final midX = size.width / 2;
+    final midY = size.height / 2;
+
+    // Outer chevron
+    final outerPath = Path()
+      ..moveTo(midX - 36, midY - 4)
+      ..lineTo(midX, midY + 4)
+      ..lineTo(midX + 36, midY - 4);
+    canvas.drawPath(outerPath, paint);
+
+    // Inner mini-chevron
+    final innerPaint = Paint()
+      ..color = color.withValues(alpha: 0.5)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    final innerPath = Path()
+      ..moveTo(midX - 18, midY - 7)
+      ..lineTo(midX, midY)
+      ..lineTo(midX + 18, midY - 7);
+    canvas.drawPath(innerPath, innerPaint);
+
+    // Center jewel diamond
+    final jewelPaint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    final diamondPath = Path()
+      ..moveTo(midX, midY - 8)
+      ..lineTo(midX + 2.5, midY - 5.5)
+      ..lineTo(midX, midY - 3)
+      ..lineTo(midX - 2.5, midY - 5.5)
+      ..close();
+    canvas.drawPath(diamondPath, jewelPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _VioletDuskChevronPainter oldDelegate) => oldDelegate.color != color;
+}
+
+Widget violetDuskMotif(BuildContext context) {
+  final colors = context.ambianceColors;
+  return Center(
+    child: SizedBox(
+      width: 100,
+      height: 20,
+      child: CustomPaint(
+        painter: _VioletDuskChevronPainter(color: colors.acc.withValues(alpha: 0.8)),
+      ),
+    ),
+  );
+}
+
 final AmbianceColors vdAmbianceColors = AmbianceColors(
   base: _vdBase,
   card: _vdCard,
@@ -66,6 +132,7 @@ final AmbianceColors vdAmbianceColors = AmbianceColors(
   cardShadow: _vdShadows.cardShadow,
   ambientGlowShadow: _vdShadows.ambientGlowShadow,
   dialogShadow: _vdShadows.dialogShadow,
+  signatureMotif: violetDuskMotif,
   isDark: true,
 );
 
@@ -74,6 +141,7 @@ final AppTheme violetDuskTheme = AppTheme(
   displayName: 'Violet Dusk',
   description: 'Deep purple tones for evening viewing.',
   colors: vdAmbianceColors,
+  signatureMotif: violetDuskMotif,
   isDark: true,
   themeData: ThemeData(
     brightness: Brightness.dark,
