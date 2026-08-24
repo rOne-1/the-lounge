@@ -23,7 +23,7 @@ const List<WhatsNewSection> kWhatsNewSections = [
     title: 'New',
     items: [
       'Analytics: a new "Discover Your Habits" hub reachable from the Lobby, with a chronological heatmap and binge-velocity view, taste metrics (favorite cast and directors, how your ratings compare to critics, genre breakdown), franchise completion tracking, a watchlist funnel and shelf-life drop-off chart, studio/label affinity, and a Legend sheet explaining every metric. Results can be exported as a shareable image.',
-      'Settings has a new card-based theme picker, and four new themes to choose from: Orchid Bloom, Tuscany, Gilded Plum, and Riviera. Café Calm has been retired.',
+      'Settings has a new card-based theme picker, and two new themes to choose from: Orchid Bloom and Tuscany. Café Calm, Reading Room, Alpine, Gilded Plum, and Riviera have been retired.',
       'A brief "confirming" indicator now appears on a TV show right after you mark it Watched, while the app double-checks its season data in the background.',
       'Improved screen reader support throughout the app -- navigation, media cards, the swipe deck, the hall selector, and summary cards now announce themselves properly.',
       'The Detail screen loads faster -- the sections below the fold now load as you scroll instead of all at once.',

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
-import 'package:the_lounge/themes/reading_room_theme.dart';
+import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/widgets/ambient_glow.dart';
 
 void main() {
@@ -25,21 +25,21 @@ void main() {
       expect(find.byType(CustomPaint), findsWidgets);
     });
 
-    testWidgets('renders child content in light theme (Reading Room)',
+    testWidgets('renders child content in light theme (Orchid Bloom)',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         MaterialApp(
-          theme: readingRoomTheme.themeData,
+          theme: orchidBloomTheme.themeData,
           home: const Scaffold(
             body: AmbientGlowWidget(
               enableAnimation: false,
-              child: Text('Reading Room Glow'),
+              child: Text('Orchid Bloom Glow'),
             ),
           ),
         ),
       );
 
-      expect(find.text('Reading Room Glow'), findsOneWidget);
+      expect(find.text('Orchid Bloom Glow'), findsOneWidget);
       expect(find.byType(AmbientGlowWidget), findsOneWidget);
     });
 

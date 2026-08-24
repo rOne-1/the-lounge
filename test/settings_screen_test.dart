@@ -12,7 +12,8 @@ import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/hall_provider.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
-import 'package:the_lounge/themes/reading_room_theme.dart';
+import 'package:the_lounge/themes/orchid_bloom_theme.dart';
+import 'package:the_lounge/themes/violet_dusk_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/widgets/lounge_dialog.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
@@ -144,13 +145,13 @@ void main() {
 
     // BETA3-SETTINGS-1: card-based theme selector replaced the segmented
     // control -- each theme card carries a stable key.
-    final readingCardFinder = find.byKey(const ValueKey('theme_card_reading_room'));
+    final readingCardFinder = find.byKey(const ValueKey('theme_card_orchid_bloom'));
     expect(readingCardFinder, findsOneWidget);
 
     await tester.tap(readingCardFinder);
     await tester.pumpAndSettle();
 
-    expect(container.read(ambianceProvider), equals(readingRoomTheme));
+    expect(container.read(ambianceProvider), equals(orchidBloomTheme));
 
     // Later sections sit below the default test viewport's built/cached
     // range -- scroll to bring them into the tree. The main vertical
@@ -349,7 +350,7 @@ void main() {
       'onHoldList': {},
       'watchedEpisodes': {},
       'watchProvidersCountry': 'CA',
-      'selectedAmbiance': 'readingRoom',
+      'selectedAmbiance': 'violetDusk',
     };
     final backupJson = jsonEncode(backupData);
 
@@ -371,7 +372,7 @@ void main() {
     expect(find.byType(LoungeDialog), findsNothing);
     expect(container.read(mediaProvider).watchlist.containsKey('movie_imported'), isTrue);
     expect(container.read(mediaProvider).watchProvidersCountry, equals('CA'));
-    expect(container.read(ambianceProvider), equals(readingRoomTheme));
+    expect(container.read(ambianceProvider), equals(violetDuskTheme));
     expect(find.text('Backup imported successfully.'), findsOneWidget);
 
     // Let the LoungeToast's auto-dismiss timer fire before teardown.

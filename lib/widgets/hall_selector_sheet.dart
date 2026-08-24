@@ -166,7 +166,7 @@ class HallSelectorSheet extends ConsumerWidget {
                       ? 'screening_room'
                       : (hall.id == 'custom_1'
                           ? 'midnight_cinema'
-                          : 'reading_room'));
+                          : 'orchid_bloom'));
               final themeName = allThemes
                   .firstWhere((t) => t.id == effectiveThemeId,
                       orElse: () => allThemes.first)
@@ -342,7 +342,7 @@ class HallSelectorSheet extends ConsumerWidget {
     String selectedThemeId = hall.themeId ??
         (hall.id == 'common'
             ? 'screening_room'
-            : (hall.id == 'custom_1' ? 'midnight_cinema' : 'reading_room'));
+            : (hall.id == 'custom_1' ? 'midnight_cinema' : 'orchid_bloom'));
     String? selectedLanguageCode = hall.lockedLanguageCode;
     String? selectedLanguageName = hall.lockedLanguageName;
     final colors = context.ambianceColors;

@@ -24,7 +24,7 @@ void main() {
       expect(mezzanine.themeId, 'midnight_cinema');
 
       final privateScreening = HallSpace.defaultPrivateScreeningHall();
-      expect(privateScreening.themeId, 'reading_room');
+      expect(privateScreening.themeId, 'orchid_bloom');
     });
 
     test('saving and loading hall preserves custom themeId', () async {
@@ -37,21 +37,21 @@ void main() {
 
     test('v4 backup export and import preserves per-hall theme IDs', () {
       final halls = [
-        HallSpace.defaultGrandHall().copyWith(themeId: 'cafe_calm'),
-        HallSpace.defaultMezzanineHall().copyWith(themeId: 'alpine_chalet'),
+        HallSpace.defaultGrandHall().copyWith(themeId: 'tuscany'),
+        HallSpace.defaultMezzanineHall().copyWith(themeId: 'orchid_bloom'),
         HallSpace.defaultPrivateScreeningHall().copyWith(themeId: 'violet_dusk'),
       ];
 
       final jsonString = service.exportFullBackupJson(
         halls: halls,
         activeHallId: 'common',
-        themeId: 'cafe_calm',
+        themeId: 'tuscany',
       );
 
       final restored = service.importBackupJson(jsonString);
       expect(restored.length, 3);
-      expect(restored[0].themeId, 'cafe_calm');
-      expect(restored[1].themeId, 'alpine_chalet');
+      expect(restored[0].themeId, 'tuscany');
+      expect(restored[1].themeId, 'orchid_bloom');
       expect(restored[2].themeId, 'violet_dusk');
     });
   });

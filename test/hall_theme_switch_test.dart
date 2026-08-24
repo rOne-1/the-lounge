@@ -36,11 +36,11 @@ void main() {
       expect(container.read(hallProvider).activeHall.themeId, 'midnight_cinema');
       expect(container.read(ambianceProvider).id, 'midnight_cinema');
 
-      // Switch to Private Screening Hall ('reading_room')
+      // Switch to Private Screening Hall ('orchid_bloom')
       await container.read(hallProvider.notifier).switchHall('custom_2');
 
-      expect(container.read(hallProvider).activeHall.themeId, 'reading_room');
-      expect(container.read(ambianceProvider).id, 'reading_room');
+      expect(container.read(hallProvider).activeHall.themeId, 'orchid_bloom');
+      expect(container.read(ambianceProvider).id, 'orchid_bloom');
     });
 
     testWidgets('updateHallTheme updates hall theme and applies immediately if active', (tester) async {

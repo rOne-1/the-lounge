@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
-import 'package:the_lounge/themes/reading_room_theme.dart';
+import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/widgets/fallback_widgets.dart';
 
@@ -24,22 +24,22 @@ void main() {
       expect(gradient.colors.contains(Colors.transparent), isFalse);
     });
 
-    test('readingRoomBackground gradient transitions to rrAmbianceColors.base', () {
-      final decoration = readingRoomBackground();
-      expect(decoration.color, equals(rrAmbianceColors.base));
+    test('orchidBloomBackground gradient transitions to obAmbianceColors.base', () {
+      final decoration = orchidBloomBackground();
+      expect(decoration.color, equals(obAmbianceColors.base));
       expect(decoration.gradient, isA<RadialGradient>());
 
       final gradient = decoration.gradient as RadialGradient;
-      expect(gradient.colors[0], equals(const Color(0xFFE8DCC8)));
-      expect(gradient.colors[1], equals(rrAmbianceColors.base));
+      expect(gradient.colors[0], equals(const Color(0xFFE6D9F0)));
+      expect(gradient.colors[1], equals(obAmbianceColors.base));
       expect(gradient.colors.contains(Colors.transparent), isFalse);
     });
 
     testWidgets('ThemeData scaffoldBackgroundColor matches base colors', (WidgetTester tester) async {
       final theme = screeningRoomTheme.themeData;
-      final rrTheme = readingRoomTheme.themeData;
+      final obTheme = orchidBloomTheme.themeData;
       expect(theme.scaffoldBackgroundColor, equals(srAmbianceColors.base));
-      expect(rrTheme.scaffoldBackgroundColor, equals(rrAmbianceColors.base));
+      expect(obTheme.scaffoldBackgroundColor, equals(obAmbianceColors.base));
     });
   });
 

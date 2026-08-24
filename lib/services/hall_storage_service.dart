@@ -152,7 +152,7 @@ class HallStorageService {
 
     themeId ??= (hallId == 'common'
         ? 'screening_room'
-        : (hallId == 'custom_1' ? 'midnight_cinema' : 'reading_room'));
+        : (hallId == 'custom_1' ? 'midnight_cinema' : 'orchid_bloom'));
 
     // Upgrade old names if still legacy strings
     if (name == 'Common Space' || name == 'Common') {
