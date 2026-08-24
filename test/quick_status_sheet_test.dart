@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:the_lounge/models/hall_space.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
+import 'package:the_lounge/services/hall_storage_service.dart';
 import 'package:the_lounge/widgets/quick_status_sheet.dart';
 import 'package:the_lounge/widgets/drag_to_dismiss_sheet.dart';
 import 'package:the_lounge/widgets/media_card.dart';
@@ -69,6 +71,99 @@ void main() {
       expect(find.text('On-Hold'), findsOneWidget);
       expect(find.text('Dropped'), findsOneWidget);
       expect(find.text('Watched'), findsOneWidget);
+    });
+
+    testWidgets('HALL-SAVE-1: shows a chip per Hall, defaulting to the active one selected',
+        (WidgetTester tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Consumer(
+                  builder: (context, ref, child) {
+                    return ElevatedButton(
+                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      child: const Text('Open Sheet'),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('quick_status_hall_picker')), findsOneWidget);
+      expect(find.text('The Grand Hall'), findsOneWidget);
+      expect(find.text('The Mezzanine Hall'), findsOneWidget);
+      expect(find.text('The Private Screening Hall'), findsOneWidget);
+    });
+
+    testWidgets(
+        'HALL-SAVE-1: picking a different Hall and tapping a status places the title there, and it syncs into the aggregating Grand Hall',
+        (WidgetTester tester) async {
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            home: Scaffold(
+              body: Builder(
+                builder: (context) => Consumer(
+                  builder: (context, ref, child) {
+                    return ElevatedButton(
+                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      child: const Text('Open Sheet'),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Open Sheet'));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('quick_status_hall_custom_1')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Watchlist'));
+      await tester.pump();
+      // The confirmation toast has its own 3s auto-dismiss timer -- let it
+      // fully resolve before the test ends, or flutter_test's pending-timer
+      // invariant trips.
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pumpAndSettle();
+
+      // It landed in the Mezzanine Hall's (custom_1) own storage, not the
+      // Grand Hall's.
+      final raw = prefs.getString(
+        HallStorageService.domainStorageKey('custom_1', MediumDomain.movies),
+      );
+      expect(raw, isNotNull);
+      expect(raw!.contains('movie-101'), isTrue);
+      final grandHallRaw = prefs.getString(
+        HallStorageService.domainStorageKey('common', MediumDomain.movies),
+      );
+      expect(grandHallRaw == null || !grandHallRaw.contains('movie-101'), isTrue);
+
+      // HALL-SYNC-1: since the active Hall is the Grand Hall (which
+      // aggregates every other Hall), the save is immediately visible --
+      // as a read-only aggregated title, not a native one.
+      final state = container.read(mediaProvider);
+      expect(state.watchlist.containsKey('movie-101'), isTrue);
+      expect(state.readOnlyMediaIds.contains('movie-101'), isTrue);
     });
 
     testWidgets('BETA3-A11Y-1: status pills expose a button role, correct label, and selected state', (WidgetTester tester) async {

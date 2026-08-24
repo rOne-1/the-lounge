@@ -160,6 +160,114 @@ void main() {
     expect(mezzanineRaw!.contains('movie-mezzanine'), isTrue);
   });
 
+  group('HALL-SAVE-1: saveToHallShelf', () {
+    test('saves to a non-active Hall without disturbing an unrelated active Hall\'s own state', () async {
+      // Active Hall is the Private Screening Hall (custom_2) -- unrelated
+      // to both the Grand Hall (whose aggregation would otherwise pull the
+      // write in) and the save target (Mezzanine/custom_1), so no
+      // reactivity is expected here at all.
+      await prefs.setString(HallStorageService.kLoungeActiveHallIdKey, 'custom_2');
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+      await notifier.loadFromPrefs();
+
+      await notifier.saveToHallShelf(
+        hallId: 'custom_1',
+        item: movieMezzanine,
+        shelf: ArchiveShelfKind.watchlist,
+      );
+
+      // The active (but unrelated) Hall's own in-memory state is untouched.
+      expect(container.read(mediaProvider).watchlist.containsKey('movie-mezzanine'), isFalse);
+
+      // But it genuinely landed in the Mezzanine Hall's own storage.
+      final raw = prefs.getString(
+        HallStorageService.domainStorageKey('custom_1', MediumDomain.movies),
+      );
+      expect(raw, isNotNull);
+      expect(raw!.contains('movie-mezzanine'), isTrue);
+
+      // Loading (not switching, to avoid pulling in the theme/ambiance
+      // machinery this plain-`test()` file isn't set up for) the Mezzanine
+      // Hall directly on mediaProvider confirms it's really there, on the
+      // right shelf.
+      await notifier.loadForHall('custom_1');
+      expect(container.read(mediaProvider).watchlist.containsKey('movie-mezzanine'), isTrue);
+    });
+
+    test('HALL-SYNC-1: saving to another Hall while viewing the Grand Hall reflects immediately, no reload needed', () async {
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      // Load fresh into the Grand Hall (the default active Hall).
+      await notifier.loadFromPrefs();
+      expect(container.read(mediaProvider).watchingList.containsKey('tv-private'), isFalse);
+
+      // Save a TV show into the Private Screening Hall while still "in"
+      // the Grand Hall -- this is exactly the cross-hall save + Grand Hall
+      // sync combination items 2/3/15 describe.
+      await notifier.saveToHallShelf(
+        hallId: 'custom_2',
+        item: showPrivate,
+        shelf: ArchiveShelfKind.watching,
+      );
+
+      // No loadForHall/switchHall call in between -- state must already
+      // reflect it.
+      final state = container.read(mediaProvider);
+      expect(state.watchingList.containsKey('tv-private'), isTrue);
+      expect(state.readOnlyMediaIds.contains('tv-private'), isTrue);
+      expect(state.readOnlySourceHallName['tv-private'], 'The Private Screening Hall');
+    });
+
+    test('a shelf change replaces any prior shelf placement for that title in the target Hall', () async {
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      await notifier.saveToHallShelf(
+        hallId: 'custom_1',
+        item: movieMezzanine,
+        shelf: ArchiveShelfKind.watchlist,
+      );
+      await notifier.saveToHallShelf(
+        hallId: 'custom_1',
+        item: movieMezzanine,
+        shelf: ArchiveShelfKind.watched,
+      );
+
+      await notifier.loadForHall('custom_1');
+      final state = container.read(mediaProvider);
+      expect(state.watchedList.containsKey('movie-mezzanine'), isTrue);
+      expect(state.watchlist.containsKey('movie-mezzanine'), isFalse);
+    });
+
+    test('saving to the currently-active Hall delegates to the normal full-featured mutation path', () async {
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      // Active Hall defaults to 'common'.
+      await notifier.saveToHallShelf(
+        hallId: 'common',
+        item: movieNative,
+        shelf: ArchiveShelfKind.watchlist,
+      );
+
+      expect(container.read(mediaProvider).watchlist.containsKey('movie-native'), isTrue);
+    });
+  });
+
   test('Non-Grand halls are never aggregated', () async {
     await seedHall('custom_1', movieWatchlist: {'movie-mezzanine': movieMezzanine});
     await seedHall('custom_2', tvWatching: {'tv-private': showPrivate});

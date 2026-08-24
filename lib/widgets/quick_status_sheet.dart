@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
+import '../models/hall_space.dart';
 import '../models/media_item.dart';
+import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'lounge_folder_picker_sheet.dart';
@@ -29,7 +31,7 @@ Future<void> showQuickStatusSheet(
 
 /// A modal selector widget displaying the 6 status options for a [MediaItem]
 /// styled with Screening Room aesthetics (dark background #161312, gold active indicator borders, icon + label pills).
-class QuickStatusSheet extends ConsumerWidget {
+class QuickStatusSheet extends ConsumerStatefulWidget {
   final MediaItem item;
 
   const QuickStatusSheet({
@@ -38,7 +40,26 @@ class QuickStatusSheet extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<QuickStatusSheet> createState() => _QuickStatusSheetState();
+}
+
+class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
+  // HALL-SAVE-1: defaults to whichever Hall is currently active; picking a
+  // different one here targets that Hall instead, without switching to it.
+  late String _targetHallId;
+
+  @override
+  void initState() {
+    super.initState();
+    _targetHallId = ref.read(hallProvider).activeHallId;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final item = widget.item;
+    final hallState = ref.watch(hallProvider);
+    final activeHallId = hallState.activeHallId;
+    final isCrossHall = _targetHallId != activeHallId;
     final mediaState = ref.watch(mediaProvider);
     final mediaNotifier = ref.read(mediaProvider.notifier);
 
@@ -64,12 +85,48 @@ class QuickStatusSheet extends ConsumerWidget {
       action();
     }
 
-    final inWatchlist = mediaState.watchlist.containsKey(item.id);
-    final inSaved = mediaState.maybeList.containsKey(item.id);
-    final inWatching = mediaState.watchingList.containsKey(item.id);
-    final inOnHold = mediaState.onHoldList.containsKey(item.id);
-    final inDropped = mediaState.droppedList.containsKey(item.id);
-    final inWatched = mediaState.watchedList.containsKey(item.id);
+    // HALL-SAVE-1: cross-hall taps skip the active-Hall toggle machinery
+    // entirely -- this sheet has no reliable read on the target Hall's
+    // existing shelf placement, so every tap there is a plain "place it on
+    // this shelf", not a toggle, followed by a confirmation toast naming
+    // the Hall it went to.
+    void handleStatusTap(ArchiveShelfKind shelf, VoidCallback activeHallToggle) {
+      if (isCrossHall) {
+        final targetHallName =
+            hallState.halls.firstWhere((h) => h.id == _targetHallId).name;
+        mediaNotifier.saveToHallShelf(
+          hallId: _targetHallId,
+          item: item,
+          shelf: shelf,
+        );
+        // Show the toast before popping -- Overlay.of walks the element
+        // tree, and this sheet's own context is no longer safe to use for
+        // that once Navigator.pop has started tearing it down.
+        LoungeToast.show(
+          context,
+          'Added to ${shelf.label} in $targetHallName.',
+          type: ToastType.success,
+        );
+        Navigator.of(context).pop();
+        return;
+      }
+      guardEdit(context, () {
+        activeHallToggle();
+        Navigator.of(context).pop();
+      });
+    }
+
+    // HALL-SAVE-1: mediaState only ever reflects the active Hall -- once a
+    // different target Hall is picked, this sheet can't know that Hall's
+    // real shelf placement without loading it, so no pill shows as active
+    // and every tap is a plain "add to this shelf there" rather than a
+    // toggle.
+    final inWatchlist = !isCrossHall && mediaState.watchlist.containsKey(item.id);
+    final inSaved = !isCrossHall && mediaState.maybeList.containsKey(item.id);
+    final inWatching = !isCrossHall && mediaState.watchingList.containsKey(item.id);
+    final inOnHold = !isCrossHall && mediaState.onHoldList.containsKey(item.id);
+    final inDropped = !isCrossHall && mediaState.droppedList.containsKey(item.id);
+    final inWatched = !isCrossHall && mediaState.watchedList.containsKey(item.id);
     // Item 1: an optimistic TV Watched/Watching placement not yet
     // confirmed by real per-episode data.
     final isPendingConfirmation =
@@ -132,8 +189,8 @@ class QuickStatusSheet extends ConsumerWidget {
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
-        top: 12,
-        bottom: MediaQuery.of(context).padding.bottom + 20,
+        top: 10,
+        bottom: MediaQuery.of(context).padding.bottom + 14,
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -150,7 +207,7 @@ class QuickStatusSheet extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           // Media Header & Current Active Status Badge
           Row(
             children: [
@@ -281,20 +338,72 @@ class QuickStatusSheet extends ConsumerWidget {
               ),
             ),
           ],
-          const SizedBox(height: 20),
+          const SizedBox(height: 8),
+          // HALL-SAVE-1: pick which Hall the status pills below act on --
+          // defaults to the active Hall, no switching required to target
+          // another one.
+          SizedBox(
+            height: 28,
+            child: ListView.separated(
+              key: const ValueKey('quick_status_hall_picker'),
+              scrollDirection: Axis.horizontal,
+              itemCount: hallState.halls.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final hall = hallState.halls[index];
+                final isSelected = hall.id == _targetHallId;
+                return Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    key: ValueKey('quick_status_hall_${hall.id}'),
+                    onTap: () => setState(() => _targetHallId = hall.id),
+                    borderRadius: BorderRadius.circular(999),
+                    child: AnimatedContainer(
+                      duration: AppPhysics.houseSpringDuration,
+                      curve: AppPhysics.houseSpringCurve,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? context.ambianceColors.acc.withValues(alpha: 0.15)
+                            : context.ambianceColors.pill,
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: isSelected
+                              ? context.ambianceColors.acc
+                              : context.ambianceColors.lineRgba,
+                          width: isSelected ? 1.5 : 1.0,
+                        ),
+                      ),
+                      child: Text(
+                        hall.name,
+                        style: AppThemes.safeGeist(
+                          fontSize: 12,
+                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          color: isSelected
+                              ? context.ambianceColors.acc
+                              : context.ambianceColors.sub,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 8),
           Divider(
             color: context.ambianceColors.lineRgba,
             height: 1,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
           // 6 Status Option Pills (Grid of 2 columns)
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-            childAspectRatio: 2.7,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 3.1,
             children: [
               _StatusPill(
                 label: 'Watchlist',
@@ -303,20 +412,16 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.bookmark_outline_rounded,
                 isActive: inWatchlist,
                 activeColor: AppStatusColors.watchlist,
-                onTap: () => guardEdit(context, () {
-                  mediaNotifier.toggleWatchlist(item);
-                  Navigator.of(context).pop();
-                }),
+                onTap: () => handleStatusTap(
+                    ArchiveShelfKind.watchlist, () => mediaNotifier.toggleWatchlist(item)),
               ),
               _StatusPill(
                 label: 'Saved',
                 icon: inSaved ? Icons.archive_rounded : Icons.archive_outlined,
                 isActive: inSaved,
                 activeColor: AppStatusColors.save,
-                onTap: () => guardEdit(context, () {
-                  mediaNotifier.toggleMaybe(item);
-                  Navigator.of(context).pop();
-                }),
+                onTap: () => handleStatusTap(
+                    ArchiveShelfKind.saved, () => mediaNotifier.toggleMaybe(item)),
               ),
               _StatusPill(
                 label: inWatching && isPendingConfirmation
@@ -327,10 +432,8 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.play_circle_outline_rounded,
                 isActive: inWatching,
                 activeColor: AppStatusColors.watching,
-                onTap: () => guardEdit(context, () {
-                  mediaNotifier.toggleWatching(item);
-                  Navigator.of(context).pop();
-                }),
+                onTap: () => handleStatusTap(
+                    ArchiveShelfKind.watching, () => mediaNotifier.toggleWatching(item)),
               ),
               _StatusPill(
                 label: 'On-Hold',
@@ -339,10 +442,8 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.pause_circle_outline_rounded,
                 isActive: inOnHold,
                 activeColor: AppStatusColors.onHold,
-                onTap: () => guardEdit(context, () {
-                  mediaNotifier.toggleOnHold(item);
-                  Navigator.of(context).pop();
-                }),
+                onTap: () => handleStatusTap(
+                    ArchiveShelfKind.onHold, () => mediaNotifier.toggleOnHold(item)),
               ),
               _StatusPill(
                 label: 'Dropped',
@@ -351,10 +452,8 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.remove_circle_outline_rounded,
                 isActive: inDropped,
                 activeColor: AppStatusColors.dropped,
-                onTap: () => guardEdit(context, () {
-                  mediaNotifier.toggleDropped(item);
-                  Navigator.of(context).pop();
-                }),
+                onTap: () => handleStatusTap(
+                    ArchiveShelfKind.dropped, () => mediaNotifier.toggleDropped(item)),
               ),
               _StatusPill(
                 label: inWatched && isPendingConfirmation
@@ -365,18 +464,17 @@ class QuickStatusSheet extends ConsumerWidget {
                     : Icons.check_circle_outline_rounded,
                 isActive: inWatched,
                 activeColor: AppStatusColors.watched,
-                onTap: () => guardEdit(context, () {
+                onTap: () => handleStatusTap(ArchiveShelfKind.watched, () {
                   if (inWatched) {
                     mediaNotifier.removeFromWatchedList(item.id);
                   } else {
                     mediaNotifier.addToWatchedList(item);
                   }
-                  Navigator.of(context).pop();
                 }),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           // PERS-FOLDERS-1: status-independent, deliberately separate from
           // the 6 status pills above -- folders are a different axis
           // (curation, not status) from Watchlist/Saved/etc.

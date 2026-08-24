@@ -458,6 +458,104 @@ class MediaNotifier extends Notifier<MediaState> {
     } catch (_) {}
   }
 
+  /// HALL-SAVE-1: saves [item] onto [shelf] in [hallId], regardless of which
+  /// Hall is currently active -- lets a status sheet target any Hall
+  /// without switching to it first.
+  ///
+  /// When [hallId] is the currently-active Hall, this just delegates to the
+  /// same full-featured mutation path a normal in-Hall save already uses
+  /// (episode tracking, TV completion classification, etc. all still
+  /// apply). For any other Hall, this is a direct, minimal read-modify-write
+  /// against that Hall's own storage -- deliberately simpler than the
+  /// active-Hall path (no episode/season bookkeeping), since a "save this
+  /// to a different Hall" action is a plain shelf placement, not an
+  /// in-progress watch session happening in that Hall right now.
+  ///
+  /// If the active Hall is the Grand Hall (or is itself the target), the
+  /// in-memory state is refreshed afterward so the change is visible
+  /// immediately -- without this, HALL-SYNC-1's complaint (a title saved in
+  /// another Hall not showing up in the Grand Hall until an unrelated
+  /// reload) would still exist for exactly the case this feature exists to
+  /// fix.
+  Future<void> saveToHallShelf({
+    required String hallId,
+    required MediaItem item,
+    required ArchiveShelfKind shelf,
+  }) async {
+    final prefs = ref.read(sharedPreferencesProvider);
+    final activeHallId = _storageService.getActiveHallId(prefs);
+
+    if (hallId == activeHallId) {
+      _applyShelfMutation(item, shelf);
+      return;
+    }
+
+    final domain =
+        item.type == MediaType.tv ? MediumDomain.tv : MediumDomain.movies;
+    final key = HallStorageService.domainStorageKey(hallId, domain);
+    final raw = prefs.getString(key);
+    var archive = (raw == null || raw.isEmpty)
+        ? const DomainArchive()
+        : DomainArchive.fromJson(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+
+    // Shelves are mutually exclusive -- strip the item from every shelf in
+    // this domain archive before placing it on the target one, the same
+    // invariant _setTvShowStatus/the addTo*List methods already enforce for
+    // the active Hall.
+    Map<String, MediaItem> without(Map<String, MediaItem> m) =>
+        Map<String, MediaItem>.of(m)..remove(item.id);
+
+    final stampedItem =
+        item.addedDate == null ? item.copyWith(addedDate: DateTime.now()) : item;
+    final targetShelf = Map<String, MediaItem>.of(archive.shelf(shelf))
+      ..[item.id] = stampedItem;
+
+    archive = archive.copyWith(
+      watchlist: shelf == ArchiveShelfKind.watchlist ? targetShelf : without(archive.watchlist),
+      saved: shelf == ArchiveShelfKind.saved ? targetShelf : without(archive.saved),
+      watching: shelf == ArchiveShelfKind.watching ? targetShelf : without(archive.watching),
+      watched: shelf == ArchiveShelfKind.watched ? targetShelf : without(archive.watched),
+      onHold: shelf == ArchiveShelfKind.onHold ? targetShelf : without(archive.onHold),
+      dropped: shelf == ArchiveShelfKind.dropped ? targetShelf : without(archive.dropped),
+    );
+
+    await prefs.setString(key, jsonEncode(archive.toJson()));
+
+    // HALL-SYNC-1: refresh in-memory state if this write is visible from
+    // wherever the user currently is -- either they're looking at the
+    // Grand Hall (which aggregates every other Hall) or, less commonly,
+    // they're mid-navigation and the target happens to already be active.
+    if (activeHallId == 'common' || hallId == activeHallId) {
+      await loadForHall(activeHallId);
+    }
+  }
+
+  /// The active-Hall half of [saveToHallShelf] -- the same full-featured
+  /// mutation each shelf's existing addTo*List method already performs,
+  /// just dispatched by [ArchiveShelfKind] instead of being called directly.
+  void _applyShelfMutation(MediaItem item, ArchiveShelfKind shelf) {
+    switch (shelf) {
+      case ArchiveShelfKind.watchlist:
+        addToWatchlist(item);
+        break;
+      case ArchiveShelfKind.saved:
+        addToMaybeList(item);
+        break;
+      case ArchiveShelfKind.watching:
+        addToWatchingList(item);
+        break;
+      case ArchiveShelfKind.watched:
+        addToWatchedList(item);
+        break;
+      case ArchiveShelfKind.onHold:
+        addToOnHoldList(item);
+        break;
+      case ArchiveShelfKind.dropped:
+        addToDroppedList(item);
+        break;
+    }
+  }
+
   Future<void> _loadFromPrefs() async {
     try {
       final prefs = ref.read(sharedPreferencesProvider);
