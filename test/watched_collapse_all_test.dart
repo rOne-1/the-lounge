@@ -83,6 +83,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // WATCHED-VIEW-1: Collection grouping is now an opt-in toggle, not the
+    // default view -- every test in this file is specifically about that
+    // grouped view, so switch it on here once rather than in each test.
+    await tester.tap(find.byKey(const ValueKey('watched_group_by_collection_toggle')));
+    await tester.pumpAndSettle();
+
     return container;
   }
 

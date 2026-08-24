@@ -52,6 +52,14 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
   bool _watchedSortByRating = false;
   bool _cleanupBannerDismissed = false;
 
+  // ARCHIVE-SORT-1: applies to every sort option above, on every shelf.
+  bool _sortAscending = false;
+
+  // WATCHED-VIEW-1: Watched now defaults to the same flat, lazily-built grid
+  // every other shelf uses -- Collection grouping is an opt-in view, not
+  // the default, toggled via this flag rather than always-on.
+  bool _watchedGroupByCollection = false;
+
   // E7: single control to collapse/expand every collection group in the Watched archive at once.
   final Map<String, ExpansibleController> _watchedTileControllers = {};
   bool _watchedAllCollapsed = false;
@@ -166,7 +174,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
               scale: _scale,
               child: SlideTransition(
                 position: _slide,
-                child: _currentKind == ArchiveShelfKind.watched
+                child: (_currentKind == ArchiveShelfKind.watched &&
+                        _watchedGroupByCollection)
                     ? _buildWatchedContent(context, items)
                     : _buildStandardContent(context, items),
               ),
@@ -177,12 +186,25 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     );
   }
 
+  /// ARCHIVE-SORT-1: the one place every sort decision funnels through --
+  /// Watched's "My Rating" toggle takes priority over [_sort] when active
+  /// (same precedence [_buildWatchedContent] already used), then
+  /// [_sortAscending] reverses whichever result came out, uniformly for
+  /// every shelf and every sort option.
+  List<MediaItem> _sortedItems(List<MediaItem> items) {
+    final sorted = (_currentKind == ArchiveShelfKind.watched && _watchedSortByRating)
+        ? personalRatingSort(items, ref.read(mediaProvider).watchHistory)
+        : sortArchiveShelf(items, _sort);
+    return _sortAscending ? sorted.reversed.toList() : sorted;
+  }
+
   Widget _buildStandardContent(BuildContext context, List<MediaItem> items) {
     final colors = context.ambianceColors;
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
     final banner =
         _currentKind == ArchiveShelfKind.saved ? _buildCleanupBanner(context, items.length) : null;
+    final isWatched = _currentKind == ArchiveShelfKind.watched;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,6 +226,10 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
               if (items.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 _buildSortGroupBar(),
+                if (isWatched) ...[
+                  const SizedBox(height: 8),
+                  _buildWatchedToolbarExtras(colors),
+                ],
               ],
             ],
           ),
@@ -212,7 +238,7 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
           child: _group == ArchiveGroupOption.none
               ? _buildGrid(
                   context,
-                  sortArchiveShelf(items, _sort),
+                  _sortedItems(items),
                   emptyLabel: 'Your ${_currentKind.label} is empty',
                 )
               : _buildGroupedGrid(context, items),
@@ -221,7 +247,81 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     );
   }
 
+  /// WATCHED-VIEW-1: "My Rating" sort and "Group by Collection" are extra,
+  /// Watched-only controls -- kept separate from the shared Sort/Group
+  /// dropdowns (which apply to every shelf) rather than folding them into
+  /// [ArchiveSortOption]/[ArchiveGroupOption], since neither one is a
+  /// meaningful choice on any other shelf.
+  Widget _buildWatchedToolbarExtras(AmbianceColors colors) {
+    return Row(
+      children: [
+        PressableScale(
+          onTap: () => setState(() => _watchedSortByRating = !_watchedSortByRating),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: _watchedSortByRating ? colors.acc.withValues(alpha: 0.14) : colors.pill,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _watchedSortByRating ? colors.acc : colors.lineRgba,
+                width: _watchedSortByRating ? 1.5 : 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.star_rounded, size: 14, color: _watchedSortByRating ? colors.acc : colors.sub),
+                const SizedBox(width: 4),
+                Text(
+                  'My Rating',
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _watchedSortByRating ? colors.acc : colors.sub,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        PressableScale(
+          key: const ValueKey('watched_group_by_collection_toggle'),
+          onTap: () => setState(() => _watchedGroupByCollection = !_watchedGroupByCollection),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: _watchedGroupByCollection ? colors.acc.withValues(alpha: 0.14) : colors.pill,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: _watchedGroupByCollection ? colors.acc : colors.lineRgba,
+                width: _watchedGroupByCollection ? 1.5 : 1.0,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.collections_bookmark_outlined,
+                    size: 14, color: _watchedGroupByCollection ? colors.acc : colors.sub),
+                const SizedBox(width: 4),
+                Text(
+                  'Group by Collection',
+                  style: AppThemes.safeGeist(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: _watchedGroupByCollection ? colors.acc : colors.sub,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildSortGroupBar() {
+    final colors = context.ambianceColors;
     return Row(
       children: [
         Expanded(
@@ -235,6 +335,26 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
             onChanged: (v) {
               if (v != null) setState(() => _sort = v);
             },
+          ),
+        ),
+        const SizedBox(width: 8),
+        // ARCHIVE-SORT-1: ascending/descending toggle, applies to every sort
+        // option above and to every shelf (including collection clusters).
+        PressableScale(
+          key: const ValueKey('archive_sort_direction_toggle'),
+          onTap: () => setState(() => _sortAscending = !_sortAscending),
+          child: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: colors.pill,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: colors.lineRgba),
+            ),
+            child: Icon(
+              _sortAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+              size: 16,
+              color: colors.acc,
+            ),
           ),
         ),
         const SizedBox(width: 8),
@@ -348,7 +468,7 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: entries.map((entry) {
-          final groupItems = sortArchiveShelf(entry.value, _sort);
+          final groupItems = _sortedItems(entry.value);
           return Container(
             key: ValueKey('${keyPrefix}_group_${entry.key}'),
             margin: const EdgeInsets.only(bottom: 12),
@@ -432,21 +552,29 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
           ? MediaType.movie
           : MediaType.tv;
 
+      final isWatched = _currentKind == ArchiveShelfKind.watched;
+
       if (otherTypeCount > 0) {
         final otherTypeName = activeType == MediaType.movie ? 'TV Shows' : 'Movies';
         return AtmosphericEmptyState(
           icon: Icons.swap_horiz_rounded,
-          title: 'No ${activeType == MediaType.movie ? 'movies' : 'TV shows'} in ${_currentKind.label}',
-          message: 'You have $otherTypeCount title${otherTypeCount == 1 ? '' : 's'} under $otherTypeName in this archive.',
+          title: isWatched
+              ? 'No watched ${activeType == MediaType.movie ? 'movies' : 'TV shows'}'
+              : 'No ${activeType == MediaType.movie ? 'movies' : 'TV shows'} in ${_currentKind.label}',
+          message: isWatched
+              ? 'You have $otherTypeCount watched title${otherTypeCount == 1 ? '' : 's'} under $otherTypeName.'
+              : 'You have $otherTypeCount title${otherTypeCount == 1 ? '' : 's'} under $otherTypeName in this archive.',
           ctaLabel: 'Switch to $otherTypeName',
           onCta: () => ref.read(navigationProvider.notifier).toggleMediaType(),
         );
       }
 
       return AtmosphericEmptyState(
-        icon: Icons.movie_creation_outlined,
-        title: emptyLabel,
-        message: 'Titles you save here will show up in this list.',
+        icon: isWatched ? Icons.check_circle_outline_rounded : Icons.movie_creation_outlined,
+        title: isWatched ? 'Nothing watched yet' : emptyLabel,
+        message: isWatched
+            ? 'Titles you mark as watched will show up here.'
+            : 'Titles you save here will show up in this list.',
         ctaLabel: 'Discover Titles',
         onCta: () {
           Navigator.of(context).popUntil((route) => route.isFirst);
@@ -541,8 +669,12 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
       standaloneItems
         ..clear()
         ..addAll(sortedStandalone);
-    } else if (_sort == ArchiveSortOption.lastAdded || _sort == ArchiveSortOption.dateAdded) {
-      // SORT-2: Sort collection clusters by the most recent timestamp in each cluster
+    } else if (_sort == ArchiveSortOption.lastAdded) {
+      // ARCHIVE-SORT-1: cluster order (and item order within each cluster)
+      // by explicit addedDate/releaseDate timestamps -- distinct from
+      // dateAdded below, which uses insertion order instead. Previously
+      // these two options shared this exact branch, so choosing between
+      // them had no effect at all.
       collectionEntries.sort((a, b) {
         final dateA = getCollectionLastAdded(a.value);
         final dateB = getCollectionLastAdded(b.value);
@@ -566,6 +698,23 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
         if (bd == null) return -1;
         return bd.compareTo(ad);
       });
+    } else if (_sort == ArchiveSortOption.dateAdded) {
+      // ARCHIVE-SORT-1: distinct from lastAdded above -- `items` arrives in
+      // the shelf's natural insertion order (same invariant
+      // sortArchiveShelf's flat dateAdded case relies on), so a cluster's
+      // recency is its highest-indexed (most recently added) member.
+      final indexOf = <String, int>{
+        for (var i = 0; i < items.length; i++) items[i].id: i,
+      };
+      collectionEntries.sort((a, b) {
+        final maxA = a.value.map((m) => indexOf[m.id] ?? 0).reduce((x, y) => x > y ? x : y);
+        final maxB = b.value.map((m) => indexOf[m.id] ?? 0).reduce((x, y) => x > y ? x : y);
+        return maxB.compareTo(maxA);
+      });
+      for (final entry in collectionEntries) {
+        entry.value.sort((a, b) => (indexOf[b.id] ?? 0).compareTo(indexOf[a.id] ?? 0));
+      }
+      standaloneItems.sort((a, b) => (indexOf[b.id] ?? 0).compareTo(indexOf[a.id] ?? 0));
     } else {
       for (final entry in collectionEntries) {
         final sorted = sortArchiveShelf(entry.value, _sort);
@@ -577,6 +726,23 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
       standaloneItems
         ..clear()
         ..addAll(sortedStandalone);
+    }
+
+    if (_sortAscending) {
+      final reversedEntries = collectionEntries.reversed.toList();
+      collectionEntries
+        ..clear()
+        ..addAll(reversedEntries);
+      for (final entry in collectionEntries) {
+        final reversed = entry.value.reversed.toList();
+        entry.value
+          ..clear()
+          ..addAll(reversed);
+      }
+      final reversedStandalone = standaloneItems.reversed.toList();
+      standaloneItems
+        ..clear()
+        ..addAll(reversedStandalone);
     }
 
     final isLarge = MediaQuery.of(context).size.width >= 600;
