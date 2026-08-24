@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 import 'ambiance_colors.dart';
+import 'shadow_tokens.dart';
 import 'typography.dart';
 
 const Color _tsBase = Color(0xFF1F161A); // Darkened Voodoo
@@ -26,6 +27,8 @@ const Color _tsSuccess = Color(0xFF6B9A6E);
 
 const double _tsGrainOpacity = 0.05;
 const Color _tsGrainTint = Color.fromRGBO(187, 139, 122, 0.26);
+
+final ThemeShadows _tsShadows = buildThemeShadows(accent: _tsAcc, isDark: true);
 
 BoxDecoration tuscanyBackground() {
   return const BoxDecoration(
@@ -67,6 +70,9 @@ final AmbianceColors tsAmbianceColors = AmbianceColors(
   ),
   grainOpacity: _tsGrainOpacity,
   grainTint: _tsGrainTint,
+  cardShadow: _tsShadows.cardShadow,
+  ambientGlowShadow: _tsShadows.ambientGlowShadow,
+  dialogShadow: _tsShadows.dialogShadow,
   isDark: true,
 );
 

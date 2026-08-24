@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import 'shadow_tokens.dart';
+
+final ThemeShadows _mcShadows =
+    buildThemeShadows(accent: const Color(0xFF00B4D8), isDark: true);
 
 BoxDecoration midnightCinemaBackground() {
   return const BoxDecoration(
@@ -41,6 +45,9 @@ final AmbianceColors mcAmbianceColors = AmbianceColors(
   ),
   grainOpacity: 0.035,
   grainTint: const Color.fromRGBO(0, 180, 216, 0.18),
+  cardShadow: _mcShadows.cardShadow,
+  ambientGlowShadow: _mcShadows.ambientGlowShadow,
+  dialogShadow: _mcShadows.dialogShadow,
   isDark: true,
 );
 

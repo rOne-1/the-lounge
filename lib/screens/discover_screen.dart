@@ -1038,19 +1038,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
         borderRadius: BorderRadius.circular(22),
         border: Border.all(color: borderColor),
         boxShadow: [
-          widget.isDark
-              ? const BoxShadow(
-                  color: Color.fromRGBO(0, 0, 0, 0.6),
-                  blurRadius: 40,
-                  offset: Offset(0, 20),
-                  spreadRadius: -12,
-                )
-              : const BoxShadow(
-                  color: Color.fromRGBO(80, 55, 30, 0.12),
-                  blurRadius: 20,
-                  offset: Offset(0, 10),
-                  spreadRadius: -6,
-                ),
+          ...context.ambianceColors.cardShadow,
           BoxShadow(
             color: context.ambianceColors.surfaceHighlight,
             blurRadius: 0,

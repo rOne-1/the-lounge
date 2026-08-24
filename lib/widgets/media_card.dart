@@ -119,6 +119,7 @@ class MediaCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(borderRadius),
                 border: Border.all(color: lineRgba),
                 boxShadow: [
+                  ...context.ambianceColors.cardShadow,
                   BoxShadow(
                     color: surfaceHighlight,
                     blurRadius: 0,

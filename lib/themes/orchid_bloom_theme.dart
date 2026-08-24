@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 import 'ambiance_colors.dart';
+import 'shadow_tokens.dart';
 import 'typography.dart';
 
 const Color _obBase = Color(0xFFF1EDF7); // Moon Pearl
@@ -26,6 +27,8 @@ const Color _obSuccess = Color(0xFF3F8F5F);
 
 const double _obGrainOpacity = 0.02;
 const Color _obGrainTint = Color.fromRGBO(75, 31, 111, 0.12);
+
+final ThemeShadows _obShadows = buildThemeShadows(accent: _obAcc, isDark: false);
 
 const LinearGradient _obPrimaryGradient = LinearGradient(
   colors: [_obAcc, _obAccGradientEnd],
@@ -73,6 +76,9 @@ final AmbianceColors obAmbianceColors = AmbianceColors(
   ),
   grainOpacity: _obGrainOpacity,
   grainTint: _obGrainTint,
+  cardShadow: _obShadows.cardShadow,
+  ambientGlowShadow: _obShadows.ambientGlowShadow,
+  dialogShadow: _obShadows.dialogShadow,
   isDark: false,
 );
 

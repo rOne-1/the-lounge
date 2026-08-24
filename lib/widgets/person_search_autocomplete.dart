@@ -74,7 +74,6 @@ class _PersonSearchAutocompleteState
 
   @override
   Widget build(BuildContext context) {
-    final isDark = widget.isDark;
     final inkColor = context.ambianceColors.ink;
     final subColor = context.ambianceColors.sub;
     final lineRgba = context.ambianceColors.lineRgba;
@@ -215,13 +214,7 @@ class _PersonSearchAutocompleteState
                       color: cardBg,
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(color: lineRgba),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(isDark ? 80 : 20),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                      boxShadow: context.ambianceColors.dialogShadow,
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: Material(

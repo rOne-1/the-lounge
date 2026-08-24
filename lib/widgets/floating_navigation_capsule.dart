@@ -310,13 +310,7 @@ class _CapsuleBody extends ConsumerWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(expanded ? 28 : 999),
         border: Border.all(color: ambiance.surfaceHighlight, width: 1),
-        boxShadow: [
-          BoxShadow(
-            color: ambiance.scrim.withValues(alpha: 0.35),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        boxShadow: ambiance.ambientGlowShadow,
       ),
       clipBehavior: Clip.antiAlias,
       // B4: RepaintBoundary isolates this into its own compositing layer --

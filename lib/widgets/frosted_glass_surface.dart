@@ -6,7 +6,9 @@ import '../constants.dart';
 /// panel in the app -- `ClipRRect -> BackdropFilter -> Material(transparency)
 /// -> decorated Container`, with the same 16-sigma blur and inner-highlight
 /// boxShadow across every consumer (LoungeDialog, WhatsNewDialog,
-/// LoungeDropdown, LoungeToast).
+/// LoungeDropdown, LoungeToast). THEME-DEPTH-3: also carries each theme's
+/// own `dialogShadow` as an outer elevation layer -- previously this shell
+/// had no outer lift shadow at all, just the inner highlight.
 ///
 /// Deliberately does NOT cover FloatingNavigationCapsule: that widget
 /// animates its own width/height, draws an outer drop shadow instead of this
@@ -55,6 +57,7 @@ class FrostedGlassSurface extends StatelessWidget {
                 borderRadius: BorderRadius.circular(borderRadius),
                 border: Border.all(color: borderColor),
                 boxShadow: [
+                  ...ambiance.dialogShadow,
                   BoxShadow(
                     color: ambiance.surfaceHighlight,
                     blurRadius: 0,

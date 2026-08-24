@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 import 'ambiance_colors.dart';
+import 'shadow_tokens.dart';
 import 'typography.dart';
 
 const Color _srBase = Color(0xFF171310);
@@ -26,6 +27,8 @@ const Color _srSuccess = Color(0xFF4C9A6A);
 
 const double _srGrainOpacity = 0.055;
 const Color _srGrainTint = Color.fromRGBO(203, 168, 106, 0.30);
+
+final ThemeShadows _srShadows = buildThemeShadows(accent: _srAcc, isDark: true);
 
 BoxDecoration screeningRoomBackground() {
   return const BoxDecoration(
@@ -67,6 +70,9 @@ final AmbianceColors srAmbianceColors = AmbianceColors(
   ),
   grainOpacity: _srGrainOpacity,
   grainTint: _srGrainTint,
+  cardShadow: _srShadows.cardShadow,
+  ambientGlowShadow: _srShadows.ambientGlowShadow,
+  dialogShadow: _srShadows.dialogShadow,
   isDark: true,
 );
 

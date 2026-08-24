@@ -51,6 +51,15 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
   /// neutral gray texture reused everywhere.
   final Color grainTint;
 
+  /// THEME-DEPTH-3: elevation for card-like surfaces (see [ThemeShadows]).
+  final List<BoxShadow> cardShadow;
+
+  /// THEME-DEPTH-3: elevation for floating overlay chrome.
+  final List<BoxShadow> ambientGlowShadow;
+
+  /// THEME-DEPTH-3: elevation for dialogs/sheets/panels.
+  final List<BoxShadow> dialogShadow;
+
   final bool isDark;
 
   const AmbianceColors({
@@ -75,6 +84,9 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     required this.primaryButtonDecoration,
     required this.grainOpacity,
     required this.grainTint,
+    required this.cardShadow,
+    required this.ambientGlowShadow,
+    required this.dialogShadow,
     required this.isDark,
   });
 
@@ -101,6 +113,9 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     BoxDecoration? primaryButtonDecoration,
     double? grainOpacity,
     Color? grainTint,
+    List<BoxShadow>? cardShadow,
+    List<BoxShadow>? ambientGlowShadow,
+    List<BoxShadow>? dialogShadow,
     bool? isDark,
   }) {
     return AmbianceColors(
@@ -125,6 +140,9 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       primaryButtonDecoration: primaryButtonDecoration ?? this.primaryButtonDecoration,
       grainOpacity: grainOpacity ?? this.grainOpacity,
       grainTint: grainTint ?? this.grainTint,
+      cardShadow: cardShadow ?? this.cardShadow,
+      ambientGlowShadow: ambientGlowShadow ?? this.ambientGlowShadow,
+      dialogShadow: dialogShadow ?? this.dialogShadow,
       isDark: isDark ?? this.isDark,
     );
   }
@@ -154,6 +172,10 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       primaryButtonDecoration: BoxDecoration.lerp(primaryButtonDecoration, other.primaryButtonDecoration, t)!,
       grainOpacity: grainOpacity + (other.grainOpacity - grainOpacity) * t,
       grainTint: Color.lerp(grainTint, other.grainTint, t)!,
+      cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, t) ?? cardShadow,
+      ambientGlowShadow:
+          BoxShadow.lerpList(ambientGlowShadow, other.ambientGlowShadow, t) ?? ambientGlowShadow,
+      dialogShadow: BoxShadow.lerpList(dialogShadow, other.dialogShadow, t) ?? dialogShadow,
       isDark: t < 0.5 ? isDark : other.isDark,
     );
   }

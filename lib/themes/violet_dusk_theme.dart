@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_theme.dart';
 import 'ambiance_colors.dart';
+import 'shadow_tokens.dart';
 import 'typography.dart';
 
 const Color _vdBase = Color(0xFF1B0B22);
@@ -18,6 +19,8 @@ const Color _vdSuccess = Color(0xFF3F9A78);
 
 const double _vdGrainOpacity = 0.045;
 const Color _vdGrainTint = Color.fromRGBO(194, 82, 143, 0.22);
+
+final ThemeShadows _vdShadows = buildThemeShadows(accent: _vdGlow1, isDark: true);
 
 BoxDecoration violetDuskBackground() {
   return const BoxDecoration(
@@ -59,6 +62,9 @@ final AmbianceColors vdAmbianceColors = AmbianceColors(
   ),
   grainOpacity: _vdGrainOpacity,
   grainTint: _vdGrainTint,
+  cardShadow: _vdShadows.cardShadow,
+  ambientGlowShadow: _vdShadows.ambientGlowShadow,
+  dialogShadow: _vdShadows.dialogShadow,
   isDark: true,
 );
 
