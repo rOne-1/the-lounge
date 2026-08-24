@@ -9,7 +9,6 @@ import '../models/media_item.dart';
 import 'detail_screen.dart';
 import 'media_list_screen.dart';
 import '../constants.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
@@ -248,10 +247,10 @@ class LobbyScreen extends ConsumerWidget {
                       const SizedBox(height: 5),
                       Text(
                         'What are we\nwatching?',
-                        style: GoogleFonts.bodoniModa(
+                        style: AppThemes.display(
+                          context,
                           fontSize: 30,
                           fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
                           color: inkColor,
                           height: 1.05,
                         ),
@@ -511,10 +510,10 @@ class LobbyScreen extends ConsumerWidget {
                 children: [
                   Text(
                     'Not sure what to pick?',
-                    style: GoogleFonts.bodoniModa(
+                    style: AppThemes.display(
+                      context,
                       fontSize: 21,
                       fontWeight: FontWeight.w600,
-                      fontStyle: FontStyle.italic,
                       color: isDark ? inkColor : context.ambianceColors.acc,
                     ),
                   ),

@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'ambient_glow.dart';
 import 'pressable_scale.dart';
 import '../constants.dart';
@@ -120,10 +119,10 @@ class _LoungeFallbackCard extends StatelessWidget {
                   Text(
                     title,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.bodoniModa(
+                    style: AppThemes.display(
+                      context,
                       fontSize: 20,
                       fontWeight: FontWeight.w600,
-                      fontStyle: FontStyle.italic,
                       color: ambiance.ink,
                     ),
                   ),
@@ -310,10 +309,10 @@ class PlaybackUnavailableWidget extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.bodoniModa(
+                  style: AppThemes.display(
+                    context,
                     fontSize: 22,
                     fontWeight: FontWeight.w600,
-                    fontStyle: FontStyle.italic,
                     color: ambiance.ink,
                   ),
                 ),
@@ -411,7 +410,8 @@ class ConfigurationErrorScreen extends StatelessWidget {
                   Text(
                     'CONFIGURATION REQUIRED',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.bodoniModa(
+                    style: AppThemes.display(
+                      context,
                       fontSize: 22,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 2.0,

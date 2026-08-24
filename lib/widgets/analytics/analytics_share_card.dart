@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../constants.dart';
 import '../../utils/analytics_engine.dart';
 
@@ -87,9 +86,9 @@ class AnalyticsShareCard extends StatelessWidget {
                     const SizedBox(height: 10),
                     Text(
                       'My Watching Habits',
-                      style: GoogleFonts.bodoniModa(
+                      style: AppThemes.display(
+                        context,
                         fontSize: 46,
-                        fontStyle: FontStyle.italic,
                         fontWeight: FontWeight.w400,
                         color: colors.ink,
                       ),
@@ -161,9 +160,9 @@ class _StatCell extends StatelessWidget {
       children: [
         Text(
           entry.value,
-          style: GoogleFonts.bodoniModa(
+          style: AppThemes.display(
+            context,
             fontSize: 36,
-            fontStyle: FontStyle.italic,
             fontWeight: FontWeight.w400,
             color: colors.acc,
           ),

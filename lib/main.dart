@@ -95,7 +95,7 @@ class MyApp extends ConsumerWidget {
       builder: (context, child) {
         return AnimatedTheme(
           duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          curve: Curves.easeInOutCubic,
           data: ambiance.themeData,
           child: Stack(
             children: [

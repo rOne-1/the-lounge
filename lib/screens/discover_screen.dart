@@ -9,7 +9,6 @@ import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'detail_screen.dart';
 
 import '../widgets/drag_to_dismiss_sheet.dart';
@@ -590,10 +589,10 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       children: [
                         Text(
                           'How the deck works',
-                          style: GoogleFonts.bodoniModa(
+                          style: AppThemes.display(
+                            context,
                             fontSize: 25,
                             fontWeight: FontWeight.w600,
-                            fontStyle: FontStyle.italic,
                             color: titleColor,
                           ),
                         ),
@@ -1272,10 +1271,10 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
                   ),
                   const SizedBox(height: 6),
                   Text(widget.item.title,
-                      style: GoogleFonts.bodoniModa(
+                      style: AppThemes.display(
+                          context,
                           fontSize: 27,
                           fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
                           color: Colors.white,
                           height: 1.02)),
                   const SizedBox(height: 5),

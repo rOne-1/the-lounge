@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:animations/animations.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
@@ -190,7 +189,8 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                         children: [
                           Text(
                             selectedItem.title,
-                            style: GoogleFonts.bodoniModa(
+                            style: AppThemes.display(
+                              context,
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
                               color: inkColor,

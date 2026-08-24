@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
@@ -123,10 +122,10 @@ class ToolsScreen extends ConsumerWidget {
             children: [
               Text(
                 'Tools',
-                style: GoogleFonts.bodoniModa(
+                style: AppThemes.display(
+                  context,
                   fontSize: 30,
                   fontWeight: FontWeight.w400,
-                  fontStyle: FontStyle.italic,
                   color: colors.ink,
                   letterSpacing: -0.4,
                 ),

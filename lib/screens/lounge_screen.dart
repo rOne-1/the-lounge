@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/media_item.dart';
 import '../models/hall_space.dart';
 import '../providers/analytics_provider.dart';
@@ -201,10 +200,10 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
               Text(
                 _greeting,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.bodoniModa(
+                style: AppThemes.display(
+                  context,
                   fontSize: 40,
                   fontWeight: FontWeight.w400,
-                  fontStyle: FontStyle.italic,
                   color: colors.ink,
                   letterSpacing: -0.5,
                   height: 1.1,

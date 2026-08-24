@@ -2,7 +2,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../models/media_item.dart';
 import '../constants.dart';
 import '../providers/hall_provider.dart';
@@ -202,10 +201,10 @@ class _MediaListScreenState extends ConsumerState<MediaListScreen> {
                       ),
                       title: Text(
                         widget.title,
-                        style: GoogleFonts.bodoniModa(
+                        style: AppThemes.display(
+                          context,
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
                           color: inkColor,
                         ),
                       ),

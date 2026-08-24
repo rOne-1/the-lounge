@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import 'shell_screen.dart';
 
@@ -175,7 +174,8 @@ class _SplashScreenState extends State<SplashScreen>
                   // Typography - The Lounge
                   Text(
                     'THE LOUNGE',
-                    style: GoogleFonts.bodoniModa(
+                    style: AppThemes.display(
+                      context,
                       fontSize: 28,
                       fontWeight: FontWeight.w600,
                       letterSpacing: 4.0,

@@ -43,7 +43,7 @@ class ShellScreen extends ConsumerWidget {
           decoration: context.ambianceColors.background,
           child: AnimatedTheme(
             duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
+            curve: Curves.easeInOutCubic,
             data: ambiance.themeData,
             child: Stack(
               children: [

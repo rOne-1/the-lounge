@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import 'pressable_scale.dart';
 
@@ -118,10 +117,10 @@ class ArchiveSummaryCard extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       child: Text(
                         countLabelOverride ?? '$count',
-                        style: GoogleFonts.bodoniModa(
+                        style: AppThemes.display(
+                          context,
                           fontSize: 34,
                           fontWeight: FontWeight.w400,
-                          fontStyle: FontStyle.italic,
                           color: statusColor,
                           height: 0.95,
                         ),

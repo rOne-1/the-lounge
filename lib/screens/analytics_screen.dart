@@ -3,7 +3,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../providers/analytics_provider.dart';
 import '../providers/media_provider.dart';
@@ -140,10 +139,10 @@ class AnalyticsScreen extends ConsumerWidget {
             children: [
               Text(
                 'Analytics',
-                style: GoogleFonts.bodoniModa(
+                style: AppThemes.display(
+                  context,
                   fontSize: 30,
                   fontWeight: FontWeight.w400,
-                  fontStyle: FontStyle.italic,
                   color: colors.ink,
                   letterSpacing: -0.4,
                 ),
@@ -566,10 +565,10 @@ class _SectionHeader extends StatelessWidget {
     final colors = context.ambianceColors;
     return Text(
       title,
-      style: GoogleFonts.bodoniModa(
+      style: AppThemes.display(
+        context,
         fontSize: 19,
         fontWeight: FontWeight.w600,
-        fontStyle: FontStyle.italic,
         color: colors.ink,
       ),
     );

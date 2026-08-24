@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/rendering.dart' show ScrollCacheExtent;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../providers/media_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../providers/hall_provider.dart';
@@ -118,10 +117,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               Text(
                                 'Settings',
                                 overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.bodoniModa(
+                                style: AppThemes.display(
+                                  context,
                                   fontSize: 24,
                                   fontWeight: FontWeight.w600,
-                                  fontStyle: FontStyle.italic,
                                   color: inkColor,
                                 ),
                               ),
@@ -944,10 +943,10 @@ class _DeveloperSignatureState extends State<_DeveloperSignature>
                 const SizedBox(width: 14),
                 Text(
                   'rOne',
-                  style: GoogleFonts.bodoniModa(
+                  style: AppThemes.display(
+                    context,
                     fontSize: 16,
                     fontWeight: FontWeight.w400,
-                    fontStyle: FontStyle.italic,
                     letterSpacing: 2.5,
                     color: widget.subColor.withValues(alpha: 0.85),
                   ),
@@ -1027,10 +1026,10 @@ class _BlockingLoadingOverlay extends StatelessWidget {
                   Text(
                     message,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.bodoniModa(
+                    style: AppThemes.display(
+                      context,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      fontStyle: FontStyle.italic,
                       color: ambianceColors.ink,
                     ),
                   ),

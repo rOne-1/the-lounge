@@ -3,7 +3,7 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import '../constants.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/media_item.dart';
@@ -225,11 +225,11 @@ class _TrailerPlayerState extends ConsumerState<TrailerPlayer> {
                     Expanded(
                       child: Text(
                         _effectiveTitle,
-                        style: GoogleFonts.bodoniModa(
+                        style: AppThemes.display(
+                          context,
                           color: Colors.white,
                           fontSize: 17,
                           fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,

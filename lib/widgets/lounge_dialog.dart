@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import 'frosted_glass_surface.dart';
 import 'pressable_scale.dart';
@@ -86,10 +85,10 @@ class LoungeDialog extends StatelessWidget {
             children: [
               Text(
                 title,
-                style: GoogleFonts.bodoniModa(
+                style: AppThemes.display(
+                  context,
                   fontSize: 21,
                   fontWeight: FontWeight.w600,
-                  fontStyle: FontStyle.italic,
                   color: ambiance.ink,
                 ),
               ),

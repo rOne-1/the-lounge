@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../constants/whats_new.dart';
 import '../providers/ambiance_provider.dart';
@@ -62,10 +61,10 @@ class WhatsNewDialog extends StatelessWidget {
                     children: [
                       Text(
                         "What's New",
-                        style: GoogleFonts.bodoniModa(
+                        style: AppThemes.display(
+                          context,
                           fontSize: 24,
                           fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
                           color: ambiance.ink,
                         ),
                       ),

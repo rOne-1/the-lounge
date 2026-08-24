@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import 'ambient_glow.dart';
 import 'pressable_scale.dart';
@@ -64,10 +63,10 @@ class AtmosphericEmptyState extends StatelessWidget {
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.bodoniModa(
+                  style: AppThemes.display(
+                    context,
                     fontSize: 19,
                     fontWeight: FontWeight.w600,
-                    fontStyle: FontStyle.italic,
                     color: ambiance.ink,
                   ),
                 ),

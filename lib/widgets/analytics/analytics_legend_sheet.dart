@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../constants.dart';
 import '../drag_to_dismiss_sheet.dart';
 import '../pressable_scale.dart';
@@ -152,10 +151,10 @@ class _AnalyticsLegendContent extends StatelessWidget {
         children: [
           Text(
             'What these mean',
-            style: GoogleFonts.bodoniModa(
+            style: AppThemes.display(
+              context,
               fontSize: 20,
               fontWeight: FontWeight.w600,
-              fontStyle: FontStyle.italic,
               color: colors.ink,
             ),
           ),
@@ -173,10 +172,10 @@ class _AnalyticsLegendContent extends StatelessWidget {
                   for (final group in _legendGroups) ...[
                     Text(
                       group.title,
-                      style: GoogleFonts.bodoniModa(
+                      style: AppThemes.display(
+                        context,
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
                         color: colors.ink,
                       ),
                     ),

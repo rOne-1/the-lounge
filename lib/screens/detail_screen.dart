@@ -19,7 +19,6 @@ import '../widgets/seasonal_rating_bar.dart';
 import '../widgets/status_pulse_ring.dart';
 import '../widgets/watch_history_timeline.dart';
 import '../constants.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'search_screen.dart';
 import 'collection_screen.dart';
 
@@ -99,8 +98,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             ),
             title: Text(
               'Details',
-              style: GoogleFonts.bodoniModa(
-                fontStyle: FontStyle.italic,
+              style: AppThemes.display(
+                context,
                 color: inkColor,
               ),
             ),
@@ -211,10 +210,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               children: [
                 Text(
                   item.title,
-                  style: GoogleFonts.bodoniModa(
+                  style: AppThemes.display(
+                    context,
                     fontSize: 30,
                     fontWeight: FontWeight.w600,
-                    fontStyle: FontStyle.italic,
                     color: inkColor,
                     height: 1.05,
                   ),
@@ -224,9 +223,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   const SizedBox(height: 8),
                   Text(
                     '"${item.tagline}"',
-                    style: GoogleFonts.bodoniModa(
+                    style: AppThemes.display(
+                      context,
                       fontSize: 16,
-                      fontStyle: FontStyle.italic,
                       color: subColor,
                     ),
                   ),
@@ -320,10 +319,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       children: [
                         Text(
                           item.title,
-                          style: GoogleFonts.bodoniModa(
+                          style: AppThemes.display(
+                            context,
                             fontSize: 34,
                             fontWeight: FontWeight.w600,
-                            fontStyle: FontStyle.italic,
                             color: inkColor,
                             height: 1.05,
                           ),
@@ -333,9 +332,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                           const SizedBox(height: 8),
                           Text(
                             '"${item.tagline}"',
-                            style: GoogleFonts.bodoniModa(
+                            style: AppThemes.display(
+                              context,
                               fontSize: 18,
-                              fontStyle: FontStyle.italic,
                               color: subColor,
                             ),
                           ),
@@ -831,10 +830,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                             Expanded(
                               child: Text(
                                 'Part of the ${collection.name}',
-                                style: GoogleFonts.bodoniModa(
+                                style: AppThemes.display(
+                                  context,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w600,
-                                  fontStyle: FontStyle.italic,
                                   color: Colors.white,
                                 ),
                               ),

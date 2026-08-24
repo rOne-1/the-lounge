@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../constants/app_languages.dart';
 import '../models/hall_space.dart';
@@ -104,10 +103,10 @@ class HallSelectorSheet extends ConsumerWidget {
                     children: [
                       Text(
                         'The Screening Halls',
-                        style: GoogleFonts.bodoniModa(
+                        style: AppThemes.display(
+                          context,
                           fontSize: 22,
                           fontWeight: FontWeight.w500,
-                          fontStyle: FontStyle.italic,
                           color: colors.ink,
                         ),
                       ),
@@ -360,9 +359,9 @@ class HallSelectorSheet extends ConsumerWidget {
               ),
               title: Text(
                 'Customize Screening Hall',
-                style: GoogleFonts.bodoniModa(
+                style: AppThemes.display(
+                  context,
                   fontSize: 20,
-                  fontStyle: FontStyle.italic,
                   color: colors.ink,
                 ),
               ),

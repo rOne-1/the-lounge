@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../constants.dart';
 import '../constants/app_languages.dart';
@@ -359,10 +358,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       children: [
                         Text(
                           'Filter Catalog',
-                          style: GoogleFonts.bodoniModa(
+                          style: AppThemes.display(
+                            context,
                             fontSize: 22,
                             fontWeight: FontWeight.w600,
-                            fontStyle: FontStyle.italic,
                             color: inkColor,
                           ),
                         ),
@@ -615,8 +614,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               ? AppBar(
                   title: Text(
                     _headerTitle(isMovies),
-                    style: GoogleFonts.bodoniModa(
-                      fontStyle: FontStyle.italic,
+                    style: AppThemes.display(
+                      context,
                       color: inkColor,
                     ),
                   ),
@@ -781,10 +780,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                             children: [
                               Text(
                                 _headerTitle(isMovies),
-                                style: GoogleFonts.bodoniModa(
+                                style: AppThemes.display(
+                                  context,
                                   fontSize: 19,
                                   fontWeight: FontWeight.w600,
-                                  fontStyle: FontStyle.italic,
                                   color: inkColor,
                                 ),
                               ),
@@ -860,10 +859,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   children: [
                     Text(
                       'Filters',
-                      style: GoogleFonts.bodoniModa(
+                      style: AppThemes.display(
+                        context,
                         fontSize: 20,
                         fontWeight: FontWeight.w600,
-                        fontStyle: FontStyle.italic,
                         color: context.ambianceColors.ink,
                       ),
                     ),

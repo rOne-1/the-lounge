@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
@@ -103,10 +102,10 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
         ),
         title: Text(
           'Clean Up Saved',
-          style: GoogleFonts.bodoniModa(
+          style: AppThemes.display(
+            context,
             fontSize: 22,
             fontWeight: FontWeight.w500,
-            fontStyle: FontStyle.italic,
             color: colors.ink,
           ),
         ),

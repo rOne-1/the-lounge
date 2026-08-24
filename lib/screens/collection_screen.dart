@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../constants.dart';
 import '../models/media_collection_detail.dart';
@@ -126,17 +125,11 @@ class CollectionScreen extends ConsumerWidget {
                 flexibleSpace: FlexibleSpaceBar(
                   title: Text(
                     collection.name,
-                    style: GoogleFonts.bodoniModa(
+                    style: AppThemes.display(
+                      context,
                       fontSize: 18,
                       fontWeight: FontWeight.w600,
-                      fontStyle: FontStyle.italic,
                       color: Colors.white,
-                      shadows: const [
-                        Shadow(
-                          color: Colors.black87,
-                          blurRadius: 10,
-                        ),
-                      ],
                     ),
                   ),
                   background: Stack(
@@ -220,10 +213,10 @@ class CollectionScreen extends ConsumerWidget {
                       const SizedBox(height: 20),
                       Text(
                         'Collection Titles',
-                        style: GoogleFonts.bodoniModa(
+                        style: AppThemes.display(
+                          context,
                           fontSize: 20,
                           fontWeight: FontWeight.w600,
-                          fontStyle: FontStyle.italic,
                           color: inkColor,
                         ),
                       ),
