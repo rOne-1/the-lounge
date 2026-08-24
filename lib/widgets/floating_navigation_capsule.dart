@@ -301,32 +301,46 @@ class _CapsuleBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ambiance = context.ambianceColors;
+    final animDuration = (enableAnimation ?? true)
+        ? AppPhysics.houseSpringDuration
+        : Duration.zero;
 
-    return AnimatedContainer(
-      duration: AppPhysics.houseSpringDuration,
-      curve: AppPhysics.houseSpringCurve,
-      width: expanded ? expandedWidth : collapsedSize,
-      height: expanded ? expandedHeight : collapsedSize,
-      decoration: BoxDecoration(
-        color: ambiance.card2.withValues(alpha: ambiance.isDark ? 0.82 : 0.95),
-        borderRadius: BorderRadius.circular(expanded ? 28 : 999),
-        border: Border.all(color: ambiance.surfaceHighlight, width: 1),
-        boxShadow: ambiance.ambientGlowShadow,
+    return TweenAnimationBuilder<double>(
+      tween: Tween<double>(
+        begin: expanded ? 1.0 : 0.0,
+        end: expanded ? 1.0 : 0.0,
       ),
-      clipBehavior: Clip.antiAlias,
-      // B4: RepaintBoundary isolates this into its own compositing layer --
-      // BackdropFilter composited underneath this AnimatedContainer's own
-      // size/decoration animation (expand/collapse) can otherwise render
-      // fully black and stay that way until something forces a full scene
-      // recomposite. This capsule is a global overlay present on every
-      // screen, so this is a high-severity instance of the same bug.
+      duration: animDuration,
+      curve: AppPhysics.houseSpringCurve,
+      builder: (context, expandProgress, child) {
+        final currentWidth =
+            lerpDouble(collapsedSize, expandedWidth, expandProgress)!;
+        final currentHeight =
+            lerpDouble(collapsedSize, expandedHeight, expandProgress)!;
+        final currentRadius =
+            lerpDouble(collapsedSize / 2, 28, expandProgress.clamp(0.0, 1.0))!;
+
+        return Container(
+          width: currentWidth,
+          height: currentHeight,
+          decoration: BoxDecoration(
+            color:
+                ambiance.card2.withValues(alpha: ambiance.isDark ? 0.82 : 0.95),
+            borderRadius: BorderRadius.circular(currentRadius),
+            border: Border.all(color: ambiance.surfaceHighlight, width: 1),
+            boxShadow: ambiance.ambientGlowShadow,
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: child,
+        );
+      },
       child: RepaintBoundary(
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
           child: Material(
             type: MaterialType.transparency,
             child: AnimatedSwitcher(
-              duration: AppPhysics.houseSpringDuration,
+              duration: animDuration,
               switchInCurve: AppPhysics.houseSpringCurve,
               switchOutCurve: Curves.easeOut,
               child: expanded

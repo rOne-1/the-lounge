@@ -268,14 +268,50 @@ void main() {
     await tester.tap(capsuleFinder);
     await tester.pumpAndSettle();
 
-    // Find the AnimatedContainer for the capsule body
-    final animatedContainers = tester.widgetList<AnimatedContainer>(find.byType(AnimatedContainer));
-    final capsuleBodyContainer = animatedContainers.firstWhere(
+    // Find the Container for the capsule body
+    final containers = tester.widgetList<Container>(find.byType(Container));
+    final capsuleBodyContainer = containers.firstWhere(
       (c) => (c.decoration as BoxDecoration?)?.borderRadius == BorderRadius.circular(28),
     );
 
     final decoration = capsuleBodyContainer.decoration as BoxDecoration;
     expect(decoration.color, isNotNull, reason: 'Expanded capsule must have a solid/frosted background color');
     expect(decoration.color!.a, greaterThan(0.8), reason: 'Surface fill must have high opacity for contrast over scrim');
+  });
+
+  testWidgets('switching themes with capsule expanded or collapsed does not trigger shadow blur radius assertion crash',
+      (tester) async {
+    final container = await pumpShell(tester);
+    addTearDown(container.dispose);
+
+    // Expand the capsule
+    await tester.tap(capsuleFinder);
+    await tester.pumpAndSettle();
+
+    // Cycle through all themes during expanded state
+    final themeIds = ['screening_room', 'midnight_cinema', 'orchid_bloom', 'violet_dusk', 'tuscany'];
+    for (final id in themeIds) {
+      await container.read(ambianceProvider.notifier).setTheme(id);
+      // Pump multiple frames to exercise the spring curve across all frame intervals
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
+
+    // Collapse the capsule
+    await tester.tap(capsuleFinder);
+    await tester.pumpAndSettle();
+
+    // Cycle through all themes during collapsed state
+    for (final id in themeIds) {
+      await container.read(ambianceProvider.notifier).setTheme(id);
+      await tester.pump(const Duration(milliseconds: 50));
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.pump(const Duration(milliseconds: 150));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    }
   });
 }
