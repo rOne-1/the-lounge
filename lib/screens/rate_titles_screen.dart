@@ -8,6 +8,7 @@ import '../providers/navigation_provider.dart';
 import '../widgets/lounge_rating_sheet.dart';
 import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
+import 'detail_screen.dart';
 
 /// PERS-RATE-2: all watched titles that have no overall personal rating yet.
 /// [typeFilter], when given, scopes the queue to just that media type --
@@ -222,6 +223,11 @@ class _RateTitleCardState extends State<_RateTitleCard>
         : null;
 
     return GestureDetector(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DetailScreen(id: widget.item.prefixedId),
+        ),
+      ),
       onPanUpdate: (details) {
         if (_controller.isAnimating) return;
         setState(() => _dragOffset += details.delta);

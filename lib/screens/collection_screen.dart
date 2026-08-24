@@ -44,6 +44,18 @@ class CollectionScreen extends ConsumerWidget {
       body: collectionAsync.when(
         data: (collection) {
           if (collection == null) {
+            // COLL-REG-1: getCollectionDetails swallows any failure --
+            // network hiccup, TMDB rate limit, transient parse error --
+            // into a null return rather than throwing, so this branch
+            // covers both "genuinely no such collection" and "the one
+            // request that ever ran for this id happened to fail." A
+            // plain (non-autoDispose) FutureProvider.family never
+            // re-fetches on its own once it has a cached null result, so
+            // without a retry action here a transient failure permanently
+            // "collection not found"s this id for the rest of the app
+            // session -- matching the reported regression ("used to work,
+            // now doesn't") far better than an actually-deleted TMDB
+            // collection would.
             return Scaffold(
               backgroundColor: bgColor,
               appBar: AppBar(
@@ -52,9 +64,36 @@ class CollectionScreen extends ConsumerWidget {
                 leading: BackButton(color: inkColor),
               ),
               body: Center(
-                child: Text(
-                  'Collection not found.',
-                  style: AppThemes.safeGeist(color: subColor, fontSize: 14),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Collection not found.',
+                      style: AppThemes.safeGeist(color: subColor, fontSize: 14),
+                    ),
+                    const SizedBox(height: 16),
+                    PressableScale(
+                      onTap: () =>
+                          ref.refresh(collectionDetailsProvider(collectionId)),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: accColor.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(color: accColor),
+                        ),
+                        child: Text(
+                          'Retry',
+                          style: AppThemes.safeGeist(
+                            color: accColor,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             );

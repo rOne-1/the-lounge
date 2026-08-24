@@ -13,6 +13,7 @@ import 'package:the_lounge/screens/search_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
+import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
@@ -112,5 +113,53 @@ void main() {
     expect(find.byType(SearchScreen), findsNothing);
     expect(find.byType(DetailScreen), findsOneWidget);
     expect(container.read(navigationProvider).currentTab, AppTab.lounge);
+  });
+
+  testWidgets(
+      'SEARCH-CAST-1: tapping a director credit clears a stale filter left over from an earlier Search session',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(_DirectorTestRepository(testMovie)),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    // Simulates a prior, unrelated Search session that left a genre filter
+    // active -- discoverFilterProvider is a long-lived singleton, so this
+    // would otherwise still be set when the user later taps a completely
+    // different director/cast credit from DetailScreen.
+    container.read(discoverFilterProvider.notifier).setGenre(
+          genreId: 28,
+          genreName: 'Action',
+        );
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: DetailScreen(id: 'nav2-movie'),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final directorFinder = find.text('Christopher Nolan');
+    await tester.scrollUntilVisible(directorFinder, 200,
+        scrollable: find.byType(Scrollable).first);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.tap(directorFinder);
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.pump(const Duration(milliseconds: 500));
+
+    final filterState = container.read(discoverFilterProvider);
+    expect(filterState.personName, 'Christopher Nolan');
+    expect(filterState.genreId, isNull,
+        reason: 'the stale genre filter must be cleared, not combined with the new person filter');
+    expect(filterState.genreName, isNull);
   });
 }

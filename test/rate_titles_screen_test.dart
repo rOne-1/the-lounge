@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:the_lounge/screens/rate_titles_screen.dart';
+import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
@@ -219,6 +220,35 @@ void main() {
       expect(find.text('Beta'), findsOneWidget);
       expect(container.read(mediaProvider).watchHistory[movie1.id], isNull);
       expect(container.read(mediaProvider).watchHistory[movie2.id], isNull);
+    });
+
+    testWidgets('RATE-CARD-1: tapping the card opens DetailScreen for that title',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(_InstantRepository()),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.read(mediaProvider.notifier).addToWatchedList(movie1);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: RateTitlesScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Alpha'), findsOneWidget);
+      await tester.tap(find.text('Alpha'));
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.byType(DetailScreen), findsOneWidget);
     });
 
     testWidgets('rating every title reaches the empty state', (tester) async {

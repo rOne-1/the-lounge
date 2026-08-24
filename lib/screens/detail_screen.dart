@@ -14,6 +14,7 @@ import '../widgets/lounge_rating_sheet.dart';
 import '../widgets/lounge_rewatch_sheet.dart';
 import '../widgets/lounge_toast.dart';
 import '../widgets/pressable_scale.dart';
+import '../widgets/quick_status_sheet.dart';
 import '../widgets/seasonal_rating_bar.dart';
 import '../widgets/status_pulse_ring.dart';
 import '../widgets/watch_history_timeline.dart';
@@ -879,6 +880,11 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final lineRgba = context.ambianceColors.lineRgba;
 
     void navigateToPerson(int? pId, String pName) {
+      // SEARCH-CAST-1: discoverFilterProvider is a long-lived singleton, so
+      // a genre/keyword/rating filter left over from an earlier, unrelated
+      // Search session would otherwise silently combine with this person
+      // filter and could zero out the filmography results entirely.
+      ref.read(discoverFilterProvider.notifier).resetFilters();
       ref.read(discoverFilterProvider.notifier).setPerson(
             personId: pId,
             personName: pName,
@@ -1033,6 +1039,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                               ),
                             );
                           },
+                          onLongPress: () =>
+                              showQuickStatusSheet(context, ref, similarItem),
                           child: SizedBox(
                             width: 110,
                             child: Column(
@@ -1702,6 +1710,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   final pId =
                       castMember != null ? int.tryParse(castMember.id) : null;
                   final pName = castMember?.name ?? castName;
+                  // SEARCH-CAST-1: see navigateToPerson's comment above --
+                  // clear any stale filters from an earlier Search session
+                  // before applying this person filter.
+                  ref.read(discoverFilterProvider.notifier).resetFilters();
                   ref.read(discoverFilterProvider.notifier).setPerson(
                         personId: pId,
                         personName: pName,

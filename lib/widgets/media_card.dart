@@ -99,8 +99,15 @@ class MediaCard extends ConsumerWidget {
 
         return PressableScale(
           onTap: onTap ?? openContainer,
-          onLongPress:
-              onLongPress ?? () => showQuickStatusSheet(context, ref, item),
+          onLongPress: onLongPress ??
+              () {
+                // Long-pressing a card near an active text field (e.g.
+                // Search's query box) must not leave the keyboard open
+                // behind the status sheet -- unfocus unconditionally; a
+                // no-op when nothing is focused.
+                FocusScope.of(context).unfocus();
+                showQuickStatusSheet(context, ref, item);
+              },
           child: Semantics(
             label: semanticLabel,
             excludeSemantics: true,

@@ -213,16 +213,31 @@ class _FloatingNavigationCapsuleState
         ? Duration.zero
         : AppPhysics.houseSpringDuration;
 
+    final scrimColor = context.ambianceColors.scrim;
+
     return Stack(
       children: [
-        if (_expanded)
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onTap: _collapse,
-              child: const SizedBox.expand(),
+        // NAV-DIM-1: dims the screen behind the capsule while expanded, so
+        // its text/icons stay readable over busy backgrounds. Always
+        // present (not `if (_expanded)`) so AnimatedOpacity can fade it in
+        // and out instead of popping instantly; IgnorePointer keeps it out
+        // of the hit-test tree entirely while invisible, so it never
+        // intercepts taps meant for the screen underneath.
+        Positioned.fill(
+          child: IgnorePointer(
+            ignoring: !_expanded,
+            child: AnimatedOpacity(
+              opacity: _expanded ? 1 : 0,
+              duration: AppPhysics.houseSpringDuration,
+              curve: AppPhysics.houseSpringCurve,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _collapse,
+                child: Container(color: scrimColor),
+              ),
             ),
           ),
+        ),
         AnimatedPositioned(
           duration: positionDuration,
           curve: AppPhysics.houseSpringCurve,

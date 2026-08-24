@@ -164,6 +164,30 @@ void main() {
     expect(find.byKey(const ValueKey('floating_nav_tab_lobby')), findsNothing);
   });
 
+  testWidgets('NAV-DIM-1: expanding the capsule fades in a backdrop scrim, collapsing fades it out',
+      (tester) async {
+    final container = await pumpShell(tester);
+    addTearDown(container.dispose);
+
+    AnimatedOpacity scrimOpacityWidget() =>
+        tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity).first);
+
+    // Collapsed by default: scrim present in the tree (so it can animate
+    // in later) but faded out.
+    expect(scrimOpacityWidget().opacity, 0.0);
+
+    await tester.tap(capsuleFinder);
+    await tester.pumpAndSettle();
+
+    expect(scrimOpacityWidget().opacity, 1.0);
+
+    // Tapping the scrim itself (not just "far away") collapses the capsule.
+    await tester.tapAt(const Offset(20, 20));
+    await tester.pumpAndSettle();
+
+    expect(scrimOpacityWidget().opacity, 0.0);
+  });
+
   testWidgets('settings shortcut in the expanded capsule opens SettingsScreen',
       (tester) async {
     final container = await pumpShell(tester);
