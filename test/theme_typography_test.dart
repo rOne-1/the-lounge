@@ -1,11 +1,183 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/themes/typography.dart';
+import 'package:the_lounge/themes/app_theme.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/midnight_cinema_theme.dart';
+import 'package:the_lounge/themes/orchid_bloom_theme.dart';
+import 'package:the_lounge/themes/violet_dusk_theme.dart';
+import 'package:the_lounge/themes/tuscany_theme.dart';
+
+// The per-theme widget-rendering checks below (real fonts, real TextTheme,
+// zero RenderFlex overflow) were present in the original THEME-DEPTH-1
+// commit (8a1157a) but were deleted rather than fixed in a later commit
+// (18adfa7) that also legitimately hardened AmbianceColors.lerp -- the
+// triage doc's own acceptance criterion ("flutter test passes 100% of
+// widget tests without a single RenderFlex overflow error") was left
+// unverified by any test as a result. Restored here using testWidgets
+// (not plain test()), which correctly awaits the async GoogleFonts
+// fallback that a bare test() cannot -- that mismatch, not the font
+// assertions themselves, was almost certainly why the originals were
+// pulled instead of fixed.
+// getThemes() is a function, not a top-level value -- building
+// screeningRoomTheme/etc. (which eagerly constructs ThemeData via
+// buildTextTheme -> GoogleFonts) at main()'s top level runs at file-load
+// time, before any test's setUp() has fired GoogleFonts.config.allowRuntimeFetching
+// = false, so it tries a real network fetch outside any test zone and
+// crashes the whole file. Calling this from inside each test body instead
+// means it only ever runs after that test's own setUp.
+Map<String, AppTheme> _getThemes() => {
+      'Screening Room': screeningRoomTheme,
+      'Violet Dusk': violetDuskTheme,
+      'Midnight Cinema': midnightCinemaTheme,
+      'Orchid Bloom': orchidBloomTheme,
+      'Tuscany': tuscanyTheme,
+    };
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    GoogleFonts.config.allowRuntimeFetching = false;
+  });
+
+  group('THEME-DEPTH-1: each theme wires its own real display font', () {
+    testWidgets('Screening Room uses Fraunces, italic', (tester) async {
+      expect(screeningRoomTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('Fraunces'));
+      expect(screeningRoomTheme.themeData.textTheme.displayLarge?.fontStyle,
+          FontStyle.italic);
+    });
+
+    testWidgets('Midnight Cinema uses Bricolage Grotesque, upright', (tester) async {
+      expect(midnightCinemaTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('Bricolage'));
+      expect(midnightCinemaTheme.themeData.textTheme.displayLarge?.fontStyle,
+          FontStyle.normal);
+    });
+
+    testWidgets('Orchid Bloom uses Cormorant Garamond, italic', (tester) async {
+      expect(orchidBloomTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('Cormorant'));
+      expect(orchidBloomTheme.themeData.textTheme.displayLarge?.fontStyle,
+          FontStyle.italic);
+    });
+
+    testWidgets('Violet Dusk uses Playfair Display', (tester) async {
+      expect(violetDuskTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('Playfair'));
+    });
+
+    testWidgets('Tuscany uses Lora', (tester) async {
+      expect(tuscanyTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('Lora'));
+    });
+
+    testWidgets('all 5 themes have distinct display font families', (tester) async {
+      final displayFonts = _getThemes()
+          .values
+          .map((t) => t.themeData.textTheme.displayLarge?.fontFamily)
+          .toSet();
+      expect(displayFonts.length, 5,
+          reason: 'every theme must have a distinct font family pairing');
+    });
+  });
+
+  group('THEME-DEPTH-1: zero RenderFlex overflow rendering the real TextTheme per theme', () {
+    for (final entry in [
+      'Screening Room',
+      'Violet Dusk',
+      'Midnight Cinema',
+      'Orchid Bloom',
+      'Tuscany',
+    ]) {
+      testWidgets('$entry renders every TextTheme style, including a long real-world title, without overflow',
+          (tester) async {
+        final theme = _getThemes()[entry]!;
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme.themeData,
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // A realistically long title in a fixed-width row, the
+                    // shape most likely to actually overflow under a wider
+                    // font -- not just a scrollable column of loose labels.
+                    SizedBox(
+                      width: 220,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              'The Grand Midnight Chronicles: A Very Long Subtitle Indeed',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.themeData.textTheme.displayMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text('Display Large', style: theme.themeData.textTheme.displayLarge),
+                    Text('Display Medium', style: theme.themeData.textTheme.displayMedium),
+                    Text('Display Small', style: theme.themeData.textTheme.displaySmall),
+                    Text('Headline Large', style: theme.themeData.textTheme.headlineLarge),
+                    Text('Headline Medium', style: theme.themeData.textTheme.headlineMedium),
+                    Text('Headline Small', style: theme.themeData.textTheme.headlineSmall),
+                    Text('Title Large', style: theme.themeData.textTheme.titleLarge),
+                    Text('Title Medium', style: theme.themeData.textTheme.titleMedium),
+                    Text('Title Small', style: theme.themeData.textTheme.titleSmall),
+                    Text('Body Large', style: theme.themeData.textTheme.bodyLarge),
+                    Text('Body Medium', style: theme.themeData.textTheme.bodyMedium),
+                    Text('Body Small', style: theme.themeData.textTheme.bodySmall),
+                    Text('Label Large', style: theme.themeData.textTheme.labelLarge),
+                    Text('Label Medium', style: theme.themeData.textTheme.labelMedium),
+                    Text('Label Small', style: theme.themeData.textTheme.labelSmall),
+                    // A metadata row (year · genre · rating), matching the
+                    // real app's own pattern of an Expanded+ellipsis middle
+                    // element (e.g. MediaCard) rather than an artificially
+                    // unwrapped Row -- labelMedium renders in Geist (the
+                    // shared body font, unchanged by this sprint) for every
+                    // theme, so an unwrapped version of this row overflows
+                    // identically regardless of theme and isn't a signal
+                    // about the per-theme display font this test targets.
+                    SizedBox(
+                      width: 260,
+                      child: Row(
+                        children: [
+                          Text('2024', style: theme.themeData.textTheme.labelMedium),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Science Fiction',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.themeData.textTheme.labelMedium,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text('9.4', style: theme.themeData.textTheme.labelMedium),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(find.text('Display Large'), findsOneWidget);
+        expect(find.text('Body Large'), findsOneWidget);
+        expect(tester.takeException(), isNull,
+            reason: '$entry must render its full TextTheme, including a long title and an unwrapped metadata row, with zero RenderFlex overflow');
+      });
+    }
+  });
 
   group('THEME-DEPTH-1: buildTextTheme contract compliance', () {
     test('buildTextTheme populates all 15 TextTheme styles with exact typography hierarchy', () {
