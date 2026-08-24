@@ -161,6 +161,68 @@ void main() {
       expect(result.totalMinutes, 0);
       expect(result.movieCount, 1);
     });
+
+    test(
+        'ANALYTICS-TV-1: a currently-Watching show with real watch progress '
+        'counts toward tvMinutes/tvCount, not just fully-Watched shows', () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchingList: const {'tv_1': show},
+        watchHistory: const {},
+        watchedEpisodes: {
+          'tv_1': {'S1E1', 'S1E2'},
+        },
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeTimeInvestment(input);
+      expect(result.tvMinutes, 45 * 2);
+      expect(result.tvCount, 1);
+    });
+
+    test(
+        'ANALYTICS-TV-1: a Watching show with zero watched episodes contributes nothing '
+        '(merely being "in progress" with no real progress does not count)', () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchingList: const {'tv_1': show},
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeTimeInvestment(input);
+      expect(result.tvMinutes, 0);
+      expect(result.tvCount, 0);
+    });
+
+    test(
+        'ANALYTICS-TV-1: a movie sitting in watchingList is not counted -- '
+        'only TV has a meaningful partial-watch state', () {
+      const movieInProgress = MediaItem(
+        id: 'movie_3',
+        title: 'Mid-watch Movie',
+        type: MediaType.movie,
+        rating: 6.0,
+        overview: '',
+        genres: [],
+        runtime: 100,
+      );
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchingList: const {'movie_3': movieInProgress},
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final result = computeTimeInvestment(input);
+      expect(result.movieMinutes, 0);
+      expect(result.movieCount, 0);
+    });
   });
 
   group('computeBingeVelocity', () {
@@ -239,6 +301,51 @@ void main() {
       final velocity = computeBingeVelocity(input);
       expect(velocity.perSeason, isEmpty);
       expect(velocity.averageDays, isNull);
+    });
+
+    test(
+        'ANALYTICS-TV-1: a show still Watching (e.g. mid-air on its latest '
+        'season) surfaces its own already-complete earlier seasons', () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchingList: const {'tv_1': show},
+        watchHistory: const {},
+        watchedEpisodes: {
+          'tv_1': {'S1E1'}, // some progress recorded -- genuinely in progress
+        },
+        seasonStartDates: {
+          'tv_1': {1: DateTime(2026, 1, 1)},
+        },
+        seasonEndDates: {
+          'tv_1': {1: DateTime(2026, 1, 4)}, // season 1 finished
+          // season 2 (currently airing) has no end date yet
+        },
+      );
+
+      final velocity = computeBingeVelocity(input);
+      expect(velocity.perSeason, hasLength(1));
+      expect(velocity.perSeason.single.seasonNumber, 1);
+      expect(velocity.perSeason.single.days, 3.0);
+    });
+
+    test(
+        'ANALYTICS-TV-1: a Watching show with no recorded watch progress at all is excluded',
+        () {
+      final input = AnalyticsInput(
+        watchedList: const {},
+        watchingList: const {'tv_1': show},
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: {
+          'tv_1': {1: DateTime(2026, 1, 1)},
+        },
+        seasonEndDates: {
+          'tv_1': {1: DateTime(2026, 1, 4)},
+        },
+      );
+
+      final velocity = computeBingeVelocity(input);
+      expect(velocity.perSeason, isEmpty);
     });
   });
 

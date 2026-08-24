@@ -314,17 +314,41 @@ HeatmapData computeHeatmap(AnalyticsInput input) {
   return HeatmapData(counts);
 }
 
+/// ANALYTICS-TV-1: TV shows sitting in [AnalyticsInput.watchingList] with
+/// real recorded watch progress (at least one watched episode) count
+/// toward TV-touching metrics the same as a fully-completed show -- a
+/// currently-airing show you're 3 seasons into shouldn't vanish from
+/// Analytics just because its 4th season hasn't finished airing yet.
+/// Movies are deliberately excluded: unlike TV, this app has no
+/// meaningful "partial watch" state for a movie (no per-scene
+/// completion tracking), so a movie only counts once genuinely marked
+/// Watched, same as before this fix.
+Map<String, MediaItem> _progressedItems(AnalyticsInput input) {
+  return {
+    ...input.watchedList,
+    for (final entry in input.watchingList.entries)
+      if (entry.value.type == MediaType.tv &&
+          (input.watchedEpisodes[entry.key]?.isNotEmpty ?? false))
+        entry.key: entry.value,
+  };
+}
+
 /// ANLY-TEMPORAL-2: movies sum `item.runtime` directly (an exact figure --
 /// one explicit user action per movie). TV sums
 /// `watchedEpisodeCount * item.runtime`, which is a stated ESTIMATE (SP-3):
 /// `runtime` for a TV item is TMDB's `episode_run_time[0]`, a single value
 /// captured once at fetch time, not a true per-episode average.
+///
+/// ANALYTICS-TV-1: iterates [_progressedItems], not just
+/// [AnalyticsInput.watchedList] -- a currently-airing show's already-watched
+/// episodes count toward tvMinutes/tvCount even before the whole series is
+/// marked Watched.
 TimeInvestment computeTimeInvestment(AnalyticsInput input) {
   var movieMinutes = 0;
   var tvMinutes = 0;
   var movieCount = 0;
   var tvCount = 0;
-  for (final entry in input.watchedList.entries) {
+  for (final entry in _progressedItems(input).entries) {
     final item = entry.value;
     final runtime = item.runtime;
     if (item.type == MediaType.movie) {
@@ -352,9 +376,15 @@ TimeInvestment computeTimeInvestment(AnalyticsInput input) {
 /// in days. Seasons missing either half of the pair are excluded entirely
 /// (not counted as 0), so the average only reflects genuinely-complete
 /// data.
+///
+/// ANALYTICS-TV-1: iterates [_progressedItems] -- a show still Watching
+/// (e.g. mid-air on its latest season) can have earlier seasons that are
+/// themselves fully complete (`seasonStartDates`/`seasonEndDates` both
+/// set); those were previously invisible to this metric entirely because
+/// the whole show hadn't reached Watched yet.
 BingeVelocity computeBingeVelocity(AnalyticsInput input) {
   final perSeason = <ShowBingeVelocity>[];
-  for (final entry in input.watchedList.entries) {
+  for (final entry in _progressedItems(input).entries) {
     final id = entry.key;
     final item = entry.value;
     if (item.type != MediaType.tv) continue;

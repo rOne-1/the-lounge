@@ -262,6 +262,114 @@ void main() {
     });
   });
 
+  group('TV-SEASON-1: markSeasonWatched', () {
+    test('marks every released episode watched in one call and reaches Watched when nothing else is unreleased', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      final seasons = [
+        TvSeason(
+          id: 1,
+          seasonNumber: 1,
+          name: 'Season 1',
+          episodes: [
+            _ep(1, 1, airDate: past),
+            _ep(1, 2, airDate: past),
+            _ep(1, 3, airDate: past),
+          ],
+        ),
+      ];
+
+      notifier.markSeasonWatched(
+        showId: show.id,
+        seasonNumber: 1,
+        showItem: show,
+        seasons: seasons,
+      );
+
+      final state = container.read(mediaProvider);
+      expect(state.watchedEpisodes[show.id], {'S1E1', 'S1E2', 'S1E3'});
+      expect(state.watchedList.containsKey(show.id), isTrue);
+      expect(state.watchingList.containsKey(show.id), isFalse);
+    });
+
+    test('never marks an unreleased episode watched, and lands on Watching rather than Watched', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      final seasons = [
+        TvSeason(
+          id: 1,
+          seasonNumber: 1,
+          name: 'Season 1',
+          episodes: [
+            _ep(1, 1, airDate: past),
+            _ep(1, 2, airDate: future),
+          ],
+        ),
+      ];
+
+      notifier.markSeasonWatched(
+        showId: show.id,
+        seasonNumber: 1,
+        showItem: show,
+        seasons: seasons,
+      );
+
+      final state = container.read(mediaProvider);
+      expect(state.watchedEpisodes[show.id], {'S1E1'});
+      expect(state.watchingList.containsKey(show.id), isTrue);
+      expect(state.watchedList.containsKey(show.id), isFalse);
+    });
+
+    test('leaves a show already Watching another season alone, and only marks the targeted season', () {
+      final container = ProviderContainer();
+      addTearDown(container.dispose);
+      final notifier = container.read(mediaProvider.notifier);
+
+      final seasons = [
+        TvSeason(
+          id: 1,
+          seasonNumber: 1,
+          name: 'Season 1',
+          episodes: [_ep(1, 1, airDate: past)],
+        ),
+        TvSeason(
+          id: 2,
+          seasonNumber: 2,
+          name: 'Season 2',
+          episodes: [_ep(2, 1, airDate: past), _ep(2, 2, airDate: past)],
+        ),
+      ];
+
+      notifier.markSeasonWatched(
+        showId: show.id,
+        seasonNumber: 1,
+        showItem: show,
+        seasons: seasons,
+      );
+
+      final state = container.read(mediaProvider);
+      expect(state.watchedEpisodes[show.id], {'S1E1'});
+      // Season 2 still has released-but-unwatched episodes, so the show as
+      // a whole is Watching, not Watched.
+      expect(state.watchingList.containsKey(show.id), isTrue);
+
+      notifier.markSeasonWatched(
+        showId: show.id,
+        seasonNumber: 2,
+        showItem: show,
+        seasons: seasons,
+      );
+
+      final finalState = container.read(mediaProvider);
+      expect(finalState.watchedEpisodes[show.id], {'S1E1', 'S2E1', 'S2E2'});
+      expect(finalState.watchedList.containsKey(show.id), isTrue);
+    });
+  });
+
   group('incomplete season data must never be read as fully released', () {
     // Regression for a real bug found via live browser testing: a single
     // flaky/rate-limited season fetch silently drops that season from the

@@ -2351,17 +2351,77 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
 
     ref.watch(mediaProvider);
 
+    // TV-SEASON-1: only offered once real per-season episode data is in
+    // hand -- marking a season complete needs to know which episodes are
+    // actually released, the same ground truth toggleEpisodeWatched
+    // requires.
+    final currentSeasonData = allSeasonsAsync.value?.firstWhere(
+      (s) => s.seasonNumber == _selectedSeason,
+      orElse: () =>
+          TvSeason(id: 0, seasonNumber: _selectedSeason, name: '', episodes: const []),
+    );
+    final seasonAlreadyComplete = ref.read(mediaProvider).seasonEndDates[
+            widget.item.id]?[_selectedSeason] !=
+        null;
+    final canMarkSeasonComplete = allSeasonsAsync.hasValue &&
+        currentSeasonData != null &&
+        currentSeasonData.episodes.isNotEmpty &&
+        !seasonAlreadyComplete;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 24),
-        Text(
-          'Seasons & Episodes',
-          style: AppThemes.safeGeist(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: inkColor,
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'Seasons & Episodes',
+                style: AppThemes.safeGeist(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: inkColor,
+                ),
+              ),
+            ),
+            if (canMarkSeasonComplete)
+              PressableScale(
+                onTap: () {
+                  ref.read(mediaProvider.notifier).markSeasonWatched(
+                        showId: widget.item.id,
+                        seasonNumber: _selectedSeason,
+                        showItem: widget.item,
+                        seasons: allSeasonsAsync.value!,
+                      );
+                  LoungeToast.show(
+                      context, 'Season $_selectedSeason marked complete.');
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: accColor.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: accColor),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.done_all, size: 14, color: accColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Mark season complete',
+                        style: AppThemes.safeGeist(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: accColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 12),
         if (seasonsCount > 1)

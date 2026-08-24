@@ -1585,6 +1585,91 @@ class MediaNotifier extends Notifier<MediaState> {
       seasonStarts.putIfAbsent(seasonNumber, () => now);
     }
 
+    state = state.copyWith(
+      watchedEpisodes: currentMap,
+      startDates: newStartDates,
+      seasonStartDates: newSeasonStartDates,
+    );
+
+    _applyWatchedEpisodesCompletion(
+      showItem: showItem,
+      showEpisodes: showEpisodes,
+      seasons: seasons,
+      totalEpisodeCount: totalEpisodeCount,
+    );
+  }
+
+  /// TV-SEASON-1: marks every currently-released episode of one season
+  /// watched in a single action, reusing exactly the same completion
+  /// classification [toggleEpisodeWatched] uses so a season-complete tap
+  /// can never disagree with what individually toggling each episode
+  /// would have produced. Unreleased episodes are silently skipped (never
+  /// force-marked watched), matching toggleEpisodeWatched's own guard.
+  void markSeasonWatched({
+    required String showId,
+    required int seasonNumber,
+    required MediaItem showItem,
+    required List<TvSeason> seasons,
+  }) {
+    final season = seasons.firstWhere(
+      (s) => s.seasonNumber == seasonNumber,
+      orElse: () =>
+          TvSeason(id: 0, seasonNumber: seasonNumber, name: '', episodes: const []),
+    );
+    if (season.episodes.isEmpty) return;
+
+    final currentMap = Map<String, Set<String>>.from(
+      state.watchedEpisodes.map((k, v) => MapEntry(k, Set<String>.from(v))),
+    );
+    final showEpisodes = Set<String>.from(currentMap[showId] ?? {});
+    final now = DateTime.now();
+
+    for (final ep in season.episodes) {
+      if (ep.airDate != null && ep.airDate!.isAfter(now)) continue;
+      showEpisodes.add('S${seasonNumber}E${ep.episodeNumber}');
+    }
+
+    if (showEpisodes.isEmpty) {
+      currentMap.remove(showId);
+    } else {
+      currentMap[showId] = showEpisodes;
+    }
+
+    // PERS-DATE-1: same bookkeeping toggleEpisodeWatched performs -- record
+    // this season (and the show, if unset) as started, immutable once set.
+    final newSeasonStartDates = _cloneSeasonDateMap(state.seasonStartDates);
+    final newStartDates = Map<String, DateTime>.from(state.startDates);
+    newStartDates.putIfAbsent(showId, () => now);
+    final seasonStarts = newSeasonStartDates.putIfAbsent(showId, () => {});
+    seasonStarts.putIfAbsent(seasonNumber, () => now);
+
+    state = state.copyWith(
+      watchedEpisodes: currentMap,
+      startDates: newStartDates,
+      seasonStartDates: newSeasonStartDates,
+    );
+
+    _applyWatchedEpisodesCompletion(
+      showItem: showItem,
+      showEpisodes: showEpisodes,
+      seasons: seasons,
+      totalEpisodeCount: null,
+    );
+  }
+
+  /// Shared completion-classification tail for both [toggleEpisodeWatched]
+  /// and [markSeasonWatched]: given the already-updated set of watched
+  /// episode keys for one show, decides whether the show is now fully
+  /// watched, still watching, or has no watched episodes left, and applies
+  /// that status. Does not itself touch [MediaState.watchedEpisodes] --
+  /// callers must have already committed that via `state.copyWith` before
+  /// calling this.
+  void _applyWatchedEpisodesCompletion({
+    required MediaItem showItem,
+    required Set<String> showEpisodes,
+    List<TvSeason>? seasons,
+    int? totalEpisodeCount,
+  }) {
     // Prefer real per-season episode data (O1 ground truth) so a show with
     // unreleased episodes never reaches "complete" just because a stale or
     // released-only header count matches the watched count.
@@ -1617,12 +1702,6 @@ class MediaNotifier extends Notifier<MediaState> {
     final isFullyReleasedAndWatched = !hasUnreleased &&
         releasedCount > 0 &&
         showEpisodes.length >= releasedCount;
-
-    state = state.copyWith(
-      watchedEpisodes: currentMap,
-      startDates: newStartDates,
-      seasonStartDates: newSeasonStartDates,
-    );
 
     if (isFullyReleasedAndWatched) {
       _setTvShowStatus(showItem.id, showItem, 'watched', seasons: seasons);
