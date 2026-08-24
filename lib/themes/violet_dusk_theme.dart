@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_theme.dart';
 import 'ambiance_colors.dart';
 import 'shadow_tokens.dart';
@@ -87,7 +88,11 @@ final AppTheme violetDuskTheme = AppTheme(
       outline: Color.fromRGBO(248, 244, 233, 0.16),
     ),
     dividerColor: const Color.fromRGBO(248, 244, 233, 0.16),
-    textTheme: buildTextTheme(_vdInk),
+    textTheme: buildTextTheme(
+      textColor: _vdInk,
+      displayFont: GoogleFonts.playfairDisplay,
+      italicDisplay: false,
+    ),
     extensions: [vdAmbianceColors],
   ),
 );

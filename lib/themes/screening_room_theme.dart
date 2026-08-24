@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_theme.dart';
 import 'ambiance_colors.dart';
 import 'shadow_tokens.dart';
@@ -95,7 +96,11 @@ final AppTheme screeningRoomTheme = AppTheme(
       outline: _srLineRgba,
     ),
     dividerColor: _srLineRgba,
-    textTheme: buildTextTheme(_srInk),
+    textTheme: buildTextTheme(
+      textColor: _srInk,
+      displayFont: GoogleFonts.fraunces,
+      italicDisplay: true,
+    ),
     extensions: [srAmbianceColors],
   ),
 );

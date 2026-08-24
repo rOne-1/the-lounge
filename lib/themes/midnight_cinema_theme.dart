@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../constants.dart';
 import 'shadow_tokens.dart';
 
@@ -70,7 +71,11 @@ final AppTheme midnightCinemaTheme = AppTheme(
       outline: Color.fromRGBO(148, 163, 184, 0.16),
     ),
     dividerColor: const Color.fromRGBO(148, 163, 184, 0.16),
-    textTheme: buildTextTheme(const Color(0xFFE2E8F0)),
+    textTheme: buildTextTheme(
+      textColor: const Color(0xFFE2E8F0),
+      displayFont: GoogleFonts.bricolageGrotesque,
+      italicDisplay: false,
+    ),
     extensions: [mcAmbianceColors],
   ),
 );

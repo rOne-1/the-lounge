@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_theme.dart';
 import 'ambiance_colors.dart';
 import 'shadow_tokens.dart';
@@ -95,7 +96,11 @@ final AppTheme tuscanyTheme = AppTheme(
       outline: _tsLineRgba,
     ),
     dividerColor: _tsLineRgba,
-    textTheme: buildTextTheme(_tsInk),
+    textTheme: buildTextTheme(
+      textColor: _tsInk,
+      displayFont: GoogleFonts.lora,
+      italicDisplay: false,
+    ),
     extensions: [tsAmbianceColors],
   ),
 );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_theme.dart';
 import 'ambiance_colors.dart';
 import 'shadow_tokens.dart';
@@ -101,7 +102,11 @@ final AppTheme orchidBloomTheme = AppTheme(
       outline: _obLineRgba,
     ),
     dividerColor: _obLineRgba,
-    textTheme: buildTextTheme(_obInk),
+    textTheme: buildTextTheme(
+      textColor: _obInk,
+      displayFont: GoogleFonts.cormorantGaramond,
+      italicDisplay: true,
+    ),
     extensions: [obAmbianceColors],
   ),
 );
