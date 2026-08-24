@@ -6,8 +6,8 @@ import '../constants.dart';
 /// ambient glow powered by multi-frequency noise trigonometric wave interference.
 ///
 /// Screening Room (Dark): Gold/copper warm aurora glow (`Color(0xFFCBA86A)`, `Color(0xFFD69784)`).
-/// Reading Room (Light): Deep rust/terracotta parchment glow (`Color(0xFFA76A50)`, `Color(0xFFB0512B)`).
-/// Violet Dusk (Dark): Deep violet/pink twilight glow (`Color(0xFF935073)`, `Color(0xFFF6DBC0)`).
+/// Violet Dusk (Dark): Rose-magenta twilight glow (`Color(0xFFC2528F)`, `Color(0xFFF4D9E8)`).
+/// Midnight Cinema (Dark): Cyan/magenta neon marquee glow (`Color(0xFF0096C7)`, `Color(0xFFD6409F)`).
 class AmbientGlowWidget extends StatefulWidget {
   final Widget? child;
   final Duration duration;
