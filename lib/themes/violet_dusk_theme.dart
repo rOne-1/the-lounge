@@ -16,6 +16,9 @@ const Color _vdScrim = Color.fromRGBO(0, 0, 0, 0.85);
 const Color _vdDanger = Color(0xFFD1495B);
 const Color _vdSuccess = Color(0xFF3F9A78);
 
+const double _vdGrainOpacity = 0.045;
+const Color _vdGrainTint = Color.fromRGBO(194, 82, 143, 0.22);
+
 BoxDecoration violetDuskBackground() {
   return const BoxDecoration(
     color: _vdBase,
@@ -54,6 +57,8 @@ final AmbianceColors vdAmbianceColors = AmbianceColors(
     color: _vdGlow1,
     borderRadius: BorderRadius.circular(999),
   ),
+  grainOpacity: _vdGrainOpacity,
+  grainTint: _vdGrainTint,
   isDark: true,
 );
 

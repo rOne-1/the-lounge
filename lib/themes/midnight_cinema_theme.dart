@@ -39,6 +39,8 @@ final AmbianceColors mcAmbianceColors = AmbianceColors(
     color: const Color(0xFF00B4D8),
     borderRadius: BorderRadius.circular(999),
   ),
+  grainOpacity: 0.035,
+  grainTint: const Color.fromRGBO(0, 180, 216, 0.18),
   isDark: true,
 );
 

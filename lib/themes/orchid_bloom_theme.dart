@@ -24,6 +24,9 @@ const Color _obScrim = Color.fromRGBO(0, 0, 0, 0.72);
 const Color _obDanger = Color(0xFFB23A5C);
 const Color _obSuccess = Color(0xFF3F8F5F);
 
+const double _obGrainOpacity = 0.02;
+const Color _obGrainTint = Color.fromRGBO(75, 31, 111, 0.12);
+
 const LinearGradient _obPrimaryGradient = LinearGradient(
   colors: [_obAcc, _obAccGradientEnd],
   begin: Alignment.topLeft,
@@ -68,6 +71,8 @@ final AmbianceColors obAmbianceColors = AmbianceColors(
     gradient: _obPrimaryGradient,
     borderRadius: BorderRadius.circular(999),
   ),
+  grainOpacity: _obGrainOpacity,
+  grainTint: _obGrainTint,
   isDark: false,
 );
 

@@ -40,6 +40,17 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
   final BoxDecoration background;
   final BoxDecoration primaryButtonDecoration;
 
+  /// THEME-DEPTH-2: base visibility of the procedural grain texture
+  /// (`AppNoiseTexture`) -- richer on velvet/luxury dark themes, barely
+  /// there on airy light ones. Independent of [grainTint]'s own alpha.
+  final double grainOpacity;
+
+  /// THEME-DEPTH-2: color wash applied over the grain structure via
+  /// `BlendMode.color`, carrying its own alpha as the wash strength. Keeps
+  /// the grain feeling like *this* theme's material rather than one
+  /// neutral gray texture reused everywhere.
+  final Color grainTint;
+
   final bool isDark;
 
   const AmbianceColors({
@@ -62,6 +73,8 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     required this.glow2,
     required this.background,
     required this.primaryButtonDecoration,
+    required this.grainOpacity,
+    required this.grainTint,
     required this.isDark,
   });
 
@@ -86,6 +99,8 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
     Color? glow2,
     BoxDecoration? background,
     BoxDecoration? primaryButtonDecoration,
+    double? grainOpacity,
+    Color? grainTint,
     bool? isDark,
   }) {
     return AmbianceColors(
@@ -108,6 +123,8 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       glow2: glow2 ?? this.glow2,
       background: background ?? this.background,
       primaryButtonDecoration: primaryButtonDecoration ?? this.primaryButtonDecoration,
+      grainOpacity: grainOpacity ?? this.grainOpacity,
+      grainTint: grainTint ?? this.grainTint,
       isDark: isDark ?? this.isDark,
     );
   }
@@ -135,6 +152,8 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       glow2: Color.lerp(glow2, other.glow2, t)!,
       background: BoxDecoration.lerp(background, other.background, t)!,
       primaryButtonDecoration: BoxDecoration.lerp(primaryButtonDecoration, other.primaryButtonDecoration, t)!,
+      grainOpacity: grainOpacity + (other.grainOpacity - grainOpacity) * t,
+      grainTint: Color.lerp(grainTint, other.grainTint, t)!,
       isDark: t < 0.5 ? isDark : other.isDark,
     );
   }

@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import '../constants/app_physics.dart';
+import '../themes/ambiance_colors.dart';
 
 /// Alias for [AppNoiseTexture] for convenience.
 typedef NoiseTextureOverlay = AppNoiseTexture;
@@ -8,16 +10,27 @@ typedef NoiseTextureOverlay = AppNoiseTexture;
 /// An efficient procedural noise/grain texture overlay widget that adds a tactile,
 /// material paper/velvet grain feel across the application interface.
 ///
-/// Blends high-frequency noise using [BlendMode.overlay] (or custom [blendMode])
-/// at a subtle ~0.03-0.05 default opacity. Wrapped in an [IgnorePointer] so it
-/// never interrupts touch or pointer events.
+/// THEME-DEPTH-2: [opacity] and [tint] default to the active theme's own
+/// `grainOpacity`/`grainTint` (`AmbianceColors`) rather than one fixed
+/// constant, so the grain reads as each theme's own material -- richer,
+/// warm-tinted "velvet" on a luxury dark theme, barely-there on an airy
+/// light one -- and cross-fades with House Spring physics on theme switch.
+/// Pass [opacity]/[tint] explicitly only to override the theme default.
+///
+/// Blends high-frequency noise using [BlendMode.overlay] (or custom
+/// [blendMode]), then washes the result with [tint] via [BlendMode.color]
+/// so the same cached grayscale noise tile reads as a different material
+/// per theme. Wrapped in an [IgnorePointer] so it never interrupts touch or
+/// pointer events.
 class AppNoiseTexture extends StatefulWidget {
-  final double opacity;
+  final double? opacity;
+  final Color? tint;
   final BlendMode blendMode;
 
   const AppNoiseTexture({
     super.key,
-    this.opacity = 0.04,
+    this.opacity,
+    this.tint,
     this.blendMode = BlendMode.overlay,
   });
 
@@ -95,14 +108,32 @@ class _AppNoiseTextureState extends State<AppNoiseTexture> {
 
   @override
   Widget build(BuildContext context) {
+    final targetOpacity = widget.opacity ?? context.ambianceColors.grainOpacity;
+    final targetTint = widget.tint ?? context.ambianceColors.grainTint;
+
     return IgnorePointer(
-      child: CustomPaint(
-        painter: _NoiseTexturePainter(
-          noiseImage: _cachedNoiseTile,
-          opacity: widget.opacity,
-          blendMode: widget.blendMode,
-        ),
-        size: Size.infinite,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween<double>(begin: targetOpacity, end: targetOpacity),
+        duration: AppPhysics.houseSpringDuration,
+        curve: AppPhysics.houseSpringCurve,
+        builder: (context, animatedOpacity, _) {
+          return TweenAnimationBuilder<Color?>(
+            tween: ColorTween(begin: targetTint, end: targetTint),
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            builder: (context, animatedTint, __) {
+              return CustomPaint(
+                painter: _NoiseTexturePainter(
+                  noiseImage: _cachedNoiseTile,
+                  opacity: animatedOpacity,
+                  tint: animatedTint ?? targetTint,
+                  blendMode: widget.blendMode,
+                ),
+                size: Size.infinite,
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -111,11 +142,13 @@ class _AppNoiseTextureState extends State<AppNoiseTexture> {
 class _NoiseTexturePainter extends CustomPainter {
   final ui.Image? noiseImage;
   final double opacity;
+  final Color tint;
   final BlendMode blendMode;
 
   _NoiseTexturePainter({
     required this.noiseImage,
     required this.opacity,
+    required this.tint,
     required this.blendMode,
   });
 
@@ -136,6 +169,19 @@ class _NoiseTexturePainter extends CustomPainter {
       canvas.drawRect(Offset.zero & size, paint);
     } else {
       _paintProceduralFallback(canvas, size);
+    }
+
+    // THEME-DEPTH-2: washes the achromatic grain structure above with the
+    // active theme's own hue (BlendMode.color keeps the noise's luminance
+    // variation, replaces its hue/saturation with tint's) so one shared
+    // cached noise tile still reads as a different material per theme.
+    if (tint.a > 0) {
+      canvas.drawRect(
+        Offset.zero & size,
+        Paint()
+          ..color = tint
+          ..blendMode = BlendMode.color,
+      );
     }
   }
 
@@ -165,6 +211,7 @@ class _NoiseTexturePainter extends CustomPainter {
   bool shouldRepaint(covariant _NoiseTexturePainter oldDelegate) {
     return oldDelegate.noiseImage != noiseImage ||
         oldDelegate.opacity != opacity ||
+        oldDelegate.tint != tint ||
         oldDelegate.blendMode != blendMode;
   }
 }

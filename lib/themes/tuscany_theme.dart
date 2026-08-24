@@ -24,6 +24,9 @@ const Color _tsScrim = Color.fromRGBO(0, 0, 0, 0.85);
 const Color _tsDanger = Color(0xFFC1443D);
 const Color _tsSuccess = Color(0xFF6B9A6E);
 
+const double _tsGrainOpacity = 0.05;
+const Color _tsGrainTint = Color.fromRGBO(187, 139, 122, 0.26);
+
 BoxDecoration tuscanyBackground() {
   return const BoxDecoration(
     color: _tsBase,
@@ -62,6 +65,8 @@ final AmbianceColors tsAmbianceColors = AmbianceColors(
     color: _tsAcc,
     borderRadius: BorderRadius.circular(999),
   ),
+  grainOpacity: _tsGrainOpacity,
+  grainTint: _tsGrainTint,
   isDark: true,
 );
 

@@ -24,6 +24,9 @@ const Color _srScrim = Color.fromRGBO(0, 0, 0, 0.85);
 const Color _srDanger = Color(0xFFD9534F);
 const Color _srSuccess = Color(0xFF4C9A6A);
 
+const double _srGrainOpacity = 0.055;
+const Color _srGrainTint = Color.fromRGBO(203, 168, 106, 0.30);
+
 BoxDecoration screeningRoomBackground() {
   return const BoxDecoration(
     color: _srBase,
@@ -62,6 +65,8 @@ final AmbianceColors srAmbianceColors = AmbianceColors(
     color: _srAcc,
     borderRadius: BorderRadius.circular(999),
   ),
+  grainOpacity: _srGrainOpacity,
+  grainTint: _srGrainTint,
   isDark: true,
 );
 
