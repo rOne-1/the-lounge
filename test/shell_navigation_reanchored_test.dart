@@ -5,11 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:the_lounge/main.dart';
 import 'package:the_lounge/screens/shell_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
+import 'package:the_lounge/widgets/noise_texture_overlay.dart';
 
 void main() {
   setUp(() {
@@ -84,5 +86,46 @@ void main() {
     final finalPop = await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(finalPop, isFalse);
+  });
+
+  group('FEAT-GRAIN-1: grain overlay on pushed routes', () {
+    testWidgets(
+        'the noise grain overlay persists across a pushed route, not just the shell tabs',
+        (tester) async {
+      tester.view.physicalSize = const Size(412, 915);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            movieRepositoryProvider.overrideWithValue(MockMovieRepository()),
+            sharedPreferencesProvider.overrideWithValue(prefs),
+          ],
+          child: const MyApp(enableAnimation: false),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Landing page (The Lounge, nothing pushed): grain is already present
+      // -- it now lives once at the MaterialApp.builder level (main.dart),
+      // not per-screen, so it covers the initial shell tabs too.
+      expect(find.byType(AppNoiseTexture), findsOneWidget);
+
+      // A real Navigator push while staying on the lounge tab -- before
+      // FEAT-GRAIN-1, AppNoiseTexture was drawn inside ShellScreen's own
+      // Stack, which sits *underneath* whatever route the Navigator pushes
+      // on top, so a pushed screen (Archive here) showed no grain at all.
+      await tester.tap(find.text('Archive'));
+      await tester.pumpAndSettle();
+
+      // Still exactly one instance -- the same single overlay, not a second
+      // copy instantiated by the pushed screen.
+      expect(find.byType(AppNoiseTexture), findsOneWidget);
+    });
   });
 }

@@ -13,6 +13,7 @@ import 'services/crash_reporting_service.dart';
 import 'themes/screening_room_theme.dart';
 import 'widgets/fallback_widgets.dart';
 import 'widgets/floating_navigation_capsule.dart';
+import 'widgets/noise_texture_overlay.dart';
 
 /// Shared with [GlobalCapsuleLayer]/[FloatingNavigationCapsule]: the capsule
 /// is drawn in [MyApp]'s `builder` as a Stack sibling of `child` (the actual
@@ -100,6 +101,15 @@ class MyApp extends ConsumerWidget {
           child: Stack(
             children: [
               child ?? const SizedBox(),
+              // FEAT-GRAIN-1: a single grain overlay here, above the routed
+              // `child` and below the capsule, covers every route the
+              // Navigator ever builds -- the initial shell tabs AND every
+              // pushed screen (Detail, Archive, Tools, Rate Titles,
+              // Cleanup, Rewatch Vault, Folders, Collection, Analytics,
+              // Settings) -- without each screen instantiating its own copy.
+              const Positioned.fill(
+                child: AppNoiseTexture(),
+              ),
               GlobalCapsuleLayer(
                 enableAnimation: enableAnimation,
               ),

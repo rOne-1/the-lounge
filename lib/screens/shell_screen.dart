@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/ambiance_provider.dart';
-import '../widgets/noise_texture_overlay.dart';
 import '../widgets/whats_new_dialog.dart';
 import '../constants.dart';
 import 'lobby_screen.dart';
@@ -55,9 +54,10 @@ class ShellScreen extends ConsumerWidget {
                     child: _buildBody(ref, navigationState.currentTab),
                   ),
                 ),
-                const Positioned.fill(
-                  child: AppNoiseTexture(),
-                ),
+                // FEAT-GRAIN-1: the grain overlay now lives once at the
+                // MaterialApp.builder level (main.dart) so it covers every
+                // route -- shell tabs AND pushed screens -- rather than
+                // just here.
                 WhatsNewGate(enableAnimation: enableAnimation),
               ],
             ),
