@@ -30,6 +30,16 @@ class TvEpisode {
   final double? voteAverage;
   final int? runtime;
 
+  /// DATA-CAST-4: notable guest performers for this specific episode,
+  /// parsed from the season-detail payload's `guest_stars` array (already
+  /// fetched by [MovieRepository.getTvSeasonDetails] -- no extra request).
+  final List<MediaCastMember>? guestStars;
+
+  /// DATA-CAST-4: episode-specific crew (director, writer, etc. for this
+  /// episode), parsed from the same season-detail payload's `crew` array.
+  /// [MediaCastMember.role] carries the job title here.
+  final List<MediaCastMember>? crew;
+
   const TvEpisode({
     required this.id,
     required this.episodeNumber,
@@ -40,6 +50,8 @@ class TvEpisode {
     this.airDate,
     this.voteAverage,
     this.runtime,
+    this.guestStars,
+    this.crew,
   });
 
   TvEpisode copyWith({
@@ -52,6 +64,8 @@ class TvEpisode {
     DateTime? airDate,
     double? voteAverage,
     int? runtime,
+    List<MediaCastMember>? guestStars,
+    List<MediaCastMember>? crew,
   }) {
     return TvEpisode(
       id: id ?? this.id,
@@ -63,6 +77,8 @@ class TvEpisode {
       airDate: airDate ?? this.airDate,
       voteAverage: voteAverage ?? this.voteAverage,
       runtime: runtime ?? this.runtime,
+      guestStars: guestStars ?? this.guestStars,
+      crew: crew ?? this.crew,
     );
   }
 
@@ -131,12 +147,28 @@ class MediaCastMember {
   final String? role;
   final String? profileUrl;
 
+  /// DATA-CAST-1: total episode count this person appeared in across the
+  /// whole series, from TV `aggregate_credits`. Null for movie cast/crew
+  /// (standard `credits` has no per-episode concept) and for anyone parsed
+  /// before this field existed.
+  final int? totalEpisodeCount;
+
+  /// DATA-CAST-1: the distinct characters this person played across the
+  /// series, from TV `aggregate_credits.cast[].roles`. A recurring actor
+  /// who played more than one character has more than one entry here;
+  /// [character] holds the same names joined for display. Null for movie
+  /// cast (a single `character` string is all TMDB's standard `credits`
+  /// gives).
+  final List<String>? roles;
+
   const MediaCastMember({
     required this.id,
     required this.name,
     this.character,
     this.role,
     this.profileUrl,
+    this.totalEpisodeCount,
+    this.roles,
   });
 
   MediaCastMember copyWith({
@@ -145,6 +177,8 @@ class MediaCastMember {
     String? character,
     String? role,
     String? profileUrl,
+    int? totalEpisodeCount,
+    List<String>? roles,
   }) {
     return MediaCastMember(
       id: id ?? this.id,
@@ -152,6 +186,8 @@ class MediaCastMember {
       character: character ?? this.character,
       role: role ?? this.role,
       profileUrl: profileUrl ?? this.profileUrl,
+      totalEpisodeCount: totalEpisodeCount ?? this.totalEpisodeCount,
+      roles: roles ?? this.roles,
     );
   }
 }
@@ -370,6 +406,14 @@ class MediaItem {
   final String? tagline;
   final String? director;
   final List<MediaCastMember>? directors;
+
+  /// DATA-CAST-2: the primary creative crew beyond Director/Creator --
+  /// Writer/Screenplay, Original Music Composer, Director of Photography,
+  /// and Producer -- parsed from `credits.crew` (movie) or
+  /// `aggregate_credits.crew` (TV). [MediaCastMember.role] holds the
+  /// canonical label ('Writer', 'Composer', 'Director of Photography',
+  /// 'Producer'); other crew jobs are not captured here.
+  final List<MediaCastMember>? extendedCrew;
   final String? certification;
   final MediaCollection? belongsToCollection;
   final List<String>? createdBy;
@@ -419,6 +463,7 @@ class MediaItem {
     this.tagline,
     this.director,
     this.directors,
+    this.extendedCrew,
     this.certification,
     this.belongsToCollection,
     this.createdBy,
@@ -538,6 +583,7 @@ class MediaItem {
     String? tagline,
     String? director,
     List<MediaCastMember>? directors,
+    List<MediaCastMember>? extendedCrew,
     String? certification,
     MediaCollection? belongsToCollection,
     List<String>? createdBy,
@@ -581,6 +627,7 @@ class MediaItem {
       tagline: tagline ?? this.tagline,
       director: director ?? this.director,
       directors: directors ?? this.directors,
+      extendedCrew: extendedCrew ?? this.extendedCrew,
       certification: certification ?? this.certification,
       belongsToCollection: belongsToCollection ?? this.belongsToCollection,
       createdBy: createdBy ?? this.createdBy,

@@ -652,6 +652,254 @@ void main() {
     });
 
     test(
+        'DATA-CAST-1: TV details request aggregate_credits (not credits) and parse full-series cast with per-role episode counts',
+        () async {
+      Uri? capturedTvRequestUrl;
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/tv/94997')) {
+          capturedTvRequestUrl = request.url;
+          return http.Response(
+              jsonEncode({
+                'id': 94997,
+                'name': 'House of the Dragon',
+                'vote_average': 8.4,
+                'first_air_date': '2022-08-21',
+                'overview': '',
+                'genres': [
+                  {'id': 18, 'name': 'Drama'}
+                ],
+                'aggregate_credits': {
+                  'cast': [
+                    {
+                      'id': 1,
+                      'name': 'Matt Smith',
+                      'profile_path': '/matt.jpg',
+                      'roles': [
+                        {
+                          'credit_id': 'c1',
+                          'character': 'Daemon Targaryen',
+                          'episode_count': 10
+                        }
+                      ],
+                      'total_episode_count': 10,
+                      'order': 0,
+                    },
+                    {
+                      'id': 2,
+                      'name': 'Emma D\'Arcy',
+                      'profile_path': null,
+                      'roles': [
+                        {
+                          'credit_id': 'c2',
+                          'character': 'Rhaenyra Targaryen',
+                          'episode_count': 8
+                        }
+                      ],
+                      'total_episode_count': 8,
+                      'order': 1,
+                    },
+                  ],
+                  'crew': [
+                    {
+                      'id': 3,
+                      'name': 'Ryan Condal',
+                      'department': 'Writing',
+                      'jobs': [
+                        {'job': 'Director', 'episode_count': 1},
+                        {'job': 'Writer', 'episode_count': 5},
+                        {'job': 'Producer', 'episode_count': 10},
+                      ],
+                      'total_episode_count': 10,
+                    },
+                    {
+                      'id': 4,
+                      'name': 'Ramin Djawadi',
+                      'department': 'Sound',
+                      'jobs': [
+                        {'job': 'Original Music Composer', 'episode_count': 10},
+                      ],
+                      'total_episode_count': 10,
+                    },
+                  ],
+                },
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final details = await repo.getMediaDetails('tv_94997');
+      expect(details, isNotNull);
+
+      // The TV request must append aggregate_credits, not the standard
+      // pilot-only credits.
+      expect(capturedTvRequestUrl, isNotNull);
+      final appendParts =
+          capturedTvRequestUrl!.queryParameters['append_to_response']!
+              .split(',');
+      expect(appendParts, contains('aggregate_credits'));
+      expect(appendParts, isNot(contains('credits')));
+
+      expect(details!.castMembers.length, equals(2));
+      final daemon = details.castMembers.first;
+      expect(daemon.name, equals('Matt Smith'));
+      expect(daemon.character, equals('Daemon Targaryen'));
+      expect(daemon.roles, equals(['Daemon Targaryen']));
+      expect(daemon.totalEpisodeCount, equals(10));
+
+      // A director found via aggregate_credits' `jobs` array (not the
+      // single `job` field standard credits uses).
+      expect(details.director, equals('Ryan Condal'));
+
+      // DATA-CAST-2: Writer/Composer/Producer extracted from the same
+      // aggregate crew list, each with its own aggregated episode count.
+      expect(details.extendedCrew, isNotNull);
+      final byRole = {for (final c in details.extendedCrew!) c.role: c};
+      expect(byRole['Writer']!.name, equals('Ryan Condal'));
+      expect(byRole['Writer']!.totalEpisodeCount, equals(5));
+      expect(byRole['Producer']!.name, equals('Ryan Condal'));
+      expect(byRole['Producer']!.totalEpisodeCount, equals(10));
+      expect(byRole['Composer']!.name, equals('Ramin Djawadi'));
+      expect(byRole['Composer']!.totalEpisodeCount, equals(10));
+    });
+
+    test(
+        'DATA-CAST-2: extended crew (Writer, Composer, DP, Producer) parsed from movie credits.crew',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/movie/200')) {
+          return http.Response(
+              jsonEncode({
+                'id': 200,
+                'title': 'A Prestige Picture',
+                'credits': {
+                  'cast': [],
+                  'crew': [
+                    {'id': 10, 'name': 'A Writer', 'job': 'Screenplay'},
+                    {'id': 11, 'name': 'A Composer', 'job': 'Original Music Composer'},
+                    {'id': 12, 'name': 'A DP', 'job': 'Director of Photography'},
+                    {'id': 13, 'name': 'A Producer', 'job': 'Producer'},
+                    {'id': 14, 'name': 'Another Producer', 'job': 'Producer'},
+                    {'id': 15, 'name': 'Unrelated Crew', 'job': 'Gaffer'},
+                  ],
+                },
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final details = await repo.getMediaDetails('movie_200');
+      expect(details, isNotNull);
+      expect(details!.extendedCrew, isNotNull);
+      expect(details.extendedCrew!.length, equals(5));
+      final names = details.extendedCrew!.map((c) => c.name).toList();
+      expect(names, isNot(contains('Unrelated Crew')));
+      final producers =
+          details.extendedCrew!.where((c) => c.role == 'Producer').toList();
+      expect(producers.length, equals(2));
+      final writer =
+          details.extendedCrew!.firstWhere((c) => c.role == 'Writer');
+      // 'Screenplay' is one of the raw job titles mapped onto the
+      // 'Writer' canonical label.
+      expect(writer.name, equals('A Writer'));
+    });
+
+    test('DATA-CAST-3: cast list is no longer capped at 8 actors',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/movie/300')) {
+          return http.Response(
+              jsonEncode({
+                'id': 300,
+                'title': 'Ensemble Picture',
+                'credits': {
+                  'cast': List.generate(
+                    12,
+                    (i) => {
+                      'id': i,
+                      'name': 'Actor $i',
+                      'character': 'Character $i',
+                    },
+                  ),
+                },
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final details = await repo.getMediaDetails('movie_300');
+      expect(details, isNotNull);
+      expect(details!.cast.length, equals(12));
+      expect(details.castMembers.length, equals(12));
+    });
+
+    test(
+        'DATA-CAST-4: getTvSeasonDetails parses guest_stars and crew already present on the episode payload',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/tv/500/season/1')) {
+          return http.Response(
+              jsonEncode({
+                'id': 5001,
+                'season_number': 1,
+                'name': 'Season 1',
+                'episodes': [
+                  {
+                    'id': 1,
+                    'episode_number': 1,
+                    'season_number': 1,
+                    'name': 'Pilot',
+                    'guest_stars': [
+                      {
+                        'id': 99,
+                        'name': 'Guest Star',
+                        'character': 'Visitor',
+                        'profile_path': '/guest.jpg',
+                      },
+                    ],
+                    'crew': [
+                      {
+                        'id': 88,
+                        'name': 'Episode Director',
+                        'job': 'Director',
+                        'profile_path': null,
+                      },
+                    ],
+                  },
+                ],
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final season = await repo.getTvSeasonDetails('500', 1);
+      expect(season, isNotNull);
+      expect(season!.episodes.length, equals(1));
+      final episode = season.episodes.first;
+      expect(episode.guestStars, isNotNull);
+      expect(episode.guestStars!.first.name, equals('Guest Star'));
+      expect(episode.guestStars!.first.character, equals('Visitor'));
+      expect(episode.crew, isNotNull);
+      expect(episode.crew!.first.name, equals('Episode Director'));
+      expect(episode.crew!.first.role, equals('Director'));
+    });
+
+    test(
         'Configured repository parses multi-country flatrate, rent, and buy providers',
         () async {
       final mockClient = MockClient((request) async {

@@ -35,6 +35,11 @@ class DetailScreen extends ConsumerStatefulWidget {
 class _DetailScreenState extends ConsumerState<DetailScreen> {
   bool _isTransitionComplete = false;
 
+  /// DATA-CAST-3: the cast rail shows a capped preview by default; tapping
+  /// "Show all" reveals the full (now uncapped, see
+  /// TmdbMovieRepository._mapJsonToMediaItem) cast list.
+  bool _showAllCast = false;
+
   @override
   void initState() {
     super.initState();
@@ -168,6 +173,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   ) {
     return [
       () => _buildDirectorOrCreatorCredit(context, ref, item, isDark),
+      () => _buildExtendedCreditsSection(context, ref, item, isDark),
       () => _buildCastStrip(context, ref, item, isDark),
       () => _buildTrailersSection(context, item, isDark),
       () => _buildSimilarTitlesSection(context, ref, item, isDark),
@@ -989,6 +995,109 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// DATA-CAST-2: the primary creative crew beyond Director/Creator --
+  /// Writer/Screenplay, Composer, Director of Photography, and Producer --
+  /// grouped by role and rendered in a compact card, matching
+  /// [_buildDirectorOrCreatorCredit]'s visual language.
+  Widget _buildExtendedCreditsSection(
+    BuildContext context,
+    WidgetRef ref,
+    MediaItem item,
+    bool isDark,
+  ) {
+    final crew = item.extendedCrew;
+    if (crew == null || crew.isEmpty) return const SizedBox.shrink();
+
+    const roleOrder = [
+      'Writer',
+      'Composer',
+      'Director of Photography',
+      'Producer',
+    ];
+    final byRole = <String, List<MediaCastMember>>{};
+    for (final member in crew) {
+      final role = member.role;
+      if (role == null) continue;
+      byRole.putIfAbsent(role, () => []).add(member);
+    }
+    if (byRole.isEmpty) return const SizedBox.shrink();
+
+    final subColor = context.ambianceColors.sub;
+    final inkColor = context.ambianceColors.ink;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+
+    void navigateToPerson(int? pId, String pName) {
+      // SEARCH-CAST-1: see _buildDirectorOrCreatorCredit's navigateToPerson
+      // -- clear any stale filters from an earlier Search session first.
+      ref.read(discoverFilterProvider.notifier).resetFilters();
+      ref.read(discoverFilterProvider.notifier).setPerson(
+            personId: pId,
+            personName: pName,
+          );
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const SearchScreen()),
+      );
+    }
+
+    final rows = <Widget>[];
+    for (final role in roleOrder) {
+      final members = byRole[role];
+      if (members == null || members.isEmpty) continue;
+      rows.add(
+        Padding(
+          padding: EdgeInsets.only(bottom: role == roleOrder.last ? 0 : 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                role,
+                style: AppThemes.safeGeist(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: subColor,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Wrap(
+                spacing: 12,
+                runSpacing: 4,
+                children: members.map((m) {
+                  final pId = int.tryParse(m.id);
+                  return PressableScale(
+                    onTap: () => navigateToPerson(pId, m.name),
+                    child: Text(
+                      m.name,
+                      style: AppThemes.safeGeist(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: inkColor,
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: phColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: lineRgba),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: rows,
+      ),
+    );
+  }
+
   Widget _buildSimilarTitlesSection(
     BuildContext context,
     WidgetRef ref,
@@ -1678,6 +1787,17 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final subColor = context.ambianceColors.sub;
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
+    final accColor = context.ambianceColors.acc;
+
+    // DATA-CAST-3: the repository no longer caps the parsed cast list --
+    // this rail owns its own display cap, with a "Show all" tile to reveal
+    // the rest instead of dumping the entire (sometimes 50+ person) cast
+    // into view by default.
+    const collapsedCount = 15;
+    final totalCount = item.cast.length;
+    final hasMore = totalCount > collapsedCount;
+    final showAll = _showAllCast || !hasMore;
+    final displayCount = showAll ? totalCount : collapsedCount;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1691,12 +1811,58 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        SizedBox(
-          height: 110,
-          child: ListView.builder(
+        AnimatedSwitcher(
+          duration: AppPhysics.houseSpringDuration,
+          switchInCurve: AppPhysics.houseSpringCurve,
+          switchOutCurve: AppPhysics.houseSpringCurve,
+          transitionBuilder: (child, animation) =>
+              FadeTransition(opacity: animation, child: child),
+          child: SizedBox(
+            key: ValueKey(showAll),
+            height: 110,
+            child: ListView.builder(
             scrollDirection: Axis.horizontal,
-            itemCount: item.cast.length,
+            itemCount: displayCount + (hasMore && !showAll ? 1 : 0),
             itemBuilder: (context, index) {
+              if (hasMore && !showAll && index == displayCount) {
+                return PressableScale(
+                  onTap: () => setState(() => _showAllCast = true),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 14.0),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: phColor,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: lineRgba),
+                          ),
+                          child: Icon(Icons.people_alt_outlined,
+                              color: accColor),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: 70,
+                          child: Text(
+                            'Show all\n$totalCount',
+                            style: AppThemes.safeGeist(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: accColor,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
               final castName = item.cast[index];
               final castMember = (index < item.castMembers.length)
                   ? item.castMembers[index]
@@ -1768,6 +1934,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 ),
               );
             },
+            ),
           ),
         ),
       ],
@@ -2605,6 +2772,23 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                                     style: AppThemes.safeGeist(
                                       fontSize: 11,
                                       color: subColor,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                                // DATA-CAST-4: notable guest performers for
+                                // this specific episode, parsed from the
+                                // same season-detail payload -- no extra
+                                // request.
+                                if (episode.guestStars != null &&
+                                    episode.guestStars!.isNotEmpty) ...[
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    'Guest stars: ${episode.guestStars!.map((g) => g.name).join(', ')}',
+                                    style: AppThemes.safeGeist(
+                                      fontSize: 11,
+                                      color: accColor,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,

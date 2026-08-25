@@ -47,10 +47,28 @@ class MockMovieRepository implements MovieRepository {
         'Elliot Page',
         'Tom Hardy'
       ],
+      castMembers: const [
+        MediaCastMember(id: '6193', name: 'Leonardo DiCaprio', character: 'Cobb'),
+        MediaCastMember(
+            id: '24045', name: 'Joseph Gordon-Levitt', character: 'Arthur'),
+        MediaCastMember(id: '1841', name: 'Elliot Page', character: 'Ariadne'),
+        MediaCastMember(id: '2524', name: 'Tom Hardy', character: 'Eames'),
+      ],
       tagline: 'Your mind is the scene of the crime.',
       director: 'Christopher Nolan',
       directors: const [
         MediaCastMember(id: '525', name: 'Christopher Nolan', role: 'Director'),
+      ],
+      // DATA-CAST-2: primary creative crew mock parity (movie shape --
+      // no totalEpisodeCount).
+      extendedCrew: const [
+        MediaCastMember(id: '2710', name: 'Christopher Nolan', role: 'Writer'),
+        MediaCastMember(id: '9032', name: 'Hans Zimmer', role: 'Composer'),
+        MediaCastMember(
+            id: '5011',
+            name: 'Wally Pfister',
+            role: 'Director of Photography'),
+        MediaCastMember(id: '5013', name: 'Emma Thomas', role: 'Producer'),
       ],
       certification: 'PG-13',
       voteCount: 34500,
@@ -92,10 +110,53 @@ class MockMovieRepository implements MovieRepository {
         'David Harbour',
         'Finn Wolfhard'
       ],
+      // DATA-CAST-1: aggregate_credits mock parity -- roles/
+      // totalEpisodeCount populated, matching the TV-only shape TMDB's
+      // real aggregate_credits returns.
+      castMembers: const [
+        MediaCastMember(
+            id: '1112123',
+            name: 'Millie Bobby Brown',
+            character: 'Eleven',
+            roles: ['Eleven'],
+            totalEpisodeCount: 34),
+        MediaCastMember(
+            id: '5081',
+            name: 'Winona Ryder',
+            character: 'Joyce Byers',
+            roles: ['Joyce Byers'],
+            totalEpisodeCount: 34),
+        MediaCastMember(
+            id: '17419',
+            name: 'David Harbour',
+            character: 'Jim Hopper',
+            roles: ['Jim Hopper'],
+            totalEpisodeCount: 30),
+        MediaCastMember(
+            id: '1219523',
+            name: 'Finn Wolfhard',
+            character: 'Mike Wheeler',
+            roles: ['Mike Wheeler'],
+            totalEpisodeCount: 34),
+      ],
       tagline: 'Every story has a beginning.',
       director: 'The Duffer Brothers',
       directors: const [
         MediaCastMember(id: '12341', name: 'The Duffer Brothers', role: 'Creator'),
+      ],
+      // DATA-CAST-2: primary creative crew mock parity (TV shape --
+      // totalEpisodeCount populated, from aggregate_credits.crew[].jobs).
+      extendedCrew: const [
+        MediaCastMember(
+            id: '12341',
+            name: 'Matt Duffer',
+            role: 'Writer',
+            totalEpisodeCount: 34),
+        MediaCastMember(
+            id: '18873',
+            name: 'Kyle Dixon',
+            role: 'Composer',
+            totalEpisodeCount: 34),
       ],
       certification: 'TV-14',
       createdBy: const ['The Duffer Brothers'],
@@ -576,6 +637,21 @@ class MockMovieRepository implements MovieRepository {
         airDate: item.releaseOrAirDate?.add(Duration(days: index * 7)),
         voteAverage: item.rating,
         runtime: 45,
+        // DATA-CAST-4: mock parity for episode-level guest_stars/crew --
+        // only the premiere carries mock data, matching how a real season
+        // isn't guest-star-heavy on every episode.
+        guestStars: index == 0
+            ? const [
+                MediaCastMember(
+                    id: '90210', name: 'Guest Performer', character: 'Visitor'),
+              ]
+            : null,
+        crew: index == 0
+            ? const [
+                MediaCastMember(
+                    id: '77001', name: 'Episode Director', role: 'Director'),
+              ]
+            : null,
       ),
     );
 

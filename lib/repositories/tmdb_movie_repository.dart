@@ -694,56 +694,60 @@ class TmdbMovieRepository implements MovieRepository {
       Map<String, dynamic>? detailsJson;
       MediaType resolvedType = explicitType ?? MediaType.movie;
 
-      final queryParams = {
-        'append_to_response':
-            'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids'
-      };
+      // DATA-CAST-1: TV has no `credits` field that carries full-series
+      // data -- the pilot-episode-only `credits` append silently drops
+      // recurring cast who joined later seasons. `aggregate_credits` is
+      // TV's full-series equivalent (per-role episode counts, aggregated
+      // crew jobs); movies have no aggregate_credits endpoint at all, so
+      // they keep the standard `credits` append.
+      const movieAppendToResponse =
+          'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids';
+      const tvAppendToResponse =
+          'aggregate_credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids';
+      final movieQueryParams = {'append_to_response': movieAppendToResponse};
+      final tvQueryParams = {'append_to_response': tvAppendToResponse};
 
       if (explicitType == MediaType.tv) {
         final key = cacheService.generateKey(
-            TmdbEndpoints.tvDetails(cleanId), queryParams);
+            TmdbEndpoints.tvDetails(cleanId), tvQueryParams);
         detailsJson = await cacheService.get(key);
         if (detailsJson == null) {
           detailsJson = await apiService.getTvDetails(cleanId,
-              appendToResponse:
-                  'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids');
+              appendToResponse: tvAppendToResponse);
           await cacheService.put(key, detailsJson);
         }
       } else if (explicitType == MediaType.movie) {
         final key = cacheService.generateKey(
-            TmdbEndpoints.movieDetails(cleanId), queryParams);
+            TmdbEndpoints.movieDetails(cleanId), movieQueryParams);
         detailsJson = await cacheService.get(key);
         if (detailsJson == null) {
           detailsJson = await apiService.getMovieDetails(cleanId,
-              appendToResponse:
-                  'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids');
+              appendToResponse: movieAppendToResponse);
           await cacheService.put(key, detailsJson);
         }
       } else {
         // Try movie details first
         final movieKey = cacheService.generateKey(
-            TmdbEndpoints.movieDetails(cleanId), queryParams);
+            TmdbEndpoints.movieDetails(cleanId), movieQueryParams);
         detailsJson = await cacheService.get(movieKey);
         if (detailsJson != null) {
           resolvedType = MediaType.movie;
         } else {
           final tvKey = cacheService.generateKey(
-              TmdbEndpoints.tvDetails(cleanId), queryParams);
+              TmdbEndpoints.tvDetails(cleanId), tvQueryParams);
           detailsJson = await cacheService.get(tvKey);
           if (detailsJson != null) {
             resolvedType = MediaType.tv;
           } else {
             try {
               detailsJson = await apiService.getMovieDetails(cleanId,
-                  appendToResponse:
-                      'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids');
+                  appendToResponse: movieAppendToResponse);
               await cacheService.put(movieKey, detailsJson);
               resolvedType = MediaType.movie;
             } catch (_) {
               // Fall back to trying TV details
               detailsJson = await apiService.getTvDetails(cleanId,
-                  appendToResponse:
-                      'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids');
+                  appendToResponse: tvAppendToResponse);
               await cacheService.put(tvKey, detailsJson);
               resolvedType = MediaType.tv;
             }
@@ -1163,27 +1167,60 @@ class TmdbMovieRepository implements MovieRepository {
     final seasonsCount = (json['number_of_seasons'] as num?)?.toInt();
     final episodesCount = (json['number_of_episodes'] as num?)?.toInt();
 
-    // Cast parsing from credits append_to_response or credits key
+    // Cast parsing from credits/aggregate_credits append_to_response.
+    // DATA-CAST-1: TV requests append `aggregate_credits` (full-series,
+    // per-role episode counts); movie requests append the standard
+    // `credits` (single pilot-episode-shaped cast list). Checking both
+    // keys means this parses correctly regardless of which one was
+    // actually requested for this payload.
     final cast = <String>[];
     final castMembers = <CastMember>[];
-    final creditsObj = json['credits'] as Map<String, dynamic>?;
+    final creditsObj =
+        (json['aggregate_credits'] ?? json['credits']) as Map<String, dynamic>?;
     if (creditsObj != null && creditsObj['cast'] is List) {
       final castList = creditsObj['cast'] as List;
-      for (final member in castList.take(8)) {
+      // DATA-CAST-3: no more 8-actor cap here -- the full cast is parsed
+      // and handed to the UI, which owns its own display/expansion cap.
+      for (final member in castList) {
         if (member is Map && member['name'] != null) {
           final memberName = member['name'].toString();
           cast.add(memberName);
 
           final memberId = member['id']?.toString() ?? '';
-          final character = member['character'] as String?;
           final profilePath = member['profile_path'] as String?;
           final profileUrl = TmdbImageHelper.getCastHeadshotUrl(profilePath);
+
+          String? character;
+          int? totalEpisodeCount;
+          List<String>? roleCharacters;
+          final rolesJson = member['roles'];
+          if (rolesJson is List && rolesJson.isNotEmpty) {
+            // aggregate_credits shape (TV): one entry per distinct
+            // character this person played, each with its own episode
+            // count.
+            roleCharacters = rolesJson
+                .whereType<Map>()
+                .map((r) => r['character']?.toString())
+                .whereType<String>()
+                .where((c) => c.isNotEmpty)
+                .toList();
+            if (roleCharacters.isNotEmpty) {
+              character = roleCharacters.join(' / ');
+            }
+            totalEpisodeCount =
+                (member['total_episode_count'] as num?)?.toInt();
+          } else {
+            // Standard credits shape (movie): a single character string.
+            character = member['character'] as String?;
+          }
 
           castMembers.add(CastMember(
             id: memberId,
             name: memberName,
             character: character,
             profileUrl: profileUrl,
+            totalEpisodeCount: totalEpisodeCount,
+            roles: roleCharacters,
           ));
         }
       }
@@ -1300,7 +1337,7 @@ class TmdbMovieRepository implements MovieRepository {
     if (creditsObj != null && creditsObj['crew'] is List) {
       for (final member in creditsObj['crew'] as List) {
         if (member is Map &&
-            member['job'] == 'Director' &&
+            _crewJobLabels(member).contains('Director') &&
             member['name'] != null) {
           final id = member['id']?.toString() ?? '';
           final name = member['name'].toString();
@@ -1309,6 +1346,50 @@ class TmdbMovieRepository implements MovieRepository {
         }
       }
     }
+
+    // DATA-CAST-2: primary creative crew beyond Director/Creator --
+    // Writer/Screenplay, Original Music Composer, Director of Photography,
+    // and Producer. Each canonical label maps to the one or more raw TMDB
+    // job titles that count as it; every matching crew member is kept
+    // (a title can legitimately have more than one writer or producer),
+    // deduped by person so an aggregate_credits entry holding multiple
+    // matching jobs for the same target label doesn't double up.
+    const extendedCrewJobMap = {
+      'Writer': ['Writer', 'Screenplay'],
+      'Composer': ['Original Music Composer'],
+      'Director of Photography': ['Director of Photography'],
+      'Producer': ['Producer'],
+    };
+    final extendedCrewList = <MediaCastMember>[];
+    if (creditsObj != null && creditsObj['crew'] is List) {
+      for (final entry in extendedCrewJobMap.entries) {
+        final label = entry.key;
+        final matchJobs = entry.value;
+        final seenIds = <String>{};
+        for (final member in creditsObj['crew'] as List) {
+          if (member is! Map || member['name'] == null) continue;
+          final jobLabels = _crewJobLabels(member);
+          final matchedJob = matchJobs
+              .cast<String?>()
+              .firstWhere(jobLabels.contains, orElse: () => null);
+          if (matchedJob == null) continue;
+          final id = member['id']?.toString() ?? '';
+          if (!seenIds.add(id.isNotEmpty ? id : member['name'].toString())) {
+            continue;
+          }
+          extendedCrewList.add(MediaCastMember(
+            id: id,
+            name: member['name'].toString().trim(),
+            role: label,
+            profileUrl: TmdbImageHelper.getCastHeadshotUrl(
+                member['profile_path'] as String?),
+            totalEpisodeCount: _crewJobEpisodeCount(member, matchedJob),
+          ));
+        }
+      }
+    }
+    final extendedCrew =
+        extendedCrewList.isNotEmpty ? extendedCrewList : null;
 
     if (json['created_by'] is List) {
       for (final creator in json['created_by'] as List) {
@@ -1328,7 +1409,7 @@ class TmdbMovieRepository implements MovieRepository {
       if (creditsObj != null && creditsObj['crew'] is List) {
         for (final member in creditsObj['crew'] as List) {
           if (member is Map &&
-              member['job'] == 'Director' &&
+              _crewJobLabels(member).contains('Director') &&
               member['name'] != null) {
             director = member['name'].toString();
             break;
@@ -1351,7 +1432,7 @@ class TmdbMovieRepository implements MovieRepository {
         if (creditsObj != null && creditsObj['crew'] is List) {
           for (final member in creditsObj['crew'] as List) {
             if (member is Map &&
-                member['job'] == 'Director' &&
+                _crewJobLabels(member).contains('Director') &&
                 member['name'] != null) {
               director = member['name'].toString();
               break;
@@ -1565,6 +1646,7 @@ class TmdbMovieRepository implements MovieRepository {
       tagline: tagline,
       director: director,
       directors: parsedDirectors.isNotEmpty ? parsedDirectors : null,
+      extendedCrew: extendedCrew,
       certification: certification,
       belongsToCollection: belongsToCollection,
       createdBy: createdBy,
@@ -1578,6 +1660,40 @@ class TmdbMovieRepository implements MovieRepository {
       spokenLanguages: spokenLanguages,
       status: status,
     );
+  }
+
+  /// DATA-CAST-2: normalizes a crew member's job title(s) to a flat list,
+  /// regardless of which credits shape produced it -- standard `credits`
+  /// gives one job per crew entry (`job`), while TV's `aggregate_credits`
+  /// aggregates every job a person held across the whole series onto one
+  /// entry (`jobs: [{job, episode_count}, ...]`).
+  List<String> _crewJobLabels(Map member) {
+    final jobsJson = member['jobs'];
+    if (jobsJson is List) {
+      return jobsJson
+          .whereType<Map>()
+          .map((j) => j['job']?.toString())
+          .whereType<String>()
+          .where((j) => j.isNotEmpty)
+          .toList();
+    }
+    final job = member['job']?.toString();
+    return (job != null && job.isNotEmpty) ? [job] : const [];
+  }
+
+  /// DATA-CAST-2: episode count this crew member logged under [job] on an
+  /// aggregate_credits entry. Null for standard `credits` (no per-episode
+  /// concept) or if [job] doesn't match any of this member's aggregated
+  /// jobs.
+  int? _crewJobEpisodeCount(Map member, String job) {
+    final jobsJson = member['jobs'];
+    if (jobsJson is! List) return null;
+    for (final j in jobsJson) {
+      if (j is Map && j['job']?.toString() == job) {
+        return (j['episode_count'] as num?)?.toInt();
+      }
+    }
+    return null;
   }
 
   Map<String, List<WatchProviderInfo>> _mapWatchProvidersJson(
@@ -1655,6 +1771,45 @@ class TmdbMovieRepository implements MovieRepository {
       }
       final epVote = (ep['vote_average'] as num?)?.toDouble();
       final epRuntime = (ep['runtime'] as num?)?.toInt();
+
+      // DATA-CAST-4: `guest_stars` and `crew` are already present on every
+      // episode in this same season-detail payload -- no extra request.
+      List<MediaCastMember>? parseGuestStars(dynamic raw) {
+        if (raw is! List || raw.isEmpty) return null;
+        final result = <MediaCastMember>[];
+        for (final m in raw) {
+          if (m is! Map || m['name'] == null) continue;
+          final n = m['name'].toString().trim();
+          if (n.isEmpty) continue;
+          result.add(MediaCastMember(
+            id: m['id']?.toString() ?? '',
+            name: n,
+            character: m['character'] as String?,
+            profileUrl:
+                TmdbImageHelper.getCastHeadshotUrl(m['profile_path'] as String?),
+          ));
+        }
+        return result.isEmpty ? null : result;
+      }
+
+      List<MediaCastMember>? parseEpisodeCrew(dynamic raw) {
+        if (raw is! List || raw.isEmpty) return null;
+        final result = <MediaCastMember>[];
+        for (final m in raw) {
+          if (m is! Map || m['name'] == null) continue;
+          final n = m['name'].toString().trim();
+          if (n.isEmpty) continue;
+          result.add(MediaCastMember(
+            id: m['id']?.toString() ?? '',
+            name: n,
+            role: m['job'] as String?,
+            profileUrl:
+                TmdbImageHelper.getCastHeadshotUrl(m['profile_path'] as String?),
+          ));
+        }
+        return result.isEmpty ? null : result;
+      }
+
       return TvEpisode(
         id: epId,
         episodeNumber: epNum,
@@ -1665,6 +1820,8 @@ class TmdbMovieRepository implements MovieRepository {
         airDate: epAirDate,
         voteAverage: epVote,
         runtime: epRuntime,
+        guestStars: parseGuestStars(ep['guest_stars']),
+        crew: parseEpisodeCrew(ep['crew']),
       );
     }).toList();
 
