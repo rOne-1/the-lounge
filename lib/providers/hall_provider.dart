@@ -217,8 +217,9 @@ class HallNotifier extends Notifier<HallState> {
       await _storageService.saveHall(_prefs, hall);
     }
 
-    final stillActiveId =
-        halls.any((h) => h.id == state.activeHallId) ? state.activeHallId : halls.first.id;
+    final stillActiveId = halls.any((h) => h.id == state.activeHallId)
+        ? state.activeHallId
+        : halls.first.id;
     await _storageService.saveActiveHallId(_prefs, stillActiveId);
 
     state = state.copyWith(halls: halls, activeHallId: stillActiveId);
@@ -230,7 +231,46 @@ class HallNotifier extends Notifier<HallState> {
     } catch (_) {}
   }
 
-  Future<void> updateActiveHall(HallSpace Function(HallSpace current) updater) async {
+  /// "Reset Everything" (Settings' Reset Account) previously only cleared
+  /// mediaProvider's vestigial un-namespaced legacy keys plus its in-memory
+  /// state -- every Hall's real namespaced storage (`saveHall`'s domains,
+  /// custom folders, watch history) survived untouched in SharedPreferences
+  /// and silently reappeared on the next hall load or app restart, the same
+  /// staleness class [applyImportedHalls]'s own doc comment warns about.
+  /// Empties every hall's *content* in place while keeping each hall's own
+  /// identity (id/name/icon/theme/language lock) -- "erase all local data"
+  /// reads as watch data, not the Hall structure itself -- via the same
+  /// [saveHall] path [applyImportedHalls] already uses, then refreshes both
+  /// this provider's and mediaProvider's in-memory state the same way.
+  Future<void> resetAllHalls() async {
+    if (state.halls.isEmpty) return;
+
+    final emptiedHalls = state.halls.map((hall) {
+      return hall.copyWith(
+        domains: {
+          for (final domain in MediumDomain.values)
+            domain: const DomainArchive()
+        },
+        customFolders: [],
+        watchHistory: {},
+      );
+    }).toList();
+
+    for (final hall in emptiedHalls) {
+      await _storageService.saveHall(_prefs, hall);
+    }
+
+    state = state.copyWith(halls: emptiedHalls);
+    await ref.read(mediaProvider.notifier).loadForHall(state.activeHallId);
+
+    try {
+      ref.invalidate(discoverMoviesDeckProvider);
+      ref.invalidate(discoverTvDeckProvider);
+    } catch (_) {}
+  }
+
+  Future<void> updateActiveHall(
+      HallSpace Function(HallSpace current) updater) async {
     final current = state.activeHall;
     final updatedHall = updater(current);
 
@@ -245,7 +285,6 @@ class HallNotifier extends Notifier<HallState> {
       await _storageService.saveHall(_prefs, updatedHall);
     } catch (_) {}
   }
-
 }
 
 final hallProvider =

@@ -452,10 +452,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                           LoungeDialogAction(
                                             label: 'Export Backup',
                                             onPressed: () async {
-                                              final jsonString = ref
-                                                  .read(mediaProvider.notifier)
-                                                  .exportBackupJson(
-                                                      ambiance.id);
+                                              // Same comprehensive multi-hall
+                                              // v4 export as the main Export
+                                              // Backup button (BACKUP-1) --
+                                              // a safety-net backup offered
+                                              // right before a destructive
+                                              // reset must not silently omit
+                                              // the other Halls' data.
+                                              final storageService =
+                                                  HallStorageService();
+                                              final prefs = ref.read(
+                                                  sharedPreferencesProvider);
+                                              final jsonString = storageService
+                                                  .exportFullBackupJson(
+                                                halls: storageService
+                                                    .loadAllHallsSync(prefs),
+                                                activeHallId: storageService
+                                                    .getActiveHallId(prefs),
+                                                themeId: ambiance.id,
+                                              );
                                               await saveJsonFile(jsonString,
                                                   'the_lounge_backup.json');
                                             },
@@ -474,9 +489,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   if (shouldReset && context.mounted) {
                                     await _runBusy(
                                       'Resetting your data…',
-                                      () => ref
-                                          .read(mediaProvider.notifier)
-                                          .clearAllData(),
+                                      () async {
+                                        // clearAllData handles the legacy
+                                        // un-namespaced keys, skip-id memory,
+                                        // and an immediate discover-pool
+                                        // refresh; resetAllHalls handles the
+                                        // real per-Hall namespaced storage
+                                        // clearAllData never touched (which
+                                        // otherwise silently reappears on the
+                                        // next hall load / app restart).
+                                        await ref
+                                            .read(mediaProvider.notifier)
+                                            .clearAllData();
+                                        await ref
+                                            .read(hallProvider.notifier)
+                                            .resetAllHalls();
+                                      },
                                     );
                                     if (context.mounted) {
                                       LoungeToast.show(context,
