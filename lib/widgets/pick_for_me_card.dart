@@ -9,6 +9,7 @@ import '../providers/navigation_provider.dart';
 import '../screens/detail_screen.dart';
 import 'ambient_glow.dart';
 import 'media_image.dart';
+import 'pick_for_me_roulette_sheet.dart';
 import 'pressable_scale.dart';
 
 /// A feature card styled with Screening Room aesthetics (champagne gold accent border,
@@ -94,12 +95,14 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
       borderRadius: BorderRadius.circular(18),
       baseColor: context.ambianceColors.card.withValues(alpha: 0.9),
       border: Border.all(
-        color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.45 : 0.35),
+        color:
+            context.ambianceColors.acc.withValues(alpha: isDark ? 0.45 : 0.35),
         width: 1.2,
       ),
       boxShadow: [
         BoxShadow(
-          color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.08 : 0.05),
+          color: context.ambianceColors.acc
+              .withValues(alpha: isDark ? 0.08 : 0.05),
           blurRadius: 12,
           offset: const Offset(0, 4),
         )
@@ -114,7 +117,8 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.15 : 0.12),
+                  color: context.ambianceColors.acc
+                      .withValues(alpha: isDark ? 0.15 : 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -140,6 +144,13 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+              ),
+              // CRAFT-ROULETTE-1: opens the constraint-based roulette sheet
+              // -- additive, doesn't change this card's own existing
+              // tap-to-DetailScreen/Re-roll behavior for a quick pick.
+              PressableScale(
+                onTap: () => showPickForMeRouletteSheet(context),
+                child: Icon(Icons.tune_rounded, size: 16, color: subColor),
               ),
             ],
           ),
@@ -261,10 +272,12 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                                 vertical: 7,
                               ),
                               decoration: BoxDecoration(
-                                color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.15 : 0.12),
+                                color: context.ambianceColors.acc
+                                    .withValues(alpha: isDark ? 0.15 : 0.12),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.4 : 0.3),
+                                  color: context.ambianceColors.acc
+                                      .withValues(alpha: isDark ? 0.4 : 0.3),
                                 ),
                               ),
                               child: Row(
@@ -295,7 +308,8 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
                 ),
               );
             },
-            openBuilder: (context, _) => DetailScreen(id: selectedItem!.prefixedId),
+            openBuilder: (context, _) =>
+                DetailScreen(id: selectedItem!.prefixedId),
           ),
         ],
       ),
@@ -313,12 +327,14 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
       borderRadius: BorderRadius.circular(18),
       baseColor: context.ambianceColors.card.withValues(alpha: 0.9),
       border: Border.all(
-        color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.45 : 0.35),
+        color:
+            context.ambianceColors.acc.withValues(alpha: isDark ? 0.45 : 0.35),
         width: 1.2,
       ),
       boxShadow: [
         BoxShadow(
-          color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.08 : 0.05),
+          color: context.ambianceColors.acc
+              .withValues(alpha: isDark ? 0.08 : 0.05),
           blurRadius: 12,
           offset: const Offset(0, 4),
         )
@@ -331,7 +347,8 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.15 : 0.12),
+                  color: context.ambianceColors.acc
+                      .withValues(alpha: isDark ? 0.15 : 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -372,12 +389,12 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
           ),
           const SizedBox(height: 14),
           PressableScale(
-            onTap: () => ref
-                .read(navigationProvider.notifier)
-                .setTab(AppTab.discover),
+            onTap: () =>
+                ref.read(navigationProvider.notifier).setTab(AppTab.discover),
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
+              decoration: context.ambianceColors.primaryButtonDecoration
+                  .copyWith(borderRadius: BorderRadius.circular(999)),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
