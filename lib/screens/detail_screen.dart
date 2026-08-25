@@ -2805,25 +2805,6 @@ class SeasonsSectionWidget extends ConsumerStatefulWidget {
 
 class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
   int _selectedSeason = 1;
-  bool _isExpanded = false;
-
-  String _formatDate(DateTime dt) {
-    const months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec'
-    ];
-    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -2834,7 +2815,6 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
     final accColor = context.ambianceColors.acc;
-    final pillColor = context.ambianceColors.pill;
 
     final seasonsCount = widget.item.seasonsCount ?? 1;
 
@@ -2938,15 +2918,52 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
               children: List.generate(seasonsCount, (index) {
                 final seasonNum = index + 1;
                 final isSelected = seasonNum == _selectedSeason;
+
+                // CRAFT-EPISODE-2: long-press this pill to mark that
+                // season complete without first switching to it -- reuses
+                // the exact same guarded markSeasonWatched call the
+                // explicit "Mark season complete" button above already
+                // makes, generalized to any season (not just
+                // _selectedSeason) since tvShowSeasonsProvider's result
+                // already carries every season's episode data, not just
+                // the currently-viewed one.
+                final seasonData = allSeasonsAsync.value?.firstWhere(
+                  (s) => s.seasonNumber == seasonNum,
+                  orElse: () => TvSeason(
+                      id: 0,
+                      seasonNumber: seasonNum,
+                      name: '',
+                      episodes: const []),
+                );
+                final seasonComplete = ref
+                        .read(mediaProvider)
+                        .seasonEndDates[widget.item.id]?[seasonNum] !=
+                    null;
+                final canLongPressComplete = allSeasonsAsync.hasValue &&
+                    seasonData != null &&
+                    seasonData.episodes.isNotEmpty &&
+                    !seasonComplete;
+
                 return Padding(
                   padding: const EdgeInsets.only(right: 8.0),
                   child: PressableScale(
                     onTap: () {
                       setState(() {
                         _selectedSeason = seasonNum;
-                        _isExpanded = false;
                       });
                     },
+                    onLongPress: canLongPressComplete
+                        ? () {
+                            ref.read(mediaProvider.notifier).markSeasonWatched(
+                                  showId: widget.item.id,
+                                  seasonNumber: seasonNum,
+                                  showItem: widget.item,
+                                  seasons: allSeasonsAsync.value!,
+                                );
+                            LoungeToast.show(
+                                context, 'Season $seasonNum marked complete.');
+                          }
+                        : null,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 6),
@@ -3015,297 +3032,90 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
               );
             }
 
-            final bool hasMoreThan15 = allEpisodes.length > 15;
-            final visibleEpisodes = (hasMoreThan15 && !_isExpanded)
-                ? allEpisodes.take(15).toList()
-                : allEpisodes;
+            // CRAFT-EPISODE-1: 16:9 still-image horizontal carousel,
+            // replacing the old vertical list -- a horizontal scroller
+            // doesn't need the previous 15-episode cap/"Show all" expand
+            // affordance (it never grows the page's height regardless of
+            // episode count), so that's dropped along with the vertical
+            // list rather than ported over unchanged.
+            return SizedBox(
+              height: 186,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: allEpisodes.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final episode = allEpisodes[index];
+                  final isWatched =
+                      ref.read(mediaProvider.notifier).isEpisodeWatched(
+                            widget.item.id,
+                            episode.seasonNumber,
+                            episode.episodeNumber,
+                          );
+                  final isEpisodeUnaired = episode.airDate != null
+                      ? episode.airDate!.isAfter(DateTime.now())
+                      : (widget.item.releaseOrAirDate != null
+                          ? widget.item.releaseOrAirDate!
+                              .isAfter(DateTime.now())
+                          : false);
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: visibleEpisodes.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final episode = visibleEpisodes[index];
-                    final isWatched =
-                        ref.read(mediaProvider.notifier).isEpisodeWatched(
-                              widget.item.id,
-                              episode.seasonNumber,
-                              episode.episodeNumber,
-                            );
+                  void handleToggle() {
+                    final totalEpisodes = widget.item.episodesCount ??
+                        ((widget.item.seasonsCount ?? 1) * allEpisodes.length);
 
-                    return Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: phColor,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: isWatched ? accColor.withAlpha(128) : lineRgba,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 64,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: context.ambianceColors.card,
-                              borderRadius: BorderRadius.circular(6),
-                              image: episode.stillUrl != null
-                                  ? DecorationImage(
-                                      image: NetworkImage(episode.stillUrl!),
-                                      fit: BoxFit.cover,
-                                    )
-                                  : null,
-                            ),
-                            child: episode.stillUrl == null
-                                ? Icon(Icons.play_circle_outline,
-                                    size: 20, color: subColor)
-                                : null,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'E${episode.episodeNumber} · ${episode.name}',
-                                  style: AppThemes.safeGeist(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: inkColor,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  episode.airDate != null
-                                      ? 'Air date: ${_formatDate(episode.airDate!)}'
-                                      : 'Air date: TBA',
-                                  style: AppThemes.safeGeist(
-                                    fontSize: 11,
-                                    color: subColor,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                                if (episode.overview != null &&
-                                    episode.overview!.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    episode.overview!,
-                                    style: AppThemes.safeGeist(
-                                      fontSize: 11,
-                                      color: subColor,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                                // DATA-CAST-4: notable guest performers for
-                                // this specific episode, parsed from the
-                                // same season-detail payload -- no extra
-                                // request.
-                                if (episode.guestStars != null &&
-                                    episode.guestStars!.isNotEmpty) ...[
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    'Guest stars: ${episode.guestStars!.map((g) => g.name).join(', ')}',
-                                    style: AppThemes.safeGeist(
-                                      fontSize: 11,
-                                      color: accColor,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Interactive watched toggle checkmark icon button
-                          () {
-                            final isEpisodeUnaired = episode.airDate != null
-                                ? episode.airDate!.isAfter(DateTime.now())
-                                : (widget.item.releaseOrAirDate != null
-                                    ? widget.item.releaseOrAirDate!
-                                        .isAfter(DateTime.now())
-                                    : false);
-                            return Tooltip(
-                              message: isEpisodeUnaired
-                                  ? 'This episode has not aired yet.'
-                                  : (isWatched
-                                      ? 'Mark as unwatched'
-                                      : 'Mark as watched'),
-                              // SP-2: themed to match the app's dark chrome
-                              // instead of Flutter's plain light default
-                              // popup.
-                              decoration: BoxDecoration(
-                                color: context.ambianceColors.card2,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: context.ambianceColors.lineRgba),
-                              ),
-                              textStyle: AppThemes.safeGeist(
-                                  fontSize: 12,
-                                  color: context.ambianceColors.ink),
-                              child: Opacity(
-                                opacity: isEpisodeUnaired ? 0.4 : 1.0,
-                                child: StatusPulseRing(
-                                  isSelected: isWatched,
-                                  accentColor: accColor,
-                                  borderRadius: 999,
-                                  child: PressableScale(
-                                    onTap: isEpisodeUnaired
-                                        ? () {
-                                            LoungeToast.show(context,
-                                                'This episode has not aired yet.');
-                                          }
-                                        : () {
-                                            final totalEpisodes = widget
-                                                    .item.episodesCount ??
-                                                ((widget.item.seasonsCount ??
-                                                        1) *
-                                                    allEpisodes.length);
+                    final showId = widget.item.id;
+                    final seasonNum = episode.seasonNumber;
+                    final wasSeasonComplete = ref
+                            .read(mediaProvider)
+                            .seasonEndDates[showId]?[seasonNum] !=
+                        null;
 
-                                            final showId = widget.item.id;
-                                            final seasonNum =
-                                                episode.seasonNumber;
-                                            final wasSeasonComplete = ref
-                                                        .read(mediaProvider)
-                                                        .seasonEndDates[showId]
-                                                    ?[seasonNum] !=
-                                                null;
+                    ref.read(mediaProvider.notifier).toggleEpisodeWatched(
+                          showId: showId,
+                          seasonNumber: seasonNum,
+                          episodeNumber: episode.episodeNumber,
+                          showItem: widget.item,
+                          totalEpisodeCount: totalEpisodes,
+                          seasons: allSeasonsAsync.value,
+                        );
 
-                                            ref
-                                                .read(mediaProvider.notifier)
-                                                .toggleEpisodeWatched(
-                                                  showId: showId,
-                                                  seasonNumber: seasonNum,
-                                                  episodeNumber:
-                                                      episode.episodeNumber,
-                                                  showItem: widget.item,
-                                                  totalEpisodeCount:
-                                                      totalEpisodes,
-                                                  seasons:
-                                                      allSeasonsAsync.value,
-                                                );
+                    // PERS-RATE-1: auto-prompt the moment this specific
+                    // season (not necessarily the whole show) newly
+                    // completes.
+                    final isNowSeasonComplete = ref
+                            .read(mediaProvider)
+                            .seasonEndDates[showId]?[seasonNum] !=
+                        null;
+                    if (!wasSeasonComplete && isNowSeasonComplete) {
+                      final hasRating = findPrimaryWatchRecord(
+                            ref.read(mediaProvider).watchHistory,
+                            showId,
+                            seasonNum,
+                          ) !=
+                          null;
+                      if (!hasRating) {
+                        showLoungeRatingSheet(
+                          context,
+                          ref,
+                          item: widget.item,
+                          seasonNumber: seasonNum,
+                          isAutoPrompt: true,
+                        );
+                      }
+                    }
+                  }
 
-                                            // PERS-RATE-1: auto-prompt the
-                                            // moment this specific season
-                                            // (not necessarily the whole
-                                            // show) newly completes.
-                                            final isNowSeasonComplete = ref
-                                                        .read(mediaProvider)
-                                                        .seasonEndDates[showId]
-                                                    ?[seasonNum] !=
-                                                null;
-                                            if (!wasSeasonComplete &&
-                                                isNowSeasonComplete) {
-                                              final hasRating =
-                                                  findPrimaryWatchRecord(
-                                                        ref
-                                                            .read(mediaProvider)
-                                                            .watchHistory,
-                                                        showId,
-                                                        seasonNum,
-                                                      ) !=
-                                                      null;
-                                              if (!hasRating) {
-                                                showLoungeRatingSheet(
-                                                  context,
-                                                  ref,
-                                                  item: widget.item,
-                                                  seasonNumber: seasonNum,
-                                                  isAutoPrompt: true,
-                                                );
-                                              }
-                                            }
-                                          },
-                                    child: AnimatedContainer(
-                                      duration: AppPhysics.houseSpringDuration,
-                                      curve: AppPhysics.houseSpringCurve,
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: isWatched
-                                            ? accColor
-                                            : Colors.transparent,
-                                        border: Border.all(
-                                          color: isWatched
-                                              ? accColor
-                                              : subColor.withAlpha(128),
-                                        ),
-                                      ),
-                                      child: AnimatedSwitcher(
-                                        duration:
-                                            AppPhysics.houseSpringDuration,
-                                        switchInCurve:
-                                            AppPhysics.houseSpringCurve,
-                                        switchOutCurve: Curves.easeOut,
-                                        transitionBuilder: (child, animation) =>
-                                            ScaleTransition(
-                                          scale: animation,
-                                          child: child,
-                                        ),
-                                        child: Icon(
-                                          isWatched
-                                              ? Icons.check
-                                              : Icons.check_outlined,
-                                          key: ValueKey(
-                                              'episode-check-$isWatched'),
-                                          size: 16,
-                                          color: isWatched
-                                              ? (Theme.of(context)
-                                                  .colorScheme
-                                                  .onPrimary)
-                                              : subColor,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            );
-                          }(),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                if (hasMoreThan15 && !_isExpanded) ...[
-                  const SizedBox(height: 12),
-                  PressableScale(
-                    onTap: () {
-                      setState(() {
-                        _isExpanded = true;
-                      });
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: pillColor,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: lineRgba),
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        'Show all ${allEpisodes.length} episodes',
-                        style: AppThemes.safeGeist(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: accColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
+                  return _EpisodeCard(
+                    episode: episode,
+                    isWatched: isWatched,
+                    isUnaired: isEpisodeUnaired,
+                    onTap: isEpisodeUnaired
+                        ? () => LoungeToast.show(
+                            context, 'This episode has not aired yet.')
+                        : handleToggle,
+                  );
+                },
+              ),
             );
           },
           loading: () => const Padding(
@@ -3324,6 +3134,169 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// CRAFT-EPISODE-1: one 16:9 still-image card in `SeasonsSectionWidget`'s
+/// horizontal episode carousel. Watched episodes get a dimmed image and a
+/// gold checkmark badge (`AmbianceColors.starRating`, the same
+/// gold/amber-in-every-theme token `_buildRatingBadge` already uses for
+/// its star rating pill -- not a new hardcoded gold). Tapping the whole
+/// card toggles watched (reusing exactly the guarded
+/// toggleEpisodeWatched/season-completion/auto-rating-prompt call
+/// [SeasonsSectionWidget] already made from its old per-row checkmark
+/// button); an unaired episode taps into an explanatory toast instead.
+class _EpisodeCard extends StatelessWidget {
+  final TvEpisode episode;
+  final bool isWatched;
+  final bool isUnaired;
+  final VoidCallback onTap;
+
+  const _EpisodeCard({
+    required this.episode,
+    required this.isWatched,
+    required this.isUnaired,
+    required this.onTap,
+  });
+
+  String _formatDate(DateTime dt) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[dt.month - 1]} ${dt.day}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.ambianceColors;
+    final subtitle = [
+      if (episode.runtime != null) '${episode.runtime} min',
+      episode.airDate != null ? _formatDate(episode.airDate!) : 'TBA',
+    ].join(' · ');
+
+    return SizedBox(
+      width: 210,
+      child: Tooltip(
+        message: isUnaired
+            ? 'This episode has not aired yet.'
+            : (isWatched ? 'Mark as unwatched' : 'Mark as watched'),
+        decoration: BoxDecoration(
+          color: colors.card2,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: colors.lineRgba),
+        ),
+        textStyle: AppThemes.safeGeist(fontSize: 12, color: colors.ink),
+        child: PressableScale(
+          onTap: onTap,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      Container(
+                        color: colors.card,
+                        child: episode.stillUrl != null
+                            ? CachedNetworkImage(
+                                imageUrl: episode.stillUrl!,
+                                fit: BoxFit.cover,
+                              )
+                            : Icon(Icons.movie_creation_outlined,
+                                size: 26, color: colors.sub),
+                      ),
+                      if (isWatched)
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.scrim.withValues(alpha: 0.55),
+                          ),
+                        ),
+                      if (isUnaired)
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: colors.scrim.withValues(alpha: 0.35),
+                          ),
+                        ),
+                      Positioned(
+                        bottom: 6,
+                        left: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: colors.scrim.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'E${episode.episodeNumber}',
+                            style: AppThemes.safeGeist(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (isWatched)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: AnimatedContainer(
+                            duration: AppPhysics.houseSpringDuration,
+                            curve: AppPhysics.houseSpringCurve,
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: colors.starRating,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.check,
+                                size: 14, color: Colors.black),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Opacity(
+                opacity: isWatched ? 0.6 : 1.0,
+                child: Text(
+                  episode.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppThemes.safeGeist(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: colors.ink,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppThemes.safeGeist(fontSize: 11, color: colors.sub),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -327,14 +327,16 @@ void main() {
       // Verify Seasons & Episodes section is rendered
       expect(find.text('Seasons & Episodes'), findsOneWidget);
 
-      // Verify checkmark icon buttons are rendered for episodes
-      final checkmarkIcons = find.byIcon(Icons.check_outlined);
-      expect(checkmarkIcons, findsAtLeastNWidgets(1));
+      // CRAFT-EPISODE-1: episodes are now 16:9 cards in a horizontal
+      // carousel (not per-row checkmark icon buttons) -- the whole card is
+      // tappable to toggle watched. "E1" is the first episode's number
+      // badge, a stable anchor to tap.
+      final firstEpisodeBadge = find.text('E1');
+      expect(firstEpisodeBadge, findsOneWidget);
 
-      // Tap first episode watched toggle button
-      await tester.scrollUntilVisible(checkmarkIcons.first, 100, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(firstEpisodeBadge, 100, scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();
-      await tester.tap(checkmarkIcons.first);
+      await tester.tap(firstEpisodeBadge);
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 500));
 
