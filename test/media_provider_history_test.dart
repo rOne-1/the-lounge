@@ -36,7 +36,8 @@ void main() {
 
     test('addWatchRecord appends to a new media ID history list', () {
       final notifier = container.read(mediaProvider.notifier);
-      final record = WatchRecord(rating: PersonalRating.loved, isFirstWatch: true);
+      final record =
+          WatchRecord(rating: PersonalRating.loved, isFirstWatch: true);
 
       notifier.addWatchRecord(movie1.id, record);
 
@@ -45,7 +46,8 @@ void main() {
       expect(state.watchHistory[movie1.id]!.first.rating, PersonalRating.loved);
     });
 
-    test('addWatchRecord appends a rewatch without disturbing the first watch', () {
+    test('addWatchRecord appends a rewatch without disturbing the first watch',
+        () {
       final notifier = container.read(mediaProvider.notifier);
       final first = WatchRecord(
         date: DateTime(2025, 1, 1),
@@ -98,7 +100,8 @@ void main() {
         WatchRecord(rating: PersonalRating.loved),
       );
 
-      expect(container.read(mediaProvider).watchHistory[movie1.id], hasLength(1));
+      expect(
+          container.read(mediaProvider).watchHistory[movie1.id], hasLength(1));
       expect(
         container.read(mediaProvider).watchHistory[movie1.id]!.first.rating,
         isNull,
@@ -119,17 +122,21 @@ void main() {
       expect(history.first.recordedAt, keepAt);
     });
 
-    test('deleteWatchRecord removes the media ID entirely once its list empties', () {
+    test(
+        'deleteWatchRecord removes the media ID entirely once its list empties',
+        () {
       final notifier = container.read(mediaProvider.notifier);
       final at = DateTime(2026, 1, 1);
       notifier.addWatchRecord(movie1.id, WatchRecord(recordedAt: at));
 
       notifier.deleteWatchRecord(movie1.id, at);
 
-      expect(container.read(mediaProvider).watchHistory.containsKey(movie1.id), isFalse);
+      expect(container.read(mediaProvider).watchHistory.containsKey(movie1.id),
+          isFalse);
     });
 
-    test('watchHistory persists to SharedPreferences and survives a reload', () async {
+    test('watchHistory persists to SharedPreferences and survives a reload',
+        () async {
       final notifier = container.read(mediaProvider.notifier);
       notifier.addWatchRecord(
         movie1.id,
@@ -154,7 +161,9 @@ void main() {
       expect(restoredHistory.first.isFirstWatch, isTrue);
     });
 
-    test('removeFromWatchedList does not delete watchHistory (personal memories persist)', () {
+    test(
+        'removeFromWatchedList does not delete watchHistory (personal memories persist)',
+        () {
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchedList(movie1);
       notifier.addWatchRecord(
@@ -164,10 +173,12 @@ void main() {
 
       notifier.removeFromWatchedList(movie1.id);
 
-      expect(container.read(mediaProvider).watchHistory[movie1.id], hasLength(1));
+      expect(
+          container.read(mediaProvider).watchHistory[movie1.id], hasLength(1));
     });
 
-    group('outstanding_issues_notepad.md item 61: id-normalization mismatch', () {
+    group('outstanding_issues_notepad.md item 61: id-normalization mismatch',
+        () {
       // addToWatchedList normalizes a MediaItem's id (movie_/tv_ prefix)
       // before storing on a shelf; addWatchRecord/updateWatchRecord/
       // deleteWatchRecord take a bare id with no MediaType to normalize
@@ -184,44 +195,66 @@ void main() {
         genres: [],
       );
 
-      test('addWatchRecord resolves a raw id to the shelf-normalized key already on watchedList', () {
+      test(
+          'addWatchRecord resolves a raw id to the shelf-normalized key already on watchedList',
+          () {
         final notifier = container.read(mediaProvider.notifier);
-        notifier.addToWatchedList(rawItem); // stores under 'movie_unprefixed-movie-id'
+        notifier.addToWatchedList(
+            rawItem); // stores under 'movie_unprefixed-movie-id'
 
-        notifier.addWatchRecord(rawId, WatchRecord(rating: PersonalRating.loved, isFirstWatch: true));
+        notifier.addWatchRecord(rawId,
+            WatchRecord(rating: PersonalRating.loved, isFirstWatch: true));
 
         final state = container.read(mediaProvider);
         expect(state.watchHistory.containsKey(rawId), isFalse);
         expect(state.watchHistory['movie_$rawId'], hasLength(1));
       });
 
-      test('updateWatchRecord and deleteWatchRecord resolve the same raw id consistently', () {
+      test(
+          'updateWatchRecord and deleteWatchRecord resolve the same raw id consistently',
+          () {
         final notifier = container.read(mediaProvider.notifier);
         notifier.addToWatchedList(rawItem);
         final recordedAt = DateTime(2026, 1, 1);
-        notifier.addWatchRecord(rawId, WatchRecord(rating: PersonalRating.okay, recordedAt: recordedAt));
+        notifier.addWatchRecord(rawId,
+            WatchRecord(rating: PersonalRating.okay, recordedAt: recordedAt));
 
-        notifier.updateWatchRecord(rawId, recordedAt, WatchRecord(rating: PersonalRating.loved, recordedAt: recordedAt));
+        notifier.updateWatchRecord(rawId, recordedAt,
+            WatchRecord(rating: PersonalRating.loved, recordedAt: recordedAt));
         expect(
-          container.read(mediaProvider).watchHistory['movie_$rawId']!.first.rating,
+          container
+              .read(mediaProvider)
+              .watchHistory['movie_$rawId']!
+              .first
+              .rating,
           PersonalRating.loved,
         );
 
         notifier.deleteWatchRecord(rawId, recordedAt);
-        expect(container.read(mediaProvider).watchHistory.containsKey('movie_$rawId'), isFalse);
+        expect(
+            container
+                .read(mediaProvider)
+                .watchHistory
+                .containsKey('movie_$rawId'),
+            isFalse);
       });
 
-      test('addWatchRecord for a title on no shelf at all still writes under the raw id (orphan case)', () {
+      test(
+          'addWatchRecord for a title on no shelf at all still writes under the raw id (orphan case)',
+          () {
         final notifier = container.read(mediaProvider.notifier);
 
-        notifier.addWatchRecord(rawId, WatchRecord(rating: PersonalRating.liked, isFirstWatch: true));
+        notifier.addWatchRecord(rawId,
+            WatchRecord(rating: PersonalRating.liked, isFirstWatch: true));
 
         expect(container.read(mediaProvider).watchHistory[rawId], hasLength(1));
       });
     });
   });
 
-  group('outstanding_issues_notepad.md item 61 (2nd wave): isEpisodeWatched / removeFromAllLists', () {
+  group(
+      'outstanding_issues_notepad.md item 61 (2nd wave): isEpisodeWatched / removeFromAllLists',
+      () {
     // Same class of bug as the watchHistory case above, found while fixing
     // surfaced-but-deferred bugs for stability before shipping to
     // testers: isEpisodeWatched/removeFromAllLists take a bare id with no
@@ -250,7 +283,9 @@ void main() {
 
     tearDown(() => container.dispose());
 
-    test('isEpisodeWatched resolves a raw id to the shelf-normalized key for a watched episode', () {
+    test(
+        'isEpisodeWatched resolves a raw id to the shelf-normalized key for a watched episode',
+        () {
       final notifier = container.read(mediaProvider.notifier);
       // toggleEpisodeWatched itself normalizes showItem before deriving
       // showId, so watchedEpisodes ends up keyed 'tv_unprefixed-tv-id'
@@ -266,14 +301,18 @@ void main() {
       expect(notifier.isEpisodeWatched(rawId, 1, 2), isFalse);
     });
 
-    test('isEpisodeWatched resolves a raw id already fully in watchedList (whole-show shortcut)', () {
+    test(
+        'isEpisodeWatched resolves a raw id already fully in watchedList (whole-show shortcut)',
+        () {
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchedList(rawShow); // stores under 'tv_unprefixed-tv-id'
 
       expect(notifier.isEpisodeWatched(rawId, 1, 1), isTrue);
     });
 
-    test('removeFromAllLists resolves a raw id and actually clears every list, not a silent no-op', () {
+    test(
+        'removeFromAllLists resolves a raw id and actually clears every list, not a silent no-op',
+        () {
       final notifier = container.read(mediaProvider.notifier);
       // The no-seasons-data fallback in addToWatchedList optimistically
       // populates watchedEpisodes too (an estimated episode set), so this
@@ -326,7 +365,9 @@ void main() {
       expect(json, contains('endDates'));
     });
 
-    test('round-trip: export then import into a fresh container restores watchHistory and dates', () async {
+    test(
+        'round-trip: export then import into a fresh container restores watchHistory and dates',
+        () async {
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchedList(movie1);
       notifier.addWatchRecord(
@@ -359,7 +400,9 @@ void main() {
       expect(state.endDates[movie1.id], isNotNull);
     });
 
-    test('legacy version-1 backups (pre-Personalization Epic) still import successfully', () async {
+    test(
+        'legacy version-1 backups (pre-Personalization Epic) still import successfully',
+        () async {
       final legacyBackup = '''
       {
         "version": 1,
@@ -388,7 +431,8 @@ void main() {
     test('clearAllData wipes watchHistory and derived dates', () async {
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchedList(movie1);
-      notifier.addWatchRecord(movie1.id, WatchRecord(rating: PersonalRating.loved));
+      notifier.addWatchRecord(
+          movie1.id, WatchRecord(rating: PersonalRating.loved));
 
       await notifier.clearAllData();
 
