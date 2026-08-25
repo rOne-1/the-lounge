@@ -43,11 +43,6 @@ void main() {
   );
 
   group('PERS-SORT-1: sortArchiveShelf', () {
-    test('dateAdded reverses insertion order (most-recently-added first)', () {
-      final items = [action1, action2, comedy1];
-      expect(sortArchiveShelf(items, ArchiveSortOption.dateAdded), [comedy1, action2, action1]);
-    });
-
     test('weightedRating sorts descending by weighted rating', () {
       final sorted = sortArchiveShelf([comedy1, action1, action2], ArchiveSortOption.weightedRating);
       // action1 has the highest raw rating and highest vote count, so it

@@ -4,7 +4,6 @@ import 'weighted_rating.dart';
 
 /// PERS-SORT-1 / SORT-1: sort options offered on archive shelf screens (Watchlist/Saved/Watched/etc).
 enum ArchiveSortOption {
-  dateAdded('Date Added'),
   lastAdded('Last Added'),
   weightedRating('Top Rated'),
   releaseDate('Release Date');
@@ -38,15 +37,15 @@ DateTime getCollectionLastAdded(List<MediaItem> items) {
 /// quality.
 const double _archiveWeightedRatingMinVotes = 50.0;
 
-/// Sorts [items] per [option]. [items] is assumed to already be in the
-/// shelf's natural insertion order (oldest-added-first, the order
-/// `Map<String, MediaItem>.values` yields for the app's LinkedHashMap-backed
-/// status shelves) -- `dateAdded` uses that directly rather than needing a
-/// separate persisted timestamp per title.
+/// Sorts [items] per [option].
+///
+/// `dateAdded` (insertion-order-based, no real timestamp) was removed --
+/// too similar to `lastAdded` in practice, and strictly less meaningful
+/// than it (falls back to `addedDate ?? releaseOrAirDate` where `dateAdded`
+/// had no fallback at all, just whatever order the shelf's backing map
+/// happened to hold).
 List<MediaItem> sortArchiveShelf(List<MediaItem> items, ArchiveSortOption option) {
   switch (option) {
-    case ArchiveSortOption.dateAdded:
-      return items.reversed.toList(); // most-recently-added first
     case ArchiveSortOption.lastAdded:
       final sorted = List<MediaItem>.from(items)
         ..sort((a, b) {

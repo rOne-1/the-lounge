@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import '../providers/archive_view_state_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
@@ -46,8 +47,13 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
   late Animation<Offset> _slide;
   late Animation<double> _scale;
 
-  // PERS-SORT-1: sort/group selection is local to this screen instance
-  ArchiveSortOption _sort = ArchiveSortOption.dateAdded;
+  // PERS-SORT-2: sort/group selection now lives in archiveViewStateProvider
+  // so it survives navigating away from and back to Archive -- these fields
+  // are re-synced from that provider at the top of every build() and are
+  // otherwise read exactly as before throughout this class. Not
+  // final/getters specifically so the rest of this file (30+ read sites)
+  // needed zero changes beyond the sync itself.
+  ArchiveSortOption _sort = ArchiveSortOption.lastAdded;
   ArchiveGroupOption _group = ArchiveGroupOption.none;
   bool _watchedSortByRating = false;
   bool _cleanupBannerDismissed = false;
@@ -129,6 +135,16 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
   @override
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
+    // PERS-SORT-2: re-synced from the provider on every build so this
+    // screen's sort/group selection survives being disposed and recreated
+    // (e.g. leaving Archive and coming back), instead of resetting to
+    // defaults the way local State did.
+    final viewState = ref.watch(archiveViewStateProvider);
+    _sort = viewState.sort;
+    _group = viewState.group;
+    _sortAscending = viewState.sortAscending;
+    _watchedSortByRating = viewState.watchedSortByRating;
+    _watchedGroupByCollection = viewState.watchedGroupByCollection;
     final mediaState = ref.watch(mediaProvider);
     final navState = ref.watch(navigationProvider);
     final activeType =
@@ -252,71 +268,102 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
   /// dropdowns (which apply to every shelf) rather than folding them into
   /// [ArchiveSortOption]/[ArchiveGroupOption], since neither one is a
   /// meaningful choice on any other shelf.
+  /// A small pill-shaped toggle button shared by every Watched-only toolbar
+  /// control ("My Rating", "Group by Collection") across both
+  /// [_buildWatchedToolbarExtras] and [_buildWatchedContent]'s own toolbar --
+  /// pulled out specifically so "Group by Collection" can never again exist
+  /// in only one of the two places and strand the user unable to turn it
+  /// back off once active (the bug this was fixed for).
+  Widget _buildPillToggle({
+    required Key? key,
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+    required AmbianceColors colors,
+  }) {
+    return PressableScale(
+      key: key,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? colors.acc.withValues(alpha: 0.14) : colors.pill,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isActive ? colors.acc : colors.lineRgba,
+            width: isActive ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: isActive ? colors.acc : colors.sub),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: AppThemes.safeGeist(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isActive ? colors.acc : colors.sub,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMyRatingToggle(AmbianceColors colors) => _buildPillToggle(
+        key: const ValueKey('watched_my_rating_toggle'),
+        icon: Icons.star_rounded,
+        label: 'My Rating',
+        isActive: _watchedSortByRating,
+        onTap: () => ref.read(archiveViewStateProvider.notifier).toggleWatchedSortByRating(),
+        colors: colors,
+      );
+
+  Widget _buildGroupByCollectionToggle(AmbianceColors colors) => _buildPillToggle(
+        key: const ValueKey('watched_group_by_collection_toggle'),
+        icon: Icons.collections_bookmark_outlined,
+        label: 'Group by Collection',
+        isActive: _watchedGroupByCollection,
+        onTap: () => ref.read(archiveViewStateProvider.notifier).toggleWatchedGroupByCollection(),
+        colors: colors,
+      );
+
   Widget _buildWatchedToolbarExtras(AmbianceColors colors) {
     return Row(
       children: [
-        PressableScale(
-          onTap: () => setState(() => _watchedSortByRating = !_watchedSortByRating),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: _watchedSortByRating ? colors.acc.withValues(alpha: 0.14) : colors.pill,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _watchedSortByRating ? colors.acc : colors.lineRgba,
-                width: _watchedSortByRating ? 1.5 : 1.0,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.star_rounded, size: 14, color: _watchedSortByRating ? colors.acc : colors.sub),
-                const SizedBox(width: 4),
-                Text(
-                  'My Rating',
-                  style: AppThemes.safeGeist(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _watchedSortByRating ? colors.acc : colors.sub,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _buildMyRatingToggle(colors),
         const SizedBox(width: 8),
-        PressableScale(
-          key: const ValueKey('watched_group_by_collection_toggle'),
-          onTap: () => setState(() => _watchedGroupByCollection = !_watchedGroupByCollection),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            decoration: BoxDecoration(
-              color: _watchedGroupByCollection ? colors.acc.withValues(alpha: 0.14) : colors.pill,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _watchedGroupByCollection ? colors.acc : colors.lineRgba,
-                width: _watchedGroupByCollection ? 1.5 : 1.0,
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.collections_bookmark_outlined,
-                    size: 14, color: _watchedGroupByCollection ? colors.acc : colors.sub),
-                const SizedBox(width: 4),
-                Text(
-                  'Group by Collection',
-                  style: AppThemes.safeGeist(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: _watchedGroupByCollection ? colors.acc : colors.sub,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _buildGroupByCollectionToggle(colors),
       ],
+    );
+  }
+
+  /// ARCHIVE-SORT-1: ascending/descending toggle, applies to every sort
+  /// option and to every shelf (including collection clusters) -- shared so
+  /// it's never present in the standard toolbar but missing from Watched's
+  /// collection-grouped one, the same "control that always applies but only
+  /// exists in one of two toolbars" bug "Group by Collection" had.
+  Widget _buildSortDirectionToggle(AmbianceColors colors) {
+    return PressableScale(
+      key: const ValueKey('archive_sort_direction_toggle'),
+      onTap: () => ref.read(archiveViewStateProvider.notifier).toggleSortAscending(),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: colors.pill,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.lineRgba),
+        ),
+        child: Icon(
+          _sortAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+          size: 16,
+          color: colors.acc,
+        ),
+      ),
     );
   }
 
@@ -328,35 +375,19 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
           child: LoungeDropdown<ArchiveSortOption>(
             value: _sort,
             hintText: 'Sort',
-            isActive: _sort != ArchiveSortOption.dateAdded,
+            isActive: _sort != ArchiveSortOption.lastAdded,
             items: ArchiveSortOption.values
                 .map((o) => LoungeDropdownItem(value: o, label: o.label))
                 .toList(),
             onChanged: (v) {
-              if (v != null) setState(() => _sort = v);
+              if (v != null) ref.read(archiveViewStateProvider.notifier).setSort(v);
             },
           ),
         ),
         const SizedBox(width: 8),
         // ARCHIVE-SORT-1: ascending/descending toggle, applies to every sort
         // option above and to every shelf (including collection clusters).
-        PressableScale(
-          key: const ValueKey('archive_sort_direction_toggle'),
-          onTap: () => setState(() => _sortAscending = !_sortAscending),
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: colors.pill,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: colors.lineRgba),
-            ),
-            child: Icon(
-              _sortAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
-              size: 16,
-              color: colors.acc,
-            ),
-          ),
-        ),
+        _buildSortDirectionToggle(colors),
         const SizedBox(width: 8),
         Expanded(
           child: LoungeDropdown<ArchiveGroupOption>(
@@ -367,7 +398,7 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                 .map((o) => LoungeDropdownItem(value: o, label: o.label))
                 .toList(),
             onChanged: (v) {
-              if (v != null) setState(() => _group = v);
+              if (v != null) ref.read(archiveViewStateProvider.notifier).setGroup(v);
             },
           ),
         ),
@@ -671,10 +702,7 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
         ..addAll(sortedStandalone);
     } else if (_sort == ArchiveSortOption.lastAdded) {
       // ARCHIVE-SORT-1: cluster order (and item order within each cluster)
-      // by explicit addedDate/releaseDate timestamps -- distinct from
-      // dateAdded below, which uses insertion order instead. Previously
-      // these two options shared this exact branch, so choosing between
-      // them had no effect at all.
+      // by explicit addedDate/releaseDate timestamps.
       collectionEntries.sort((a, b) {
         final dateA = getCollectionLastAdded(a.value);
         final dateB = getCollectionLastAdded(b.value);
@@ -698,23 +726,6 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
         if (bd == null) return -1;
         return bd.compareTo(ad);
       });
-    } else if (_sort == ArchiveSortOption.dateAdded) {
-      // ARCHIVE-SORT-1: distinct from lastAdded above -- `items` arrives in
-      // the shelf's natural insertion order (same invariant
-      // sortArchiveShelf's flat dateAdded case relies on), so a cluster's
-      // recency is its highest-indexed (most recently added) member.
-      final indexOf = <String, int>{
-        for (var i = 0; i < items.length; i++) items[i].id: i,
-      };
-      collectionEntries.sort((a, b) {
-        final maxA = a.value.map((m) => indexOf[m.id] ?? 0).reduce((x, y) => x > y ? x : y);
-        final maxB = b.value.map((m) => indexOf[m.id] ?? 0).reduce((x, y) => x > y ? x : y);
-        return maxB.compareTo(maxA);
-      });
-      for (final entry in collectionEntries) {
-        entry.value.sort((a, b) => (indexOf[b.id] ?? 0).compareTo(indexOf[a.id] ?? 0));
-      }
-      standaloneItems.sort((a, b) => (indexOf[b.id] ?? 0).compareTo(indexOf[a.id] ?? 0));
     } else {
       for (final entry in collectionEntries) {
         final sorted = sortArchiveShelf(entry.value, _sort);
@@ -769,52 +780,39 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                 child: LoungeDropdown<ArchiveSortOption>(
                   value: _sort,
                   hintText: 'Sort',
-                  isActive: _sort != ArchiveSortOption.dateAdded && _sort != ArchiveSortOption.lastAdded,
+                  isActive: _sort != ArchiveSortOption.lastAdded,
                   items: ArchiveSortOption.values
                       .map((o) => LoungeDropdownItem(value: o, label: o.label))
                       .toList(),
                   onChanged: (v) {
                     if (v != null) {
-                      setState(() {
-                        _sort = v;
-                        _watchedSortByRating = false;
-                      });
+                      ref.read(archiveViewStateProvider.notifier).setSortClearingRatingToggle(v);
                     }
                   },
                 ),
               ),
               const SizedBox(width: 8),
-              PressableScale(
-                onTap: () => setState(() => _watchedSortByRating = !_watchedSortByRating),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: _watchedSortByRating ? colors.acc.withValues(alpha: 0.14) : colors.pill,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: _watchedSortByRating ? colors.acc : colors.lineRgba,
-                      width: _watchedSortByRating ? 1.5 : 1.0,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.star_rounded, size: 14, color: _watchedSortByRating ? colors.acc : colors.sub),
-                      const SizedBox(width: 4),
-                      Text(
-                        'My Rating',
-                        style: AppThemes.safeGeist(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: _watchedSortByRating ? colors.acc : colors.sub,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (watchedGroupKeys.length > 1) ...[
-                const SizedBox(width: 8),
+              // ARCHIVE-SORT-1: this toggle applies here exactly as much as
+              // on the standard toolbar -- previously only the standard one
+              // had it, so switching to collection view silently lost the
+              // ability to flip sort direction, same class of bug as
+              // "Group by Collection" going missing from this same toolbar.
+              _buildSortDirectionToggle(colors),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _buildMyRatingToggle(colors),
+              // BUG FIX: previously this toolbar had no way to turn
+              // "Group by Collection" back off once active -- the standard
+              // toolbar's toggle was the only one, and switching to this
+              // grouped view replaces that entire toolbar, stranding the
+              // user until the screen was torn down and rebuilt.
+              _buildGroupByCollectionToggle(colors),
+              if (watchedGroupKeys.length > 1)
                 PressableScale(
                   onTap: () {
                     final collapseAll = !_watchedAllCollapsed;
@@ -856,7 +854,6 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                     ),
                   ),
                 ),
-              ],
             ],
           ),
           const SizedBox(height: 12),
