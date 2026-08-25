@@ -9,6 +9,7 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
+import 'package:the_lounge/models/media_collection_detail.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/widgets/pressable_scale.dart';
@@ -846,6 +847,116 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     });
   });
+
+  group('DATA-FRAN-1/2: franchise banner completion gauge', () {
+    final franchisePart = MediaItem(
+      id: 'movie-franchise-part',
+      title: 'Saga Part Two',
+      type: MediaType.movie,
+      rating: 8.0,
+      overview: '',
+      genres: const [],
+      belongsToCollection: const MediaCollection(id: 55, name: 'The Saga'),
+    );
+
+    testWidgets(
+        'the item being viewed is in the library: fetches the collection and shows the gauge',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _CountingCollectionRepository(
+          {'movie-franchise-part': franchisePart});
+
+      final container = ProviderContainer(overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        movieRepositoryProvider.overrideWithValue(repo),
+      ]);
+      addTearDown(container.dispose);
+      // The viewed item itself is the "franchise part in the library"
+      // signal that gates the collection fetch.
+      container.read(mediaProvider.notifier).addToWatchedList(franchisePart);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-franchise-part'),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('1 of 2 Watched (50%)'), findsOneWidget);
+      expect(repo.collectionDetailsCallCount, greaterThan(0));
+    });
+
+    testWidgets(
+        'the item being viewed is NOT in the library: never fetches the collection or shows a gauge',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = _CountingCollectionRepository(
+          {'movie-franchise-part': franchisePart});
+
+      final container = ProviderContainer(overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        movieRepositoryProvider.overrideWithValue(repo),
+      ]);
+      addTearDown(container.dispose);
+      // Deliberately not added to any shelf this time.
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(
+            home: DetailScreen(id: 'movie-franchise-part'),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Part of the The Saga'), findsOneWidget);
+      expect(find.textContaining('Watched ('), findsNothing);
+      expect(repo.collectionDetailsCallCount, equals(0),
+          reason:
+              'a title not in the library must never trigger a full collection fetch (the "storm" DATA-FRAN-1 guards against)');
+    });
+  });
+}
+
+class _CountingCollectionRepository extends MockDetailRepository {
+  int collectionDetailsCallCount = 0;
+
+  _CountingCollectionRepository(super.items);
+
+  @override
+  Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) async {
+    collectionDetailsCallCount++;
+    return const MediaCollectionDetail(
+      id: 55,
+      name: 'The Saga',
+      parts: [
+        MediaItem(
+          id: 'movie-franchise-part',
+          title: 'Saga Part Two',
+          type: MediaType.movie,
+          rating: 8.0,
+          overview: '',
+          genres: [],
+        ),
+        MediaItem(
+          id: 'movie-franchise-part-3',
+          title: 'Saga Part Three',
+          type: MediaType.movie,
+          rating: 8.0,
+          overview: '',
+          genres: [],
+        ),
+      ],
+    );
+  }
 }
 
 

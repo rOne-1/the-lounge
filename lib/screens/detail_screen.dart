@@ -244,7 +244,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   _buildGenreChips(context, ref, item, isDark),
                 ],
                 if (item.belongsToCollection != null)
-                  _buildCollectionBanner(context, item, isDark),
+                  _buildCollectionBanner(context, ref, item, isDark),
                 const SizedBox(height: 18),
                 _buildActionButtons(context, ref, item, isDark),
                 const SizedBox(height: 22),
@@ -353,7 +353,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                           _buildGenreChips(paneContext, ref, item, isDark),
                         ],
                         if (item.belongsToCollection != null)
-                          _buildCollectionBanner(paneContext, item, isDark),
+                          _buildCollectionBanner(paneContext, ref, item, isDark),
                         const SizedBox(height: 24),
                         _buildActionButtons(paneContext, ref, item, isDark),
                         const SizedBox(height: 24),
@@ -863,7 +863,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 
   Widget _buildCollectionBanner(
-      BuildContext context, MediaItem item, bool isDark) {
+      BuildContext context, WidgetRef ref, MediaItem item, bool isDark) {
     final collection = item.belongsToCollection;
     if (collection == null) return const SizedBox.shrink();
 
@@ -872,6 +872,40 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final cardBg = context.ambianceColors.card;
 
     final imageUrl = collection.backdropUrl ?? collection.posterUrl;
+
+    // DATA-FRAN-1: only fetch the full collection (its parts list) when
+    // THIS item itself sits on one of the user's shelves -- the item is
+    // trivially a part of its own collection, so that alone is a real
+    // "franchise part in the library" signal without needing to already
+    // know the collection's other part ids. Browsing a title's detail from
+    // Discover/Search (not in the library) never triggers this fetch,
+    // which is what actually bounds this against a collection-fetch storm
+    // across every random title glanced at.
+    final mediaState = ref.watch(mediaProvider);
+    final isInLibrary = mediaState.watchlist.containsKey(item.prefixedId) ||
+        mediaState.maybeList.containsKey(item.prefixedId) ||
+        mediaState.watchedList.containsKey(item.prefixedId) ||
+        mediaState.watchingList.containsKey(item.prefixedId) ||
+        mediaState.droppedList.containsKey(item.prefixedId) ||
+        mediaState.onHoldList.containsKey(item.prefixedId);
+
+    int? watchedCount;
+    int? totalCount;
+    if (isInLibrary) {
+      final detail = ref
+          .watch(collectionDetailsProvider(collection.id))
+          .when(
+            data: (d) => d,
+            loading: () => null,
+            error: (_, __) => null,
+          );
+      if (detail != null && detail.parts.isNotEmpty) {
+        totalCount = detail.parts.length;
+        watchedCount = detail.parts
+            .where((p) => mediaState.watchedList.containsKey(p.prefixedId))
+            .length;
+      }
+    }
 
     return PressableScale(
       onTap: () {
@@ -972,6 +1006,18 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                             ),
                           ],
                         ),
+                        if (totalCount != null && totalCount > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '$watchedCount of $totalCount Watched '
+                            '(${((watchedCount! / totalCount) * 100).round()}%)',
+                            style: AppThemes.safeGeist(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

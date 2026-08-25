@@ -68,25 +68,52 @@ class AnalyticsNotifier extends Notifier<AnalyticsState> {
   @override
   AnalyticsState build() => const AnalyticsState();
 
-  /// EXP-FRANCHISE-1: fetches completion standing for the 5
-  /// most-recently-watched distinct collections among watched titles
-  /// (bounding worst-case Generate latency -- a franchise-heavy library
-  /// doesn't fetch every collection it's ever touched). A failed/slow
-  /// fetch for one collection just omits that row; it never blocks the
-  /// others or fails Generate as a whole.
+  /// EXP-FRANCHISE-1 / DATA-FRAN-1: fetches completion standing for the 5
+  /// distinct collections most recently touched (bounding worst-case
+  /// Generate latency -- a franchise-heavy library doesn't fetch every
+  /// collection it's ever touched). A failed/slow fetch for one collection
+  /// just omits that row; it never blocks the others or fails Generate as
+  /// a whole.
+  ///
+  /// DATA-FRAN-1: a collection *qualifies* for tracking if any shelf has a
+  /// part in it, not just Watched (a franchise you've only started via
+  /// Watchlist/Watching still deserves a completion standing) -- but
+  /// [CollectionCompletion.watchedCount] itself still means literally
+  /// watched, matching this feature's own "3 of 8 Watched" framing.
+  /// Priority for the top-5 cap still favors recently-*watched*
+  /// collections (falls back to insertion order for collections with no
+  /// watch activity at all, via the null-date branch below).
   Future<List<CollectionCompletion>> _fetchCollectionCompletions(
     MediaState mediaState,
   ) async {
-    final byCollection = <int, List<MediaItem>>{};
+    final anyShelfItems = <MediaItem>[
+      ...mediaState.watchlist.values,
+      ...mediaState.maybeList.values,
+      ...mediaState.watchedList.values,
+      ...mediaState.watchingList.values,
+      ...mediaState.droppedList.values,
+      ...mediaState.onHoldList.values,
+    ];
+
+    final anyShelfByCollection = <int, List<MediaItem>>{};
+    for (final item in anyShelfItems) {
+      final collection = item.belongsToCollection;
+      if (collection != null) {
+        anyShelfByCollection.putIfAbsent(collection.id, () => []).add(item);
+      }
+    }
+    if (anyShelfByCollection.isEmpty) return [];
+
+    final watchedByCollection = <int, List<MediaItem>>{};
     for (final item in mediaState.watchedList.values) {
       final collection = item.belongsToCollection;
       if (collection != null) {
-        byCollection.putIfAbsent(collection.id, () => []).add(item);
+        watchedByCollection.putIfAbsent(collection.id, () => []).add(item);
       }
     }
-    if (byCollection.isEmpty) return [];
 
-    DateTime? mostRecentWatchDate(List<MediaItem> items) {
+    DateTime? mostRecentWatchDate(List<MediaItem>? items) {
+      if (items == null) return null;
       DateTime? latest;
       for (final item in items) {
         final records = mediaState.watchHistory[item.id];
@@ -99,10 +126,10 @@ class AnalyticsNotifier extends Notifier<AnalyticsState> {
       return latest;
     }
 
-    final sortedIds = byCollection.keys.toList()
+    final sortedIds = anyShelfByCollection.keys.toList()
       ..sort((a, b) {
-        final dateA = mostRecentWatchDate(byCollection[a]!);
-        final dateB = mostRecentWatchDate(byCollection[b]!);
+        final dateA = mostRecentWatchDate(watchedByCollection[a]);
+        final dateB = mostRecentWatchDate(watchedByCollection[b]);
         if (dateA == null && dateB == null) return 0;
         if (dateA == null) return 1;
         if (dateB == null) return -1;
@@ -118,7 +145,7 @@ class AnalyticsNotifier extends Notifier<AnalyticsState> {
         results.add(CollectionCompletion(
           collectionId: id,
           collectionName: detail.name,
-          watchedCount: byCollection[id]!.length,
+          watchedCount: watchedByCollection[id]?.length ?? 0,
           totalCount: detail.parts.length,
         ));
       } catch (_) {

@@ -4,7 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 
 import '../constants.dart';
 import '../models/media_collection_detail.dart';
-import '../providers/repository_provider.dart';
+import '../providers/media_provider.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/media_card.dart';
 import '../widgets/pressable_scale.dart';
@@ -100,6 +100,18 @@ class CollectionScreen extends ConsumerWidget {
 
           final imageUrl = collection.backdropUrl ?? collection.posterUrl;
 
+          // DATA-FRAN-2: computed locally from the collection detail this
+          // screen already fetched (no extra network call) cross-referenced
+          // against the Watched shelf -- "3 of 8 Watched (37%)" instead of
+          // a raw part count.
+          final watchedList = ref.watch(mediaProvider).watchedList;
+          final totalCount = collection.parts.length;
+          final watchedCount = collection.parts
+              .where((p) => watchedList.containsKey(p.prefixedId))
+              .length;
+          final completionPct =
+              totalCount > 0 ? ((watchedCount / totalCount) * 100).round() : 0;
+
           return CustomScrollView(
             slivers: [
               // SliverAppBar with backdrop banner
@@ -190,7 +202,9 @@ class CollectionScreen extends ConsumerWidget {
                           ),
                           const SizedBox(width: 10),
                           Text(
-                            '${collection.parts.length} Titles',
+                            totalCount > 0
+                                ? '$watchedCount of $totalCount Watched ($completionPct%)'
+                                : '0 Titles',
                             style: AppThemes.safeGeist(
                               fontSize: 12,
                               fontWeight: FontWeight.w500,
@@ -199,6 +213,25 @@ class CollectionScreen extends ConsumerWidget {
                           ),
                         ],
                       ),
+                      if (totalCount > 0) ...[
+                        const SizedBox(height: 10),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: SizedBox(
+                            height: 5,
+                            child: Stack(
+                              children: [
+                                Container(color: context.ambianceColors.lineRgba),
+                                FractionallySizedBox(
+                                  widthFactor:
+                                      (watchedCount / totalCount).clamp(0.0, 1.0),
+                                  child: Container(color: accColor),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                       if (collection.overview != null && collection.overview!.trim().isNotEmpty) ...[
                         const SizedBox(height: 12),
                         Text(

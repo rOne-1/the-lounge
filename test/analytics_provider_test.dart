@@ -227,5 +227,64 @@ void main() {
       expect(
           state.collectionCompletions.single.collectionName, 'Good Collection');
     });
+
+    test(
+        'DATA-FRAN-1: a franchise part on the Watchlist (not yet Watched) still qualifies the collection, but watchedCount stays 0',
+        () async {
+      final fakeRepo = _FakeCollectionRepository({
+        10: const MediaCollectionDetail(
+          id: 10,
+          name: 'Watchlist-Only Collection',
+          parts: [
+            MediaItem(
+                id: '1',
+                title: 'Part 1',
+                type: MediaType.movie,
+                rating: 7,
+                overview: '',
+                genres: []),
+            MediaItem(
+                id: '2',
+                title: 'Part 2',
+                type: MediaType.movie,
+                rating: 7,
+                overview: '',
+                genres: []),
+          ],
+        ),
+      });
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          movieRepositoryProvider.overrideWithValue(fakeRepo),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // Nothing in this franchise has ever been Watched -- only Watchlisted.
+      // Pre-DATA-FRAN-1, _fetchCollectionCompletions only scanned
+      // watchedList, so this collection would never have qualified at all.
+      container.read(mediaProvider.notifier).addToWatchlist(
+            const MediaItem(
+              id: '1',
+              title: 'Part 1',
+              type: MediaType.movie,
+              rating: 7,
+              overview: '',
+              genres: [],
+              belongsToCollection:
+                  MediaCollection(id: 10, name: 'Watchlist-Only Collection'),
+            ),
+          );
+
+      await container.read(analyticsProvider.notifier).generate();
+
+      final completions =
+          container.read(analyticsProvider).collectionCompletions;
+      expect(completions, hasLength(1));
+      expect(completions.single.collectionName, 'Watchlist-Only Collection');
+      expect(completions.single.watchedCount, 0);
+      expect(completions.single.totalCount, 2);
+    });
   });
 }

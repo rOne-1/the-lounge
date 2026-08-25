@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import '../../constants.dart';
 import '../../providers/analytics_provider.dart';
 
-/// EXP-FRANCHISE-1: completion standing for the 5 most-recently-watched
-/// distinct collections/franchises among watched titles. The only
-/// Analytics metric that depends on a live network fetch (see
-/// `AnalyticsNotifier._fetchCollectionCompletions`) -- a collection that
-/// failed to fetch simply isn't in this list, not shown as an error.
+/// EXP-FRANCHISE-1 / DATA-FRAN-1: completion standing for up to 5
+/// distinct collections/franchises with a part on any shelf (Watchlist,
+/// Saved, Watched, Watching, Dropped, On Hold), prioritized by recent
+/// watch activity. The only Analytics metric that depends on a live
+/// network fetch (see `AnalyticsNotifier._fetchCollectionCompletions`) --
+/// a collection that failed to fetch simply isn't in this list, not shown
+/// as an error.
 class CollectionCompletionSection extends StatelessWidget {
   final List<CollectionCompletion> completions;
 

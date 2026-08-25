@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:the_lounge/models/media_collection_detail.dart';
+import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
@@ -69,4 +70,73 @@ void main() {
     expect(find.text('Recovered Collection'), findsOneWidget);
     expect(repo.calls, 2);
   });
+
+  testWidgets(
+      'DATA-FRAN-2: header shows a completion gauge (watched/total + percent) instead of a raw part count',
+      (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final repo = _ThreePartRepository();
+    final container = ProviderContainer(
+      overrides: [
+        movieRepositoryProvider.overrideWithValue(repo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    // Only one of the collection's 3 parts is Watched.
+    container
+        .read(mediaProvider.notifier)
+        .addToWatchedList(_ThreePartRepository.part1);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: CollectionScreen(collectionId: 42)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 of 3 Watched (33%)'), findsOneWidget);
+    expect(find.text('3 Titles'), findsNothing);
+  });
+}
+
+class _ThreePartRepository extends MockMovieRepository {
+  static const part1 = MediaItem(
+    id: 'movie_p1',
+    title: 'Part One',
+    type: MediaType.movie,
+    rating: 7.0,
+    overview: '',
+    genres: [],
+  );
+
+  @override
+  Future<MediaCollectionDetail?> getCollectionDetails(int collectionId) async {
+    return const MediaCollectionDetail(
+      id: 42,
+      name: 'Three Part Saga',
+      parts: [
+        part1,
+        MediaItem(
+          id: 'movie_p2',
+          title: 'Part Two',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+        ),
+        MediaItem(
+          id: 'movie_p3',
+          title: 'Part Three',
+          type: MediaType.movie,
+          rating: 7.0,
+          overview: '',
+          genres: [],
+        ),
+      ],
+    );
+  }
 }
