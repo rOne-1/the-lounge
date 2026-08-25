@@ -269,6 +269,10 @@ class AnalyticsResult {
   final List<NameCount> directorRanking;
   final List<RatingDivergencePoint> ratingDivergence;
   final Map<String, int> genreFrequency;
+
+  /// DATA-CONT-3: keyword frequency across watched titles, for the
+  /// Analytics "Taste DNA" keyword affinity breakdown.
+  final Map<String, int> keywordAffinity;
   final DecadeDistribution decadeDistribution;
   final TemporalDistanceIndex temporalDistanceIndex;
   final LanguageDistribution languageDistribution;
@@ -287,6 +291,7 @@ class AnalyticsResult {
     required this.directorRanking,
     required this.ratingDivergence,
     required this.genreFrequency,
+    required this.keywordAffinity,
     required this.decadeDistribution,
     required this.temporalDistanceIndex,
     required this.languageDistribution,
@@ -513,6 +518,25 @@ Map<String, int> computeGenreFrequency(AnalyticsInput input) {
   return counts;
 }
 
+/// DATA-CONT-3: tallies `item.keywords` across every watched title
+/// (multi-membership, same convention as [computeGenreFrequency]).
+/// Relies on `MediaNotifier.backfillMissingWatchedMetadata` having
+/// populated `keywords` for titles added via a path that never fetched
+/// full TMDB details (Discover swipe, grid card) -- same
+/// TMDB-Details-only availability gap EXP-DATA-2 already covers for
+/// runtime/cast/director/productionCompanyNames.
+Map<String, int> computeKeywordAffinity(AnalyticsInput input) {
+  final counts = <String, int>{};
+  for (final item in input.watchedList.values) {
+    for (final keyword in item.keywords ?? const <MediaKeyword>[]) {
+      final trimmed = keyword.name.trim();
+      if (trimmed.isEmpty) continue;
+      counts[trimmed] = (counts[trimmed] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
 /// EXP-ERA-1: buckets watched titles by decade of `releaseOrAirDate`.
 DecadeDistribution computeDecadeDistribution(AnalyticsInput input) {
   final counts = <String, int>{};
@@ -723,6 +747,7 @@ AnalyticsResult computeAnalytics(AnalyticsInput input) {
     directorRanking: rankings.directors,
     ratingDivergence: computeRatingDivergence(input),
     genreFrequency: computeGenreFrequency(input),
+    keywordAffinity: computeKeywordAffinity(input),
     decadeDistribution: computeDecadeDistribution(input),
     temporalDistanceIndex: computeTemporalDistanceIndex(input),
     languageDistribution: computeLanguageDistribution(input),

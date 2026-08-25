@@ -297,6 +297,48 @@ class MediaKeyword {
   }
 }
 
+/// DATA-CONT-2: a single TMDB community review, parsed verbatim (no
+/// editorializing) from the `reviews` append_to_response.
+class MediaReview {
+  final String id;
+  final String author;
+  final String content;
+  final double? rating;
+  final DateTime? createdAt;
+  final String? url;
+  final String? authorAvatarUrl;
+
+  const MediaReview({
+    required this.id,
+    required this.author,
+    required this.content,
+    this.rating,
+    this.createdAt,
+    this.url,
+    this.authorAvatarUrl,
+  });
+
+  MediaReview copyWith({
+    String? id,
+    String? author,
+    String? content,
+    double? rating,
+    DateTime? createdAt,
+    String? url,
+    String? authorAvatarUrl,
+  }) {
+    return MediaReview(
+      id: id ?? this.id,
+      author: author ?? this.author,
+      content: content ?? this.content,
+      rating: rating ?? this.rating,
+      createdAt: createdAt ?? this.createdAt,
+      url: url ?? this.url,
+      authorAvatarUrl: authorAvatarUrl ?? this.authorAvatarUrl,
+    );
+  }
+}
+
 class ProductionCompany {
   final int id;
   final String name;
@@ -423,6 +465,34 @@ class MediaItem {
   /// kept alongside it so a UI that wants to show more than one region's
   /// rating doesn't need a second fetch.
   final Map<String, String> certificationsByCountry;
+
+  /// DATA-CONT-1: transparent title-treatment logo (ClearLogo), the
+  /// single best-scoring PNG from `images.logos` (prefers an 'en'-tagged
+  /// or language-neutral entry, highest `vote_average` as tiebreaker).
+  /// Data-layer only -- no hero UI consumes this yet (reserved for
+  /// Section C).
+  final String? logoUrl;
+
+  /// DATA-CONT-1: alternate backdrops from `images.backdrops`, beyond the
+  /// single primary [backdropUrl].
+  final List<String>? backdropUrls;
+
+  /// DATA-CONT-1: alternate posters from `images.posters`, beyond the
+  /// single primary [posterUrl]/[detailPosterUrl].
+  final List<String>? posterUrls;
+
+  /// DATA-CONT-2: community reviews from the `reviews` append_to_response.
+  final List<MediaReview>? reviews;
+
+  /// DATA-CONT-4: raw title strings from `alternative_titles` (regional
+  /// theatrical/release title variants -- distinct from [translations],
+  /// which are language-driven rather than region-driven).
+  final List<String>? alternativeTitles;
+
+  /// DATA-CONT-4: translated titles from `translations`, keyed by
+  /// `iso_639_1` language code, for native title display and local
+  /// library search matching by a foreign-language title.
+  final Map<String, String>? translatedTitlesByLanguage;
   final MediaCollection? belongsToCollection;
   final List<String>? createdBy;
   final List<MediaNetwork>? networks;
@@ -474,6 +544,12 @@ class MediaItem {
     this.extendedCrew,
     this.certification,
     this.certificationsByCountry = const {},
+    this.logoUrl,
+    this.backdropUrls,
+    this.posterUrls,
+    this.reviews,
+    this.alternativeTitles,
+    this.translatedTitlesByLanguage,
     this.belongsToCollection,
     this.createdBy,
     this.networks,
@@ -595,6 +671,12 @@ class MediaItem {
     List<MediaCastMember>? extendedCrew,
     String? certification,
     Map<String, String>? certificationsByCountry,
+    String? logoUrl,
+    List<String>? backdropUrls,
+    List<String>? posterUrls,
+    List<MediaReview>? reviews,
+    List<String>? alternativeTitles,
+    Map<String, String>? translatedTitlesByLanguage,
     MediaCollection? belongsToCollection,
     List<String>? createdBy,
     List<MediaNetwork>? networks,
@@ -641,6 +723,13 @@ class MediaItem {
       certification: certification ?? this.certification,
       certificationsByCountry:
           certificationsByCountry ?? this.certificationsByCountry,
+      logoUrl: logoUrl ?? this.logoUrl,
+      backdropUrls: backdropUrls ?? this.backdropUrls,
+      posterUrls: posterUrls ?? this.posterUrls,
+      reviews: reviews ?? this.reviews,
+      alternativeTitles: alternativeTitles ?? this.alternativeTitles,
+      translatedTitlesByLanguage:
+          translatedTitlesByLanguage ?? this.translatedTitlesByLanguage,
       belongsToCollection: belongsToCollection ?? this.belongsToCollection,
       createdBy: createdBy ?? this.createdBy,
       networks: networks ?? this.networks,
@@ -680,6 +769,22 @@ class MediaItem {
       'seasonsCount': seasonsCount,
       'episodesCount': episodesCount,
       'productionCompanyNames': productionCompanyNames,
+      // DATA-CONT-3: needed by Analytics' Keyword Taste DNA and the
+      // Discover deck's library-keyword-overlap boost -- same
+      // TMDB-Details-only availability gap EXP-DATA-2 already solved for
+      // the fields above (see MediaNotifier.backfillMissingWatchedMetadata).
+      if (keywords != null && keywords!.isNotEmpty)
+        'keywords': keywords!
+            .map((k) => {'id': k.id, 'name': k.name})
+            .toList(),
+      // DATA-CONT-4: needed for the local-library search-matching
+      // enhancement (SearchScreen) to keep working after a restart, not
+      // just within the session that fetched the detail payload.
+      if (alternativeTitles != null && alternativeTitles!.isNotEmpty)
+        'alternativeTitles': alternativeTitles,
+      if (translatedTitlesByLanguage != null &&
+          translatedTitlesByLanguage!.isNotEmpty)
+        'translatedTitlesByLanguage': translatedTitlesByLanguage,
       if (belongsToCollection != null) ...{
         'collectionId': belongsToCollection!.id,
         'collectionName': belongsToCollection!.name,
@@ -738,6 +843,29 @@ class MediaItem {
         ? companyNamesJson.whereType<String>().toList()
         : const <String>[];
 
+    final keywordsJson = json['keywords'];
+    final keywordsList = keywordsJson is List
+        ? keywordsJson
+            .whereType<Map>()
+            .map((k) => MediaKeyword(
+                  id: (k['id'] as num?)?.toInt() ?? 0,
+                  name: k['name']?.toString() ?? '',
+                ))
+            .where((k) => k.name.isNotEmpty)
+            .toList()
+        : null;
+
+    final altTitlesJson = json['alternativeTitles'];
+    final altTitlesList = altTitlesJson is List
+        ? altTitlesJson.whereType<String>().toList()
+        : null;
+
+    final translatedTitlesJson = json['translatedTitlesByLanguage'];
+    final translatedTitlesMap = translatedTitlesJson is Map
+        ? translatedTitlesJson.map(
+            (key, value) => MapEntry(key.toString(), value.toString()))
+        : null;
+
     final rawId = json['id']?.toString() ?? '';
 
     return MediaItem(
@@ -764,6 +892,9 @@ class MediaItem {
       seasonsCount: (json['seasonsCount'] as num?)?.toInt(),
       episodesCount: (json['episodesCount'] as num?)?.toInt(),
       productionCompanyNames: companyNamesList,
+      keywords: keywordsList,
+      alternativeTitles: altTitlesList,
+      translatedTitlesByLanguage: translatedTitlesMap,
       belongsToCollection: col,
     );
   }

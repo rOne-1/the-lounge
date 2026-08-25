@@ -18,6 +18,7 @@ import '../widgets/analytics/chronological_heatmap.dart';
 import '../widgets/analytics/discover_funnel_section.dart';
 import '../widgets/analytics/era_distribution_section.dart';
 import '../widgets/analytics/genre_dna_section.dart';
+import '../widgets/analytics/keyword_dna_section.dart';
 import '../widgets/analytics/language_distribution_section.dart';
 import '../widgets/analytics/rating_divergence_section.dart';
 import '../widgets/analytics/studio_affinity_section.dart';
@@ -471,6 +472,17 @@ class _AnalyticsResults extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               GenreDnaSection(genreFrequency: result.genreFrequency),
+              const SizedBox(height: 20),
+              Text(
+                'Keyword DNA',
+                style: AppThemes.safeGeist(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: colors.sub,
+                ),
+              ),
+              const SizedBox(height: 10),
+              KeywordDnaSection(keywordAffinity: result.keywordAffinity),
               const SizedBox(height: 20),
               Text(
                 'Global Footprint',

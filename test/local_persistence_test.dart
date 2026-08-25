@@ -147,6 +147,52 @@ void main() {
       expect(restored.episodesCount, 40);
       expect(restored.productionCompanyNames, ['A24', 'Neon']);
     });
+
+    test(
+        'toMinimalJson/fromMinimalJson round-trips keywords (DATA-CONT-3)',
+        () {
+      // Same class of gap as EXP-DATA-2 above -- Analytics' Keyword DNA and
+      // the Discover deck's keyword-overlap boost both need this to survive
+      // a restart, not just a live session.
+      final item = MediaItem(
+        id: 'movie_600',
+        title: 'Keyword Round Trip',
+        type: MediaType.movie,
+        rating: 7.4,
+        overview: 'Something with keyword metadata.',
+        genres: const ['Drama'],
+        keywords: const [
+          MediaKeyword(id: 1, name: 'heist'),
+          MediaKeyword(id: 2, name: 'dream'),
+        ],
+      );
+
+      final restored = MediaItem.fromMinimalJson(item.toMinimalJson());
+
+      expect(restored.keywords, isNotNull);
+      expect(restored.keywords!.length, 2);
+      expect(restored.keywords!.map((k) => k.name), ['heist', 'dream']);
+      expect(restored.keywords!.map((k) => k.id), [1, 2]);
+    });
+
+    test(
+        'toMinimalJson omits keywords entirely when null, and fromMinimalJson leaves it null',
+        () {
+      const item = MediaItem(
+        id: 'movie_601',
+        title: 'No Keywords',
+        type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: [],
+      );
+
+      final json = item.toMinimalJson();
+      expect(json.containsKey('keywords'), isFalse);
+
+      final restored = MediaItem.fromMinimalJson(json);
+      expect(restored.keywords, isNull);
+    });
   });
 
   group(

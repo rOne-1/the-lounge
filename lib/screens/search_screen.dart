@@ -6,8 +6,8 @@ import '../constants/app_languages.dart';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import '../providers/hall_provider.dart';
+import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../providers/repository_provider.dart';
 import '../utils/scroll_chrome_tracker.dart';
 import '../utils/weighted_rating.dart';
 import '../widgets/atmospheric_empty_state.dart';
@@ -156,7 +156,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       final results = await repo.searchMedia(trimmed);
       if (mounted) {
         setState(() {
-          _searchResults = results;
+          _searchResults = _withLibraryAltTitleMatches(results, trimmed);
           _isSearching = false;
         });
       }
@@ -168,6 +168,52 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         });
       }
     }
+  }
+
+  /// DATA-CONT-4: TMDB's own text search has no reliable way for this app
+  /// to query by alternative/translated title -- that data only exists on
+  /// a title's own detail payload (`alternative_titles`/`translations`),
+  /// not on search results. The one case this app CAN resolve correctly is
+  /// a title already in the user's own library (added via the Detail
+  /// screen, which fetches and persists both -- see
+  /// MediaItem.toMinimalJson): scan those for a case-insensitive
+  /// substring match against the query and surface any the live TMDB
+  /// search missed, ahead of the regular results (the user already knows
+  /// this exact title by that name).
+  List<MediaItem> _withLibraryAltTitleMatches(
+    List<MediaItem> results,
+    String query,
+  ) {
+    final mediaState = ref.read(mediaProvider);
+    final libraryItems = <String, MediaItem>{
+      ...mediaState.watchlist,
+      ...mediaState.maybeList,
+      ...mediaState.watchedList,
+      ...mediaState.watchingList,
+      ...mediaState.droppedList,
+      ...mediaState.onHoldList,
+    }.values;
+
+    final alreadyPresentIds = results
+        .expand((item) => [item.id, item.prefixedId])
+        .toSet();
+    final lowerQuery = query.toLowerCase();
+
+    final altMatches = libraryItems.where((item) {
+      if (alreadyPresentIds.contains(item.id) ||
+          alreadyPresentIds.contains(item.prefixedId)) {
+        return false;
+      }
+      final altTitleHit = (item.alternativeTitles ?? const [])
+          .any((t) => t.toLowerCase().contains(lowerQuery));
+      final translatedHit = (item.translatedTitlesByLanguage ?? const {})
+          .values
+          .any((t) => t.toLowerCase().contains(lowerQuery));
+      return altTitleHit || translatedHit;
+    }).toList();
+
+    if (altMatches.isEmpty) return results;
+    return [...altMatches, ...results];
   }
 
   static const int _maxAccumulatedItems = 200;

@@ -176,6 +176,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       () => _buildExtendedCreditsSection(context, ref, item, isDark),
       () => _buildCastStrip(context, ref, item, isDark),
       () => _buildTrailersSection(context, item, isDark),
+      () => _buildReviewsSection(context, item, isDark),
       () => _buildSimilarTitlesSection(context, ref, item, isDark),
       () => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -670,6 +671,126 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  /// DATA-CONT-2: verified TMDB community reviews, each in an expandable
+  /// card (reusing [ExpandableOverviewText], the same "Show more"/"Show
+  /// less" affordance the overview text already uses -- SP-2 consistency).
+  /// Hidden entirely when there are none, matching every other optional
+  /// below-fold section on this screen (trailers, cast, keywords,
+  /// networks) rather than introducing a new "no reviews yet" placeholder
+  /// pattern this screen doesn't otherwise use.
+  Widget _buildReviewsSection(
+    BuildContext context,
+    MediaItem item,
+    bool isDark,
+  ) {
+    final reviews = item.reviews;
+    if (reviews == null || reviews.isEmpty) return const SizedBox.shrink();
+
+    final inkColor = context.ambianceColors.ink;
+    final subColor = context.ambianceColors.sub;
+    final phColor = context.ambianceColors.ph;
+    final lineRgba = context.ambianceColors.lineRgba;
+    final accColor = context.ambianceColors.acc;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 20),
+        Text(
+          'Reviews',
+          style: AppThemes.safeGeist(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            color: inkColor,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...reviews.map((review) {
+          Widget avatarContent;
+          if (review.authorAvatarUrl != null &&
+              review.authorAvatarUrl!.isNotEmpty) {
+            avatarContent = ClipOval(
+              child: MediaImage(
+                imageUrl: review.authorAvatarUrl!,
+                fit: BoxFit.cover,
+                fallback: Icon(Icons.person, size: 18, color: subColor),
+              ),
+            );
+          } else {
+            avatarContent = Icon(Icons.person, size: 18, color: subColor);
+          }
+
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: phColor,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: lineRgba),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: context.ambianceColors.card,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: lineRgba),
+                      ),
+                      child: avatarContent,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        review.author,
+                        style: AppThemes.safeGeist(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: inkColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (review.rating != null) ...[
+                      const SizedBox(width: 8),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.star_rounded, size: 14, color: accColor),
+                          const SizedBox(width: 2),
+                          Text(
+                            review.rating!.toStringAsFixed(1),
+                            style: AppThemes.safeGeist(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: accColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 10),
+                ExpandableOverviewText(
+                  text: review.content,
+                  style: AppThemes.safeGeist(fontSize: 12.5, color: subColor),
+                  isDark: isDark,
+                  maxLinesCollapsed: 4,
+                ),
+              ],
+            ),
+          );
+        }),
+      ],
     );
   }
 

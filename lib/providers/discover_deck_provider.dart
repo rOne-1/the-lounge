@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../constants/analytics_constants.dart';
 import '../models/discover_filter_params.dart';
 import '../models/media_item.dart';
 import '../utils/weighted_rating.dart';
@@ -104,6 +105,26 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
   String get _lastManualReloadKey =>
       'the_lounge_last_manual_reload_${isMovies ? 'movies' : 'tv'}';
 
+  /// DATA-CONT-3: the top [AnalyticsConstants.discoverKeywordBoostTopN]
+  /// keyword ids by frequency across the watched shelf, mirroring
+  /// `computeKeywordAffinity`'s tally convention (multi-membership, name
+  /// used there / id used here since `with_keywords` needs TMDB's numeric
+  /// id, not the display name).
+  List<int> _topWatchedKeywordIds(Map<String, MediaItem> watchedList) {
+    final counts = <int, int>{};
+    for (final item in watchedList.values) {
+      for (final keyword in item.keywords ?? const <MediaKeyword>[]) {
+        counts[keyword.id] = (counts[keyword.id] ?? 0) + 1;
+      }
+    }
+    final sorted = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return sorted
+        .take(AnalyticsConstants.discoverKeywordBoostTopN)
+        .map((e) => e.key)
+        .toList();
+  }
+
   @override
   DiscoverDeckState build() {
     DateTime? lastManualReloadAt;
@@ -183,6 +204,15 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
       List<MediaItem> newItems = [];
       int attempts = 0;
 
+      // DATA-CONT-3: the user's most-watched keyword ids, from the same
+      // library-keyword-overlap signal Analytics' Keyword DNA reads (see
+      // computeKeywordAffinity) -- fetched once per loadPool() call, not
+      // per while-loop attempt below, since it costs one real
+      // `/discover` request per keyword regardless of which attempt finds
+      // it.
+      final topKeywordIds = _topWatchedKeywordIds(mediaState.watchedList);
+      final keywordBoostIds = <String>{};
+
       while (newItems.length < 5 && attempts < 5) {
         final List<MediaItem> rawList = [];
         final p1 = page;
@@ -212,6 +242,24 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
           } catch (_) {}
         }
 
+        // DATA-CONT-3: blend in one page per top library keyword, only on
+        // the first attempt -- a subtle taste-based boost layered on top
+        // of the existing popularity/rating blend-ins above, bounded to
+        // AnalyticsConstants.discoverKeywordBoostTopN extra requests total.
+        if (attempts == 0) {
+          for (final kwId in topKeywordIds) {
+            try {
+              final boosted = await repo.discoverMedia(
+                isMovies: isMovies,
+                params: discoverParams.copyWith(keywordId: kwId),
+                page: p1,
+              );
+              rawList.addAll(boosted);
+              keywordBoostIds.addAll(boosted.map((e) => e.id));
+            } catch (_) {}
+          }
+        }
+
         final seen = <String>{...state.pool.map((e) => e.id), ...newItems.map((e) => e.id)};
         final poolMean = meanRatingOf(rawList);
         final filtered = rawList.where((item) {
@@ -229,7 +277,14 @@ abstract class DiscoverDeckNotifier extends Notifier<DiscoverDeckState> {
               seen.add(item.id);
         }).toList();
 
-        newItems.addAll(filtered);
+        // Keyword-matched titles surface earlier in the deck (pool order
+        // is display order -- see DiscoverScreen's `pool.first`), a real
+        // (if subtle) placement boost rather than just wider inclusion.
+        // A stable partition, not a sort: ties keep their original
+        // relative order within each group.
+        final boostedFirst = filtered.where((i) => keywordBoostIds.contains(i.id));
+        final rest = filtered.where((i) => !keywordBoostIds.contains(i.id));
+        newItems.addAll([...boostedFirst, ...rest]);
         page += 2;
         attempts++;
       }

@@ -28,4 +28,18 @@ class AnalyticsConstants {
 
   /// Cap on genres rendered on the Genre DNA radar chart, for legibility.
   static const int genreDnaTopN = 8;
+
+  /// DATA-CONT-3: cap on keywords rendered on the Keyword DNA tag cloud.
+  /// Higher than [genreDnaTopN] -- keywords are a much longer-tail
+  /// taxonomy than TMDB's small fixed genre list, so a useful "taste"
+  /// picture needs more entries to not look sparse.
+  static const int keywordDnaTopN = 15;
+
+  /// DATA-CONT-3: how many of the user's top watched-shelf keywords feed
+  /// the Discover deck's keyword-overlap boost. Deliberately small --
+  /// each one costs a real `/discover` request per `loadPool()` call (see
+  /// DiscoverDeckNotifier.loadPool), and the boost is meant to nudge the
+  /// deck toward a taste signal, not dominate it with an ever-widening
+  /// keyword net.
+  static const int discoverKeywordBoostTopN = 3;
 }

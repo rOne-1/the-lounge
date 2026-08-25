@@ -716,12 +716,23 @@ class TmdbMovieRepository implements MovieRepository {
       // TV's full-series equivalent (per-role episode counts, aggregated
       // crew jobs); movies have no aggregate_credits endpoint at all, so
       // they keep the standard `credits` append.
+      // DATA-CONT-1: `images` gives ClearLogo/alternate backdrop/poster
+      // data on the same request -- no extra round trip.
+      // DATA-CONT-2: `reviews` gives community reviews on the same request.
+      // DATA-CONT-4: `alternative_titles`/`translations` likewise.
       const movieAppendToResponse =
-          'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids';
+          'credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids,images,reviews,alternative_titles,translations';
       const tvAppendToResponse =
-          'aggregate_credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids';
-      final movieQueryParams = {'append_to_response': movieAppendToResponse};
-      final tvQueryParams = {'append_to_response': tvAppendToResponse};
+          'aggregate_credits,videos,watch/providers,release_dates,content_ratings,keywords,external_ids,images,reviews,alternative_titles,translations';
+      const includeImageLanguage = 'en,null';
+      final movieQueryParams = {
+        'append_to_response': movieAppendToResponse,
+        'include_image_language': includeImageLanguage,
+      };
+      final tvQueryParams = {
+        'append_to_response': tvAppendToResponse,
+        'include_image_language': includeImageLanguage,
+      };
 
       if (explicitType == MediaType.tv) {
         final key = cacheService.generateKey(
@@ -729,7 +740,8 @@ class TmdbMovieRepository implements MovieRepository {
         detailsJson = await cacheService.get(key);
         if (detailsJson == null) {
           detailsJson = await apiService.getTvDetails(cleanId,
-              appendToResponse: tvAppendToResponse);
+              appendToResponse: tvAppendToResponse,
+              includeImageLanguage: includeImageLanguage);
           await cacheService.put(key, detailsJson);
         }
       } else if (explicitType == MediaType.movie) {
@@ -738,7 +750,8 @@ class TmdbMovieRepository implements MovieRepository {
         detailsJson = await cacheService.get(key);
         if (detailsJson == null) {
           detailsJson = await apiService.getMovieDetails(cleanId,
-              appendToResponse: movieAppendToResponse);
+              appendToResponse: movieAppendToResponse,
+              includeImageLanguage: includeImageLanguage);
           await cacheService.put(key, detailsJson);
         }
       } else {
@@ -757,13 +770,15 @@ class TmdbMovieRepository implements MovieRepository {
           } else {
             try {
               detailsJson = await apiService.getMovieDetails(cleanId,
-                  appendToResponse: movieAppendToResponse);
+                  appendToResponse: movieAppendToResponse,
+                  includeImageLanguage: includeImageLanguage);
               await cacheService.put(movieKey, detailsJson);
               resolvedType = MediaType.movie;
             } catch (_) {
               // Fall back to trying TV details
               detailsJson = await apiService.getTvDetails(cleanId,
-                  appendToResponse: tvAppendToResponse);
+                  appendToResponse: tvAppendToResponse,
+                  includeImageLanguage: includeImageLanguage);
               await cacheService.put(tvKey, detailsJson);
               resolvedType = MediaType.tv;
             }
@@ -1161,6 +1176,138 @@ class TmdbMovieRepository implements MovieRepository {
 
     final backdropPath = json['backdrop_path'] as String?;
     final backdropUrl = TmdbImageHelper.getBackdropUrl(backdropPath);
+
+    // DATA-CONT-1: `images` append_to_response -- ClearLogo plus a bounded
+    // set of alternate backdrops/posters beyond the single primary ones
+    // above. Data-layer only; no hero UI consumes these yet.
+    String? logoUrl;
+    List<String>? backdropUrls;
+    List<String>? posterUrls;
+    final imagesObj = json['images'] as Map<String, dynamic>?;
+    if (imagesObj != null) {
+      final logosJson = imagesObj['logos'];
+      if (logosJson is List && logosJson.isNotEmpty) {
+        final candidates = logosJson.whereType<Map>().toList();
+        if (candidates.isNotEmpty) {
+          int score(Map m) {
+            final path = m['file_path']?.toString().toLowerCase() ?? '';
+            final isPng = path.endsWith('.png') ? 1 : 0;
+            final isEnglish = m['iso_639_1'] == 'en' ? 1 : 0;
+            return isPng * 100 + isEnglish * 10;
+          }
+
+          candidates.sort((a, b) {
+            final scoreDiff = score(b) - score(a);
+            if (scoreDiff != 0) return scoreDiff;
+            final voteA = (a['vote_average'] as num?)?.toDouble() ?? 0;
+            final voteB = (b['vote_average'] as num?)?.toDouble() ?? 0;
+            return voteB.compareTo(voteA);
+          });
+          logoUrl =
+              TmdbImageHelper.w500(candidates.first['file_path'] as String?);
+        }
+      }
+
+      List<String>? mapImagePaths(dynamic raw, String? Function(String?) urlBuilder) {
+        if (raw is! List || raw.isEmpty) return null;
+        final urls = raw
+            .whereType<Map>()
+            .map((m) => urlBuilder(m['file_path'] as String?))
+            .whereType<String>()
+            .take(10)
+            .toList();
+        return urls.isEmpty ? null : urls;
+      }
+
+      backdropUrls =
+          mapImagePaths(imagesObj['backdrops'], TmdbImageHelper.getBackdropUrl);
+      posterUrls = mapImagePaths(
+          imagesObj['posters'], TmdbImageHelper.getPosterThumbnailUrl);
+    }
+
+    // DATA-CONT-2: community reviews from `reviews` append_to_response,
+    // parsed verbatim (author/content/rating/date/url), no editorializing.
+    List<MediaReview>? reviews;
+    final reviewsObj = json['reviews'] as Map<String, dynamic>?;
+    if (reviewsObj != null && reviewsObj['results'] is List) {
+      final parsed = <MediaReview>[];
+      for (final r in reviewsObj['results'] as List) {
+        if (r is! Map || r['id'] == null || r['content'] == null) continue;
+        final authorDetails = r['author_details'] as Map<String, dynamic>?;
+
+        // TMDB's own quirk: `avatar_path` is either a normal TMDB-relative
+        // path, or (for a Gravatar-sourced avatar) a full external URL
+        // with a leading slash prepended -- the two need different
+        // handling, not one blanket TmdbImageHelper.buildUrl call.
+        String? avatarUrl;
+        final rawAvatarPath = authorDetails?['avatar_path'] as String?;
+        if (rawAvatarPath != null && rawAvatarPath.isNotEmpty) {
+          final stripped = rawAvatarPath.startsWith('/')
+              ? rawAvatarPath.substring(1)
+              : rawAvatarPath;
+          avatarUrl = stripped.startsWith('http')
+              ? stripped
+              : TmdbImageHelper.getCastHeadshotUrl(rawAvatarPath);
+        }
+
+        parsed.add(MediaReview(
+          id: r['id'].toString(),
+          author: r['author']?.toString() ?? 'Anonymous',
+          content: r['content'].toString(),
+          rating: (authorDetails?['rating'] as num?)?.toDouble(),
+          createdAt: r['created_at'] != null
+              ? DateTime.tryParse(r['created_at'].toString())
+              : null,
+          url: r['url'] as String?,
+          authorAvatarUrl: avatarUrl,
+        ));
+      }
+      if (parsed.isNotEmpty) reviews = parsed;
+    }
+
+    // DATA-CONT-4: `alternative_titles` -- region-driven title variants.
+    // TMDB's own API is inconsistent here: movies nest the array under
+    // `titles`, TV under `results` -- checking both covers either shape
+    // regardless of which type this payload actually is.
+    List<String>? alternativeTitles;
+    final altTitlesObj = json['alternative_titles'] as Map<String, dynamic>?;
+    if (altTitlesObj != null) {
+      final rawList = (altTitlesObj['titles'] ?? altTitlesObj['results']);
+      if (rawList is List && rawList.isNotEmpty) {
+        final names = rawList
+            .whereType<Map>()
+            .map((t) => t['title']?.toString().trim())
+            .whereType<String>()
+            .where((t) => t.isNotEmpty)
+            .toSet() // TMDB frequently repeats the same title across
+            .toList(); // multiple countries -- dedupe for a clean list.
+        if (names.isNotEmpty) alternativeTitles = names;
+      }
+    }
+
+    // DATA-CONT-4: `translations` -- language-driven title variants
+    // (distinct axis from alternative_titles' country-driven ones).
+    Map<String, String>? translatedTitlesByLanguage;
+    final translationsObj = json['translations'] as Map<String, dynamic>?;
+    if (translationsObj != null && translationsObj['translations'] is List) {
+      final map = <String, String>{};
+      for (final t in translationsObj['translations'] as List) {
+        if (t is! Map) continue;
+        final lang = t['iso_639_1']?.toString();
+        final data = t['data'] as Map<String, dynamic>?;
+        // TV translations use `data.name`; movie translations use
+        // `data.title` -- checking both covers either type.
+        final translatedTitle =
+            (data?['title'] ?? data?['name'])?.toString().trim();
+        if (lang != null &&
+            lang.isNotEmpty &&
+            translatedTitle != null &&
+            translatedTitle.isNotEmpty) {
+          map[lang] = translatedTitle;
+        }
+      }
+      if (map.isNotEmpty) translatedTitlesByLanguage = map;
+    }
 
     // Some shows (e.g. those with deliberately variable episode lengths)
     // leave the aggregate `episode_run_time` empty even though TMDB still
@@ -1676,6 +1823,12 @@ class TmdbMovieRepository implements MovieRepository {
       extendedCrew: extendedCrew,
       certification: certification,
       certificationsByCountry: certificationsByCountry,
+      logoUrl: logoUrl,
+      backdropUrls: backdropUrls,
+      posterUrls: posterUrls,
+      reviews: reviews,
+      alternativeTitles: alternativeTitles,
+      translatedTitlesByLanguage: translatedTitlesByLanguage,
       belongsToCollection: belongsToCollection,
       createdBy: createdBy,
       networks: networks,

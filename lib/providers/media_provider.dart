@@ -2356,7 +2356,11 @@ class MediaNotifier extends Notifier<MediaState> {
             // fetched -- without this, the Collection Completion Gauge
             // would systematically miss collections for anyone who
             // doesn't add movies via the Detail screen specifically.
-            (item.type == MediaType.movie && item.belongsToCollection == null))
+            (item.type == MediaType.movie && item.belongsToCollection == null) ||
+            // DATA-CONT-3: needed by Analytics' Keyword Taste DNA and the
+            // Discover deck's keyword-overlap boost.
+            item.keywords == null ||
+            item.keywords!.isEmpty)
         .take(maxItems)
         .toList();
     if (missing.isEmpty) return;
@@ -2385,6 +2389,9 @@ class MediaNotifier extends Notifier<MediaState> {
               : details.productionCompanyNames,
           belongsToCollection:
               current.belongsToCollection ?? details.belongsToCollection,
+          keywords: (current.keywords != null && current.keywords!.isNotEmpty)
+              ? current.keywords
+              : details.keywords,
         );
         patchedAny = true;
       } catch (e, stack) {

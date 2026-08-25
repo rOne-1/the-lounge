@@ -532,6 +532,59 @@ void main() {
     });
   });
 
+  group('DATA-CONT-3: computeKeywordAffinity', () {
+    test('multi-membership: a title with N keywords counts toward all N',
+        () {
+      const item1 = MediaItem(
+        id: 'movie_1',
+        title: 'One',
+        type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: [],
+        keywords: [
+          MediaKeyword(id: 1, name: 'heist'),
+          MediaKeyword(id: 2, name: 'dream'),
+        ],
+      );
+      const item2 = MediaItem(
+        id: 'movie_2',
+        title: 'Two',
+        type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: [],
+        keywords: [MediaKeyword(id: 1, name: 'heist')],
+      );
+      // A title backfilled before DATA-CONT-3 existed, or never enriched
+      // -- must not throw on a null keywords list.
+      const item3 = MediaItem(
+        id: 'movie_3',
+        title: 'Three',
+        type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: [],
+      );
+
+      final input = AnalyticsInput(
+        watchedList: const {
+          'movie_1': item1,
+          'movie_2': item2,
+          'movie_3': item3,
+        },
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final affinity = computeKeywordAffinity(input);
+      expect(affinity['heist'], 2);
+      expect(affinity['dream'], 1);
+    });
+  });
+
   group('computeDecadeDistribution', () {
     test('buckets by decade, excludes titles with no release date', () {
       const item90s = MediaItem(

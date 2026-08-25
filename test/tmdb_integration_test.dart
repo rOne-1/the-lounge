@@ -900,6 +900,217 @@ void main() {
     });
 
     test(
+        'DATA-CONT-1: details request appends images with include_image_language and parses ClearLogo/alternate backdrops/posters',
+        () async {
+      Uri? capturedUrl;
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/movie/800')) {
+          capturedUrl = request.url;
+          return http.Response(
+              jsonEncode({
+                'id': 800,
+                'title': 'Logo Picture',
+                'images': {
+                  'logos': [
+                    // A non-English SVG entry that should lose to the PNG
+                    // English entry below despite appearing first.
+                    {
+                      'file_path': '/logo-fr.svg',
+                      'iso_639_1': 'fr',
+                      'vote_average': 9.0,
+                    },
+                    {
+                      'file_path': '/logo-en.png',
+                      'iso_639_1': 'en',
+                      'vote_average': 5.0,
+                    },
+                  ],
+                  'backdrops': [
+                    {'file_path': '/backdrop1.jpg'},
+                    {'file_path': '/backdrop2.jpg'},
+                  ],
+                  'posters': [
+                    {'file_path': '/poster1.jpg'},
+                  ],
+                },
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final details = await repo.getMediaDetails('movie_800');
+      expect(details, isNotNull);
+
+      expect(capturedUrl, isNotNull);
+      final appendParts =
+          capturedUrl!.queryParameters['append_to_response']!.split(',');
+      expect(appendParts, contains('images'));
+      expect(capturedUrl!.queryParameters['include_image_language'],
+          equals('en,null'));
+
+      // PNG + English-tagged wins over an earlier-listed, higher-voted
+      // non-English SVG.
+      expect(details!.logoUrl,
+          equals('https://image.tmdb.org/t/p/w500/logo-en.png'));
+      expect(
+          details.backdropUrls,
+          equals([
+            'https://image.tmdb.org/t/p/w780/backdrop1.jpg',
+            'https://image.tmdb.org/t/p/w780/backdrop2.jpg',
+          ]));
+      expect(details.posterUrls,
+          equals(['https://image.tmdb.org/t/p/w342/poster1.jpg']));
+    });
+
+    test(
+        'DATA-CONT-2: parses reviews verbatim, including the Gravatar avatar_path quirk',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/movie/900')) {
+          return http.Response(
+              jsonEncode({
+                'id': 900,
+                'title': 'Reviewed Picture',
+                'reviews': {
+                  'results': [
+                    {
+                      'id': 'rev1',
+                      'author': 'Alice',
+                      'content': 'Loved it.',
+                      'created_at': '2021-05-01T00:00:00.000Z',
+                      'url': 'https://www.themoviedb.org/review/rev1',
+                      'author_details': {
+                        'rating': 9,
+                        'avatar_path': '/tmdb-avatar.jpg',
+                      },
+                    },
+                    {
+                      'id': 'rev2',
+                      'author': 'Bob',
+                      'content': 'It was fine.',
+                      'author_details': {
+                        'rating': null,
+                        'avatar_path':
+                            '/https://secure.gravatar.com/avatar/xyz.jpg',
+                      },
+                    },
+                  ],
+                },
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final details = await repo.getMediaDetails('movie_900');
+      expect(details, isNotNull);
+      expect(details!.reviews, isNotNull);
+      expect(details.reviews!.length, equals(2));
+
+      final alice = details.reviews!.first;
+      expect(alice.author, equals('Alice'));
+      expect(alice.content, equals('Loved it.'));
+      expect(alice.rating, equals(9.0));
+      expect(alice.createdAt, equals(DateTime.parse('2021-05-01T00:00:00.000Z')));
+      expect(alice.url, equals('https://www.themoviedb.org/review/rev1'));
+      expect(alice.authorAvatarUrl,
+          equals('https://image.tmdb.org/t/p/w185/tmdb-avatar.jpg'));
+
+      final bob = details.reviews![1];
+      expect(bob.rating, isNull);
+      // The Gravatar-style external URL is used as-is (leading slash
+      // stripped), not prefixed with TMDB's image base URL.
+      expect(bob.authorAvatarUrl,
+          equals('https://secure.gravatar.com/avatar/xyz.jpg'));
+    });
+
+    test(
+        'DATA-CONT-4: parses alternative_titles (movie "titles" key) and translations, deduping repeats',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/movie/1000')) {
+          return http.Response(
+              jsonEncode({
+                'id': 1000,
+                'title': 'Original Title',
+                'alternative_titles': {
+                  'titles': [
+                    {'iso_3166_1': 'BR', 'title': 'Origem', 'type': ''},
+                    {'iso_3166_1': 'PT', 'title': 'Origem', 'type': ''},
+                    {'iso_3166_1': 'RU', 'title': 'Начало', 'type': ''},
+                    {'iso_3166_1': 'FR', 'title': '', 'type': ''},
+                  ],
+                },
+                'translations': {
+                  'translations': [
+                    {
+                      'iso_639_1': 'ja',
+                      'iso_3166_1': 'JP',
+                      'data': {'title': 'インセプション'},
+                    },
+                    {
+                      'iso_639_1': 'de',
+                      'iso_3166_1': 'DE',
+                      'data': {'title': ''},
+                    },
+                  ],
+                },
+              }),
+              200,
+              // Cyrillic/Japanese characters in this fixture aren't
+              // Latin-1-representable -- http.Response defaults to Latin-1
+              // without an explicit UTF-8 content-type header.
+              headers: {'content-type': 'application/json; charset=utf-8'});
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final details = await repo.getMediaDetails('movie_1000');
+      expect(details, isNotNull);
+      // 'Origem' appears for both BR and PT but is deduped to one entry.
+      expect(details!.alternativeTitles, unorderedEquals(['Origem', 'Начало']));
+      expect(details.translatedTitlesByLanguage, equals({'ja': 'インセプション'}));
+    });
+
+    test(
+        'DATA-CONT-4: TV alternative_titles uses the "results" key, not "titles"',
+        () async {
+      final mockClient = MockClient((request) async {
+        if (request.url.path.contains('/tv/1001')) {
+          return http.Response(
+              jsonEncode({
+                'id': 1001,
+                'name': 'Original Series',
+                'alternative_titles': {
+                  'results': [
+                    {'iso_3166_1': 'JP', 'title': 'Japanese Title'},
+                  ],
+                },
+              }),
+              200);
+        }
+        return http.Response(jsonEncode({'results': []}), 200);
+      });
+
+      final service = TmdbApiService(token: 'valid_token', client: mockClient);
+      final repo = TmdbMovieRepository(apiService: service);
+
+      final details = await repo.getMediaDetails('tv_1001');
+      expect(details, isNotNull);
+      expect(details!.alternativeTitles, equals(['Japanese Title']));
+    });
+
+    test(
         'Configured repository parses multi-country flatrate, rent, and buy providers',
         () async {
       final mockClient = MockClient((request) async {

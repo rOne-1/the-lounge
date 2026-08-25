@@ -490,22 +490,33 @@ class TmdbApiService {
   Future<Map<String, dynamic>> getMovieDetails(
     String id, {
     String? appendToResponse,
+    // DATA-CONT-1: scopes the `images` append (when present in
+    // appendToResponse) to logos/posters tagged with one of these
+    // languages -- 'en,null' keeps English-tagged and language-neutral
+    // (typically textless ClearLogo) entries, dropping every other
+    // language's images server-side instead of filtering client-side.
+    String? includeImageLanguage,
   }) async {
-    final query = appendToResponse != null
-        ? {'append_to_response': appendToResponse}
-        : null;
-    return _get(TmdbEndpoints.movieDetails(id), query);
+    final query = <String, dynamic>{
+      if (appendToResponse != null) 'append_to_response': appendToResponse,
+      if (includeImageLanguage != null)
+        'include_image_language': includeImageLanguage,
+    };
+    return _get(TmdbEndpoints.movieDetails(id), query.isEmpty ? null : query);
   }
 
   /// GET /3/tv/{id}
   Future<Map<String, dynamic>> getTvDetails(
     String id, {
     String? appendToResponse,
+    String? includeImageLanguage,
   }) async {
-    final query = appendToResponse != null
-        ? {'append_to_response': appendToResponse}
-        : null;
-    return _get(TmdbEndpoints.tvDetails(id), query);
+    final query = <String, dynamic>{
+      if (appendToResponse != null) 'append_to_response': appendToResponse,
+      if (includeImageLanguage != null)
+        'include_image_language': includeImageLanguage,
+    };
+    return _get(TmdbEndpoints.tvDetails(id), query.isEmpty ? null : query);
   }
 
   /// GET /3/tv/{id} (Alias for getTvDetails)

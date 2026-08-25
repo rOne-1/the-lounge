@@ -71,6 +71,30 @@ class MockMovieRepository implements MovieRepository {
         MediaCastMember(id: '5013', name: 'Emma Thomas', role: 'Producer'),
       ],
       certification: 'PG-13',
+      // DATA-CONT-1: images data-layer mock parity.
+      logoUrl:
+          'https://image.tmdb.org/t/p/w500/9r4M3aVjr5PIfCH8Ux6ihUXEIZY.png',
+      backdropUrls: const [
+        'https://image.tmdb.org/t/p/w780/8ZTVqvKDQ8emSGUEMjsS4yHAwrp.jpg',
+      ],
+      posterUrls: const [
+        'https://image.tmdb.org/t/p/w342/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
+      ],
+      // DATA-CONT-4: alternative titles/translations mock parity.
+      alternativeTitles: const ['Origem', 'Начало'],
+      translatedTitlesByLanguage: const {'ja': 'インセプション', 'fr': 'Inception'},
+      // DATA-CONT-2: reviews mock parity.
+      reviews: [
+        MediaReview(
+          id: 'mock-review-1',
+          author: 'CinemaFan42',
+          content:
+              'A dazzling, layered heist thriller that rewards multiple viewings. '
+              'Nolan at his most ambitious.',
+          rating: 9.0,
+          createdAt: DateTime(2010, 7, 20),
+        ),
+      ],
       voteCount: 34500,
       imdbId: 'tt1375666',
       keywords: const [
