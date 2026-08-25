@@ -21,15 +21,25 @@ class AnalyticsShareCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
     final totalHours = (result.timeInvestment.totalMinutes / 60).round();
+    final totalTitles = result.timeInvestment.movieCount + result.timeInvestment.tvCount;
     final topGenre = _topEntryName(result.genreFrequency);
     final topDirector = result.directorRanking.isNotEmpty ? result.directorRanking.first.name : null;
     final topActor = result.castRanking.isNotEmpty ? result.castRanking.first.name : null;
+    final topDecade = _topEntryName(result.decadeDistribution.counts);
+    final topStudio =
+        result.studioAffinity.studios.isNotEmpty ? result.studioAffinity.studios.first.name : null;
+    final avgBingeDays = result.bingeVelocity.averageDays;
 
     final stats = [
       _StatEntry(value: '$totalHours', label: 'Hours Watched'),
+      _StatEntry(value: '$totalTitles', label: 'Titles Watched'),
       if (topGenre != null) _StatEntry(value: topGenre, label: 'Top Genre'),
       if (topDirector != null) _StatEntry(value: topDirector, label: 'Top Director'),
       if (topActor != null) _StatEntry(value: topActor, label: 'Top Actor'),
+      if (topDecade != null) _StatEntry(value: topDecade, label: 'Favorite Era'),
+      if (topStudio != null) _StatEntry(value: topStudio, label: 'Top Studio'),
+      if (avgBingeDays != null)
+        _StatEntry(value: '${avgBingeDays.toStringAsFixed(1)}d', label: 'Avg. Binge Pace'),
     ];
 
     return Container(
@@ -96,10 +106,6 @@ class AnalyticsShareCard extends StatelessWidget {
                   ],
                 ),
                 _StatGrid(stats: stats),
-                Text(
-                  'Generated on-device -- the-lounge app',
-                  style: AppThemes.safeGeist(fontSize: 13, color: colors.sub),
-                ),
               ],
             ),
           ),

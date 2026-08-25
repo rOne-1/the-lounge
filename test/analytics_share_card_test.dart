@@ -21,20 +21,21 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('renders total hours, top genre, top director, and top actor',
-      (tester) async {
+  testWidgets(
+      'renders total hours, titles watched, top genre, top director, top '
+      'actor, favorite era, top studio, and avg. binge pace', (tester) async {
     await pump(
       tester,
       const AnalyticsResult(
         heatmap: HeatmapData({}),
         timeInvestment: TimeInvestment(
             movieMinutes: 120, tvMinutes: 60, movieCount: 1, tvCount: 1),
-        bingeVelocity: BingeVelocity(averageDays: null, perSeason: []),
+        bingeVelocity: BingeVelocity(averageDays: 2.5, perSeason: []),
         castRanking: [NameCount(name: 'Alice', count: 3)],
         directorRanking: [NameCount(name: 'Nolan', count: 2)],
         ratingDivergence: [],
         genreFrequency: {'Drama': 4, 'Comedy': 1},
-        decadeDistribution: DecadeDistribution({}),
+        decadeDistribution: DecadeDistribution({'2010s': 3, '2000s': 1}),
         temporalDistanceIndex: TemporalDistanceIndex(null),
         languageDistribution: LanguageDistribution({}),
         dayOfWeekDistribution:
@@ -46,7 +47,7 @@ void main() {
             epicCount: 0),
         discoverSwipeRatio: DiscoverSwipeRatio(
             skippedCount: 0, watchlistedCount: 0, savedCount: 0),
-        studioAffinity: StudioAffinity([]),
+        studioAffinity: StudioAffinity([NameCount(name: 'A24', count: 2)]),
         watchlistFunnel: WatchlistFunnel(
             convertedCount: 0, averageBacklogDays: null, pendingCount: 0),
         abandonedShows: [],
@@ -57,12 +58,23 @@ void main() {
     expect(find.text('My Watching Habits'), findsOneWidget);
     expect(find.text('3'), findsOneWidget); // (120+60)/60 = 3 total hours
     expect(find.text('Hours Watched'), findsOneWidget);
+    expect(find.text('2'), findsOneWidget); // movieCount + tvCount
+    expect(find.text('Titles Watched'), findsOneWidget);
     expect(find.text('Drama'), findsOneWidget);
     expect(find.text('Top Genre'), findsOneWidget);
     expect(find.text('Nolan'), findsOneWidget);
     expect(find.text('Top Director'), findsOneWidget);
     expect(find.text('Alice'), findsOneWidget);
     expect(find.text('Top Actor'), findsOneWidget);
+    expect(find.text('2010s'), findsOneWidget);
+    expect(find.text('Favorite Era'), findsOneWidget);
+    expect(find.text('A24'), findsOneWidget);
+    expect(find.text('Top Studio'), findsOneWidget);
+    expect(find.text('2.5d'), findsOneWidget);
+    expect(find.text('Avg. Binge Pace'), findsOneWidget);
+
+    // Regression guard: the on-device attribution footer was removed.
+    expect(find.textContaining('Generated on-device'), findsNothing);
   });
 
   testWidgets('omits rows with no data instead of showing blank/null values',
@@ -98,8 +110,12 @@ void main() {
     );
 
     expect(find.text('Hours Watched'), findsOneWidget);
+    expect(find.text('Titles Watched'), findsOneWidget);
     expect(find.text('Top Genre'), findsNothing);
     expect(find.text('Top Director'), findsNothing);
     expect(find.text('Top Actor'), findsNothing);
+    expect(find.text('Favorite Era'), findsNothing);
+    expect(find.text('Top Studio'), findsNothing);
+    expect(find.text('Avg. Binge Pace'), findsNothing);
   });
 }
