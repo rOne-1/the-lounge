@@ -4,9 +4,11 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'dart:math' as math;
+import '../providers/ambiance_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
+import '../utils/app_haptics.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/pressable_scale.dart';
 import 'detail_screen.dart';
@@ -774,6 +776,11 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
   String? _flyOffDirection;
   String? _lastNotifiedDirection;
 
+  /// CRAFT-HAPTIC-1: fires the threshold-crossing tick once per crossing,
+  /// not once per pixel while lingering past it -- reset when the drag
+  /// retreats back below the commit threshold so re-crossing ticks again.
+  bool _hasFiredThresholdTick = false;
+
   @override
   void initState() {
     super.initState();
@@ -973,6 +980,9 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
   Widget build(BuildContext context) {
     final phColor = context.ambianceColors.ph;
     final borderColor = context.ambianceColors.lineRgba;
+    // CRAFT-HAPTIC-1: per-theme haptic weight family for this deck's tick/
+    // commit feedback below.
+    final hapticWeight = hapticWeightForThemeId(ref.watch(ambianceProvider).id);
 
     const double commitThreshold = 100.0;
     final bool isHorizontalDominant =
@@ -1271,8 +1281,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
                   ),
                   const SizedBox(height: 6),
                   Text(widget.item.title,
-                      style: AppThemes.display(
-                          context,
+                      style: AppThemes.display(context,
                           fontSize: 27,
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -1343,6 +1352,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
               onTap: openContainer,
               onLongPress: () =>
                   showQuickStatusSheet(context, ref, widget.item),
+              onPanStart: (_) => _hasFiredThresholdTick = false,
               onPanUpdate: (details) {
                 if (_isFlyingOff) return;
                 if (_motionController.isAnimating) {
@@ -1352,6 +1362,19 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
                   _dragOffset += details.delta;
                   _angle = _dragOffset.dx / 300 * (math.pi / 8);
                 });
+                // CRAFT-HAPTIC-1: one light tick the moment the drag first
+                // crosses the commit threshold, reset (via onPanStart) so
+                // the next gesture can tick again -- not a tick per pixel
+                // while lingering past it.
+                final crossedThreshold =
+                    _dragOffset.dx.abs() >= commitThreshold ||
+                        _dragOffset.dy.abs() >= commitThreshold;
+                if (crossedThreshold && !_hasFiredThresholdTick) {
+                  _hasFiredThresholdTick = true;
+                  AppHaptics.thresholdTick(hapticWeight);
+                } else if (!crossedThreshold && _hasFiredThresholdTick) {
+                  _hasFiredThresholdTick = false;
+                }
               },
               onPanEnd: (details) {
                 if (_isFlyingOff) return;
@@ -1361,9 +1384,11 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
 
                 if (isHorizontalDominant) {
                   if (_dragOffset.dx > 100 || velocity.dx > 500) {
+                    AppHaptics.commitImpact(hapticWeight);
                     flyOff('Right', () => widget.onSwipe('Right'),
                         velocity: velocity);
                   } else if (_dragOffset.dx < -100 || velocity.dx < -500) {
+                    AppHaptics.commitImpact(hapticWeight);
                     flyOff('Left', () => widget.onSwipe('Left'),
                         velocity: velocity);
                   } else {
@@ -1371,9 +1396,11 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
                   }
                 } else {
                   if (_dragOffset.dy > 100 || velocity.dy > 500) {
+                    AppHaptics.commitImpact(hapticWeight);
                     flyOff('Down', () => widget.onSwipe('Down'),
                         velocity: velocity);
                   } else if (_dragOffset.dy < -100 || velocity.dy < -500) {
+                    AppHaptics.commitImpact(hapticWeight);
                     flyOff('Up', () => widget.onSwipe('Up'),
                         velocity: velocity);
                   } else {

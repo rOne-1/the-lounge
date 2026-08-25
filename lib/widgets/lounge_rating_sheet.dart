@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
+import '../providers/ambiance_provider.dart';
 import '../providers/media_provider.dart';
+import '../utils/app_haptics.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'media_image.dart';
 import 'pressable_scale.dart';
@@ -21,7 +23,8 @@ WatchRecord? findPrimaryWatchRecord(
   // writing (see media_provider.dart's _resolveWatchHistoryId), so a
   // not-yet-normalized mediaId here would otherwise miss the prefixed key
   // the record actually landed under.
-  final records = watchHistory[resolveStoredId(watchHistory, mediaId) ?? mediaId];
+  final records =
+      watchHistory[resolveStoredId(watchHistory, mediaId) ?? mediaId];
   if (records == null) return null;
   for (final r in records) {
     if (r.seasonNumber == seasonNumber && r.isFirstWatch) return r;
@@ -83,10 +86,9 @@ class LoungeRatingSheet extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final watchHistory =
-        ref.watch(mediaProvider.select((s) => s.watchHistory));
-    final resolved =
-        recordToEdit ?? findPrimaryWatchRecord(watchHistory, item.id, seasonNumber);
+    final watchHistory = ref.watch(mediaProvider.select((s) => s.watchHistory));
+    final resolved = recordToEdit ??
+        findPrimaryWatchRecord(watchHistory, item.id, seasonNumber);
     final notifier = ref.read(mediaProvider.notifier);
     final colors = context.ambianceColors;
 
@@ -95,6 +97,15 @@ class LoungeRatingSheet extends ConsumerWidget {
         : (item.type == MediaType.movie ? 'Movie' : 'TV Show');
 
     void selectRating(PersonalRating rating) {
+      // CRAFT-HAPTIC-1: "Loved" is the closest existing analog to
+      // Star/Favorite in this app's data model (there's no separate
+      // favoriting feature) -- gets the double-pulse, the other 3 tiers
+      // just PressableScale's own default tap feedback.
+      if (rating == PersonalRating.loved) {
+        AppHaptics.doublePulse(
+          hapticWeightForThemeId(ref.read(ambianceProvider).id),
+        );
+      }
       if (resolved != null) {
         notifier.updateWatchRecord(
           item.id,
@@ -153,7 +164,8 @@ class LoungeRatingSheet extends ConsumerWidget {
                 child: SizedBox(
                   width: 44,
                   height: 64,
-                  child: MediaImage(item: item, fit: BoxFit.cover, showFallbackTitle: false),
+                  child: MediaImage(
+                      item: item, fit: BoxFit.cover, showFallbackTitle: false),
                 ),
               ),
               const SizedBox(width: 14),
@@ -174,7 +186,8 @@ class LoungeRatingSheet extends ConsumerWidget {
                     const SizedBox(height: 4),
                     Text(
                       isAutoPrompt ? 'How was it?' : 'Rate $subtitle',
-                      style: AppThemes.safeGeist(fontSize: 12, color: colors.sub),
+                      style:
+                          AppThemes.safeGeist(fontSize: 12, color: colors.sub),
                     ),
                   ],
                 ),
@@ -197,7 +210,9 @@ class LoungeRatingSheet extends ConsumerWidget {
             children: [
               Expanded(
                 child: PressableScale(
-                  onTap: resolved != null ? removeRating : () => Navigator.of(context).pop(),
+                  onTap: resolved != null
+                      ? removeRating
+                      : () => Navigator.of(context).pop(),
                   child: Container(
                     height: 44,
                     alignment: Alignment.center,
@@ -208,7 +223,9 @@ class LoungeRatingSheet extends ConsumerWidget {
                     ),
                     child: Text(
                       resolved != null
-                          ? (recordToEdit != null ? 'Delete entry' : 'Remove rating')
+                          ? (recordToEdit != null
+                              ? 'Delete entry'
+                              : 'Remove rating')
                           : (isAutoPrompt ? 'Skip' : 'Cancel'),
                       style: AppThemes.safeGeist(
                         fontSize: 13,
@@ -263,7 +280,8 @@ class _RatingTierRow extends StatelessWidget {
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: tierColor),
+              decoration:
+                  BoxDecoration(shape: BoxShape.circle, color: tierColor),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -276,7 +294,8 @@ class _RatingTierRow extends StatelessWidget {
                 ),
               ),
             ),
-            if (isSelected) Icon(Icons.check_rounded, size: 18, color: tierColor),
+            if (isSelected)
+              Icon(Icons.check_rounded, size: 18, color: tierColor),
           ],
         ),
       ),
@@ -316,7 +335,8 @@ class PersonalRatingPill extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(mediaProvider);
-    final record = findPrimaryWatchRecord(state.watchHistory, item.id, seasonNumber);
+    final record =
+        findPrimaryWatchRecord(state.watchHistory, item.id, seasonNumber);
 
     final bool isEligible;
     if (seasonNumber == null) {
@@ -333,8 +353,8 @@ class PersonalRatingPill extends ConsumerWidget {
     final rating = record?.rating;
     final tierColor = rating != null ? AppRatingColors.of(rating) : colors.acc;
     final label = rating != null ? rating.label : 'Rate it';
-    void onTap() =>
-        showLoungeRatingSheet(context, ref, item: item, seasonNumber: seasonNumber);
+    void onTap() => showLoungeRatingSheet(context, ref,
+        item: item, seasonNumber: seasonNumber);
 
     if (!expanded) {
       return PressableScale(
@@ -344,10 +364,14 @@ class PersonalRatingPill extends ConsumerWidget {
           curve: AppPhysics.houseSpringCurve,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: rating != null ? tierColor.withValues(alpha: 0.16) : colors.pill,
+            color: rating != null
+                ? tierColor.withValues(alpha: 0.16)
+                : colors.pill,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: rating != null ? tierColor.withValues(alpha: 0.6) : colors.lineRgba,
+              color: rating != null
+                  ? tierColor.withValues(alpha: 0.6)
+                  : colors.lineRgba,
             ),
           ),
           child: Row(
@@ -392,7 +416,9 @@ class PersonalRatingPill extends ConsumerWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                rating == null ? Icons.star_outline_rounded : Icons.star_rounded,
+                rating == null
+                    ? Icons.star_outline_rounded
+                    : Icons.star_rounded,
                 size: 18,
                 color: tierColor,
               ),

@@ -173,10 +173,13 @@ void main() {
   testWidgets('Discover screen swipe gestures update provider state',
       (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
     final mockRepo = TestRepository();
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
 
@@ -244,10 +247,13 @@ void main() {
       'BETA3-A11Y-2: SwipeCard exposes a title/year/type/rating label and '
       'skip/save/watchlist/watched custom semantic actions', (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
     final mockRepo = TestRepository();
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
     addTearDown(container.dispose);
@@ -285,10 +291,13 @@ void main() {
   testWidgets('Tapping Discover card navigates to DetailScreen',
       (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
     final mockRepo = TestRepository();
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
 
@@ -325,10 +334,13 @@ void main() {
   testWidgets('Swiping drag gesture triggers early completion when exceeding 70% threshold',
       (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
     final mockRepo = TestRepository();
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
 
@@ -362,10 +374,13 @@ void main() {
   testWidgets('Action button visual highlight triggers on swipe gesture and direct button tap',
       (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
     final mockRepo = TestRepository();
     final container = ProviderContainer(
       overrides: [
         movieRepositoryProvider.overrideWithValue(mockRepo),
+        sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
 
