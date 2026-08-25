@@ -9,6 +9,7 @@ import '../providers/hall_provider.dart';
 import '../constants.dart';
 import '../widgets/ambient_glow.dart';
 import '../widgets/analytics_hero_card.dart';
+import '../widgets/continue_watching_hero_card.dart';
 import '../widgets/lounge_doorway_emblem.dart';
 import '../widgets/memory_moments_section.dart';
 import '../widgets/pressable_scale.dart';
@@ -108,10 +109,13 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
 
     final activeMediaType = ref.watch(navigationProvider).activeMediaType;
     final activeDomain = MediumDomain.fromMediaTypeToggle(activeMediaType);
-    final targetType = activeMediaType == MediaTypeToggle.movies ? MediaType.movie : MediaType.tv;
+    final targetType = activeMediaType == MediaTypeToggle.movies
+        ? MediaType.movie
+        : MediaType.tv;
 
-    int countForType(Map<String, dynamic> itemsMap) =>
-        itemsMap.values.where((m) => m is MediaItem && m.type == targetType).length;
+    int countForType(Map<String, dynamic> itemsMap) => itemsMap.values
+        .where((m) => m is MediaItem && m.type == targetType)
+        .length;
 
     final libraryCount = countForType(mediaState.watchlist) +
         countForType(mediaState.maybeList) +
@@ -123,13 +127,16 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
     String domainSubtitle = '$libraryCount titles in the lounge';
     switch (activeDomain) {
       case MediumDomain.movies:
-        domainSubtitle = '$libraryCount ${libraryCount == 1 ? "movie" : "movies"} in the lounge';
+        domainSubtitle =
+            '$libraryCount ${libraryCount == 1 ? "movie" : "movies"} in the lounge';
         break;
       case MediumDomain.tv:
-        domainSubtitle = '$libraryCount ${libraryCount == 1 ? "TV show" : "TV shows"} in the lounge';
+        domainSubtitle =
+            '$libraryCount ${libraryCount == 1 ? "TV show" : "TV shows"} in the lounge';
         break;
       case MediumDomain.anime:
-        domainSubtitle = '$libraryCount ${libraryCount == 1 ? "anime" : "anime series"} in the lounge';
+        domainSubtitle =
+            '$libraryCount ${libraryCount == 1 ? "anime" : "anime series"} in the lounge';
         break;
     }
 
@@ -152,7 +159,8 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
                 key: const ValueKey('lounge_hall_pill'),
                 onTap: () => HallSelectorSheet.show(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                   decoration: BoxDecoration(
                     color: colors.card,
                     borderRadius: BorderRadius.circular(20),
@@ -274,6 +282,13 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
                 ],
               ),
               const SizedBox(height: 14),
+
+              // 3a. Continue Watching Hero Card (CRAFT-HERO-1) -- collapses
+              // to a true zero-height SizedBox.shrink() (own trailing gap
+              // included internally, not here) when no TV show is currently
+              // in Watching, so it never leaves a doubled-up empty gap
+              // above the Analytics hero below.
+              const ContinueWatchingHeroCard(),
 
               // 3b. Analytics Hero Banner (ANLY-HUB-1) -- the third of the
               // app's "3 Cores", so it gets a full-width hero entry rather
