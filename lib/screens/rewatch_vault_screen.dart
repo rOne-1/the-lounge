@@ -9,6 +9,19 @@ import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
 import 'detail_screen.dart';
 
+/// FEAT-TOOLS-1: total number of rewatch `WatchRecord` entries logged
+/// across every title, both movies and TV (unlike [RewatchVaultScreen]'s
+/// own list, which is scoped to the active Movies/TV toggle) -- the Tools
+/// Hub card shows one aggregate number regardless of which toggle is
+/// active. Also feeds the hero stat on this screen itself (FEAT-REWATCH-1).
+int totalRewatchCount(MediaState state) {
+  var total = 0;
+  for (final records in state.watchHistory.values) {
+    total += records.where((r) => !r.isFirstWatch).length;
+  }
+  return total;
+}
+
 MediaItem? _findKnownItem(MediaState state, String id) {
   return state.watchlist[id] ??
       state.maybeList[id] ??

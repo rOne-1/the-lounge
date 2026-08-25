@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
+import '../providers/media_provider.dart';
 import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
 import 'folders_screen.dart';
@@ -20,6 +21,17 @@ class ToolsScreen extends ConsumerWidget {
     final colors = context.ambianceColors;
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
+
+    // FEAT-TOOLS-1/2: live counts read straight off mediaProvider, so every
+    // card updates reactively the moment a title is rated, saved, or
+    // rewatched -- reusing the same counting logic each tool's own screen
+    // already uses (unratedWatchedTitles, totalRewatchCount), not a second
+    // copy of the rule.
+    final state = ref.watch(mediaProvider);
+    final unratedCount = unratedWatchedTitles(state).length;
+    final cleanupCount = state.maybeList.length;
+    final rewatchCount = totalRewatchCount(state);
+    final folderCount = state.customFolders.length;
 
     return Scaffold(
       backgroundColor: colors.base,
@@ -54,25 +66,39 @@ class ToolsScreen extends ConsumerWidget {
                       _ToolCard(
                         icon: Icons.star_rounded,
                         title: 'Rate Titles',
-                        subtitle: 'Batch rating tool',
+                        subtitle: unratedCount > 0
+                            ? '$unratedCount unrated'
+                            : 'All caught up',
+                        isActive: unratedCount > 0,
+                        badgeCount: unratedCount,
                         onTap: () => _push(context, const RateTitlesScreen()),
                       ),
                       _ToolCard(
                         icon: Icons.folder_rounded,
                         title: 'Custom Folders',
-                        subtitle: 'Curated playlists',
+                        subtitle: folderCount == 1
+                            ? '1 playlist'
+                            : '$folderCount playlists',
                         onTap: () => _push(context, const FoldersScreen()),
                       ),
                       _ToolCard(
                         icon: Icons.auto_awesome_rounded,
                         title: 'Cleanup Session',
-                        subtitle: 'Tidy up Saved',
+                        subtitle: cleanupCount > 0
+                            ? '$cleanupCount pending'
+                            : 'All caught up',
+                        isActive: cleanupCount > 0,
+                        badgeCount: cleanupCount,
                         onTap: () => _push(context, const CleanupSwipeScreen()),
                       ),
                       _ToolCard(
                         icon: Icons.replay_rounded,
                         title: 'Rewatch Vault',
-                        subtitle: 'Titles you\'ve rewatched',
+                        subtitle: rewatchCount == 0
+                            ? 'No rewatches yet'
+                            : rewatchCount == 1
+                                ? '1 rewatch logged'
+                                : '$rewatchCount rewatches logged',
                         onTap: () => _push(context, const RewatchVaultScreen()),
                       ),
                     ],
@@ -158,11 +184,22 @@ class _ToolCard extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
+  /// FEAT-TOOLS-2: null means "no active/quiet concept" (Custom Folders,
+  /// Rewatch Vault -- live counts, not queues to clear), so the card
+  /// always renders at the existing uniform accent level. true/false is
+  /// for cards with real actionable pending work (Rate Titles, Cleanup
+  /// Session): true dials the accent presence up and shows [badgeCount];
+  /// false renders a quiet neutral state instead.
+  final bool? isActive;
+  final int? badgeCount;
+
   const _ToolCard({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.isActive,
+    this.badgeCount,
   });
 
   @override
@@ -170,6 +207,13 @@ class _ToolCard extends StatelessWidget {
     final colors = context.ambianceColors;
     final accent = colors.acc;
     final isDark = colors.isDark;
+    final isQuiet = isActive == false;
+
+    final borderAlpha =
+        isQuiet ? (isDark ? 0.14 : 0.18) : (isDark ? 0.28 : 0.35);
+    final gradientAlpha = isQuiet ? 0.04 : (isDark ? 0.12 : 0.08);
+    final iconBgAlpha = isQuiet ? (isDark ? 0.10 : 0.08) : (isDark ? 0.18 : 0.14);
+    final iconColor = isQuiet ? colors.sub : accent;
 
     return PressableScale(
       onTap: onTap,
@@ -181,25 +225,21 @@ class _ToolCard extends StatelessWidget {
           color: colors.card,
           borderRadius: BorderRadius.circular(22.0),
           border: Border.all(
-            color: accent.withValues(alpha: isDark ? 0.28 : 0.35),
+            color: accent.withValues(alpha: borderAlpha),
             width: 1.2,
           ),
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-                    accent.withValues(alpha: 0.12),
-                    colors.card,
-                  ]
-                : [
-                    accent.withValues(alpha: 0.08),
-                    colors.card,
-                  ],
+            colors: [
+              accent.withValues(alpha: gradientAlpha),
+              colors.card,
+            ],
           ),
           boxShadow: [
             BoxShadow(
-              color: accent.withValues(alpha: isDark ? 0.08 : 0.04),
+              color: accent.withValues(
+                  alpha: isQuiet ? 0.0 : (isDark ? 0.08 : 0.04)),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -216,22 +256,47 @@ class _ToolCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: accent.withValues(alpha: isDark ? 0.18 : 0.14),
-                borderRadius: BorderRadius.circular(11.0),
-                border: Border.all(
-                  color: accent.withValues(alpha: 0.35),
-                  width: 1.0,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: iconBgAlpha),
+                    borderRadius: BorderRadius.circular(11.0),
+                    border: Border.all(
+                      color: accent.withValues(alpha: isQuiet ? 0.18 : 0.35),
+                      width: 1.0,
+                    ),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: iconColor,
+                    size: 20,
+                  ),
                 ),
-              ),
-              child: Icon(
-                icon,
-                color: accent,
-                size: 20,
-              ),
+                if (isActive == true && badgeCount != null)
+                  AnimatedContainer(
+                    duration: AppPhysics.houseSpringDuration,
+                    curve: AppPhysics.houseSpringCurve,
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: isDark ? 0.18 : 0.14),
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: accent.withValues(alpha: 0.4)),
+                    ),
+                    child: Text(
+                      '$badgeCount',
+                      style: AppThemes.safeGeist(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: accent,
+                      ),
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             Column(
