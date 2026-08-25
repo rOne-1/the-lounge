@@ -7,6 +7,7 @@ import 'package:the_lounge/screens/rewatch_vault_screen.dart';
 import 'package:the_lounge/screens/detail_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
+import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 
@@ -44,14 +45,18 @@ void main() {
     genres: const ['Comedy'],
   );
 
-  Future<ProviderContainer> pumpVault(WidgetTester tester) async {
+  Future<ProviderContainer> pumpVault(WidgetTester tester, {List<MediaItem> extraItems = const []}) async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
         movieRepositoryProvider.overrideWithValue(
-          _TestRepository({rewatchedMovie.id: rewatchedMovie, neverRewatchedMovie.id: neverRewatchedMovie}),
+          _TestRepository({
+            rewatchedMovie.id: rewatchedMovie,
+            neverRewatchedMovie.id: neverRewatchedMovie,
+            for (final item in extraItems) item.id: item,
+          }),
         ),
       ],
     );
@@ -190,6 +195,122 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(DetailScreen), findsOneWidget);
+    });
+  });
+
+  group('FEAT-REWATCH-2: empty-state CTA', () {
+    testWidgets('the empty state has a Discover Titles CTA that switches the active tab',
+        (tester) async {
+      final container = await pumpVault(tester);
+
+      expect(find.text('No rewatches yet'), findsOneWidget);
+      expect(find.text('Discover Titles'), findsOneWidget);
+      expect(container.read(navigationProvider).currentTab, isNot(AppTab.discover));
+
+      await tester.tap(find.text('Discover Titles'));
+      await tester.pump();
+
+      expect(container.read(navigationProvider).currentTab, equals(AppTab.discover));
+    });
+  });
+
+  group('FEAT-REWATCH-1: hero summary card & secondary sort', () {
+    testWidgets('hero card shows the aggregate rewatch count and the most-rewatched title',
+        (tester) async {
+      // rewatchedMovie: rewatched twice. A second, once-rewatched movie is
+      // added so "most rewatched" has a real winner to pick between.
+      final onceRewatchedMovie = MediaItem(
+        id: 'movie_once_rewatch',
+        title: 'Once Rewatched',
+        type: MediaType.movie,
+        rating: 6.5,
+        overview: '',
+        genres: const [],
+      );
+      final container = await pumpVault(tester, extraItems: [onceRewatchedMovie]);
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToWatchedList(rewatchedMovie);
+      notifier.addToWatchedList(onceRewatchedMovie);
+      notifier.addWatchRecord(rewatchedMovie.id, WatchRecord(isFirstWatch: true));
+      notifier.addWatchRecord(rewatchedMovie.id, WatchRecord(isFirstWatch: false));
+      notifier.addWatchRecord(rewatchedMovie.id, WatchRecord(isFirstWatch: false));
+      notifier.addWatchRecord(onceRewatchedMovie.id, WatchRecord(isFirstWatch: true));
+      notifier.addWatchRecord(onceRewatchedMovie.id, WatchRecord(isFirstWatch: false));
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: RewatchVaultScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('3 rewatches logged'), findsOneWidget);
+      expect(find.textContaining('Most rewatched: ${rewatchedMovie.title}'), findsOneWidget);
+    });
+
+    testWidgets('the sort dropdown reorders the rewatch list', (tester) async {
+      // Ids are pre-normalized ('movie_' prefixed, per normalizeMediaId in
+      // media_item.dart) so addToWatchedList's internal normalization is a
+      // no-op and the key it stores under matches the raw id addWatchRecord
+      // below uses -- otherwise _findKnownItem can't resolve either title
+      // (a real key-mismatch trap in this codebase's id handling, not
+      // specific to this test).
+      final aTitleMovie = MediaItem(
+        id: 'movie_alpha',
+        title: 'Alpha Movie',
+        type: MediaType.movie,
+        rating: 6.0,
+        overview: '',
+        genres: const [],
+      );
+      final zTitleMovie = MediaItem(
+        id: 'movie_zeta',
+        title: 'Zeta Movie',
+        type: MediaType.movie,
+        rating: 6.0,
+        overview: '',
+        genres: const [],
+      );
+      final container = await pumpVault(tester, extraItems: [aTitleMovie, zTitleMovie]);
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToWatchedList(aTitleMovie);
+      notifier.addToWatchedList(zTitleMovie);
+      // Zeta rewatched more recently and more often than Alpha, so the
+      // default (Most Recent) and Most Rewatched sorts should both surface
+      // it first, while Title A-Z should surface Alpha first instead.
+      notifier.addWatchRecord(aTitleMovie.id, WatchRecord(date: DateTime(2025, 1, 1), isFirstWatch: true));
+      notifier.addWatchRecord(aTitleMovie.id, WatchRecord(date: DateTime(2025, 1, 2), isFirstWatch: false));
+      notifier.addWatchRecord(zTitleMovie.id, WatchRecord(date: DateTime(2025, 6, 1), isFirstWatch: true));
+      notifier.addWatchRecord(zTitleMovie.id, WatchRecord(date: DateTime(2025, 6, 2), isFirstWatch: false));
+      notifier.addWatchRecord(zTitleMovie.id, WatchRecord(date: DateTime(2025, 6, 3), isFirstWatch: false));
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: RewatchVaultScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Assert via on-screen row position (robust to the flutter_animate
+      // wrapping around each row): Zeta's title should sit above Alpha's
+      // under Most Recent (the default sort).
+      final zetaCenter = tester.getCenter(find.text(zTitleMovie.title));
+      final alphaCenter = tester.getCenter(find.text(aTitleMovie.title));
+      expect(zetaCenter.dy, lessThan(alphaCenter.dy));
+
+      // Switch to Title A-Z -- Alpha should now be above Zeta.
+      await tester.tap(find.text('Most Recent'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Title A-Z'));
+      await tester.pumpAndSettle();
+
+      final zetaCenterAfter = tester.getCenter(find.text(zTitleMovie.title));
+      final alphaCenterAfter = tester.getCenter(find.text(aTitleMovie.title));
+      expect(alphaCenterAfter.dy, lessThan(zetaCenterAfter.dy));
     });
   });
 }
