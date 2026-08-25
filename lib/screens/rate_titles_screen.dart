@@ -35,6 +35,14 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
   late List<MediaItem> _queue;
   late MediaType _activeType;
 
+  // Single-level undo, matching Discover's convention: only the most recent
+  // action, cleared once used. `recordedAt` null means the last action was
+  // a skip (nothing to reverse in the provider, just requeue the item);
+  // non-null identifies the WatchRecord to delete on undo.
+  MediaItem? _lastActionItem;
+  DateTime? _lastActionRecordedAt;
+  bool _lastActionWasSkip = false;
+
   @override
   void initState() {
     super.initState();
@@ -47,16 +55,40 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
   void _rate(PersonalRating rating) {
     if (_queue.isEmpty) return;
     final item = _queue.first;
-    ref.read(mediaProvider.notifier).addWatchRecord(
-          item.id,
-          WatchRecord(rating: rating, date: DateTime.now(), isFirstWatch: true),
-        );
-    setState(() => _queue.removeAt(0));
+    final record = WatchRecord(rating: rating, date: DateTime.now(), isFirstWatch: true);
+    ref.read(mediaProvider.notifier).addWatchRecord(item.id, record);
+    setState(() {
+      _queue.removeAt(0);
+      _lastActionItem = item;
+      _lastActionRecordedAt = record.recordedAt;
+      _lastActionWasSkip = false;
+    });
   }
 
   void _skip() {
     if (_queue.length <= 1) return;
-    setState(() => _queue.add(_queue.removeAt(0)));
+    final item = _queue.first;
+    setState(() {
+      _queue.add(_queue.removeAt(0));
+      _lastActionItem = item;
+      _lastActionRecordedAt = null;
+      _lastActionWasSkip = true;
+    });
+  }
+
+  void _undo() {
+    final item = _lastActionItem;
+    if (item == null) return;
+    if (!_lastActionWasSkip && _lastActionRecordedAt != null) {
+      ref.read(mediaProvider.notifier).deleteWatchRecord(item.id, _lastActionRecordedAt!);
+    }
+    setState(() {
+      _queue.remove(item);
+      _queue.insert(0, item);
+      _lastActionItem = null;
+      _lastActionRecordedAt = null;
+      _lastActionWasSkip = false;
+    });
   }
 
   @override
@@ -102,6 +134,35 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
             color: colors.ink,
           ),
         ),
+        actions: [
+          if (_lastActionItem != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: Center(
+                child: PressableScale(
+                  key: const ValueKey('rate_titles_undo_button'),
+                  onTap: _undo,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colors.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colors.lineRgba),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(Icons.undo_rounded, color: colors.ink, size: 20),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: _queue.isEmpty

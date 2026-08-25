@@ -24,9 +24,16 @@ class CleanupSwipeScreen extends ConsumerStatefulWidget {
   ConsumerState<CleanupSwipeScreen> createState() => _CleanupSwipeScreenState();
 }
 
+enum _CleanupAction { promote, keep, drop }
+
 class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
   late List<MediaItem> _queue;
   late int _startCount;
+
+  // Single-level undo, matching Discover's convention: only the most recent
+  // action, cleared once used.
+  MediaItem? _lastActionItem;
+  _CleanupAction? _lastAction;
 
   @override
   void initState() {
@@ -50,19 +57,50 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
     if (_queue.isEmpty) return;
     final item = _queue.first;
     ref.read(mediaProvider.notifier).addToWatchlist(item);
-    setState(() => _queue.removeAt(0));
+    setState(() {
+      _queue.removeAt(0);
+      _lastActionItem = item;
+      _lastAction = _CleanupAction.promote;
+    });
   }
 
   void _keep() {
     if (_queue.isEmpty) return;
-    setState(() => _queue.removeAt(0));
+    final item = _queue.first;
+    setState(() {
+      _queue.removeAt(0);
+      _lastActionItem = item;
+      _lastAction = _CleanupAction.keep;
+    });
   }
 
   void _drop() {
     if (_queue.isEmpty) return;
     final item = _queue.first;
     ref.read(mediaProvider.notifier).addToDroppedList(item);
-    setState(() => _queue.removeAt(0));
+    setState(() {
+      _queue.removeAt(0);
+      _lastActionItem = item;
+      _lastAction = _CleanupAction.drop;
+    });
+  }
+
+  void _undo() {
+    final item = _lastActionItem;
+    final action = _lastAction;
+    if (item == null || action == null) return;
+    // Promote/drop moved the item to Watchlist/Dropped -- addToMaybeList
+    // moves it back to Saved (mutually exclusive with those shelves).
+    // Keep never touched the provider, so there's nothing to reverse there.
+    if (action == _CleanupAction.promote || action == _CleanupAction.drop) {
+      ref.read(mediaProvider.notifier).addToMaybeList(item);
+    }
+    setState(() {
+      _queue.remove(item);
+      _queue.insert(0, item);
+      _lastActionItem = null;
+      _lastAction = null;
+    });
   }
 
   @override
@@ -109,6 +147,35 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
             color: colors.ink,
           ),
         ),
+        actions: [
+          if (_lastActionItem != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12.0),
+              child: Center(
+                child: PressableScale(
+                  key: const ValueKey('cleanup_undo_button'),
+                  onTap: _undo,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: colors.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colors.lineRgba),
+                      boxShadow: [
+                        BoxShadow(
+                          color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Icon(Icons.undo_rounded, color: colors.ink, size: 20),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
       body: SafeArea(
         child: _queue.isEmpty

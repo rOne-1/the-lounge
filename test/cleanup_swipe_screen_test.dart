@@ -104,6 +104,64 @@ void main() {
       expect(find.text('Movie 1'), findsOneWidget);
     });
 
+    testWidgets('no Undo button until an action has been taken', (tester) async {
+      await pumpCleanup(tester, count: 1);
+      expect(find.byKey(const ValueKey('cleanup_undo_button')), findsNothing);
+    });
+
+    testWidgets('Undo reverses Promote, restoring the card to Saved and the front of the queue',
+        (tester) async {
+      final container = await pumpCleanup(tester, count: 2);
+
+      await tester.tap(find.text('Promote'));
+      await tester.pumpAndSettle();
+      expect(container.read(mediaProvider).watchlist.containsKey('movie_0'), isTrue);
+      expect(find.text('Movie 1'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('cleanup_undo_button')));
+      await tester.pumpAndSettle();
+
+      final state = container.read(mediaProvider);
+      expect(state.watchlist.containsKey('movie_0'), isFalse);
+      expect(state.maybeList.containsKey('movie_0'), isTrue);
+      expect(find.text('Movie 0'), findsOneWidget);
+      expect(find.byKey(const ValueKey('cleanup_undo_button')), findsNothing);
+    });
+
+    testWidgets('Undo reverses Drop, restoring the card to Saved and the front of the queue',
+        (tester) async {
+      final container = await pumpCleanup(tester, count: 2);
+
+      await tester.tap(find.text('Drop'));
+      await tester.pumpAndSettle();
+      expect(container.read(mediaProvider).droppedList.containsKey('movie_0'), isTrue);
+
+      await tester.tap(find.byKey(const ValueKey('cleanup_undo_button')));
+      await tester.pumpAndSettle();
+
+      final state = container.read(mediaProvider);
+      expect(state.droppedList.containsKey('movie_0'), isFalse);
+      expect(state.maybeList.containsKey('movie_0'), isTrue);
+      expect(find.text('Movie 0'), findsOneWidget);
+    });
+
+    testWidgets('Undo reverses Keep, restoring the card to the front of the queue',
+        (tester) async {
+      final container = await pumpCleanup(tester, count: 2);
+
+      await tester.tap(find.text('Keep'));
+      await tester.pumpAndSettle();
+      expect(find.text('Movie 1'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('cleanup_undo_button')));
+      await tester.pumpAndSettle();
+
+      // Keep never touched the provider -- Movie 0 was always still Saved,
+      // this just verifies the queue position itself is restored.
+      expect(container.read(mediaProvider).maybeList.containsKey('movie_0'), isTrue);
+      expect(find.text('Movie 0'), findsOneWidget);
+    });
+
     testWidgets('reviewing every card reaches the empty state', (tester) async {
       await pumpCleanup(tester, count: 1);
 

@@ -222,6 +222,79 @@ void main() {
       expect(container.read(mediaProvider).watchHistory[movie2.id], isNull);
     });
 
+    testWidgets('Undo reverses the last rating and restores the card to the front',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        movieRepositoryProvider.overrideWithValue(_InstantRepository()),
+      ],
+      );
+      addTearDown(container.dispose);
+      container.read(mediaProvider.notifier).addToWatchedList(movie1);
+      container.read(mediaProvider.notifier).addToWatchedList(movie2);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: RateTitlesScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // No undo button until an action has been taken.
+      expect(find.byKey(const ValueKey('rate_titles_undo_button')), findsNothing);
+
+      await tester.tap(find.text('Loved it'));
+      await tester.pumpAndSettle();
+      expect(find.text('Beta'), findsOneWidget);
+      expect(container.read(mediaProvider).watchHistory[movie1.id], hasLength(1));
+
+      await tester.tap(find.byKey(const ValueKey('rate_titles_undo_button')));
+      await tester.pumpAndSettle();
+
+      // The rating is reversed and Alpha is back at the front of the queue.
+      expect(container.read(mediaProvider).watchHistory[movie1.id], isNull);
+      expect(find.text('Alpha'), findsOneWidget);
+      expect(find.text('2 titles left to rate'), findsOneWidget);
+      expect(find.byKey(const ValueKey('rate_titles_undo_button')), findsNothing);
+    });
+
+    testWidgets('Undo reverses the last skip, restoring the card to the front',
+        (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        movieRepositoryProvider.overrideWithValue(_InstantRepository()),
+      ],
+      );
+      addTearDown(container.dispose);
+      container.read(mediaProvider.notifier).addToWatchedList(movie1);
+      container.read(mediaProvider.notifier).addToWatchedList(movie2);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: RateTitlesScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Skip'));
+      await tester.pumpAndSettle();
+      expect(find.text('Beta'), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('rate_titles_undo_button')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Alpha'), findsOneWidget);
+      expect(container.read(mediaProvider).watchHistory[movie1.id], isNull);
+    });
+
     testWidgets('RATE-CARD-1: tapping the card opens DetailScreen for that title',
         (tester) async {
       SharedPreferences.setMockInitialValues({});
