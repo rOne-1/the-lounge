@@ -138,7 +138,10 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(milliseconds: 500));
 
-      expect(find.text('Test Movie 1'), findsOneWidget);
+      // CRAFT-LOGO-1: the title text can legitimately render twice now (the
+      // hero's own fallback plus the collapsed top-bar title, invisible at
+      // rest but still built) -- at-least-one, not exactly-one.
+      expect(find.text('Test Movie 1'), findsAtLeastNWidgets(1));
       expect(find.byType(CircularProgressIndicator), findsNothing);
       final initialCalls = mockRepo.getMediaDetailsCalls;
 
@@ -153,7 +156,7 @@ void main() {
 
       // Verify NO CircularProgressIndicator is shown during rebuild
       expect(find.byType(CircularProgressIndicator), findsNothing);
-      expect(find.text('Test Movie 1'), findsOneWidget);
+      expect(find.text('Test Movie 1'), findsAtLeastNWidgets(1));
 
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pump(const Duration(milliseconds: 500));

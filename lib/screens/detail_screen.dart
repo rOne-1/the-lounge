@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
@@ -40,6 +41,19 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   /// TmdbMovieRepository._mapJsonToMediaItem) cast list.
   bool _showAllCast = false;
 
+  /// CRAFT-LOGO-1: drives the ClearLogo hero's scroll-collapse into the
+  /// compact top bar -- only the compact (mobile) layout's CustomScrollView
+  /// is wired to this controller. The large/desktop layout splits the hero
+  /// and the title into two independently-scrolling panes (see
+  /// _buildLargeLayout), so there's no single coupled scroll signal to
+  /// collapse against there; the top bar simply stays uncollapsed on that
+  /// layout rather than forcing a collapse gesture that doesn't correspond
+  /// to anything the user actually did.
+  final ScrollController _heroScrollController = ScrollController();
+  double _heroCollapseT = 0.0;
+
+  static const double _heroCollapseDistance = 160.0;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +64,22 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         });
       }
     });
+    _heroScrollController.addListener(_handleHeroScroll);
+  }
+
+  void _handleHeroScroll() {
+    final t =
+        (_heroScrollController.offset / _heroCollapseDistance).clamp(0.0, 1.0);
+    if (t != _heroCollapseT) {
+      setState(() => _heroCollapseT = t);
+    }
+  }
+
+  @override
+  void dispose() {
+    _heroScrollController.removeListener(_handleHeroScroll);
+    _heroScrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _playTrailer(
@@ -90,6 +120,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final detailAsync = ref.watch(mediaDetailsProvider(widget.id));
     final isDark = context.ambianceColors.isDark;
     final inkColor = context.ambianceColors.ink;
+    // CRAFT-LOGO-1: best-known item so far, for the collapsed top-bar title
+    // -- independent of the full detailAsync.when() branching the body
+    // below uses, since the app bar renders even while data is loading.
+    final knownItem = detailAsync.value ?? widget.initialItem;
 
     return SizedBox.expand(
       child: DecoratedBox(
@@ -101,13 +135,31 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               onTap: () => Navigator.maybePop(context),
               child: Icon(Icons.arrow_back, color: inkColor),
             ),
-            title: Text(
-              'Details',
-              style: AppThemes.display(
-                context,
-                color: inkColor,
-              ),
-            ),
+            // CRAFT-LOGO-1: scroll-coupled 1:1 with `_heroCollapseT`
+            // (recomputed every scroll frame), not a separately-eased
+            // AnimatedOpacity -- a spring/duration-based transition here
+            // would visibly lag behind the physical scroll gesture instead
+            // of tracking the finger, the opposite of what a scroll-driven
+            // collapse should feel like.
+            title: knownItem == null
+                ? const SizedBox.shrink()
+                : Opacity(
+                    opacity: _heroCollapseT,
+                    child: Transform.translate(
+                      offset: Offset(0, (1 - _heroCollapseT) * 10),
+                      child: Transform.scale(
+                        scale: 0.82 + (0.18 * _heroCollapseT),
+                        alignment: Alignment.centerLeft,
+                        child: _ClearLogoTitle(
+                          item: knownItem,
+                          textColor: inkColor,
+                          logoHeight: 24,
+                          fontSize: 17,
+                          maxLines: 1,
+                        ),
+                      ),
+                    ),
+                  ),
             backgroundColor: Colors.transparent,
             elevation: 0,
             iconTheme: IconThemeData(color: inkColor),
@@ -196,13 +248,13 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     MediaItem item,
     bool isDark,
   ) {
-    final inkColor = context.ambianceColors.ink;
     final subColor = context.ambianceColors.sub;
     final belowFold = _isTransitionComplete
         ? _belowFoldSectionBuilders(context, ref, item, isDark)
         : const <Widget Function()>[];
 
     return CustomScrollView(
+      controller: _heroScrollController,
       slivers: [
         SliverToBoxAdapter(
           child: _buildHero(context, item, isDark)
@@ -215,19 +267,11 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  item.title,
-                  style: AppThemes.display(
-                    context,
-                    fontSize: 30,
-                    fontWeight: FontWeight.w600,
-                    color: inkColor,
-                    height: 1.05,
-                  ),
-                ),
+                // CRAFT-LOGO-1: the title (as ClearLogo or its text
+                // fallback) now lives inside _buildHero, overlaid on the
+                // backdrop -- not duplicated here.
                 if (item.tagline != null &&
                     item.tagline!.trim().isNotEmpty) ...[
-                  const SizedBox(height: 8),
                   Text(
                     '"${item.tagline}"',
                     style: AppThemes.display(
@@ -236,8 +280,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       color: subColor,
                     ),
                   ),
+                  const SizedBox(height: 12),
                 ],
-                const SizedBox(height: 12),
                 _buildMetaRow(item, isDark),
                 if (item.genres.isNotEmpty) ...[
                   const SizedBox(height: 12),
@@ -295,7 +339,6 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     MediaItem item,
     bool isDark,
   ) {
-    final inkColor = context.ambianceColors.ink;
     final subColor = context.ambianceColors.sub;
 
     return Row(
@@ -324,19 +367,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          item.title,
-                          style: AppThemes.display(
-                            context,
-                            fontSize: 34,
-                            fontWeight: FontWeight.w600,
-                            color: inkColor,
-                            height: 1.05,
-                          ),
-                        ),
+                        // CRAFT-LOGO-1: title (ClearLogo or text fallback)
+                        // lives in the left pane's hero -- see
+                        // _buildLargeLayout's SingleChildScrollView above
+                        // and _buildHero -- not duplicated in this pane.
                         if (item.tagline != null &&
                             item.tagline!.trim().isNotEmpty) ...[
-                          const SizedBox(height: 8),
                           Text(
                             '"${item.tagline}"',
                             style: AppThemes.display(
@@ -345,15 +381,16 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                               color: subColor,
                             ),
                           ),
+                          const SizedBox(height: 14),
                         ],
-                        const SizedBox(height: 14),
                         _buildMetaRow(item, isDark),
                         if (item.genres.isNotEmpty) ...[
                           const SizedBox(height: 14),
                           _buildGenreChips(paneContext, ref, item, isDark),
                         ],
                         if (item.belongsToCollection != null)
-                          _buildCollectionBanner(paneContext, ref, item, isDark),
+                          _buildCollectionBanner(
+                              paneContext, ref, item, isDark),
                         const SizedBox(height: 24),
                         _buildActionButtons(paneContext, ref, item, isDark),
                         const SizedBox(height: 24),
@@ -408,13 +445,54 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       aspectRatio: 16 / 9,
       child: Container(
         color: phColor,
-        child: MediaImage(
-          item: item,
-          imageUrl: item.backdropUrl ?? item.posterUrl,
-          fit: BoxFit.cover,
-          showFallbackTitle: false,
-          memCacheWidth: 800,
-          memCacheHeight: 450,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            MediaImage(
+              item: item,
+              imageUrl: item.backdropUrl ?? item.posterUrl,
+              fit: BoxFit.cover,
+              showFallbackTitle: false,
+              memCacheWidth: 800,
+              memCacheHeight: 450,
+            ),
+            // CRAFT-LOGO-1: scrim so the ClearLogo (or its text fallback,
+            // both white -- TMDB logos are white-on-transparent, matching
+            // this app's other text-over-image overlays, e.g. the
+            // unreleased badge on SwipeCard) stays legible against
+            // whatever the backdrop happens to be. `scrim` is this app's
+            // own token for exactly this ("backdrop hero gradient fade and
+            // modal barrier scrim" per its own doc comment in
+            // ambiance_colors.dart) -- not a hardcoded black.
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.transparent,
+                      Colors.transparent,
+                      context.ambianceColors.scrim.withValues(alpha: 0.75),
+                    ],
+                    stops: const [0.0, 0.55, 1.0],
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              left: 18,
+              right: 18,
+              bottom: 18,
+              child: _ClearLogoTitle(
+                item: item,
+                textColor: Colors.white,
+                logoHeight: 56,
+                fontSize: 28,
+                maxLines: 2,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -892,9 +970,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     int? watchedCount;
     int? totalCount;
     if (isInLibrary) {
-      final detail = ref
-          .watch(collectionDetailsProvider(collection.id))
-          .when(
+      final detail = ref.watch(collectionDetailsProvider(collection.id)).when(
             data: (d) => d,
             loading: () => null,
             error: (_, __) => null,
@@ -1988,12 +2064,86 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             key: ValueKey(showAll),
             height: 110,
             child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: displayCount + (hasMore && !showAll ? 1 : 0),
-            itemBuilder: (context, index) {
-              if (hasMore && !showAll && index == displayCount) {
+              scrollDirection: Axis.horizontal,
+              itemCount: displayCount + (hasMore && !showAll ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (hasMore && !showAll && index == displayCount) {
+                  return PressableScale(
+                    onTap: () => setState(() => _showAllCast = true),
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 14.0),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: phColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: lineRgba),
+                            ),
+                            child: Icon(Icons.people_alt_outlined,
+                                color: accColor),
+                          ),
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: 70,
+                            child: Text(
+                              'Show all\n$totalCount',
+                              style: AppThemes.safeGeist(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: accColor,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }
+
+                final castName = item.cast[index];
+                final castMember = (index < item.castMembers.length)
+                    ? item.castMembers[index]
+                    : null;
+                final profileUrl = castMember?.profileUrl;
+
+                Widget avatarContent;
+                if (profileUrl != null && profileUrl.isNotEmpty) {
+                  avatarContent = ClipOval(
+                    child: MediaImage(
+                      imageUrl: profileUrl,
+                      fit: BoxFit.cover,
+                      fallback: Icon(Icons.person, color: subColor),
+                    ),
+                  );
+                } else {
+                  avatarContent = Icon(Icons.person, color: subColor);
+                }
+
                 return PressableScale(
-                  onTap: () => setState(() => _showAllCast = true),
+                  onTap: () {
+                    final pId =
+                        castMember != null ? int.tryParse(castMember.id) : null;
+                    final pName = castMember?.name ?? castName;
+                    // SEARCH-CAST-1: see navigateToPerson's comment above --
+                    // clear any stale filters from an earlier Search session
+                    // before applying this person filter.
+                    ref.read(discoverFilterProvider.notifier).resetFilters();
+                    ref.read(discoverFilterProvider.notifier).setPerson(
+                          personId: pId,
+                          personName: pName,
+                        );
+                    // NAV-2: see navigateToPerson's comment above -- do not
+                    // mutate the root tab for a pushed sub-route.
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const SearchScreen()),
+                    );
+                  },
                   child: Padding(
                     padding: const EdgeInsets.only(right: 14.0),
                     child: Column(
@@ -2006,18 +2156,16 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                             shape: BoxShape.circle,
                             border: Border.all(color: lineRgba),
                           ),
-                          child: Icon(Icons.people_alt_outlined,
-                              color: accColor),
+                          child: avatarContent,
                         ),
                         const SizedBox(height: 8),
                         SizedBox(
                           width: 70,
                           child: Text(
-                            'Show all\n$totalCount',
+                            castName,
                             style: AppThemes.safeGeist(
                               fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: accColor,
+                              color: subColor,
                             ),
                             textAlign: TextAlign.center,
                             maxLines: 2,
@@ -2028,79 +2176,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                     ),
                   ),
                 );
-              }
-
-              final castName = item.cast[index];
-              final castMember = (index < item.castMembers.length)
-                  ? item.castMembers[index]
-                  : null;
-              final profileUrl = castMember?.profileUrl;
-
-              Widget avatarContent;
-              if (profileUrl != null && profileUrl.isNotEmpty) {
-                avatarContent = ClipOval(
-                  child: MediaImage(
-                    imageUrl: profileUrl,
-                    fit: BoxFit.cover,
-                    fallback: Icon(Icons.person, color: subColor),
-                  ),
-                );
-              } else {
-                avatarContent = Icon(Icons.person, color: subColor);
-              }
-
-              return PressableScale(
-                onTap: () {
-                  final pId =
-                      castMember != null ? int.tryParse(castMember.id) : null;
-                  final pName = castMember?.name ?? castName;
-                  // SEARCH-CAST-1: see navigateToPerson's comment above --
-                  // clear any stale filters from an earlier Search session
-                  // before applying this person filter.
-                  ref.read(discoverFilterProvider.notifier).resetFilters();
-                  ref.read(discoverFilterProvider.notifier).setPerson(
-                        personId: pId,
-                        personName: pName,
-                      );
-                  // NAV-2: see navigateToPerson's comment above -- do not
-                  // mutate the root tab for a pushed sub-route.
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SearchScreen()),
-                  );
-                },
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 14.0),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: phColor,
-                          shape: BoxShape.circle,
-                          border: Border.all(color: lineRgba),
-                        ),
-                        child: avatarContent,
-                      ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        width: 70,
-                        child: Text(
-                          castName,
-                          style: AppThemes.safeGeist(
-                            fontSize: 11,
-                            color: subColor,
-                          ),
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
+              },
             ),
           ),
         ),
@@ -2531,6 +2607,91 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   }
 }
 
+/// CRAFT-LOGO-1: renders [MediaItem.logoUrl] (a transparent PNG, per TMDB's
+/// ClearLogo convention) as the title, falling back to plain styled text --
+/// on a missing/empty [MediaItem.logoUrl], and also (via [errorWidget], not
+/// just once up front) if the logo URL turns out to be unreachable at
+/// paint time, so a broken logo never leaves the title area blank. Used
+/// both as the large hero overlay (`_buildHero`) and, at a smaller size,
+/// as the collapsed top-bar title -- one shared source of truth for "does
+/// this title show a logo or text," not two separately-maintained copies.
+class _ClearLogoTitle extends StatefulWidget {
+  final MediaItem item;
+  final Color textColor;
+  final double logoHeight;
+  final double fontSize;
+  final int maxLines;
+
+  const _ClearLogoTitle({
+    required this.item,
+    required this.textColor,
+    required this.logoHeight,
+    required this.fontSize,
+    this.maxLines = 2,
+  });
+
+  @override
+  State<_ClearLogoTitle> createState() => _ClearLogoTitleState();
+}
+
+class _ClearLogoTitleState extends State<_ClearLogoTitle> {
+  bool _logoFailed = false;
+
+  @override
+  void didUpdateWidget(covariant _ClearLogoTitle oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.item.logoUrl != widget.item.logoUrl) {
+      _logoFailed = false;
+    }
+  }
+
+  Widget _titleText(BuildContext context) {
+    return Text(
+      widget.item.title,
+      maxLines: widget.maxLines,
+      overflow: TextOverflow.ellipsis,
+      style: AppThemes.display(
+        context,
+        fontSize: widget.fontSize,
+        fontWeight: FontWeight.w600,
+        color: widget.textColor,
+        height: 1.05,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final logoUrl = widget.item.logoUrl;
+    final hasLogo =
+        !_logoFailed && logoUrl != null && logoUrl.trim().isNotEmpty;
+
+    if (!hasLogo) return _titleText(context);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: widget.logoHeight,
+          maxWidth: widget.logoHeight * 4.5,
+        ),
+        child: CachedNetworkImage(
+          imageUrl: logoUrl,
+          fit: BoxFit.contain,
+          alignment: Alignment.centerLeft,
+          fadeInDuration: AppPhysics.houseSpringDuration,
+          errorWidget: (context, url, error) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted && !_logoFailed) setState(() => _logoFailed = true);
+            });
+            return _titleText(context);
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class ExpandableOverviewText extends StatefulWidget {
   final String text;
   final TextStyle style;
@@ -2702,11 +2863,12 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
     // requires.
     final currentSeasonData = allSeasonsAsync.value?.firstWhere(
       (s) => s.seasonNumber == _selectedSeason,
-      orElse: () =>
-          TvSeason(id: 0, seasonNumber: _selectedSeason, name: '', episodes: const []),
+      orElse: () => TvSeason(
+          id: 0, seasonNumber: _selectedSeason, name: '', episodes: const []),
     );
-    final seasonAlreadyComplete = ref.read(mediaProvider).seasonEndDates[
-            widget.item.id]?[_selectedSeason] !=
+    final seasonAlreadyComplete = ref
+            .read(mediaProvider)
+            .seasonEndDates[widget.item.id]?[_selectedSeason] !=
         null;
     final canMarkSeasonComplete = allSeasonsAsync.hasValue &&
         currentSeasonData != null &&
@@ -2742,8 +2904,8 @@ class _SeasonsSectionWidgetState extends ConsumerState<SeasonsSectionWidget> {
                       context, 'Season $_selectedSeason marked complete.');
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 12, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: accColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(999),

@@ -160,7 +160,10 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
 
     expect(find.byType(DetailScreen), findsOneWidget);
-    expect(find.text('Continue Movie 0'), findsOneWidget);
+    // CRAFT-LOGO-1: the title can legitimately render twice on
+    // DetailScreen now (the hero's own fallback plus the collapsed
+    // top-bar title, invisible at rest but still built).
+    expect(find.text('Continue Movie 0'), findsAtLeastNWidgets(1));
   });
 
   testWidgets('LobbyScreen contains AnimatedSize, AnimatedCrossFade and AnimatedSwitcher transitions for TV mode', (WidgetTester tester) async {
