@@ -192,13 +192,38 @@ class MediaNotifier extends Notifier<MediaState> {
   // response, never round-tripped through save/load) would otherwise pass
   // the raw, unprefixed id and silently miss the actual movie_/tv_-prefixed
   // key the shelf map is stored under. Resolve defensively against the map
-  // itself instead of trusting the caller.
-  String? _resolveStoredId<T>(Map<String, T> map, String id) {
-    if (map.containsKey(id)) return id;
-    if (id.startsWith('movie_') || id.startsWith('tv_')) return null;
-    if (map.containsKey('movie_$id')) return 'movie_$id';
-    if (map.containsKey('tv_$id')) return 'tv_$id';
-    return null;
+  // itself instead of trusting the caller -- `resolveStoredId` (promoted to
+  // a shared top-level utility in media_item.dart per outstanding_issues_
+  // notepad.md item 61, so watchHistory-touching methods below and other
+  // files can reuse the exact same reconciliation instead of each
+  // reimplementing it) does this.
+
+  /// Item 61: `addWatchRecord`/`updateWatchRecord`/`deleteWatchRecord` take
+  /// a bare [id] the same way `removeFrom*` above do, with the same
+  /// no-MediaType-to-normalize-with gap -- but unlike a shelf map (removed
+  /// entries just vanish), a mismatched key here silently forks a title's
+  /// watch history into two never-reconciled entries instead of one.
+  /// Resolves [id] to whichever key an *existing* shelf entry for this
+  /// title already uses (so a new watchHistory entry lands under the same
+  /// key `_findKnownItem`-style shelf lookups expect), then falls back to
+  /// whichever form `watchHistory` itself already has this id filed under
+  /// (self-consistency across repeat add/update/delete calls for a title
+  /// with watch history but not, or no longer, on any shelf), and finally
+  /// the raw [id] unchanged for a genuinely new, shelf-less entry -- a
+  /// no-op for the common case where [id] is already normalized.
+  String _resolveWatchHistoryId(String id) {
+    for (final shelf in [
+      state.watchlist,
+      state.maybeList,
+      state.watchingList,
+      state.watchedList,
+      state.droppedList,
+      state.onHoldList,
+    ]) {
+      final resolved = resolveStoredId(shelf, id);
+      if (resolved != null) return resolved;
+    }
+    return resolveStoredId(state.watchHistory, id) ?? id;
   }
 
   @override
@@ -1037,7 +1062,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromWatchlist(String id) {
-    final key = _resolveStoredId(state.watchlist, id);
+    final key = resolveStoredId(state.watchlist, id);
     if (key == null) return;
 
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
@@ -1098,7 +1123,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromMaybeList(String id) {
-    final key = _resolveStoredId(state.maybeList, id);
+    final key = resolveStoredId(state.maybeList, id);
     if (key == null) return;
 
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
@@ -1160,7 +1185,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromWatchingList(String id) {
-    final key = _resolveStoredId(state.watchingList, id);
+    final key = resolveStoredId(state.watchingList, id);
     if (key == null) return;
 
     final newWatchingList = Map<String, MediaItem>.from(state.watchingList)
@@ -1549,8 +1574,8 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromWatchedList(String id) {
-    final id0 = _resolveStoredId(state.watchedList, id) ??
-        _resolveStoredId(state.watchedEpisodes, id);
+    final id0 = resolveStoredId(state.watchedList, id) ??
+        resolveStoredId(state.watchedEpisodes, id);
     if (id0 == null) return;
     id = id0;
 
@@ -1636,7 +1661,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromDroppedList(String id) {
-    final key = _resolveStoredId(state.droppedList, id);
+    final key = resolveStoredId(state.droppedList, id);
     if (key == null) return;
 
     final newDroppedList = Map<String, MediaItem>.from(state.droppedList)
@@ -1694,7 +1719,7 @@ class MediaNotifier extends Notifier<MediaState> {
   }
 
   void removeFromOnHoldList(String id) {
-    final key = _resolveStoredId(state.onHoldList, id);
+    final key = resolveStoredId(state.onHoldList, id);
     if (key == null) return;
 
     final newOnHoldList = Map<String, MediaItem>.from(state.onHoldList)
@@ -2097,6 +2122,7 @@ class MediaNotifier extends Notifier<MediaState> {
   /// [mediaId]'s history log. `record.recordedAt` is the record's stable
   /// identity for later `updateWatchRecord`/`deleteWatchRecord` calls.
   void addWatchRecord(String mediaId, WatchRecord record) {
+    mediaId = _resolveWatchHistoryId(mediaId);
     final newHistory = Map<String, List<WatchRecord>>.from(state.watchHistory);
     final records = List<WatchRecord>.from(newHistory[mediaId] ?? const []);
     records.add(record);
@@ -2109,6 +2135,7 @@ class MediaNotifier extends Notifier<MediaState> {
   /// system-generated timestamp) with [updated]. No-op if not found.
   void updateWatchRecord(
       String mediaId, DateTime recordedAt, WatchRecord updated) {
+    mediaId = _resolveWatchHistoryId(mediaId);
     final newHistory = Map<String, List<WatchRecord>>.from(state.watchHistory);
     final records = newHistory[mediaId];
     if (records == null) return;
@@ -2123,6 +2150,7 @@ class MediaNotifier extends Notifier<MediaState> {
 
   /// Removes the record identified by [recordedAt] from [mediaId]'s history.
   void deleteWatchRecord(String mediaId, DateTime recordedAt) {
+    mediaId = _resolveWatchHistoryId(mediaId);
     final newHistory = Map<String, List<WatchRecord>>.from(state.watchHistory);
     final records = newHistory[mediaId];
     if (records == null) return;

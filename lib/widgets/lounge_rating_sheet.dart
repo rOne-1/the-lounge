@@ -17,7 +17,11 @@ WatchRecord? findPrimaryWatchRecord(
   String mediaId,
   int? seasonNumber,
 ) {
-  final records = watchHistory[mediaId];
+  // Item 61: addWatchRecord resolves against existing shelf keys before
+  // writing (see media_provider.dart's _resolveWatchHistoryId), so a
+  // not-yet-normalized mediaId here would otherwise miss the prefixed key
+  // the record actually landed under.
+  final records = watchHistory[resolveStoredId(watchHistory, mediaId) ?? mediaId];
   if (records == null) return null;
   for (final r in records) {
     if (r.seasonNumber == seasonNumber && r.isFirstWatch) return r;

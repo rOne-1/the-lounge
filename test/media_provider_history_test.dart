@@ -166,6 +166,59 @@ void main() {
 
       expect(container.read(mediaProvider).watchHistory[movie1.id], hasLength(1));
     });
+
+    group('outstanding_issues_notepad.md item 61: id-normalization mismatch', () {
+      // addToWatchedList normalizes a MediaItem's id (movie_/tv_ prefix)
+      // before storing on a shelf; addWatchRecord/updateWatchRecord/
+      // deleteWatchRecord take a bare id with no MediaType to normalize
+      // with. A caller with a not-yet-normalized MediaItem in hand (e.g.
+      // straight off a repository response) can pass that raw id straight
+      // through -- these regression-test that exact scenario.
+      const rawId = 'unprefixed-movie-id';
+      const rawItem = MediaItem(
+        id: rawId,
+        title: 'Not Yet Normalized',
+        type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: [],
+      );
+
+      test('addWatchRecord resolves a raw id to the shelf-normalized key already on watchedList', () {
+        final notifier = container.read(mediaProvider.notifier);
+        notifier.addToWatchedList(rawItem); // stores under 'movie_unprefixed-movie-id'
+
+        notifier.addWatchRecord(rawId, WatchRecord(rating: PersonalRating.loved, isFirstWatch: true));
+
+        final state = container.read(mediaProvider);
+        expect(state.watchHistory.containsKey(rawId), isFalse);
+        expect(state.watchHistory['movie_$rawId'], hasLength(1));
+      });
+
+      test('updateWatchRecord and deleteWatchRecord resolve the same raw id consistently', () {
+        final notifier = container.read(mediaProvider.notifier);
+        notifier.addToWatchedList(rawItem);
+        final recordedAt = DateTime(2026, 1, 1);
+        notifier.addWatchRecord(rawId, WatchRecord(rating: PersonalRating.okay, recordedAt: recordedAt));
+
+        notifier.updateWatchRecord(rawId, recordedAt, WatchRecord(rating: PersonalRating.loved, recordedAt: recordedAt));
+        expect(
+          container.read(mediaProvider).watchHistory['movie_$rawId']!.first.rating,
+          PersonalRating.loved,
+        );
+
+        notifier.deleteWatchRecord(rawId, recordedAt);
+        expect(container.read(mediaProvider).watchHistory.containsKey('movie_$rawId'), isFalse);
+      });
+
+      test('addWatchRecord for a title on no shelf at all still writes under the raw id (orphan case)', () {
+        final notifier = container.read(mediaProvider.notifier);
+
+        notifier.addWatchRecord(rawId, WatchRecord(rating: PersonalRating.liked, isFirstWatch: true));
+
+        expect(container.read(mediaProvider).watchHistory[rawId], hasLength(1));
+      });
+    });
   });
 
   group('PERS-DATA-1: backup export/import schema migration', () {

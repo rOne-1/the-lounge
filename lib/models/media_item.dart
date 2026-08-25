@@ -19,6 +19,30 @@ String normalizeMediaId(String id, MediaType type) {
   return '${type == MediaType.tv ? 'tv' : 'movie'}_$id';
 }
 
+/// Resolves [id] to whichever key [map] actually stores an entry under:
+/// itself if present directly, otherwise the 'movie_'/'tv_'-prefixed form
+/// (tried only when [id] isn't already prefixed). Returns null if no entry
+/// exists under either form.
+///
+/// Generalizes the reconciliation every [normalizeMediaId]-keyed map needs:
+/// a caller that has a not-yet-normalized [MediaItem.id] in hand (built
+/// straight from a repository response, never round-tripped through a
+/// method that normalizes first) would otherwise pass the raw, unprefixed
+/// id and silently miss the actual prefixed key the map is stored under.
+/// Shared by every id-keyed lookup surface (shelf-removal methods,
+/// watchHistory reads/writes, rewatch lookups) rather than each
+/// reimplementing this reconciliation on its own -- see
+/// `local-notes/outstanding_issues_notepad.md` item 61 for the concrete
+/// bug this was written to close (found via `addWatchRecord` not
+/// normalizing before storing into `watchHistory`).
+String? resolveStoredId<T>(Map<String, T> map, String id) {
+  if (map.containsKey(id)) return id;
+  if (id.startsWith('movie_') || id.startsWith('tv_')) return null;
+  if (map.containsKey('movie_$id')) return 'movie_$id';
+  if (map.containsKey('tv_$id')) return 'tv_$id';
+  return null;
+}
+
 class TvEpisode {
   final int id;
   final int episodeNumber;

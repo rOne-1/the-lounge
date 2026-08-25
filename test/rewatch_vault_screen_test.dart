@@ -313,4 +313,46 @@ void main() {
       expect(alphaCenterAfter.dy, lessThan(zetaCenterAfter.dy));
     });
   });
+
+  group('outstanding_issues_notepad.md item 61: id-normalization mismatch', () {
+    testWidgets(
+        'a raw (non-normalized) id resolves synchronously via _findKnownItem, no async fallback needed',
+        (tester) async {
+      // Regression for the exact bug this item documented: before the fix,
+      // addWatchRecord stored watchHistory under the caller's raw,
+      // hyphenated id while addToWatchedList stored the shelf entry under
+      // the movie_-prefixed normalized id, so _findKnownItem (looking up
+      // by the watchHistory key) never found the shelf item and both the
+      // hero card and the row silently rendered blank. No extraItems/mock
+      // repository fallback is registered here on purpose -- if resolution
+      // regresses, this test can only pass via the async path, which it
+      // deliberately can't reach (no repository entry for this id).
+      const rawId = 'unprefixed-raw-id';
+      const rawItem = MediaItem(
+        id: rawId,
+        title: 'Raw Id Title',
+        type: MediaType.movie,
+        rating: 7.5,
+        overview: '',
+        genres: [],
+      );
+      final container = await pumpVault(tester);
+      final notifier = container.read(mediaProvider.notifier);
+
+      notifier.addToWatchedList(rawItem);
+      notifier.addWatchRecord(rawId, WatchRecord(isFirstWatch: true));
+      notifier.addWatchRecord(rawId, WatchRecord(isFirstWatch: false));
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: RewatchVaultScreen()),
+        ),
+      );
+      await tester.pump(); // no pumpAndSettle: proves it's already resolved, not just eventually
+
+      expect(find.text('Raw Id Title'), findsOneWidget);
+      expect(find.textContaining('Most rewatched: Raw Id Title'), findsOneWidget);
+    });
+  });
 }

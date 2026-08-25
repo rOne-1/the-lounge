@@ -35,13 +35,24 @@ int totalRewatchCount(MediaState state) {
   return total;
 }
 
+/// Item 61: resolves [id] against each shelf's own keys (raw or
+/// movie_/tv_-prefixed, whichever the shelf actually stores it under)
+/// rather than a bare direct lookup, since `id` here comes from a
+/// `watchHistory` key which isn't guaranteed to already be in the shelves'
+/// normalized form -- see `resolveStoredId` in media_item.dart.
 MediaItem? _findKnownItem(MediaState state, String id) {
-  return state.watchlist[id] ??
-      state.maybeList[id] ??
-      state.watchingList[id] ??
-      state.watchedList[id] ??
-      state.droppedList[id] ??
-      state.onHoldList[id];
+  for (final shelf in [
+    state.watchlist,
+    state.maybeList,
+    state.watchingList,
+    state.watchedList,
+    state.droppedList,
+    state.onHoldList,
+  ]) {
+    final resolved = resolveStoredId(shelf, id);
+    if (resolved != null) return shelf[resolved];
+  }
+  return null;
 }
 
 /// FEAT-REWATCH-1: the single most-rewatched title across every type (an
