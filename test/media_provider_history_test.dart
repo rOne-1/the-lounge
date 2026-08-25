@@ -221,6 +221,79 @@ void main() {
     });
   });
 
+  group('outstanding_issues_notepad.md item 61 (2nd wave): isEpisodeWatched / removeFromAllLists', () {
+    // Same class of bug as the watchHistory case above, found while fixing
+    // surfaced-but-deferred bugs for stability before shipping to
+    // testers: isEpisodeWatched/removeFromAllLists take a bare id with no
+    // MediaType to normalize with, and (unlike addWatchRecord et al.)
+    // weren't resolving against the shelf maps' actual keys at all.
+    const rawId = 'unprefixed-tv-id';
+    const rawShow = MediaItem(
+      id: rawId,
+      title: 'Not Yet Normalized Show',
+      type: MediaType.tv,
+      rating: 7.0,
+      overview: '',
+      genres: [],
+    );
+
+    late SharedPreferences prefs;
+    late ProviderContainer container;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      prefs = await SharedPreferences.getInstance();
+      container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+    });
+
+    tearDown(() => container.dispose());
+
+    test('isEpisodeWatched resolves a raw id to the shelf-normalized key for a watched episode', () {
+      final notifier = container.read(mediaProvider.notifier);
+      // toggleEpisodeWatched itself normalizes showItem before deriving
+      // showId, so watchedEpisodes ends up keyed 'tv_unprefixed-tv-id'
+      // regardless of what raw id this call is made with.
+      notifier.toggleEpisodeWatched(
+        showId: rawId,
+        seasonNumber: 1,
+        episodeNumber: 1,
+        showItem: rawShow,
+      );
+
+      expect(notifier.isEpisodeWatched(rawId, 1, 1), isTrue);
+      expect(notifier.isEpisodeWatched(rawId, 1, 2), isFalse);
+    });
+
+    test('isEpisodeWatched resolves a raw id already fully in watchedList (whole-show shortcut)', () {
+      final notifier = container.read(mediaProvider.notifier);
+      notifier.addToWatchedList(rawShow); // stores under 'tv_unprefixed-tv-id'
+
+      expect(notifier.isEpisodeWatched(rawId, 1, 1), isTrue);
+    });
+
+    test('removeFromAllLists resolves a raw id and actually clears every list, not a silent no-op', () {
+      final notifier = container.read(mediaProvider.notifier);
+      // The no-seasons-data fallback in addToWatchedList optimistically
+      // populates watchedEpisodes too (an estimated episode set), so this
+      // alone is enough to exercise clearing both maps -- a *second*
+      // toggleEpisodeWatched call here would just toggle that estimated
+      // set back off, which isn't what this test is checking.
+      notifier.addToWatchedList(rawShow);
+      final normalizedId = 'tv_$rawId';
+      final stateBefore = container.read(mediaProvider);
+      expect(stateBefore.watchedList.containsKey(normalizedId), isTrue);
+      expect(stateBefore.watchedEpisodes.containsKey(normalizedId), isTrue);
+
+      notifier.removeFromAllLists(rawId);
+
+      final state = container.read(mediaProvider);
+      expect(state.watchedList.containsKey(normalizedId), isFalse);
+      expect(state.watchedEpisodes.containsKey(normalizedId), isFalse);
+    });
+  });
+
   group('PERS-DATA-1: backup export/import schema migration', () {
     late SharedPreferences prefs;
     late ProviderContainer container;

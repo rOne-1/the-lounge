@@ -563,7 +563,8 @@ class MediaNotifier extends Notifier<MediaState> {
     final raw = prefs.getString(key);
     var archive = (raw == null || raw.isEmpty)
         ? const DomainArchive()
-        : DomainArchive.fromJson(Map<String, dynamic>.from(jsonDecode(raw) as Map));
+        : DomainArchive.fromJson(
+            Map<String, dynamic>.from(jsonDecode(raw) as Map));
 
     // Shelves are mutually exclusive -- strip the item from every shelf in
     // this domain archive before placing it on the target one, the same
@@ -572,18 +573,31 @@ class MediaNotifier extends Notifier<MediaState> {
     Map<String, MediaItem> without(Map<String, MediaItem> m) =>
         Map<String, MediaItem>.of(m)..remove(item.id);
 
-    final stampedItem =
-        item.addedDate == null ? item.copyWith(addedDate: DateTime.now()) : item;
+    final stampedItem = item.addedDate == null
+        ? item.copyWith(addedDate: DateTime.now())
+        : item;
     final targetShelf = Map<String, MediaItem>.of(archive.shelf(shelf))
       ..[item.id] = stampedItem;
 
     archive = archive.copyWith(
-      watchlist: shelf == ArchiveShelfKind.watchlist ? targetShelf : without(archive.watchlist),
-      saved: shelf == ArchiveShelfKind.saved ? targetShelf : without(archive.saved),
-      watching: shelf == ArchiveShelfKind.watching ? targetShelf : without(archive.watching),
-      watched: shelf == ArchiveShelfKind.watched ? targetShelf : without(archive.watched),
-      onHold: shelf == ArchiveShelfKind.onHold ? targetShelf : without(archive.onHold),
-      dropped: shelf == ArchiveShelfKind.dropped ? targetShelf : without(archive.dropped),
+      watchlist: shelf == ArchiveShelfKind.watchlist
+          ? targetShelf
+          : without(archive.watchlist),
+      saved: shelf == ArchiveShelfKind.saved
+          ? targetShelf
+          : without(archive.saved),
+      watching: shelf == ArchiveShelfKind.watching
+          ? targetShelf
+          : without(archive.watching),
+      watched: shelf == ArchiveShelfKind.watched
+          ? targetShelf
+          : without(archive.watched),
+      onHold: shelf == ArchiveShelfKind.onHold
+          ? targetShelf
+          : without(archive.onHold),
+      dropped: shelf == ArchiveShelfKind.dropped
+          ? targetShelf
+          : without(archive.dropped),
     );
 
     await prefs.setString(key, jsonEncode(archive.toJson()));
@@ -844,9 +858,7 @@ class MediaNotifier extends Notifier<MediaState> {
     return folders.map((folderId, folder) => MapEntry(
           folderId,
           folder.copyWith(
-            mediaIds: [
-              for (final id in folder.mediaIds) idMigration[id] ?? id
-            ],
+            mediaIds: [for (final id in folder.mediaIds) idMigration[id] ?? id],
           ),
         ));
   }
@@ -1835,8 +1847,8 @@ class MediaNotifier extends Notifier<MediaState> {
     showId = showItem.id;
     final season = seasons.firstWhere(
       (s) => s.seasonNumber == seasonNumber,
-      orElse: () =>
-          TvSeason(id: 0, seasonNumber: seasonNumber, name: '', episodes: const []),
+      orElse: () => TvSeason(
+          id: 0, seasonNumber: seasonNumber, name: '', episodes: const []),
     );
     if (season.episodes.isEmpty) return;
 
@@ -1942,12 +1954,23 @@ class MediaNotifier extends Notifier<MediaState> {
     }
   }
 
+  /// Item 61-class fix: [showId] is a bare id with no `MediaType` to
+  /// normalize with the way item-based methods (`toggleEpisodeWatched`,
+  /// `markSeasonWatched`) do via `_normalizedItem` -- resolve it against
+  /// both maps' actual keys first (the same `resolveStoredId` dual-map
+  /// pattern `removeFromWatchedList` already uses), so a caller with a
+  /// not-yet-normalized id doesn't silently read back every episode as
+  /// unwatched even after it was genuinely marked watched under the
+  /// normalized key.
   bool isEpisodeWatched(String showId, int seasonNumber, int episodeNumber) {
-    if (state.watchedList.containsKey(showId)) {
+    final resolvedId = resolveStoredId(state.watchedList, showId) ??
+        resolveStoredId(state.watchedEpisodes, showId) ??
+        showId;
+    if (state.watchedList.containsKey(resolvedId)) {
       return true;
     }
     final key = 'S${seasonNumber}E$episodeNumber';
-    final episodes = state.watchedEpisodes[showId];
+    final episodes = state.watchedEpisodes[resolvedId];
     return episodes?.contains(key) ?? false;
   }
 
@@ -2075,7 +2098,21 @@ class MediaNotifier extends Notifier<MediaState> {
     }
   }
 
+  /// Item 61-class fix: resolves [id] against every map this method
+  /// touches before removing -- previously an unnormalized id would
+  /// silently no-op across all of them (nothing actually removed
+  /// anywhere), rather than raise the resolve-or-fall-back-to-raw
+  /// tolerance the rest of the `removeFrom*` family already has.
   void removeFromAllLists(String id) {
+    id = resolveStoredId(state.watchlist, id) ??
+        resolveStoredId(state.maybeList, id) ??
+        resolveStoredId(state.watchingList, id) ??
+        resolveStoredId(state.watchedList, id) ??
+        resolveStoredId(state.droppedList, id) ??
+        resolveStoredId(state.onHoldList, id) ??
+        resolveStoredId(state.watchedEpisodes, id) ??
+        id;
+
     final newWatchlist = Map<String, MediaItem>.from(state.watchlist)
       ..remove(id);
     final newMaybeList = Map<String, MediaItem>.from(state.maybeList)
@@ -2320,8 +2357,7 @@ class MediaNotifier extends Notifier<MediaState> {
             final clearedPending =
                 Set<String>.from(state.pendingWatchConfirmation)
                   ..remove(item.id);
-            state =
-                state.copyWith(pendingWatchConfirmation: clearedPending);
+            state = state.copyWith(pendingWatchConfirmation: clearedPending);
           }
         }
       }
@@ -2384,7 +2420,8 @@ class MediaNotifier extends Notifier<MediaState> {
             // fetched -- without this, the Collection Completion Gauge
             // would systematically miss collections for anyone who
             // doesn't add movies via the Detail screen specifically.
-            (item.type == MediaType.movie && item.belongsToCollection == null) ||
+            (item.type == MediaType.movie &&
+                item.belongsToCollection == null) ||
             // DATA-CONT-3: needed by Analytics' Keyword Taste DNA and the
             // Discover deck's keyword-overlap boost.
             item.keywords == null ||
@@ -2602,7 +2639,8 @@ class MediaNotifier extends Notifier<MediaState> {
           );
           final fetchedSeasons = <int, TvSeason>{
             for (var i = 0; i < seasonNumbersNeeded.length; i++)
-              if (fetchedList[i] != null) seasonNumbersNeeded[i]: fetchedList[i]!
+              if (fetchedList[i] != null)
+                seasonNumbersNeeded[i]: fetchedList[i]!
           };
 
           final epsToRemove = <String>[];
