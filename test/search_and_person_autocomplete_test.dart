@@ -43,7 +43,7 @@ class _TestRepository extends MockMovieRepository {
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => items.values.toList();
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async => items[id] ?? items.values.firstOrNull;
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async => items[id] ?? items.values.firstOrNull;
 
   @override
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;

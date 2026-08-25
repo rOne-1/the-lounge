@@ -50,7 +50,7 @@ class MockTestRepository extends MockMovieRepository {
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => trendingTvShows;
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async {
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async {
     final all = [...trendingMovies, ...popularMovies, ...trendingTvShows];
     final cleanId = id.replaceFirst(RegExp(r'^(movie_|tv_)'), '');
     return all.firstWhere(

@@ -24,7 +24,7 @@ class _DirectorTestRepository extends MockMovieRepository {
   _DirectorTestRepository(this.item);
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async => item;
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async => item;
 
   @override
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;

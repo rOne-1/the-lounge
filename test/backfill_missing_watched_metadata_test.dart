@@ -22,7 +22,7 @@ class _FakeDetailsRepository extends MockMovieRepository {
   _FakeDetailsRepository(this.detailsById);
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async {
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async {
     return detailsById[id];
   }
 }

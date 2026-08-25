@@ -131,7 +131,12 @@ final popularMoviesProvider = FutureProvider<List<MediaItem>>((ref) async {
 final mediaDetailsProvider =
     FutureProvider.family<MediaItem?, String>((ref, id) async {
   final repo = ref.watch(movieRepositoryProvider);
-  return repo.getMediaDetails(id);
+  // DATA-CERT-1: reuse the same watch-region/locale signal
+  // nowPlayingMoviesProvider/upcomingMoviesProvider already use, rather
+  // than introducing a second region source or a duplicate selector.
+  final country =
+      ref.watch(mediaProvider.select((s) => s.watchProvidersCountry));
+  return repo.getMediaDetails(id, region: country);
 });
 
 final watchProviderRegionsProvider =

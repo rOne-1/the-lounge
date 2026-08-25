@@ -415,6 +415,14 @@ class MediaItem {
   /// 'Producer'); other crew jobs are not captured here.
   final List<MediaCastMember>? extendedCrew;
   final String? certification;
+
+  /// DATA-CERT-1: every country TMDB reported a certification/content
+  /// rating for, keyed by ISO 3166-1 country code (e.g. 'GB' -> '15').
+  /// [certification] is this map resolved for the active watch region at
+  /// fetch time (see TmdbMovieRepository._mapJsonToMediaItem); this map is
+  /// kept alongside it so a UI that wants to show more than one region's
+  /// rating doesn't need a second fetch.
+  final Map<String, String> certificationsByCountry;
   final MediaCollection? belongsToCollection;
   final List<String>? createdBy;
   final List<MediaNetwork>? networks;
@@ -465,6 +473,7 @@ class MediaItem {
     this.directors,
     this.extendedCrew,
     this.certification,
+    this.certificationsByCountry = const {},
     this.belongsToCollection,
     this.createdBy,
     this.networks,
@@ -585,6 +594,7 @@ class MediaItem {
     List<MediaCastMember>? directors,
     List<MediaCastMember>? extendedCrew,
     String? certification,
+    Map<String, String>? certificationsByCountry,
     MediaCollection? belongsToCollection,
     List<String>? createdBy,
     List<MediaNetwork>? networks,
@@ -629,6 +639,8 @@ class MediaItem {
       directors: directors ?? this.directors,
       extendedCrew: extendedCrew ?? this.extendedCrew,
       certification: certification ?? this.certification,
+      certificationsByCountry:
+          certificationsByCountry ?? this.certificationsByCountry,
       belongsToCollection: belongsToCollection ?? this.belongsToCollection,
       createdBy: createdBy ?? this.createdBy,
       networks: networks ?? this.networks,

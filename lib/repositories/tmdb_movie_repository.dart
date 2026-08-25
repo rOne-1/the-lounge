@@ -659,11 +659,11 @@ class TmdbMovieRepository implements MovieRepository {
   }
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async {
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async {
     if (!isConfigured) {
       _logWarning('TMDB token is missing or unconfigured.');
       if (fallbackRepository != null) {
-        return fallbackRepository!.getMediaDetails(id);
+        return fallbackRepository!.getMediaDetails(id, region: region);
       }
       throw Exception('TMDB API token is missing or unconfigured.');
     }
@@ -672,8 +672,24 @@ class TmdbMovieRepository implements MovieRepository {
     // tvShowSeasonsProvider both call it when seasonsCount is unknown) --
     // shares one in-flight Future across concurrent callers instead of
     // issuing duplicate real network requests, same mechanism as
-    // _ensureGenresLoaded/getTvSeasonDetails above.
-    return _deduplicated('media_details:$id', () => _fetchMediaDetails(id));
+    // _ensureGenresLoaded/getTvSeasonDetails above. Deliberately keyed by
+    // id only, not region: the underlying fetch/cache is region-agnostic
+    // (TMDB returns every country's certification on one payload), so
+    // varying the dedup key by region would only fragment the cache
+    // without changing what's fetched.
+    final item =
+        await _deduplicated('media_details:$id', () => _fetchMediaDetails(id));
+    if (item == null) return item;
+
+    // DATA-CERT-1: re-resolve the display certification for the caller's
+    // actual requested region against the already-parsed per-country map
+    // -- no second fetch needed, since _fetchMediaDetails/_mapJsonToMediaItem
+    // above always parses every country regardless of which one is shown.
+    if (region == null || region.trim().isEmpty) return item;
+    final resolvedRegion = region.trim().toUpperCase();
+    final regionCert = item.certificationsByCountry[resolvedRegion];
+    if (regionCert == null || regionCert == item.certification) return item;
+    return item.copyWith(certification: regionCert);
   }
 
   Future<MediaItem?> _fetchMediaDetails(String id) async {
@@ -1442,26 +1458,30 @@ class TmdbMovieRepository implements MovieRepository {
       }
     }
 
-    String? certification;
+    // DATA-CERT-1: parse every country's certification (not just US) into
+    // a map, then resolve the display value for the requested region --
+    // falling back to US, then to unresolved (null) if neither has one.
+    // Parsing the full map up front (rather than fetching per-region)
+    // means a region change never needs a second network request: the
+    // same cached detail payload already carries every country's rating.
+    final certificationsByCountry = <String, String>{};
     if (type == MediaType.movie) {
       final releaseDatesObj = json['release_dates'] as Map<String, dynamic>?;
       if (releaseDatesObj != null && releaseDatesObj['results'] is List) {
-        final results = releaseDatesObj['results'] as List;
-        for (final country in results) {
-          if (country is Map && country['iso_3166_1'] == 'US') {
-            final dates = country['release_dates'];
-            if (dates is List) {
-              for (final d in dates) {
-                if (d is Map && d['certification'] != null) {
-                  final cert = d['certification'].toString().trim();
-                  if (cert.isNotEmpty) {
-                    certification = cert;
-                    break;
-                  }
-                }
+        for (final country in releaseDatesObj['results'] as List) {
+          if (country is! Map) continue;
+          final countryCode = country['iso_3166_1']?.toString();
+          if (countryCode == null || countryCode.isEmpty) continue;
+          final dates = country['release_dates'];
+          if (dates is! List) continue;
+          for (final d in dates) {
+            if (d is Map && d['certification'] != null) {
+              final cert = d['certification'].toString().trim();
+              if (cert.isNotEmpty) {
+                certificationsByCountry[countryCode] = cert;
+                break;
               }
             }
-            if (certification != null) break;
           }
         }
       }
@@ -1469,18 +1489,25 @@ class TmdbMovieRepository implements MovieRepository {
       final contentRatingsObj =
           json['content_ratings'] as Map<String, dynamic>?;
       if (contentRatingsObj != null && contentRatingsObj['results'] is List) {
-        final results = contentRatingsObj['results'] as List;
-        for (final country in results) {
-          if (country is Map && country['iso_3166_1'] == 'US') {
-            final rating = country['rating']?.toString().trim();
-            if (rating != null && rating.isNotEmpty) {
-              certification = rating;
-              break;
-            }
+        for (final country in contentRatingsObj['results'] as List) {
+          if (country is! Map) continue;
+          final countryCode = country['iso_3166_1']?.toString();
+          final rating = country['rating']?.toString().trim();
+          if (countryCode != null &&
+              countryCode.isNotEmpty &&
+              rating != null &&
+              rating.isNotEmpty) {
+            certificationsByCountry[countryCode] = rating;
           }
         }
       }
     }
+
+    // Baseline resolution is always US -- getMediaDetails re-resolves this
+    // against the caller's actual requested region afterward (cheap: the
+    // full per-country map above already has every country, so no second
+    // fetch is needed just to change which one is displayed).
+    final certification = certificationsByCountry['US'];
 
     MediaCollection? belongsToCollection;
     if (json['belongs_to_collection'] is Map) {
@@ -1648,6 +1675,7 @@ class TmdbMovieRepository implements MovieRepository {
       directors: parsedDirectors.isNotEmpty ? parsedDirectors : null,
       extendedCrew: extendedCrew,
       certification: certification,
+      certificationsByCountry: certificationsByCountry,
       belongsToCollection: belongsToCollection,
       createdBy: createdBy,
       networks: networks,

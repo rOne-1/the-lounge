@@ -668,7 +668,7 @@ class MockMovieRepository implements MovieRepository {
 
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async {
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async {
     await Future.delayed(const Duration(milliseconds: 500));
     // TH-58: _mockData ids are all domain-prefixed now, so a caller passing
     // a bare numeric id (or an already-prefixed one for the other domain)

@@ -20,7 +20,7 @@ import 'package:the_lounge/repositories/mock_movie_repository.dart';
 /// settings_screen_test.dart, rate_titles_screen_test.dart).
 class _InstantRepository extends MockMovieRepository {
   @override
-  Future<MediaItem?> getMediaDetails(String id) async => null;
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async => null;
 }
 
 void main() {

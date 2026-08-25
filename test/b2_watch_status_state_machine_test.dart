@@ -28,7 +28,7 @@ class SeasonedMockRepository extends MockMovieRepository {
   }
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async => mediaDetailsMap[id];
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async => mediaDetailsMap[id];
 }
 
 /// Item 2 regression fixture: fails the first [failCount] calls to

@@ -41,7 +41,7 @@ class _CountingRepository extends MockMovieRepository {
   }
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async {
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async {
     getMediaDetailsCalls++;
     return super.getMediaDetails(id);
   }

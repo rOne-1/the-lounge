@@ -78,7 +78,7 @@ class _FakeInnerRepository extends MockMovieRepository {
   Future<List<MediaItem>> getRecommendations(String mediaId) async => items;
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) async =>
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async =>
       items.where((i) => i.id == id).firstOrNull;
 }
 

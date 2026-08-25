@@ -69,7 +69,8 @@ class AnimeFilteredMovieRepository implements MovieRepository {
           .excludingAnime();
 
   @override
-  Future<MediaItem?> getMediaDetails(String id) => inner.getMediaDetails(id);
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) =>
+      inner.getMediaDetails(id, region: region);
 
   @override
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) =>

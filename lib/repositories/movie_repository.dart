@@ -22,7 +22,13 @@ abstract class MovieRepository {
   // release dates, the same way getNowPlayingMovies' region already works.
   Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage});
   Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage});
-  Future<MediaItem?> getMediaDetails(String id);
+  // DATA-CERT-1: region, when provided, resolves which country's
+  // certification/content rating MediaItem.certification reports (movie
+  // release_dates / TV content_ratings are per-country) -- falls back to
+  // 'US' when omitted or when the requested region has no explicit
+  // certification, same convention as getNowPlayingMovies/getUpcomingMovies'
+  // region param above.
+  Future<MediaItem?> getMediaDetails(String id, {String? region});
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber);
   Future<List<MediaItem>> searchMedia(String query);
   Future<List<Map<String, String>>> getWatchProviderRegions();
