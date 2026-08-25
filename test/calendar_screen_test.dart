@@ -8,6 +8,7 @@ import 'package:the_lounge/providers/repository_provider.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
+import 'package:the_lounge/widgets/media_image.dart';
 
 class MockCalendarRepository extends MockMovieRepository {
   final List<MediaItem> movies;
@@ -238,6 +239,50 @@ void main() {
       await tester.pump(const Duration(seconds: 1));
 
       expect(find.textContaining('${nextYearDate.year}'), findsOneWidget);
+    });
+  });
+
+  group('FEAT-CAL-1: agenda card poster art', () {
+    testWidgets(
+        'agenda cards render a poster thumbnail with a graceful placeholder fallback',
+        (WidgetTester tester) async {
+      // No posterPath is set on testMovie/testTvShow, so MediaImage falls
+      // back to MediaPosterFallback -- exercising the "graceful fallback"
+      // half of the acceptance criteria, not just the happy path.
+      final mockRepo = MockCalendarRepository(
+        movies: [testMovie],
+        tvShows: [testTvShow],
+      );
+
+      final container = ProviderContainer(
+        overrides: [movieRepositoryProvider.overrideWithValue(mockRepo)],
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: CalendarScreen()),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 1));
+
+      // The old status dot is gone; a poster thumbnail sits in its place,
+      // and the title / media-type badge remain alongside it.
+      expect(find.byType(MediaImage), findsOneWidget);
+      expect(find.byType(MediaPosterFallback), findsOneWidget);
+      expect(find.text('Inception Premiere'), findsOneWidget);
+      expect(find.text('Movie Premiere'), findsOneWidget);
+
+      final sizedBox = tester.widget<SizedBox>(
+        find.ancestor(
+          of: find.byType(MediaImage),
+          matching: find.byType(SizedBox),
+        ).first,
+      );
+      expect(sizedBox.width, 40);
+      expect(sizedBox.height, 60);
     });
   });
 }

@@ -9,6 +9,7 @@ import '../models/media_item.dart';
 import 'detail_screen.dart';
 import '../constants.dart';
 import '../widgets/atmospheric_empty_state.dart';
+import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
 import '../widgets/quick_status_sheet.dart';
 
@@ -194,8 +195,6 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   Widget _buildAgendaCard(MediaItem item, bool isDark, Color inkColor, Color subColor, {required int index}) {
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
-    final accColor = context.ambianceColors.acc; // For Movies
-    final dotColor = item.type == MediaType.movie ? accColor : AppStatusColors.watched; // For TV
 
     return OpenContainer(
       transitionDuration: AppPhysics.houseSpringDuration,
@@ -224,18 +223,18 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
               ),
               child: Row(
                 children: [
-                  AnimatedContainer(
-                    duration: AppPhysics.houseSpringDuration,
-                    curve: AppPhysics.houseSpringCurve,
-                    width: 8, height: 8,
-                    decoration: BoxDecoration(
-                      color: dotColor,
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(color: isDark ? const Color.fromRGBO(0, 0, 0, 0.15) : const Color.fromRGBO(0, 0, 0, 0.1), blurRadius: 0, spreadRadius: 0, offset: const Offset(0, 1), blurStyle: BlurStyle.inner)
-                      ]
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: SizedBox(
+                      width: 40,
+                      height: 60,
+                      child: MediaImage(
+                        imageUrl: item.posterUrl,
+                        type: item.type,
+                        fit: BoxFit.cover,
+                      ),
                     ),
-                  ).animate(key: ValueKey(dotColor)).fade(duration: 200.ms),
+                  ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
