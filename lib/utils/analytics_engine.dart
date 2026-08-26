@@ -438,14 +438,19 @@ List<NameCount> _tally(Iterable<String> names) {
 }
 
 /// ANLY-TASTE-1: tallies `cast`/`director` across every watched title.
-/// Reflects only the top-billed cast/primary director captured per saved
-/// title, not full credits -- a real scope limit of the stored data, not a
-/// bug.
+/// BUGFIX-7: `item.cast` holds the entire credited cast in TMDB's own
+/// billing order (not just top-billed -- DATA-CAST-3 removed that display
+/// cap on the stored list itself), so only the first
+/// [AnalyticsConstants.castRankingTopBilledCount] names per title are
+/// tallied -- otherwise a background/cameo actor's many brief appearances
+/// could outrank someone who's the clear lead in fewer titles.
 CastAndDirectorRankings computeCastAndDirectorRankings(AnalyticsInput input) {
   final castNames = <String>[];
   final directorNames = <String>[];
   for (final item in input.watchedList.values) {
-    castNames.addAll(item.cast);
+    castNames.addAll(
+      item.cast.take(AnalyticsConstants.castRankingTopBilledCount),
+    );
     final director = item.director;
     if (director != null) directorNames.add(director);
   }

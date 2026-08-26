@@ -42,4 +42,15 @@ class AnalyticsConstants {
   /// deck toward a taste signal, not dominate it with an ever-widening
   /// keyword net.
   static const int discoverKeywordBoostTopN = 3;
+
+  /// BUGFIX-7: per-title cutoff for computeCastAndDirectorRankings --
+  /// `MediaItem.cast` holds the *entire* credited cast in TMDB's own
+  /// billing order (DATA-CAST-3 removed the old display cap on this list,
+  /// but never added a ranking-side one), so a frequency-only tally lets a
+  /// prolific cameo actor who appears briefly across many titles (e.g. a
+  /// producer's traditional one-scene cameo) outrank someone who's the
+  /// clear lead in fewer titles. Only counting each title's top-billed
+  /// slice keeps the ranking about who a title is actually *about*, not
+  /// raw appearance count. Dev-reported, 2026-08-26 feedback doc item 12.
+  static const int castRankingTopBilledCount = 10;
 }

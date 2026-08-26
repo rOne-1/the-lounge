@@ -183,7 +183,8 @@ void main() {
 
     test(
         'ANALYTICS-TV-1: a Watching show with zero watched episodes contributes nothing '
-        '(merely being "in progress" with no real progress does not count)', () {
+        '(merely being "in progress" with no real progress does not count)',
+        () {
       final input = AnalyticsInput(
         watchedList: const {},
         watchingList: const {'tv_1': show},
@@ -386,6 +387,63 @@ void main() {
       expect(rankings.directors.single.name, 'Nolan');
       expect(rankings.directors.single.count, 2);
     });
+
+    test(
+        'BUGFIX-7: a background cameo appearing in every title\'s full cast list does not outrank a title\'s actual lead',
+        () {
+      // Mirrors the dev-reported scenario: a prolific cameo actor (billed
+      // last, well outside the top-billed slice) appears in every title,
+      // while each title's own lead only appears in one -- the cameo actor
+      // must not out-tally the leads just by sheer title count.
+      List<String> castWithCameoAt(String lead) => [
+            lead,
+            'Support A',
+            'Support B',
+            'Support C',
+            'Support D',
+            'Support E',
+            'Support F',
+            'Support G',
+            'Support H',
+            'Support I',
+            'Cameo Actor', // 11th billed -- past the top-10 cutoff.
+          ];
+
+      final items = {
+        for (final lead in ['Lead One', 'Lead Two', 'Lead Three'])
+          'movie_$lead': MediaItem(
+            id: 'movie_$lead',
+            title: lead,
+            type: MediaType.movie,
+            rating: 7.0,
+            overview: '',
+            genres: const [],
+            cast: castWithCameoAt(lead),
+          ),
+      };
+
+      final input = AnalyticsInput(
+        watchedList: items,
+        watchHistory: const {},
+        watchedEpisodes: const {},
+        seasonStartDates: const {},
+        seasonEndDates: const {},
+      );
+
+      final rankings = computeCastAndDirectorRankings(input);
+      final cameoEntry =
+          rankings.cast.where((c) => c.name == 'Cameo Actor').toList();
+      expect(cameoEntry, isEmpty,
+          reason:
+              'billed 11th in every title, past the top-10 cutoff -- should never be tallied at all');
+      // Every lead appears exactly once (in their own title), same as any
+      // other top-billed name -- none of them should be out-ranked by a
+      // cameo that (pre-fix) would have tallied 3 appearances.
+      for (final lead in ['Lead One', 'Lead Two', 'Lead Three']) {
+        final entry = rankings.cast.firstWhere((c) => c.name == lead);
+        expect(entry.count, 1);
+      }
+    });
   });
 
   group('computeRatingDivergence', () {
@@ -533,8 +591,7 @@ void main() {
   });
 
   group('DATA-CONT-3: computeKeywordAffinity', () {
-    test('multi-membership: a title with N keywords counts toward all N',
-        () {
+    test('multi-membership: a title with N keywords counts toward all N', () {
       const item1 = MediaItem(
         id: 'movie_1',
         title: 'One',
