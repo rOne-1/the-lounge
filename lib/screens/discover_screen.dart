@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'dart:math' as math;
+import 'dart:ui';
 import '../providers/ambiance_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
@@ -167,8 +168,11 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   if (deckState.lastSwipe != null)
-                    PressableScale(
+                    _buildTopBarChip(
                       key: const ValueKey('discover_undo_button'),
+                      icon: Icons.undo,
+                      label: 'Undo',
+                      subColor: subColor,
                       onTap: () {
                         HapticFeedback.selectionClick();
                         ref
@@ -177,34 +181,15 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                                 : discoverTvDeckProvider.notifier)
                             .undoLastSwipe();
                       },
-                      child: Row(
-                        children: [
-                          Icon(Icons.undo, color: subColor, size: 15),
-                          const SizedBox(width: 6),
-                          Text('Undo',
-                              style: AppThemes.safeGeist(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                  color: subColor)),
-                        ],
-                      ),
                     )
                   else
                     const SizedBox.shrink(),
-                  PressableScale(
+                  _buildTopBarChip(
+                    icon: Icons.info_outline,
+                    label: 'Legend',
+                    subColor: subColor,
                     onTap: () => setState(() => _showLegend = true),
-                    child: Row(
-                      children: [
-                        Icon(Icons.info_outline, color: subColor, size: 15),
-                        const SizedBox(width: 6),
-                        Text('Legend',
-                            style: AppThemes.safeGeist(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w500,
-                                color: subColor)),
-                      ],
-                    ),
-                  )
+                  ),
                 ],
               ),
             ),
@@ -215,7 +200,16 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 child: Stack(
                   alignment: Alignment.topCenter,
                   children: [
-                    // Back cards
+                    // Back cards -- CRAFT-DISC-1: these are meant to read as
+                    // a soft, receding stack behind the top card. The
+                    // `Opacity` here used to wrap nothing (no `child`), so it
+                    // never actually faded the container -- both ghost cards
+                    // painted their border at full strength, stacking into
+                    // hard concentric rings around the deck instead of a
+                    // soft blend. Wrapping the container properly, and
+                    // dropping the crisp border in favor of a faint one plus
+                    // a soft shadow, is what actually produces the blended
+                    // "cards receding into the background" look.
                     Positioned(
                       top: 26,
                       left: 8,
@@ -223,15 +217,26 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       bottom: 20,
                       child: Transform.scale(
                         scale: 0.92,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: context.ambianceColors.card2,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
+                        child: Opacity(
+                          opacity: isDark ? 0.45 : 0.55,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: context.ambianceColors.card2,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
                                 color: context.ambianceColors.lineRgba
-                                    .withValues(alpha: 0.1)),
+                                    .withValues(alpha: 0.08),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: context.ambianceColors.scrim
+                                      .withValues(alpha: isDark ? 0.25 : 0.1),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
                           ),
-                          child: Opacity(opacity: isDark ? 0.5 : 0.6),
                         ),
                       ),
                     ),
@@ -242,15 +247,26 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                       bottom: 20,
                       child: Transform.scale(
                         scale: 0.96,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: context.ambianceColors.card,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(
+                        child: Opacity(
+                          opacity: isDark ? 0.65 : 0.75,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: context.ambianceColors.card,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
                                 color: context.ambianceColors.lineRgba
-                                    .withValues(alpha: 0.14)),
+                                    .withValues(alpha: 0.1),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: context.ambianceColors.scrim
+                                      .withValues(alpha: isDark ? 0.22 : 0.08),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
                           ),
-                          child: Opacity(opacity: isDark ? 0.7 : 0.8),
                         ),
                       ),
                     ),
@@ -362,67 +378,109 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                           .watch(skippedMediaIdsProvider)
                           .containsKey(topItem.id));
 
+              // CRAFT-DISC-2: unified into one frosted pill bar (the same
+              // color/border/shadow/blur convention FloatingNavigationCapsule
+              // already uses for every other floating surface in the app --
+              // color: card2 @ 0.82/0.95, surfaceHighlight border,
+              // ambientGlowShadow, 16px backdrop blur) instead of 4 separate
+              // circles floating loose on the bare background. Previously
+              // each button was its own disconnected element; grouping them
+              // into a single surface is what actually reads as one action
+              // bar rather than "elements thrown everywhere" (dev feedback,
+              // 2026-08-26: Discover's layout/stack/blend needs work).
+              // Full-width bar (not a content-hugging pill) + a horizontal
+              // SingleChildScrollView around the Row -- a bare
+              // Row(mainAxisSize: min) inside Center still overflows if the
+              // 4 buttons don't fit the available width (narrow devices,
+              // accessibility text scaling, or a narrow test viewport all
+              // hit this). SingleChildScrollView makes that degrade to a
+              // scroll instead of a RenderFlex error, mirroring the same
+              // fix already applied to Analytics' header button row.
               return Padding(
                 padding: EdgeInsets.fromLTRB(
-                    0, 14.0, 0, 14.0 + MediaQuery.of(context).padding.bottom),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _buildActionButtonWithLabel(
-                      label: '← Skip',
-                      button: _buildActionButton(
-                        icon: Icons.close,
-                        color: context.ambianceColors.sub,
-                        borderColor: context.ambianceColors.lineRgba,
-                        direction: 'Left',
-                        onTap: () => _triggerSwipe('Left'),
-                        isDark: isDark,
-                        isHighlighted: isSkipped,
+                    20, 14.0, 20, 14.0 + MediaQuery.of(context).padding.bottom),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: context.ambianceColors.card2
+                            .withValues(alpha: isDark ? 0.82 : 0.95),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: context.ambianceColors.surfaceHighlight,
+                          width: 1,
+                        ),
+                        boxShadow: context.ambianceColors.ambientGlowShadow,
                       ),
-                      isDark: isDark,
-                    ),
-                    const SizedBox(width: 14),
-                    _buildActionButtonWithLabel(
-                      label: '→ Saved',
-                      button: _buildActionButton(
-                        icon: Icons.star_border,
-                        activeIcon: Icons.star,
-                        color: AppStatusColors.save,
-                        borderColor:
-                            AppStatusColors.save.withValues(alpha: 0.55),
-                        direction: 'Right',
-                        onTap: () => _triggerSwipe('Right'),
-                        isDark: isDark,
-                        isHighlighted: isMaybe,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildActionButtonWithLabel(
+                              label: '← Skip',
+                              button: _buildActionButton(
+                                icon: Icons.close,
+                                color: context.ambianceColors.sub,
+                                borderColor: context.ambianceColors.lineRgba,
+                                direction: 'Left',
+                                onTap: () => _triggerSwipe('Left'),
+                                isDark: isDark,
+                                isHighlighted: isSkipped,
+                              ),
+                              isDark: isDark,
+                            ),
+                            const SizedBox(width: 10),
+                            _buildActionButtonWithLabel(
+                              label: '→ Saved',
+                              button: _buildActionButton(
+                                icon: Icons.star_border,
+                                activeIcon: Icons.star,
+                                color: AppStatusColors.save,
+                                borderColor: AppStatusColors.save
+                                    .withValues(alpha: 0.55),
+                                direction: 'Right',
+                                onTap: () => _triggerSwipe('Right'),
+                                isDark: isDark,
+                                isHighlighted: isMaybe,
+                              ),
+                              isDark: isDark,
+                            ),
+                            const SizedBox(width: 10),
+                            _buildActionButtonWithLabel(
+                              label: '↓ Watchlist',
+                              button: _buildWatchlistActionButton(
+                                isDark: isDark,
+                                accColor: accColor,
+                                isWatchlist: isWatchlist,
+                              ),
+                              isDark: isDark,
+                            ),
+                            const SizedBox(width: 10),
+                            _buildActionButtonWithLabel(
+                              label: '↑ Watched',
+                              button: _buildActionButton(
+                                icon: Icons.check,
+                                color: AppStatusColors.watched,
+                                borderColor: AppStatusColors.watched
+                                    .withValues(alpha: 0.55),
+                                direction: 'Up',
+                                onTap: () => _triggerSwipe('Up'),
+                                isDark: isDark,
+                                isHighlighted: isWatched,
+                              ),
+                              isDark: isDark,
+                            ),
+                          ],
+                        ),
                       ),
-                      isDark: isDark,
                     ),
-                    const SizedBox(width: 14),
-                    _buildActionButtonWithLabel(
-                      label: '↓ Watchlist',
-                      button: _buildWatchlistActionButton(
-                        isDark: isDark,
-                        accColor: accColor,
-                        isWatchlist: isWatchlist,
-                      ),
-                      isDark: isDark,
-                    ),
-                    const SizedBox(width: 14),
-                    _buildActionButtonWithLabel(
-                      label: '↑ Watched',
-                      button: _buildActionButton(
-                        icon: Icons.check,
-                        color: AppStatusColors.watched,
-                        borderColor:
-                            AppStatusColors.watched.withValues(alpha: 0.55),
-                        direction: 'Up',
-                        onTap: () => _triggerSwipe('Up'),
-                        isDark: isDark,
-                        isHighlighted: isWatched,
-                      ),
-                      isDark: isDark,
-                    ),
-                  ],
+                  ),
                 ),
               );
             })
@@ -430,6 +488,39 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
         ),
         _buildLegendOverlay(isDark, accColor),
       ],
+    );
+  }
+
+  Widget _buildTopBarChip({
+    Key? key,
+    required IconData icon,
+    required String label,
+    required Color subColor,
+    required VoidCallback onTap,
+  }) {
+    return PressableScale(
+      key: key,
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+        decoration: BoxDecoration(
+          color: context.ambianceColors.pill,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: context.ambianceColors.lineRgba),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: subColor, size: 14),
+            const SizedBox(width: 6),
+            Text(label,
+                style: AppThemes.safeGeist(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: subColor)),
+          ],
+        ),
+      ),
     );
   }
 
