@@ -41,6 +41,16 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   /// TmdbMovieRepository._mapJsonToMediaItem) cast list.
   bool _showAllCast = false;
 
+  /// BUGFIX-2: Reviews and the extended crew card default to collapsed --
+  /// same pattern and reasoning as WatchHistoryTimeline's own _expanded
+  /// (also false by default): both can get long, and this screen already
+  /// has a lot below the fold. The director/creator card gets the same
+  /// treatment, but only when there's more than one name to show -- a
+  /// single director/creator is a one-line card with nothing to hide.
+  bool _reviewsExpanded = false;
+  bool _crewExpanded = false;
+  bool _directorsExpanded = false;
+
   /// CRAFT-LOGO-1: drives the ClearLogo hero's scroll-collapse into the
   /// compact top bar -- only the compact (mobile) layout's CustomScrollView
   /// is wired to this controller. The large/desktop layout splits the hero
@@ -304,6 +314,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 _buildSeasonsSection(context, ref, item, isDark),
                 SeasonalRatingBar(item: item),
                 _buildWatchHistorySection(context, item, isDark),
+                // BUGFIX-1: this Column ends the eagerly-built portion of
+                // the screen; the lazily-built below-fold sliver (starting
+                // with the director/creator credit card) follows directly
+                // after with no gap of its own, unlike every other section
+                // boundary above which all use an explicit 18-22px SizedBox.
+                const SizedBox(height: 22),
               ],
             ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
                   begin: 0.08,
@@ -752,13 +768,57 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// BUGFIX-2: shared collapsible-section header -- same visual/motion
+  /// pattern as [WatchHistoryTimeline]'s own header (PressableScale +
+  /// AnimatedRotation chevron), reused here instead of inventing a second
+  /// one (SP-2). [count] is omitted for sections where a number wouldn't
+  /// mean anything (e.g. a single director card never reaches this at all).
+  Widget _collapsibleSectionHeader({
+    required String title,
+    int? count,
+    required bool expanded,
+    required VoidCallback onToggle,
+  }) {
+    final colors = context.ambianceColors;
+    return PressableScale(
+      onTap: onToggle,
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: AppThemes.safeGeist(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: colors.ink,
+            ),
+          ),
+          if (count != null) ...[
+            const SizedBox(width: 8),
+            Text(
+              '($count)',
+              style: AppThemes.safeGeist(fontSize: 13, color: colors.sub),
+            ),
+          ],
+          const Spacer(),
+          AnimatedRotation(
+            turns: expanded ? 0.5 : 0,
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            child: Icon(Icons.expand_more_rounded, color: colors.sub),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// DATA-CONT-2: verified TMDB community reviews, each in an expandable
   /// card (reusing [ExpandableOverviewText], the same "Show more"/"Show
   /// less" affordance the overview text already uses -- SP-2 consistency).
   /// Hidden entirely when there are none, matching every other optional
   /// below-fold section on this screen (trailers, cast, keywords,
   /// networks) rather than introducing a new "no reviews yet" placeholder
-  /// pattern this screen doesn't otherwise use.
+  /// pattern this screen doesn't otherwise use. BUGFIX-2: the section
+  /// itself now defaults collapsed, same as Watch History.
   Widget _buildReviewsSection(
     BuildContext context,
     MediaItem item,
@@ -777,97 +837,113 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        Text(
-          'Reviews',
-          style: AppThemes.safeGeist(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: inkColor,
-          ),
+        _collapsibleSectionHeader(
+          title: 'Reviews',
+          count: reviews.length,
+          expanded: _reviewsExpanded,
+          onToggle: () => setState(() => _reviewsExpanded = !_reviewsExpanded),
         ),
-        const SizedBox(height: 12),
-        ...reviews.map((review) {
-          Widget avatarContent;
-          if (review.authorAvatarUrl != null &&
-              review.authorAvatarUrl!.isNotEmpty) {
-            avatarContent = ClipOval(
-              child: MediaImage(
-                imageUrl: review.authorAvatarUrl!,
-                fit: BoxFit.cover,
-                fallback: Icon(Icons.person, size: 18, color: subColor),
-              ),
-            );
-          } else {
-            avatarContent = Icon(Icons.person, size: 18, color: subColor);
-          }
-
-          return Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: phColor,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: lineRgba),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: context.ambianceColors.card,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: lineRgba),
-                      ),
-                      child: avatarContent,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        review.author,
-                        style: AppThemes.safeGeist(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: inkColor,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (review.rating != null) ...[
-                      const SizedBox(width: 8),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.star_rounded, size: 14, color: accColor),
-                          const SizedBox(width: 2),
-                          Text(
-                            review.rating!.toStringAsFixed(1),
-                            style: AppThemes.safeGeist(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              color: accColor,
+        AnimatedSize(
+          duration: AppPhysics.houseSpringDuration,
+          curve: AppPhysics.houseSpringCurve,
+          alignment: Alignment.topCenter,
+          child: !_reviewsExpanded
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ...reviews.map((review) {
+                        Widget avatarContent;
+                        if (review.authorAvatarUrl != null &&
+                            review.authorAvatarUrl!.isNotEmpty) {
+                          avatarContent = ClipOval(
+                            child: MediaImage(
+                              imageUrl: review.authorAvatarUrl!,
+                              fit: BoxFit.cover,
+                              fallback:
+                                  Icon(Icons.person, size: 18, color: subColor),
                             ),
+                          );
+                        } else {
+                          avatarContent =
+                              Icon(Icons.person, size: 18, color: subColor);
+                        }
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: phColor,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: lineRgba),
                           ),
-                        ],
-                      ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 32,
+                                    height: 32,
+                                    decoration: BoxDecoration(
+                                      color: context.ambianceColors.card,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: lineRgba),
+                                    ),
+                                    child: avatarContent,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      review.author,
+                                      style: AppThemes.safeGeist(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: inkColor,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  if (review.rating != null) ...[
+                                    const SizedBox(width: 8),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.star_rounded,
+                                            size: 14, color: accColor),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          review.rating!.toStringAsFixed(1),
+                                          style: AppThemes.safeGeist(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: accColor,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ],
+                              ),
+                              const SizedBox(height: 10),
+                              ExpandableOverviewText(
+                                text: review.content,
+                                style: AppThemes.safeGeist(
+                                    fontSize: 12.5, color: subColor),
+                                isDark: isDark,
+                                maxLinesCollapsed: 4,
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
                     ],
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                ExpandableOverviewText(
-                  text: review.content,
-                  style: AppThemes.safeGeist(fontSize: 12.5, color: subColor),
-                  isDark: isDark,
-                  maxLinesCollapsed: 4,
-                ),
-              ],
-            ),
-          );
-        }),
+        ),
       ],
     );
   }
@@ -1158,6 +1234,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       );
     }
 
+    // BUGFIX-2: only worth collapsing when there's more than one name --
+    // a single director/creator is already a one-line card with nothing
+    // to hide, matching the dev's own framing ("if there are more than 1
+    // director listed").
+    final isMultiple = hasDirectors && item.directors!.length > 1;
+
     Widget contentWidget;
     if (hasDirectors) {
       final directorList = item.directors!;
@@ -1219,18 +1301,39 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: AppThemes.safeGeist(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: subColor,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                contentWidget,
-              ],
+              children: isMultiple
+                  ? [
+                      _collapsibleSectionHeader(
+                        title: label,
+                        count: item.directors!.length,
+                        expanded: _directorsExpanded,
+                        onToggle: () => setState(
+                            () => _directorsExpanded = !_directorsExpanded),
+                      ),
+                      AnimatedSize(
+                        duration: AppPhysics.houseSpringDuration,
+                        curve: AppPhysics.houseSpringCurve,
+                        alignment: Alignment.topCenter,
+                        child: !_directorsExpanded
+                            ? const SizedBox(width: double.infinity)
+                            : Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: contentWidget,
+                              ),
+                      ),
+                    ]
+                  : [
+                      Text(
+                        label,
+                        style: AppThemes.safeGeist(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: subColor,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      contentWidget,
+                    ],
             ),
           ),
         ],
@@ -1336,7 +1439,28 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: rows,
+        children: [
+          _collapsibleSectionHeader(
+            title: 'Crew',
+            count: crew.length,
+            expanded: _crewExpanded,
+            onToggle: () => setState(() => _crewExpanded = !_crewExpanded),
+          ),
+          AnimatedSize(
+            duration: AppPhysics.houseSpringDuration,
+            curve: AppPhysics.houseSpringCurve,
+            alignment: Alignment.topCenter,
+            child: !_crewExpanded
+                ? const SizedBox(width: double.infinity)
+                : Padding(
+                    padding: const EdgeInsets.only(top: 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: rows,
+                    ),
+                  ),
+          ),
+        ],
       ),
     );
   }
