@@ -159,29 +159,21 @@ class _NoiseTexturePainter extends CustomPainter {
     if (noiseImage != null) {
       final paint = Paint()
         ..blendMode = blendMode
-        ..color = Color.fromRGBO(255, 255, 255, opacity)
-        ..shader = ImageShader(
-          noiseImage!,
-          TileMode.repeated,
-          TileMode.repeated,
-          Matrix4.identity().storage,
-        );
+        ..color = Color.fromRGBO(255, 255, 255, opacity);
+
+      if (tint.a > 0) {
+        paint.colorFilter = ColorFilter.mode(tint, BlendMode.color);
+      }
+
+      paint.shader = ImageShader(
+        noiseImage!,
+        TileMode.repeated,
+        TileMode.repeated,
+        Matrix4.identity().storage,
+      );
       canvas.drawRect(Offset.zero & size, paint);
     } else {
       _paintProceduralFallback(canvas, size);
-    }
-
-    // THEME-DEPTH-2: washes the achromatic grain structure above with the
-    // active theme's own hue (BlendMode.color keeps the noise's luminance
-    // variation, replaces its hue/saturation with tint's) so one shared
-    // cached noise tile still reads as a different material per theme.
-    if (tint.a > 0) {
-      canvas.drawRect(
-        Offset.zero & size,
-        Paint()
-          ..color = tint
-          ..blendMode = BlendMode.color,
-      );
     }
   }
 
@@ -189,6 +181,10 @@ class _NoiseTexturePainter extends CustomPainter {
     final paint = Paint()
       ..blendMode = blendMode
       ..color = Color.fromRGBO(255, 255, 255, opacity);
+
+    if (tint.a > 0) {
+      paint.colorFilter = ColorFilter.mode(tint, BlendMode.color);
+    }
 
     final random = math.Random(1337);
     final width = size.width;
