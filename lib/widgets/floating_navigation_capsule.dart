@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../providers/ambiance_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../providers/media_provider.dart';
 import '../providers/hall_provider.dart';
 import '../screens/settings_screen.dart';
 import 'ambient_glow.dart';
@@ -18,8 +17,10 @@ import 'hall_selector_sheet.dart';
 /// capsule that replaces ShellScreen's fixed top bar and bottom nav bar.
 /// Collapsed it is a minimal frosted orb showing the active tab + media
 /// type; tapping it expands an ambient command sheet with all 5 tab
-/// destinations, the movie/TV toggle, and utility actions (Settings,
-/// Discover undo).
+/// destinations, the movie/TV toggle, and utility actions (Hall switcher,
+/// Settings). BUGFIX-5: Discover's own undo button used to live here too,
+/// moved to Discover's own top bar 2026-08-26 -- undo should be scoped to
+/// the screen it affects, matching Rate Titles/Cleanup Swipe.
 class FloatingNavigationCapsule extends ConsumerStatefulWidget {
   final bool? enableAnimation;
 
@@ -494,12 +495,6 @@ class _ExpandedContent extends ConsumerWidget {
     final ambiance = context.ambianceColors;
 
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
-    final isDiscover = navState.currentTab == AppTab.discover;
-    final deckState = isDiscover
-        ? ref.watch(
-            isMovies ? discoverMoviesDeckProvider : discoverTvDeckProvider)
-        : null;
-    final hasLastSwipe = deckState?.lastSwipe != null;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(14, 16, 14, 14),
@@ -552,23 +547,6 @@ class _ExpandedContent extends ConsumerWidget {
                 icon: Icons.settings_outlined,
                 label: 'Settings',
                 onTap: onSettings,
-              ),
-              const SizedBox(width: 8),
-              _UtilityAction(
-                key: const ValueKey('floating_nav_undo_button'),
-                icon: Icons.undo,
-                label: 'Undo',
-                enabled: hasLastSwipe,
-                onTap: hasLastSwipe
-                    ? () {
-                        HapticFeedback.selectionClick();
-                        ref
-                            .read(isMovies
-                                ? discoverMoviesDeckProvider.notifier
-                                : discoverTvDeckProvider.notifier)
-                            .undoLastSwipe();
-                      }
-                    : null,
               ),
             ],
           ),
@@ -705,7 +683,6 @@ class _UtilityAction extends StatelessWidget {
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
-  final bool enabled;
   final String? semanticLabel;
 
   const _UtilityAction({
@@ -713,62 +690,54 @@ class _UtilityAction extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.onTap,
-    this.enabled = true,
     this.semanticLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final ambiance = context.ambianceColors;
-    final color = enabled ? ambiance.ink : ambiance.sub.withValues(alpha: 0.4);
+    final color = ambiance.ink;
 
     return Expanded(
       child: Semantics(
         label: semanticLabel ?? label,
         button: true,
-        enabled: enabled,
         excludeSemantics: semanticLabel != null,
         child: PressableScale(
-          enabled: enabled,
           onTap: onTap ?? () {},
-          child: AnimatedOpacity(
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
-            opacity: enabled ? 1.0 : 0.45,
-            child: Container(
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              decoration: BoxDecoration(
-                color: ambiance.pill,
-                border: Border.all(color: ambiance.lineRgba),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(icon, color: color, size: 14),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: AnimatedSwitcher(
-                      duration: AppPhysics.houseSpringDuration,
-                      switchInCurve: AppPhysics.houseSpringCurve,
-                      switchOutCurve: Curves.easeOut,
-                      child: Text(
-                        label,
-                        key: ValueKey(label),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppThemes.safeGeist(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: color,
-                        ),
+          child: Container(
+            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: ambiance.pill,
+              border: Border.all(color: ambiance.lineRgba),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color, size: 14),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: AnimatedSwitcher(
+                    duration: AppPhysics.houseSpringDuration,
+                    switchInCurve: AppPhysics.houseSpringCurve,
+                    switchOutCurve: Curves.easeOut,
+                    child: Text(
+                      label,
+                      key: ValueKey(label),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppThemes.safeGeist(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: color,
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),

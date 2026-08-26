@@ -18,7 +18,8 @@ import 'package:the_lounge/main.dart';
 
 class TestRepository extends MockMovieRepository {
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async {
+  Future<List<MediaItem>> getTrendingMovies(
+      {int page = 1, String? originalLanguage}) async {
     return [
       const MediaItem(
           id: '1',
@@ -56,36 +57,52 @@ class TestRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async {
+  Future<List<MediaItem>> getPopularMovies(
+      {int page = 1, String? originalLanguage}) async {
     return [];
   }
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTrendingTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getNowPlayingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getAiringTodayTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getOnTheAirTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
   Future<MediaItem?> getMediaDetails(String id, {String? region}) async => null;
 
   @override
-  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async =>
+      null;
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
@@ -142,31 +159,49 @@ class _ManyPagesRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getPopularMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTrendingMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTrendingTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getNowPlayingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getAiringTodayTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getOnTheAirTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 }
 
 void main() {
@@ -245,7 +280,8 @@ void main() {
 
   testWidgets(
       'BETA3-A11Y-2: SwipeCard exposes a title/year/type/rating label and '
-      'skip/save/watchlist/watched custom semantic actions', (WidgetTester tester) async {
+      'skip/save/watchlist/watched custom semantic actions',
+      (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -331,7 +367,8 @@ void main() {
     expect(find.byType(DetailScreen), findsOneWidget);
   });
 
-  testWidgets('Swiping drag gesture triggers early completion when exceeding 70% threshold',
+  testWidgets(
+      'Swiping drag gesture triggers early completion when exceeding 70% threshold',
       (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({});
@@ -371,7 +408,8 @@ void main() {
     expect(find.text('Movie 2'), findsOneWidget);
   });
 
-  testWidgets('Action button visual highlight triggers on swipe gesture and direct button tap',
+  testWidgets(
+      'Action button visual highlight triggers on swipe gesture and direct button tap',
       (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     SharedPreferences.setMockInitialValues({});
@@ -408,14 +446,16 @@ void main() {
     await tester.pump();
 
     // During tap/flyoff animation, Right action button highlights with scale 1.12
-    final tapScales = tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
+    final tapScales =
+        tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
     expect(tapScales.any((s) => (s.scale - 1.12).abs() < 0.01), isTrue);
 
     await tester.pumpAndSettle();
 
     // Movie 2 is now displayed and all action button scales revert to 1.0
     expect(find.text('Movie 2'), findsOneWidget);
-    final settledScales = tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
+    final settledScales =
+        tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
     expect(settledScales.every((s) => (s.scale - 1.0).abs() < 0.01), isTrue);
 
     // Tap Down action button (Watchlist)
@@ -423,7 +463,8 @@ void main() {
     await tester.pump();
 
     // During flyoff animation, Watchlist button highlights with scale 1.12
-    final watchlistScales = tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
+    final watchlistScales =
+        tester.widgetList<AnimatedScale>(find.byType(AnimatedScale));
     expect(watchlistScales.any((s) => (s.scale - 1.12).abs() < 0.01), isTrue);
 
     await tester.pumpAndSettle();
@@ -432,24 +473,32 @@ void main() {
     expect(find.text('Movie 3'), findsOneWidget);
   });
 
-  test('Skipped titles are successfully persisted to SharedPreferences and pruned after their 6-month expiration window (B9)', () async {
+  test(
+      'Skipped titles are successfully persisted to SharedPreferences and pruned after their 6-month expiration window (B9)',
+      () async {
     SharedPreferences.setMockInitialValues({
       'the_lounge_skipped_media_v2': jsonEncode({
         // Older than the old 30-day window but well inside the new 6-month
         // (182-day) one -- must survive.
         'valid_id': {
-          'lastSkippedAt': DateTime.now().subtract(const Duration(days: 60)).toIso8601String(),
+          'lastSkippedAt': DateTime.now()
+              .subtract(const Duration(days: 60))
+              .toIso8601String(),
           'count': 1,
         },
         // Older than even the new 6-month window -- must be pruned.
         'expired_id': {
-          'lastSkippedAt': DateTime.now().subtract(const Duration(days: 200)).toIso8601String(),
+          'lastSkippedAt': DateTime.now()
+              .subtract(const Duration(days: 200))
+              .toIso8601String(),
           'count': 1,
         },
         // Old and would normally be pruned, but crossed the permanent-skip
         // threshold -- must survive regardless of age.
         'permanent_id': {
-          'lastSkippedAt': DateTime.now().subtract(const Duration(days: 200)).toIso8601String(),
+          'lastSkippedAt': DateTime.now()
+              .subtract(const Duration(days: 200))
+              .toIso8601String(),
           'count': 6,
         },
       }),
@@ -479,7 +528,9 @@ void main() {
     expect(decoded.containsKey('expired_id'), isFalse);
   });
 
-  test('A title becomes permanently skipped after more than 5 skips, and undo correctly decrements rather than wiping history (B9)', () async {
+  test(
+      'A title becomes permanently skipped after more than 5 skips, and undo correctly decrements rather than wiping history (B9)',
+      () async {
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(
@@ -492,28 +543,36 @@ void main() {
     for (var i = 0; i < 5; i++) {
       notifier.add('title_x');
     }
-    expect(container.read(skippedMediaIdsProvider)['title_x']!.count, equals(5));
-    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent, isFalse);
+    expect(
+        container.read(skippedMediaIdsProvider)['title_x']!.count, equals(5));
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent,
+        isFalse);
 
     // The 6th skip tips it into permanent.
     notifier.add('title_x');
-    expect(container.read(skippedMediaIdsProvider)['title_x']!.count, equals(6));
-    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent, isTrue);
+    expect(
+        container.read(skippedMediaIdsProvider)['title_x']!.count, equals(6));
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent,
+        isTrue);
 
     // Undoing that 6th skip must decrement back to 5/not-permanent, not
     // erase the whole history.
     notifier.undoSkip('title_x');
-    expect(container.read(skippedMediaIdsProvider)['title_x']!.count, equals(5));
-    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent, isFalse);
+    expect(
+        container.read(skippedMediaIdsProvider)['title_x']!.count, equals(5));
+    expect(container.read(skippedMediaIdsProvider)['title_x']!.isPermanent,
+        isFalse);
 
     // Undoing down to zero removes the record entirely.
     for (var i = 0; i < 5; i++) {
       notifier.undoSkip('title_x');
     }
-    expect(container.read(skippedMediaIdsProvider).containsKey('title_x'), isFalse);
+    expect(container.read(skippedMediaIdsProvider).containsKey('title_x'),
+        isFalse);
   });
 
-  testWidgets('Discover deck state is preserved when switching tabs', (WidgetTester tester) async {
+  testWidgets('Discover deck state is preserved when switching tabs',
+      (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     final mockRepo = TestRepository();
     SharedPreferences.setMockInitialValues({});
@@ -537,23 +596,29 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    
+
     final moviesDeckBefore = container.read(discoverMoviesDeckProvider);
     expect(moviesDeckBefore.pool.isNotEmpty, isTrue);
 
     // Switch to TV
-    container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.tv);
+    container
+        .read(navigationProvider.notifier)
+        .setMediaType(MediaTypeToggle.tv);
     await tester.pumpAndSettle();
 
     // Switch back to Movies
-    container.read(navigationProvider.notifier).setMediaType(MediaTypeToggle.movies);
+    container
+        .read(navigationProvider.notifier)
+        .setMediaType(MediaTypeToggle.movies);
     await tester.pumpAndSettle();
 
     final moviesDeckAfter = container.read(discoverMoviesDeckProvider);
     expect(moviesDeckAfter.pool, equals(moviesDeckBefore.pool));
   });
 
-  test('Discover deck pagination search automatically fetches new pages in background when pages are fully excluded', () async {
+  test(
+      'Discover deck pagination search automatically fetches new pages in background when pages are fully excluded',
+      () async {
     final mockRepo = TestRepository();
     SharedPreferences.setMockInitialValues({});
     final prefs = await SharedPreferences.getInstance();
@@ -563,24 +628,39 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(prefs),
       ],
     );
-    
+
     // add '1' and '2' to watchlist so they are excluded
     final mediaNotifier = container.read(mediaProvider.notifier);
-    mediaNotifier.addToWatchlist(const MediaItem(id: '1', title: 'Movie 1', type: MediaType.movie, rating: 8.0, overview: '', genres: []));
-    mediaNotifier.addToWatchlist(const MediaItem(id: '2', title: 'Movie 2', type: MediaType.movie, rating: 7.0, overview: '', genres: []));
+    mediaNotifier.addToWatchlist(const MediaItem(
+        id: '1',
+        title: 'Movie 1',
+        type: MediaType.movie,
+        rating: 8.0,
+        overview: '',
+        genres: []));
+    mediaNotifier.addToWatchlist(const MediaItem(
+        id: '2',
+        title: 'Movie 2',
+        type: MediaType.movie,
+        rating: 7.0,
+        overview: '',
+        genres: []));
 
-    // this will attempt to load and initially see 1 and 2 excluded, and since TestRepository only returns 4 items, 
+    // this will attempt to load and initially see 1 and 2 excluded, and since TestRepository only returns 4 items,
     // it should fetch pages and then end up with item 3 and 4 in the pool.
     final deckNotifier = container.read(discoverMoviesDeckProvider.notifier);
     await deckNotifier.loadPool();
-    
+
     final pool = container.read(discoverMoviesDeckProvider).pool;
     expect(pool.any((item) => item.id == '1' || item.id == '2'), isFalse);
     expect(pool.any((item) => item.id == '3' || item.id == '4'), isTrue);
   });
 
-  group('B9: daily-capped manual "Reload deck", unlimited swipe pagination', () {
-    test('manualReload works once, then is a no-op for the rest of the calendar day', () async {
+  group('B9: daily-capped manual "Reload deck", unlimited swipe pagination',
+      () {
+    test(
+        'manualReload works once, then is a no-op for the rest of the calendar day',
+        () async {
       final mockRepo = TestRepository();
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -594,12 +674,15 @@ void main() {
 
       final notifier = container.read(discoverMoviesDeckProvider.notifier);
       await notifier.loadPool();
-      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday, isTrue);
+      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday,
+          isTrue);
 
       final firstAttempt = await notifier.manualReload();
       expect(firstAttempt, isTrue);
-      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday, isFalse);
-      expect(container.read(discoverMoviesDeckProvider).lastManualReloadAt, isNotNull);
+      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday,
+          isFalse);
+      expect(container.read(discoverMoviesDeckProvider).lastManualReloadAt,
+          isNotNull);
 
       // Persisted, so it survives a fresh notifier read (simulates the app
       // being reopened later the same day).
@@ -611,7 +694,8 @@ void main() {
           reason: 'a second manual reload the same day must be a no-op');
     });
 
-    test('movies and TV each get their own independent daily reload allowance', () async {
+    test('movies and TV each get their own independent daily reload allowance',
+        () async {
       final mockRepo = TestRepository();
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -632,12 +716,16 @@ void main() {
       await container.read(discoverMoviesDeckProvider.notifier).loadPool();
       await container.read(discoverMoviesDeckProvider.notifier).manualReload();
 
-      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday, isFalse);
+      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday,
+          isFalse);
       // The TV deck's allowance is untouched by the movies deck's use.
-      expect(container.read(discoverTvDeckProvider).canManuallyReloadToday, isTrue);
+      expect(container.read(discoverTvDeckProvider).canManuallyReloadToday,
+          isTrue);
     });
 
-    test('swipe-triggered auto-pagination (popCard) stays unlimited within a session, unaffected by the manual-reload cap', () async {
+    test(
+        'swipe-triggered auto-pagination (popCard) stays unlimited within a session, unaffected by the manual-reload cap',
+        () async {
       final mockRepo = _ManyPagesRepository();
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -655,7 +743,8 @@ void main() {
 
       // Use up today's one manual reload up front.
       await notifier.manualReload();
-      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday, isFalse);
+      expect(container.read(discoverMoviesDeckProvider).canManuallyReloadToday,
+          isFalse);
 
       // Swipe through several cards -- each pop that empties the pool
       // triggers popCard's internal auto-reload (isReload: true), which
@@ -677,7 +766,9 @@ void main() {
     });
   });
 
-  testWidgets('Swiping a card shows Undo SnackBar and tapping it reverts the swipe', (WidgetTester tester) async {
+  testWidgets(
+      'Swiping a card shows Undo SnackBar and tapping it reverts the swipe',
+      (WidgetTester tester) async {
     GoogleFonts.config.allowRuntimeFetching = false;
     final mockRepo = TestRepository();
     SharedPreferences.setMockInitialValues({});
@@ -724,22 +815,7 @@ void main() {
     // Verify Movie 1 is displayed
     expect(find.text('Movie 1'), findsOneWidget);
 
-    final capsuleFinder = find.byKey(const ValueKey('floating_nav_capsule'));
-    Future<void> openCapsule() async {
-      await tester.tap(capsuleFinder);
-      await tester.pumpAndSettle();
-    }
-
-    Future<void> closeCapsule() async {
-      // NAV-3: expanding the capsule covers the screen with a dismiss
-      // barrier, so it must be explicitly collapsed again before the
-      // underlying Discover card's own swipe controls are reachable.
-      // Tapping the capsule's own center (rather than outside it) would
-      // land on an inner control (e.g. the media-type toggle) and get
-      // consumed by that nested GestureDetector instead of collapsing it.
-      await tester.tapAt(const Offset(20, 20));
-      await tester.pumpAndSettle();
-    }
+    final undoButtonFinder = find.byKey(const ValueKey('discover_undo_button'));
 
     // Simulate Left swipe (Skip)
     await tester.tap(find.byIcon(Icons.close).last);
@@ -748,17 +824,17 @@ void main() {
     // Verify no SnackBar is shown (we removed it)
     expect(find.text('Skipped "Movie 1"'), findsNothing);
 
-    // Undo now lives in the floating navigation capsule's expanded utility
-    // row (NAV-3), not a persistent top-bar button.
-    await openCapsule();
-    expect(find.byIcon(Icons.undo), findsOneWidget);
+    // BUGFIX-5: undo now lives scoped to Discover's own top bar, not the
+    // shared floating navigation capsule (dev feedback, 2026-08-26 item
+    // 13) -- visible directly, no capsule expand/collapse needed.
+    expect(undoButtonFinder, findsOneWidget);
 
     // Movie 1 should be gone, Movie 2 displayed
     expect(find.text('Movie 1'), findsNothing);
     expect(find.text('Movie 2'), findsOneWidget);
 
     // Tap Undo
-    await tester.tap(find.byIcon(Icons.undo));
+    await tester.tap(undoButtonFinder);
     await tester.pumpAndSettle();
 
     // Movie 1 should be back
@@ -767,32 +843,35 @@ void main() {
     // Verify it was unskipped
     final skippedState = container.read(skippedMediaIdsProvider);
     expect(skippedState.containsKey('1'), isFalse);
-    expect(skippedState.containsKey('movie_1'), isFalse); // Assert on prefixed id as well
+    expect(skippedState.containsKey('movie_1'),
+        isFalse); // Assert on prefixed id as well
 
-    await closeCapsule();
+    // Undo button disappears again once there's nothing left to undo.
+    expect(undoButtonFinder, findsNothing);
 
     // Second swipe invalidates first swipe
-    await tester.tap(find.byIcon(Icons.star_border).last); // Right swipe (Save for later)
+    await tester.tap(
+        find.byIcon(Icons.star_border).last); // Right swipe (Save for later)
     await tester.pumpAndSettle();
 
-    await openCapsule();
-    expect(find.byIcon(Icons.undo), findsOneWidget);
-    await closeCapsule();
+    expect(undoButtonFinder, findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.bookmark_border).last); // Down swipe (Watchlist)
+    await tester
+        .tap(find.byIcon(Icons.bookmark_border).last); // Down swipe (Watchlist)
     await tester.pumpAndSettle();
 
-    await openCapsule();
-    expect(find.byIcon(Icons.undo), findsOneWidget);
+    expect(undoButtonFinder, findsOneWidget);
 
     // Tap Undo (should only undo Movie 2)
-    await tester.tap(find.byIcon(Icons.undo));
+    await tester.tap(undoButtonFinder);
     await tester.pumpAndSettle();
 
     expect(find.text('Movie 2'), findsOneWidget);
     final mediaState = container.read(mediaProvider);
-    expect(mediaState.maybeList.containsKey('movie_1'), isTrue); // Movie 1 remains saved
-    expect(mediaState.watchlist.containsKey('movie_2'), isFalse); // Movie 2 undone
+    expect(mediaState.maybeList.containsKey('movie_1'),
+        isTrue); // Movie 1 remains saved
+    expect(
+        mediaState.watchlist.containsKey('movie_2'), isFalse); // Movie 2 undone
   });
 
   testWidgets(
@@ -847,10 +926,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Movie 1'), findsNothing);
 
-    // Undo through the floating navigation capsule (NAV-3).
-    await tester.tap(find.byKey(const ValueKey('floating_nav_capsule')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.undo));
+    // BUGFIX-5: undo now lives scoped to Discover's own top bar, not the
+    // shared floating navigation capsule (dev feedback, 2026-08-26 item 13).
+    await tester.tap(find.byKey(const ValueKey('discover_undo_button')));
     await tester.pumpAndSettle();
 
     expect(find.text('Movie 1'), findsOneWidget);
@@ -946,8 +1024,7 @@ void main() {
         .loadPool(isReload: false);
 
     // Step 5: movie_1 must no longer appear in the discover pool.
-    final poolAfter =
-        singleRepoContainer.read(discoverMoviesDeckProvider).pool;
+    final poolAfter = singleRepoContainer.read(discoverMoviesDeckProvider).pool;
     expect(poolAfter.any((item) => item.id == '1'), isFalse,
         reason:
             'movie_1 was imported into watchlist and must be evicted from the discover pool');
@@ -978,13 +1055,19 @@ class _SingleMovieRepository extends MockMovieRepository {
   }
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getPopularMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTrendingMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
   Future<List<MediaItem>> getNowPlayingMovies({
@@ -995,5 +1078,7 @@ class _SingleMovieRepository extends MockMovieRepository {
       [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      [];
 }

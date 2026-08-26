@@ -1,6 +1,7 @@
 import '../constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:animations/animations.dart';
 import 'dart:math' as math;
@@ -152,14 +153,44 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       children: [
         Column(
           children: [
-            // Top bar: legend key (media toggle now lives in the floating
-            // navigation capsule, NAV-3).
+            // Top bar: undo (when there's a last swipe to reverse) + legend
+            // key (media toggle now lives in the floating navigation
+            // capsule, NAV-3). BUGFIX-5: undo used to live in the shared
+            // FloatingNavigationCapsule instead of scoped to this screen --
+            // the one inconsistent placement among Discover/Rate
+            // Titles/Cleanup Swipe's otherwise-matching per-screen undo
+            // buttons (dev feedback, 2026-08-26 item 13).
             Padding(
               padding: EdgeInsets.fromLTRB(
                   isLarge ? 24 : 18, isLarge ? 0 : 2, isLarge ? 24 : 18, 10),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  if (deckState.lastSwipe != null)
+                    PressableScale(
+                      key: const ValueKey('discover_undo_button'),
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        ref
+                            .read(isMovies
+                                ? discoverMoviesDeckProvider.notifier
+                                : discoverTvDeckProvider.notifier)
+                            .undoLastSwipe();
+                      },
+                      child: Row(
+                        children: [
+                          Icon(Icons.undo, color: subColor, size: 15),
+                          const SizedBox(width: 6),
+                          Text('Undo',
+                              style: AppThemes.safeGeist(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w500,
+                                  color: subColor)),
+                        ],
+                      ),
+                    )
+                  else
+                    const SizedBox.shrink(),
                   PressableScale(
                     onTap: () => setState(() => _showLegend = true),
                     child: Row(
