@@ -6,6 +6,7 @@ import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../widgets/media_image.dart';
 import '../widgets/pressable_scale.dart';
+import 'detail_screen.dart';
 
 /// PERS-SORT-1: the archive shelf size that triggers the (non-blocking, dismissible)
 /// cleanup prompt.
@@ -41,9 +42,10 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
     // PERS-SORT-1: scoped to the active Movies/TV toggle, mirroring every
     // archive shelf screen -- previously this pulled the whole Saved shelf
     // regardless of the toggle.
-    final activeType = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies
-        ? MediaType.movie
-        : MediaType.tv;
+    final activeType =
+        ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies
+            ? MediaType.movie
+            : MediaType.tv;
     _queue = ref
         .read(mediaProvider)
         .maybeList
@@ -127,13 +129,15 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
                   border: Border.all(color: colors.lineRgba),
                   boxShadow: [
                     BoxShadow(
-                      color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                      color: colors.scrim
+                          .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Icon(Icons.chevron_left_rounded, color: colors.ink, size: 22),
+                child: Icon(Icons.chevron_left_rounded,
+                    color: colors.ink, size: 22),
               ),
             ),
           ),
@@ -164,13 +168,15 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
                       border: Border.all(color: colors.lineRgba),
                       boxShadow: [
                         BoxShadow(
-                          color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                          color: colors.scrim
+                              .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Icon(Icons.undo_rounded, color: colors.ink, size: 20),
+                    child:
+                        Icon(Icons.undo_rounded, color: colors.ink, size: 20),
                   ),
                 ),
               ),
@@ -179,14 +185,16 @@ class _CleanupSwipeScreenState extends ConsumerState<CleanupSwipeScreen> {
       ),
       body: SafeArea(
         child: _queue.isEmpty
-            ? _EmptyState(processed: processed, onDone: () => Navigator.of(context).pop())
+            ? _EmptyState(
+                processed: processed, onDone: () => Navigator.of(context).pop())
             : Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Column(
                   children: [
                     Text(
                       '$processed of $_startCount reviewed',
-                      style: AppThemes.safeGeist(fontSize: 13, color: colors.sub),
+                      style:
+                          AppThemes.safeGeist(fontSize: 13, color: colors.sub),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
@@ -302,7 +310,8 @@ class _CleanupCard extends StatefulWidget {
   State<_CleanupCard> createState() => _CleanupCardState();
 }
 
-class _CleanupCardState extends State<_CleanupCard> with SingleTickerProviderStateMixin {
+class _CleanupCardState extends State<_CleanupCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   Animation<Offset>? _animation;
   Offset _dragOffset = Offset.zero;
@@ -311,7 +320,8 @@ class _CleanupCardState extends State<_CleanupCard> with SingleTickerProviderSta
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: AppPhysics.houseSpringDuration)
+    _controller = AnimationController(
+        vsync: this, duration: AppPhysics.houseSpringDuration)
       ..addListener(() {
         setState(() => _dragOffset = _animation!.value);
       });
@@ -334,7 +344,8 @@ class _CleanupCardState extends State<_CleanupCard> with SingleTickerProviderSta
     final screenSize = MediaQuery.of(context).size;
     _animation = Tween<Offset>(
       begin: _dragOffset,
-      end: Offset(direction.dx * screenSize.width, direction.dy * screenSize.height),
+      end: Offset(
+          direction.dx * screenSize.width, direction.dy * screenSize.height),
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.duration = const Duration(milliseconds: 250);
     await _controller.forward(from: 0.0);
@@ -348,7 +359,8 @@ class _CleanupCardState extends State<_CleanupCard> with SingleTickerProviderSta
     final horizontalDominant = dx.abs() >= dy.abs();
 
     if (horizontalDominant && dx.abs() > _dismissThreshold) {
-      _flyOff(Offset(dx > 0 ? 1 : -1, 0), dx > 0 ? widget.onPromote : widget.onKeep);
+      _flyOff(Offset(dx > 0 ? 1 : -1, 0),
+          dx > 0 ? widget.onPromote : widget.onKeep);
     } else if (!horizontalDominant && dy > _dismissThreshold) {
       _flyOff(const Offset(0, 1), widget.onDrop);
     } else {
@@ -379,6 +391,15 @@ class _CleanupCardState extends State<_CleanupCard> with SingleTickerProviderSta
     }
 
     return GestureDetector(
+      // BUGFIX-6: same tap-to-detail pattern as Rate Titles' and
+      // Discover's swipe cards -- Cleanup Swipe's card was the one outlier
+      // with no way to open the full detail view (dev feedback,
+      // 2026-08-26 item 15).
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DetailScreen(id: widget.item.prefixedId),
+        ),
+      ),
       onPanUpdate: (details) {
         if (_controller.isAnimating) return;
         setState(() => _dragOffset += details.delta);
@@ -394,14 +415,20 @@ class _CleanupCardState extends State<_CleanupCard> with SingleTickerProviderSta
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: colors.lineRgba),
               boxShadow: const [
-                BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.35), blurRadius: 24, offset: Offset(0, 10)),
+                BoxShadow(
+                    color: Color.fromRGBO(0, 0, 0, 0.35),
+                    blurRadius: 24,
+                    offset: Offset(0, 10)),
               ],
             ),
             clipBehavior: Clip.antiAlias,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                MediaImage(item: widget.item, fit: BoxFit.cover, showFallbackTitle: false),
+                MediaImage(
+                    item: widget.item,
+                    fit: BoxFit.cover,
+                    showFallbackTitle: false),
                 if (tint != null)
                   Container(color: tint.withValues(alpha: tintOpacity)),
                 Positioned(
@@ -414,7 +441,10 @@ class _CleanupCardState extends State<_CleanupCard> with SingleTickerProviderSta
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.85)],
+                        colors: [
+                          Colors.transparent,
+                          Color.fromRGBO(0, 0, 0, 0.85)
+                        ],
                       ),
                     ),
                     child: Column(
