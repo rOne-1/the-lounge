@@ -43,9 +43,24 @@ void main() {
     seasonNumber: 1,
     name: 'Season 1',
     episodes: [
-      TvEpisode(id: 1, episodeNumber: 1, seasonNumber: 1, name: 'Pilot', airDate: DateTime(2020, 1, 1)),
-      TvEpisode(id: 2, episodeNumber: 2, seasonNumber: 1, name: 'The Box', airDate: DateTime(2020, 1, 8)),
-      TvEpisode(id: 3, episodeNumber: 3, seasonNumber: 1, name: 'Finale', airDate: DateTime(2020, 1, 15)),
+      TvEpisode(
+          id: 1,
+          episodeNumber: 1,
+          seasonNumber: 1,
+          name: 'Pilot',
+          airDate: DateTime(2020, 1, 1)),
+      TvEpisode(
+          id: 2,
+          episodeNumber: 2,
+          seasonNumber: 1,
+          name: 'The Box',
+          airDate: DateTime(2020, 1, 8)),
+      TvEpisode(
+          id: 3,
+          episodeNumber: 3,
+          seasonNumber: 1,
+          name: 'Finale',
+          airDate: DateTime(2020, 1, 15)),
     ],
   );
 
@@ -75,7 +90,8 @@ void main() {
   }
 
   group('CRAFT-HERO-1: ContinueWatchingHeroCard', () {
-    testWidgets('collapses to nothing when no TV show is in Watching', (tester) async {
+    testWidgets('collapses to nothing when no TV show is in Watching',
+        (tester) async {
       await pumpHero(tester);
 
       expect(find.byType(ContinueWatchingHeroCard), findsOneWidget);
@@ -85,7 +101,8 @@ void main() {
     testWidgets(
         'renders title, next-episode label, and episode progress for an in-progress show',
         (tester) async {
-      final container = await pumpHero(tester, seasons: {'${show.id}:1': season1});
+      final container =
+          await pumpHero(tester, seasons: {'${show.id}:1': season1});
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchingList(show);
       notifier.toggleEpisodeWatched(
@@ -104,12 +121,15 @@ void main() {
       expect(find.text('1 of 3 episodes · 33%'), findsOneWidget);
       expect(find.text('Quick Watch'), findsOneWidget);
       // A single in-progress show gets no pagination dots.
-      expect(find.byKey(ValueKey('continue_watching_dot_${show.id}')), findsNothing);
+      expect(find.byKey(ValueKey('continue_watching_dot_${show.id}')),
+          findsNothing);
     });
 
-    testWidgets('tapping Quick Watch advances the next-unwatched-episode indicator',
+    testWidgets(
+        'tapping Quick Watch advances the next-unwatched-episode indicator',
         (tester) async {
-      final container = await pumpHero(tester, seasons: {'${show.id}:1': season1});
+      final container =
+          await pumpHero(tester, seasons: {'${show.id}:1': season1});
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchingList(show);
       notifier.toggleEpisodeWatched(
@@ -139,7 +159,8 @@ void main() {
       // widget invents) -- so it should vanish from Continue Watching
       // entirely rather than linger showing a stale "All episodes watched"
       // card, matching the AC's "hides when no TV shows in Watching" case.
-      final container = await pumpHero(tester, seasons: {'${show.id}:1': season1});
+      final container =
+          await pumpHero(tester, seasons: {'${show.id}:1': season1});
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchingList(show);
       for (final ep in season1.episodes) {
@@ -158,7 +179,8 @@ void main() {
       expect(find.text(show.title), findsNothing);
     });
 
-    testWidgets('multiple in-progress shows render pagination dots, tapping one switches the card',
+    testWidgets(
+        'multiple in-progress shows render pagination dots, tapping one switches the card',
         (tester) async {
       const secondShow = MediaItem(
         id: 'tv_continue_2',
@@ -174,7 +196,12 @@ void main() {
         seasonNumber: 1,
         name: 'Season 1',
         episodes: [
-          TvEpisode(id: 11, episodeNumber: 1, seasonNumber: 1, name: 'Start', airDate: DateTime(2019, 1, 1)),
+          TvEpisode(
+              id: 11,
+              episodeNumber: 1,
+              seasonNumber: 1,
+              name: 'Start',
+              airDate: DateTime(2019, 1, 1)),
         ],
       );
       final container = await pumpHero(tester, seasons: {
@@ -188,8 +215,10 @@ void main() {
       await container.rePump(tester);
 
       // Two pagination dots for two in-progress shows, one per show id.
-      expect(find.byKey(ValueKey('continue_watching_dot_${show.id}')), findsOneWidget);
-      expect(find.byKey(ValueKey('continue_watching_dot_${secondShow.id}')), findsOneWidget);
+      expect(find.byKey(ValueKey('continue_watching_dot_${show.id}')),
+          findsOneWidget);
+      expect(find.byKey(ValueKey('continue_watching_dot_${secondShow.id}')),
+          findsOneWidget);
 
       // Exactly one of the two titles shows initially -- which one is a
       // startDates-timestamp tiebreak, not something this test pins down.
@@ -208,9 +237,67 @@ void main() {
       expect(find.text(secondShow.title).evaluate().isNotEmpty, !secondVisible);
     });
 
-    testWidgets('tapping the card body (not Quick Watch) navigates to DetailScreen',
+    testWidgets(
+        'ITEM-1: swiping the card horizontally pages between multiple in-progress shows',
         (tester) async {
-      final container = await pumpHero(tester, seasons: {'${show.id}:1': season1});
+      const secondShow = MediaItem(
+        id: 'tv_continue_2',
+        title: 'Second Show',
+        type: MediaType.tv,
+        rating: 7.0,
+        overview: '',
+        genres: [],
+        seasonsCount: 1,
+      );
+      final season1b = TvSeason(
+        id: 2,
+        seasonNumber: 1,
+        name: 'Season 1',
+        episodes: [
+          TvEpisode(
+              id: 11,
+              episodeNumber: 1,
+              seasonNumber: 1,
+              name: 'Start',
+              airDate: DateTime(2019, 1, 1)),
+        ],
+      );
+      final container = await pumpHero(tester, seasons: {
+        '${show.id}:1': season1,
+        '${secondShow.id}:1': season1b,
+      });
+      final notifier = container.read(mediaProvider.notifier);
+      notifier.addToWatchingList(secondShow);
+      notifier.addToWatchingList(show);
+      await container.rePump(tester);
+
+      final showVisible = find.text(show.title).evaluate().isNotEmpty;
+
+      // Dragging left pages forward (to index 1). If the card already
+      // started on the last show, this drag hits the clamp and nothing
+      // changes -- then a rightward drag must page it back to index 0
+      // instead, proving the gesture works in both directions regardless
+      // of which show the startDates tiebreak happened to surface first.
+      await tester.drag(
+          find.byType(ContinueWatchingHeroCard), const Offset(-100, 0));
+      await tester.pumpAndSettle();
+
+      final afterLeftShowVisible = find.text(show.title).evaluate().isNotEmpty;
+      if (afterLeftShowVisible == showVisible) {
+        await tester.drag(
+            find.byType(ContinueWatchingHeroCard), const Offset(100, 0));
+        await tester.pumpAndSettle();
+        expect(find.text(show.title).evaluate().isNotEmpty, !showVisible);
+      } else {
+        expect(afterLeftShowVisible, !showVisible);
+      }
+    });
+
+    testWidgets(
+        'tapping the card body (not Quick Watch) navigates to DetailScreen',
+        (tester) async {
+      final container =
+          await pumpHero(tester, seasons: {'${show.id}:1': season1});
       final notifier = container.read(mediaProvider.notifier);
       notifier.addToWatchingList(show);
       await container.rePump(tester);
