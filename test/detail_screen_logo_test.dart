@@ -15,10 +15,12 @@ class _LogoTestRepository extends MockMovieRepository {
   _LogoTestRepository(this.items);
 
   @override
-  Future<MediaItem?> getMediaDetails(String id, {String? region}) async => items[id];
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async =>
+      items[id];
 
   @override
-  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async =>
+      null;
 }
 
 void main() {
@@ -70,7 +72,8 @@ void main() {
   }
 
   group('CRAFT-LOGO-1: ClearLogo hero title', () {
-    testWidgets('a title with logoUrl renders a CachedNetworkImage for it in the hero',
+    testWidgets(
+        'a title with logoUrl renders a CachedNetworkImage for it in the hero',
         (tester) async {
       await pumpDetail(tester, withLogo);
       // A single pump (not pumpAndSettle) -- CachedNetworkImage is
@@ -94,7 +97,8 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('a title without logoUrl falls back to plain styled text, no CachedNetworkImage',
+    testWidgets(
+        'a title without logoUrl falls back to plain styled text, no CachedNetworkImage',
         (tester) async {
       await pumpDetail(tester, withoutLogo);
       await tester.pumpAndSettle();
@@ -115,19 +119,29 @@ void main() {
   });
 
   group('CRAFT-LOGO-1: scroll-collapse into the top bar', () {
-    testWidgets('the collapsed top-bar title is invisible at rest and fades in on scroll',
+    testWidgets(
+        'the collapsed top-bar title is invisible at rest and fades in on scroll',
         (tester) async {
       await pumpDetail(tester, withoutLogo);
       await tester.pumpAndSettle();
 
+      // BUGFIX-3: the AppBar's title is now a ValueListenableBuilder
+      // wrapping the Opacity (scoped rebuilds on scroll, see
+      // detail_screen.dart), not a bare Opacity -- find it as a
+      // descendant instead of casting appBar.title directly.
       Opacity findAppBarTitleOpacity() {
-        final appBar = tester.widget<AppBar>(find.byType(AppBar));
-        return appBar.title as Opacity;
+        return tester.widget<Opacity>(
+          find.descendant(
+            of: find.byType(AppBar),
+            matching: find.byType(Opacity),
+          ),
+        );
       }
 
       expect(findAppBarTitleOpacity().opacity, 0.0);
 
-      await tester.drag(find.byType(CustomScrollView).first, const Offset(0, -300));
+      await tester.drag(
+          find.byType(CustomScrollView).first, const Offset(0, -300));
       // pumpAndSettle, not a single pump: dragging this far can scroll
       // below-fold sections into view, triggering their own lazily-started
       // fetches -- letting those resolve here avoids leaving a pending

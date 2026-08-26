@@ -60,7 +60,15 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   /// layout rather than forcing a collapse gesture that doesn't correspond
   /// to anything the user actually did.
   final ScrollController _heroScrollController = ScrollController();
-  double _heroCollapseT = 0.0;
+  // BUGFIX-3: a ValueNotifier + ValueListenableBuilder around just the
+  // AppBar title (the only thing that actually reads this value -- see
+  // the title: widget below), not a setState-backed field. This used to
+  // be `double _heroCollapseT` updated via setState() on every scroll
+  // frame within the ~160px collapse window, which rebuilt this whole
+  // screen's build() -- including the season-pill row and its "Mark
+  // season complete" button -- on every frame, reading as flicker/jitter
+  // while scrolling (dev-reported, 2026-08-26 feedback doc item 4).
+  final ValueNotifier<double> _heroCollapseT = ValueNotifier<double>(0.0);
 
   static const double _heroCollapseDistance = 160.0;
 
@@ -80,15 +88,14 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   void _handleHeroScroll() {
     final t =
         (_heroScrollController.offset / _heroCollapseDistance).clamp(0.0, 1.0);
-    if (t != _heroCollapseT) {
-      setState(() => _heroCollapseT = t);
-    }
+    _heroCollapseT.value = t;
   }
 
   @override
   void dispose() {
     _heroScrollController.removeListener(_handleHeroScroll);
     _heroScrollController.dispose();
+    _heroCollapseT.dispose();
     super.dispose();
   }
 
@@ -145,29 +152,35 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               onTap: () => Navigator.maybePop(context),
               child: Icon(Icons.arrow_back, color: inkColor),
             ),
-            // CRAFT-LOGO-1: scroll-coupled 1:1 with `_heroCollapseT`
-            // (recomputed every scroll frame), not a separately-eased
-            // AnimatedOpacity -- a spring/duration-based transition here
-            // would visibly lag behind the physical scroll gesture instead
-            // of tracking the finger, the opposite of what a scroll-driven
-            // collapse should feel like.
+            // CRAFT-LOGO-1: scroll-coupled 1:1 with the hero collapse
+            // progress (recomputed every scroll frame), not a
+            // separately-eased AnimatedOpacity -- a spring/duration-based
+            // transition here would visibly lag behind the physical scroll
+            // gesture instead of tracking the finger, the opposite of what
+            // a scroll-driven collapse should feel like. BUGFIX-3: scoped
+            // to just this title via ValueListenableBuilder so only this
+            // subtree rebuilds per scroll frame, not the whole screen.
             title: knownItem == null
                 ? const SizedBox.shrink()
-                : Opacity(
-                    opacity: _heroCollapseT,
-                    child: Transform.translate(
-                      offset: Offset(0, (1 - _heroCollapseT) * 10),
-                      child: Transform.scale(
-                        scale: 0.82 + (0.18 * _heroCollapseT),
-                        alignment: Alignment.centerLeft,
-                        child: _ClearLogoTitle(
-                          item: knownItem,
-                          textColor: inkColor,
-                          logoHeight: 24,
-                          fontSize: 17,
-                          maxLines: 1,
+                : ValueListenableBuilder<double>(
+                    valueListenable: _heroCollapseT,
+                    builder: (context, t, child) => Opacity(
+                      opacity: t,
+                      child: Transform.translate(
+                        offset: Offset(0, (1 - t) * 10),
+                        child: Transform.scale(
+                          scale: 0.82 + (0.18 * t),
+                          alignment: Alignment.centerLeft,
+                          child: child,
                         ),
                       ),
+                    ),
+                    child: _ClearLogoTitle(
+                      item: knownItem,
+                      textColor: inkColor,
+                      logoHeight: 24,
+                      fontSize: 17,
+                      maxLines: 1,
                     ),
                   ),
             backgroundColor: Colors.transparent,
