@@ -47,6 +47,20 @@ Future<void> shareImageFile(Uint8List pngBytes, String fileName) async {
   );
 }
 
+/// BUGFIX-8: sibling to [saveJsonFile] (same native file-picker save
+/// dialog), for the Analytics summary card -- previously only [shareImageFile]
+/// existed for it, so the only route off-device was through the system
+/// share sheet, with no direct save-to-device option (dev feedback,
+/// 2026-08-26 feedback doc item 11).
+Future<bool> saveImageFile(Uint8List pngBytes, String fileName) async {
+  final path = await FilePicker.saveFile(
+    dialogTitle: 'Save Analytics Image',
+    fileName: fileName,
+    bytes: pngBytes,
+  );
+  return path != null && path.isNotEmpty;
+}
+
 Future<String?> pickJsonFile() async {
   final result = await FilePicker.pickFiles(
     type: FileType.custom,

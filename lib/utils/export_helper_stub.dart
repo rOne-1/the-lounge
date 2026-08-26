@@ -9,7 +9,12 @@ Future<void> shareJsonFile(String jsonString, String fileName) async {
 }
 
 Future<void> shareImageFile(Uint8List pngBytes, String fileName) async {
-  throw UnimplementedError('shareImageFile is not implemented on this platform');
+  throw UnimplementedError(
+      'shareImageFile is not implemented on this platform');
+}
+
+Future<bool> saveImageFile(Uint8List pngBytes, String fileName) async {
+  throw UnimplementedError('saveImageFile is not implemented on this platform');
 }
 
 Future<String?> pickJsonFile() async {

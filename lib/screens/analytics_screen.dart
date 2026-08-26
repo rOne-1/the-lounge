@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -276,65 +277,106 @@ class _AnalyticsResults extends StatelessWidget {
                       ],
                     ),
                   ),
-                  PressableScale(
-                    onTap: () => _handleShare(context),
-                    child: Container(
-                      margin: const EdgeInsets.only(right: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: colors.pill,
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(color: colors.lineRgba),
-                      ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
                       child: Row(
-                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.ios_share_rounded,
-                              size: 14, color: colors.ink),
-                          const SizedBox(width: 6),
-                          Text(
-                            'Share',
-                            style: AppThemes.safeGeist(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: colors.ink,
+                          PressableScale(
+                            key: const ValueKey('analytics_save_button'),
+                            onTap: () => _handleSave(context),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: colors.pill,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: colors.lineRgba),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.download_rounded,
+                                      size: 14, color: colors.ink),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Save',
+                                    style: AppThemes.safeGeist(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.ink,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          PressableScale(
+                            onTap: () => _handleShare(context),
+                            child: Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: colors.pill,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: colors.lineRgba),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.ios_share_rounded,
+                                      size: 14, color: colors.ink),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    'Share',
+                                    style: AppThemes.safeGeist(
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w600,
+                                      color: colors.ink,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          PressableScale(
+                            onTap: isImporting
+                                ? null
+                                : () => ref
+                                    .read(analyticsProvider.notifier)
+                                    .generate(),
+                            child: Opacity(
+                              opacity: isImporting ? 0.5 : 1.0,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: colors.pill,
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(color: colors.lineRgba),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.refresh_rounded,
+                                        size: 14, color: colors.ink),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      'Regenerate',
+                                      style: AppThemes.safeGeist(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: colors.ink,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ),
-                  PressableScale(
-                    onTap: isImporting
-                        ? null
-                        : () => ref.read(analyticsProvider.notifier).generate(),
-                    child: Opacity(
-                      opacity: isImporting ? 0.5 : 1.0,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: colors.pill,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: colors.lineRgba),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.refresh_rounded,
-                                size: 14, color: colors.ink),
-                            const SizedBox(width: 6),
-                            Text(
-                              'Regenerate',
-                              style: AppThemes.safeGeist(
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.w600,
-                                color: colors.ink,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ),
@@ -546,21 +588,53 @@ class _AnalyticsResults extends StatelessWidget {
     );
   }
 
+  /// BUGFIX-8: shared by [_handleShare] and [_handleSave] -- captures the
+  /// offscreen AnalyticsShareCard as PNG bytes, the one piece both actions
+  /// need before diverging into share-sheet vs. save-to-device.
+  Future<Uint8List?> _captureShareCardPng() async {
+    final boundary = _analyticsShareCardKey.currentContext?.findRenderObject()
+        as RenderRepaintBoundary?;
+    if (boundary == null) return null;
+    final image = await boundary.toImage(pixelRatio: 3.0);
+    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (byteData == null) return null;
+    return byteData.buffer.asUint8List();
+  }
+
   Future<void> _handleShare(BuildContext context) async {
     try {
-      final boundary = _analyticsShareCardKey.currentContext?.findRenderObject()
-          as RenderRepaintBoundary?;
-      if (boundary == null) return;
-      final image = await boundary.toImage(pixelRatio: 3.0);
-      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-      if (byteData == null) return;
-      final bytes = byteData.buffer.asUint8List();
+      final bytes = await _captureShareCardPng();
+      if (bytes == null) return;
       await shareImageFile(bytes, 'the_lounge_analytics.png');
     } catch (_) {
       if (context.mounted) {
         LoungeToast.show(
           context,
           'Could not create the share image.',
+          type: ToastType.danger,
+        );
+      }
+    }
+  }
+
+  /// BUGFIX-8: dedicated save-to-device action -- previously the only way
+  /// off-device was Share, which routes through the system share sheet
+  /// with no direct "save" option depending on what's installed (dev
+  /// feedback, 2026-08-26 feedback doc item 11).
+  Future<void> _handleSave(BuildContext context) async {
+    try {
+      final bytes = await _captureShareCardPng();
+      if (bytes == null) return;
+      final saved = await saveImageFile(bytes, 'the_lounge_analytics.png');
+      if (context.mounted && saved) {
+        LoungeToast.show(context, 'Analytics image saved.',
+            type: ToastType.success);
+      }
+    } catch (_) {
+      if (context.mounted) {
+        LoungeToast.show(
+          context,
+          'Could not save the analytics image.',
           type: ToastType.danger,
         );
       }

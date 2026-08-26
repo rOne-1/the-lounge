@@ -7,7 +7,8 @@ import 'package:file_picker/file_picker.dart';
 
 Future<bool> saveJsonFile(String jsonString, String fileName) async {
   final bytes = utf8.encode(jsonString);
-  final blob = web.Blob([bytes.toJS].toJS, web.BlobPropertyBag(type: 'application/json'));
+  final blob = web.Blob(
+      [bytes.toJS].toJS, web.BlobPropertyBag(type: 'application/json'));
   final url = web.URL.createObjectURL(blob);
   final anchor = web.document.createElement('a') as web.HTMLAnchorElement
     ..href = url
@@ -23,7 +24,8 @@ Future<void> shareJsonFile(String jsonString, String fileName) async {
     final jsNavigator = web.window.navigator;
     if (jsNavigator.hasProperty('share'.toJS).toDart) {
       final bytes = utf8.encode(jsonString);
-      final file = web.File([bytes.toJS].toJS, fileName, web.FilePropertyBag(type: 'application/json'));
+      final file = web.File([bytes.toJS].toJS, fileName,
+          web.FilePropertyBag(type: 'application/json'));
       final shareData = {
         'title': 'The Lounge Backup',
         'text': 'The Lounge Backup JSON',
@@ -42,7 +44,8 @@ Future<void> shareJsonFile(String jsonString, String fileName) async {
 /// for the [shareImageFile] fallback when `navigator.share` isn't
 /// available/supported.
 Future<bool> saveImageFile(Uint8List pngBytes, String fileName) async {
-  final blob = web.Blob([pngBytes.toJS].toJS, web.BlobPropertyBag(type: 'image/png'));
+  final blob =
+      web.Blob([pngBytes.toJS].toJS, web.BlobPropertyBag(type: 'image/png'));
   final url = web.URL.createObjectURL(blob);
   final anchor = web.document.createElement('a') as web.HTMLAnchorElement
     ..href = url
@@ -59,7 +62,8 @@ Future<void> shareImageFile(Uint8List pngBytes, String fileName) async {
   try {
     final jsNavigator = web.window.navigator;
     if (jsNavigator.hasProperty('share'.toJS).toDart) {
-      final file = web.File([pngBytes.toJS].toJS, fileName, web.FilePropertyBag(type: 'image/png'));
+      final file = web.File([pngBytes.toJS].toJS, fileName,
+          web.FilePropertyBag(type: 'image/png'));
       final shareData = {
         'title': 'The Lounge Analytics',
         'text': 'My watching habits, from The Lounge',
