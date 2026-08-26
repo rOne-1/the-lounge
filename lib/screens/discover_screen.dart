@@ -206,10 +206,13 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     // never actually faded the container -- both ghost cards
                     // painted their border at full strength, stacking into
                     // hard concentric rings around the deck instead of a
-                    // soft blend. Wrapping the container properly, and
-                    // dropping the crisp border in favor of a faint one plus
-                    // a soft shadow, is what actually produces the blended
-                    // "cards receding into the background" look.
+                    // soft blend. A faint border still reads as a crisp ring
+                    // once combined with the top card's own accent-colored
+                    // `cardShadow` glow -- dropping the border AND the extra
+                    // per-card shadow entirely (letting the top card's own
+                    // shadow be the only glow, and translucent fill color
+                    // alone suggest the cards behind it) is what actually
+                    // reads as one soft stack instead of concentric rings.
                     Positioned(
                       top: 26,
                       left: 8,
@@ -223,18 +226,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             decoration: BoxDecoration(
                               color: context.ambianceColors.card2,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: context.ambianceColors.lineRgba
-                                    .withValues(alpha: 0.08),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: context.ambianceColors.scrim
-                                      .withValues(alpha: isDark ? 0.25 : 0.1),
-                                  blurRadius: 20,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
                             ),
                           ),
                         ),
@@ -253,18 +244,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                             decoration: BoxDecoration(
                               color: context.ambianceColors.card,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: context.ambianceColors.lineRgba
-                                    .withValues(alpha: 0.1),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: context.ambianceColors.scrim
-                                      .withValues(alpha: isDark ? 0.22 : 0.08),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
                             ),
                           ),
                         ),
@@ -393,9 +372,15 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
               // Row(mainAxisSize: min) inside Center still overflows if the
               // 4 buttons don't fit the available width (narrow devices,
               // accessibility text scaling, or a narrow test viewport all
-              // hit this). SingleChildScrollView makes that degrade to a
-              // scroll instead of a RenderFlex error, mirroring the same
-              // fix already applied to Analytics' header button row.
+              // hit this). A bare SingleChildScrollView doesn't center its
+              // content when there's extra room -- it always anchors to the
+              // scroll origin, which is what left-stacked the buttons with a
+              // wide empty gap on the right on normal screen widths. Forcing
+              // the scrollable content to be at least as wide as the
+              // viewport (via the LayoutBuilder + ConstrainedBox below) gives
+              // Center something to actually center within on the common
+              // case, while still allowing it to grow past that and scroll
+              // on the rare narrower-than-content case.
               return Padding(
                 padding: EdgeInsets.fromLTRB(
                     20, 14.0, 20, 14.0 + MediaQuery.of(context).padding.bottom),
@@ -417,67 +402,78 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                         ),
                         boxShadow: context.ambianceColors.ambientGlowShadow,
                       ),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _buildActionButtonWithLabel(
-                              label: '← Skip',
-                              button: _buildActionButton(
-                                icon: Icons.close,
-                                color: context.ambianceColors.sub,
-                                borderColor: context.ambianceColors.lineRgba,
-                                direction: 'Left',
-                                onTap: () => _triggerSwipe('Left'),
-                                isDark: isDark,
-                                isHighlighted: isSkipped,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: ConstrainedBox(
+                              constraints: BoxConstraints(
+                                  minWidth: constraints.maxWidth),
+                              child: Center(
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    _buildActionButtonWithLabel(
+                                      label: '← Skip',
+                                      button: _buildActionButton(
+                                        icon: Icons.close,
+                                        color: context.ambianceColors.sub,
+                                        borderColor:
+                                            context.ambianceColors.lineRgba,
+                                        direction: 'Left',
+                                        onTap: () => _triggerSwipe('Left'),
+                                        isDark: isDark,
+                                        isHighlighted: isSkipped,
+                                      ),
+                                      isDark: isDark,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    _buildActionButtonWithLabel(
+                                      label: '→ Saved',
+                                      button: _buildActionButton(
+                                        icon: Icons.star_border,
+                                        activeIcon: Icons.star,
+                                        color: AppStatusColors.save,
+                                        borderColor: AppStatusColors.save
+                                            .withValues(alpha: 0.55),
+                                        direction: 'Right',
+                                        onTap: () => _triggerSwipe('Right'),
+                                        isDark: isDark,
+                                        isHighlighted: isMaybe,
+                                      ),
+                                      isDark: isDark,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    _buildActionButtonWithLabel(
+                                      label: '↓ Watchlist',
+                                      button: _buildWatchlistActionButton(
+                                        isDark: isDark,
+                                        accColor: accColor,
+                                        isWatchlist: isWatchlist,
+                                      ),
+                                      isDark: isDark,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    _buildActionButtonWithLabel(
+                                      label: '↑ Watched',
+                                      button: _buildActionButton(
+                                        icon: Icons.check,
+                                        color: AppStatusColors.watched,
+                                        borderColor: AppStatusColors.watched
+                                            .withValues(alpha: 0.55),
+                                        direction: 'Up',
+                                        onTap: () => _triggerSwipe('Up'),
+                                        isDark: isDark,
+                                        isHighlighted: isWatched,
+                                      ),
+                                      isDark: isDark,
+                                    ),
+                                  ],
+                                ),
                               ),
-                              isDark: isDark,
                             ),
-                            const SizedBox(width: 10),
-                            _buildActionButtonWithLabel(
-                              label: '→ Saved',
-                              button: _buildActionButton(
-                                icon: Icons.star_border,
-                                activeIcon: Icons.star,
-                                color: AppStatusColors.save,
-                                borderColor: AppStatusColors.save
-                                    .withValues(alpha: 0.55),
-                                direction: 'Right',
-                                onTap: () => _triggerSwipe('Right'),
-                                isDark: isDark,
-                                isHighlighted: isMaybe,
-                              ),
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 10),
-                            _buildActionButtonWithLabel(
-                              label: '↓ Watchlist',
-                              button: _buildWatchlistActionButton(
-                                isDark: isDark,
-                                accColor: accColor,
-                                isWatchlist: isWatchlist,
-                              ),
-                              isDark: isDark,
-                            ),
-                            const SizedBox(width: 10),
-                            _buildActionButtonWithLabel(
-                              label: '↑ Watched',
-                              button: _buildActionButton(
-                                icon: Icons.check,
-                                color: AppStatusColors.watched,
-                                borderColor: AppStatusColors.watched
-                                    .withValues(alpha: 0.55),
-                                direction: 'Up',
-                                onTap: () => _triggerSwipe('Up'),
-                                isDark: isDark,
-                                isHighlighted: isWatched,
-                              ),
-                              isDark: isDark,
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ),
                   ),
