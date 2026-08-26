@@ -154,33 +154,41 @@ class _NoiseTexturePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (size.isEmpty) return;
+    if (size.isEmpty || opacity <= 0) return;
+
+    // THEME-DEPTH-2: Skia ignores paint.color alpha when an ImageShader is
+    // present. To correctly apply both opacity and BlendMode.overlay on all
+    // rendering backends (Impeller and Skia), we render into an offscreen layer
+    // and composite with the desired opacity and blend mode during restore.
+    final layerPaint = Paint()
+      ..color = Color.fromRGBO(255, 255, 255, opacity)
+      ..blendMode = blendMode;
+
+    canvas.saveLayer(Offset.zero & size, layerPaint);
 
     if (noiseImage != null) {
-      final paint = Paint()
-        ..blendMode = blendMode
-        ..color = Color.fromRGBO(255, 255, 255, opacity);
+      final imagePaint = Paint();
 
       if (tint.a > 0) {
-        paint.colorFilter = ColorFilter.mode(tint, BlendMode.color);
+        imagePaint.colorFilter = ColorFilter.mode(tint, BlendMode.color);
       }
 
-      paint.shader = ImageShader(
+      imagePaint.shader = ImageShader(
         noiseImage!,
         TileMode.repeated,
         TileMode.repeated,
         Matrix4.identity().storage,
       );
-      canvas.drawRect(Offset.zero & size, paint);
+      canvas.drawRect(Offset.zero & size, imagePaint);
     } else {
       _paintProceduralFallback(canvas, size);
     }
+
+    canvas.restore();
   }
 
   void _paintProceduralFallback(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..blendMode = blendMode
-      ..color = Color.fromRGBO(255, 255, 255, opacity);
+    final paint = Paint()..color = const Color(0xFFFFFFFF);
 
     if (tint.a > 0) {
       paint.colorFilter = ColorFilter.mode(tint, BlendMode.color);
