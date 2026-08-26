@@ -148,7 +148,11 @@ class _PickForMeRouletteSheetState extends ConsumerState<PickForMeRouletteSheet>
       padding: EdgeInsets.only(
         left: 20,
         right: 20,
-        top: 4,
+        // BUGFIX-4: was 4 -- the tightest of every DragToDismissSheet
+        // consumer's own top padding (others run 8-10), and the one the
+        // dev specifically flagged as reading cramped against the drag
+        // handle/sheet border above it.
+        top: 10,
         bottom: MediaQuery.of(context).padding.bottom + 20,
       ),
       child: SingleChildScrollView(

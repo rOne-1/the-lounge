@@ -70,11 +70,18 @@ class _DragToDismissSheetState extends State<DragToDismissSheet>
 
   void _handlePanEnd(DragEndDetails details) {
     final velocityY = details.velocity.pixelsPerSecond.dy;
-    if (_dragY > widget.dismissThreshold || velocityY > widget.velocityThreshold) {
+    if (_dragY > widget.dismissThreshold ||
+        velocityY > widget.velocityThreshold) {
+      // BUGFIX-4: onDismiss() pops the route, which starts the modal's own
+      // slide-down closing transition. Snapping _dragY back to 0 right
+      // here used to fight that transition -- the sheet visually jumped
+      // back to its undragged position for a frame before the route's own
+      // animation took over, reading as a jitter/jerk right at release
+      // (dev-reported, 2026-08-26 feedback doc item 9). This widget is
+      // about to be disposed as the route pops, so there's nothing to
+      // reset _dragY for -- leaving it lets the route's closing animation
+      // continue smoothly from wherever the user's finger actually let go.
       widget.onDismiss();
-      setState(() {
-        _dragY = 0.0;
-      });
     } else {
       _snapBack();
     }
