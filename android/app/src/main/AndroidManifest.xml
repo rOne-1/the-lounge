@@ -31,6 +31,18 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Impeller fails to composite BackdropFilter (the blur behind every
+             dialog/sheet/dropdown, via the shared FrostedGlassSurface widget)
+             under a route/dialog transition on at least this device family
+             (confirmed live on a Samsung Galaxy S24, SM-S921B, Android 16):
+             the barrier renders but the dialog/sheet content never appears,
+             reading as a frozen/blank screen (Reset Account, Archive's
+             Sort/Group dropdown, etc.). Disabling Impeller and falling back
+             to Skia fixed it immediately and completely in a live on-device
+             test. -->
+        <meta-data
+            android:name="io.flutter.embedding.android.EnableImpeller"
+            android:value="false" />
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
