@@ -2,7 +2,7 @@
 /// the What's New dialog shows once per distinct value of this string
 /// (tracked in SharedPreferences), not once per app version/build number,
 /// so it can be updated independently of pubspec's version field.
-const String kWhatsNewVersion = '0.3.3';
+const String kWhatsNewVersion = '0.3.4';
 
 class WhatsNewSection {
   final String title;
@@ -12,24 +12,29 @@ class WhatsNewSection {
 }
 
 /// Curated, user-facing summary of everything visibly new/fixed since the
-/// last version testers actually saw this dialog for ('0.2.3') -- the
-/// 0.3.0/0.3.1/0.3.2 version bumps were never actually distributed, so
-/// this consolidates all of it into one release: the Analytics epic, the
-/// Beta 3 Launch Readiness sprint, the new theme roster and Theme Depth
-/// pass, a round of dev-feedback fixes, TMDB data enrichment (cast/crew,
-/// regional certification, images/reviews/keywords, franchise
-/// completion), a feature-depth pass (Tools Hub, Calendar, Rewatch
-/// Vault, Archive), a craft/polish pass (Continue Watching hero,
-/// haptics, ClearLogo hero title, episode carousel, Pick For Me
-/// roulette), and stability fixes. Plain-language only -- no internal
-/// ticket IDs, file names, or engineering framing.
+/// last version testers actually saw this dialog for ('0.2.3') -- neither
+/// the 0.3.0/0.3.1/0.3.2 nor the 0.3.3 version bumps were ever actually
+/// distributed to testers (v0.3.3 was built and tagged, then the dev found
+/// enough issues in personal testing to halt shipment -- see
+/// local-notes/outstanding_issues_notepad.md item 64 onward), so this
+/// consolidates all of it into one release: the Analytics epic, the Beta 3
+/// Launch Readiness sprint, the new theme roster and Theme Depth pass, TMDB
+/// data enrichment (cast/crew, regional certification, images/reviews/
+/// keywords, franchise completion), a feature-depth pass (Tools Hub,
+/// Calendar, Rewatch Vault, Archive), a craft/polish pass (Continue
+/// Watching hero, haptics, ClearLogo hero title, episode carousel, Pick For
+/// Me roulette), a stability pass (the root cause of the "blank screen"
+/// dialog bug, plus every dev-feedback item from live device testing), and
+/// a visual pass on Discover and the app-wide grain texture. Plain-language
+/// only -- no internal ticket IDs, file names, or engineering framing.
 const List<WhatsNewSection> kWhatsNewSections = [
   WhatsNewSection(
     title: 'New',
     items: [
-      'Analytics: a new "Discover Your Habits" hub reachable from the Lobby, with a chronological heatmap and binge-velocity view, taste metrics (favorite cast and directors, how your ratings compare to critics, genre breakdown), franchise completion tracking, a watchlist funnel and shelf-life drop-off chart, studio/label affinity, and a Legend sheet explaining every metric. Results can be exported as a shareable image.',
+      'Analytics: a new "Discover Your Habits" hub reachable from the Lobby, with a chronological heatmap and binge-velocity view, taste metrics (favorite cast and directors, how your ratings compare to critics, genre breakdown), franchise completion tracking, a watchlist funnel and shelf-life drop-off chart, studio/label affinity, and a Legend sheet explaining every metric. Results can be saved to your device or shared as an image.',
       'Two new themes, Orchid Bloom and Tuscany -- each with its own display typeface, tactile grain texture, ambient shadow, and a signature decorative flourish. Reading Room, Café Calm, and Alpine Chalet have been retired.',
-      'A new Continue Watching card on the Lounge home screen jumps you straight to your next unwatched episode.',
+      'A new Continue Watching card on the Lounge home screen jumps you straight to your next unwatched episode -- swipe between multiple in-progress shows with a smooth slide.',
+      'You can now swipe between your Watching, Watched, Watchlist, and Saved shelves, then keep swiping right into Lobby, Search, and Calendar -- one continuous gesture connecting all of them.',
       'Discover and your ratings now have their own haptic feel -- distinct swipe and commit vibrations, tuned per theme.',
       'Pick For Me is now a full constraint roulette: filter by type, runtime, streaming service, and mood before it picks for you.',
       'The Detail screen now opens with a full-bleed title logo that collapses into the top bar as you scroll.',
@@ -40,6 +45,8 @@ const List<WhatsNewSection> kWhatsNewSections = [
     title: 'Improved',
     items: [
       'Settings has a new card-based theme picker; Violet Dusk and Midnight Cinema got a contrast pass so their accent colors and star ratings stand out clearly.',
+      'Discover\'s card stack and action buttons got a visual pass -- the stacked-card look now blends smoothly instead of showing hard rings, and the four swipe-action buttons are grouped into one bar instead of floating separately. Its Undo button also moved to the top of the screen, matching Rate Titles and Saved cleanup.',
+      'The Detail screen\'s Reviews, Crew, and Director sections are now collapsed by default -- tap to expand -- with proper spacing between the season ratings and directors sections.',
       'TV shows now show cast aggregated across every season, plus extended crew (writer, composer, cinematographer, producer), an uncapped "show all" cast list, and guest stars/crew per episode.',
       'Age ratings now resolve for your actual watch region instead of always showing the US rating.',
       'Detail pages gained more images, user reviews, and alternative/translated titles that are now searchable against your own library.',
@@ -59,8 +66,13 @@ const List<WhatsNewSection> kWhatsNewSections = [
   WhatsNewSection(
     title: 'Fixed',
     items: [
+      'Fixed Reset Account, the Sort/Filter dropdowns, and several other dialogs and sheets occasionally opening to a blank screen instead of their actual content.',
       '"Reset Everything" in Settings now actually clears all your data. It previously appeared to work, but your watchlists and history could silently reappear afterward.',
       'Fixed a rare case where a movie and an unrelated TV show sharing the same catalog id could silently overwrite each other in your watchlists, saved list, or watch history.',
+      'Fixed the Detail screen\'s title flickering while scrolling.',
+      'Fixed rating sheets, the hall selector, and other drag-to-dismiss sheets jittering when dismissed, and Pick For Me\'s cramped top padding.',
+      'Cards in Cleanup Session are now tappable to open details, matching every other card in the app.',
+      'Fixed Analytics\' cast ranking counting a background cameo appearance as equally significant as a lead role.',
       'Undoing a Discover swipe now reliably removes the title from wherever it was just added, instead of occasionally leaving it behind.',
       'Calendar no longer shows already-released titles as "upcoming."',
       'Runtime, cast, and director data now backfills correctly for Watched titles that were added through a list import.',
