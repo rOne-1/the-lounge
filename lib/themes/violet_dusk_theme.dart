@@ -18,10 +18,11 @@ const Color _vdScrim = Color.fromRGBO(0, 0, 0, 0.85);
 const Color _vdDanger = Color(0xFFD1495B);
 const Color _vdSuccess = Color(0xFF3F9A78);
 
-const double _vdGrainOpacity = 0.045;
+const double _vdGrainOpacity = 0.028;
 const Color _vdGrainTint = Color.fromRGBO(194, 82, 143, 0.22);
 
-final ThemeShadows _vdShadows = buildThemeShadows(accent: _vdGlow1, isDark: true);
+final ThemeShadows _vdShadows =
+    buildThemeShadows(accent: _vdGlow1, isDark: true);
 
 BoxDecoration violetDuskBackground() {
   return const BoxDecoration(
@@ -88,7 +89,8 @@ class _VioletDuskChevronPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _VioletDuskChevronPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _VioletDuskChevronPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 Widget violetDuskMotif(BuildContext context) {
@@ -98,7 +100,8 @@ Widget violetDuskMotif(BuildContext context) {
       width: 100,
       height: 20,
       child: CustomPaint(
-        painter: _VioletDuskChevronPainter(color: colors.acc.withValues(alpha: 0.8)),
+        painter:
+            _VioletDuskChevronPainter(color: colors.acc.withValues(alpha: 0.8)),
       ),
     ),
   );

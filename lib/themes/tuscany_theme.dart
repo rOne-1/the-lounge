@@ -26,7 +26,7 @@ const Color _tsScrim = Color.fromRGBO(0, 0, 0, 0.85);
 const Color _tsDanger = Color(0xFFC1443D);
 const Color _tsSuccess = Color(0xFF6B9A6E);
 
-const double _tsGrainOpacity = 0.05;
+const double _tsGrainOpacity = 0.031;
 const Color _tsGrainTint = Color.fromRGBO(187, 139, 122, 0.26);
 
 final ThemeShadows _tsShadows = buildThemeShadows(accent: _tsAcc, isDark: true);
@@ -85,12 +85,15 @@ class _TuscanyFlourishPainter extends CustomPainter {
       ..color = color.withValues(alpha: 0.7)
       ..strokeWidth = 1.0;
     canvas.drawLine(Offset(midX, midY - 4), Offset(midX, midY - 8), rayPaint);
-    canvas.drawLine(Offset(midX - 4, midY - 3), Offset(midX - 7, midY - 6), rayPaint);
-    canvas.drawLine(Offset(midX + 4, midY - 3), Offset(midX + 7, midY - 6), rayPaint);
+    canvas.drawLine(
+        Offset(midX - 4, midY - 3), Offset(midX - 7, midY - 6), rayPaint);
+    canvas.drawLine(
+        Offset(midX + 4, midY - 3), Offset(midX + 7, midY - 6), rayPaint);
   }
 
   @override
-  bool shouldRepaint(covariant _TuscanyFlourishPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _TuscanyFlourishPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 Widget tuscanyMotif(BuildContext context) {
@@ -100,7 +103,8 @@ Widget tuscanyMotif(BuildContext context) {
       width: 110,
       height: 20,
       child: CustomPaint(
-        painter: _TuscanyFlourishPainter(color: colors.acc.withValues(alpha: 0.75)),
+        painter:
+            _TuscanyFlourishPainter(color: colors.acc.withValues(alpha: 0.75)),
       ),
     ),
   );

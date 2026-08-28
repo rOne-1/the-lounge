@@ -26,10 +26,11 @@ const Color _obScrim = Color.fromRGBO(0, 0, 0, 0.72);
 const Color _obDanger = Color(0xFFB23A5C);
 const Color _obSuccess = Color(0xFF3F8F5F);
 
-const double _obGrainOpacity = 0.02;
+const double _obGrainOpacity = 0.012;
 const Color _obGrainTint = Color.fromRGBO(75, 31, 111, 0.12);
 
-final ThemeShadows _obShadows = buildThemeShadows(accent: _obAcc, isDark: false);
+final ThemeShadows _obShadows =
+    buildThemeShadows(accent: _obAcc, isDark: false);
 
 const LinearGradient _obPrimaryGradient = LinearGradient(
   colors: [_obAcc, _obAccGradientEnd],
@@ -94,7 +95,8 @@ class _OrchidBloomPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _OrchidBloomPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _OrchidBloomPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 Widget orchidBloomMotif(BuildContext context) {
@@ -145,7 +147,8 @@ final AmbianceColors obAmbianceColors = AmbianceColors(
 final AppTheme orchidBloomTheme = AppTheme(
   id: 'orchid_bloom',
   displayName: 'Orchid Bloom',
-  description: 'Airy lavender and amethyst, for daylight viewing with a violet hush.',
+  description:
+      'Airy lavender and amethyst, for daylight viewing with a violet hush.',
   colors: obAmbianceColors,
   signatureMotif: orchidBloomMotif,
   isDark: false,

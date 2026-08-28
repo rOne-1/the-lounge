@@ -15,7 +15,6 @@ const Color _srAcc = Color(0xFFCBA86A);
 const Color _srPh = Color.fromRGBO(239, 230, 216, 0.07);
 const Color _srPill = Color.fromRGBO(239, 230, 216, 0.08);
 
-
 const Color _srGlow1 = Color(0xFFCBA86A);
 const Color _srGlow2 = Color(0xFFD69784);
 
@@ -26,7 +25,7 @@ const Color _srScrim = Color.fromRGBO(0, 0, 0, 0.85);
 const Color _srDanger = Color(0xFFD9534F);
 const Color _srSuccess = Color(0xFF4C9A6A);
 
-const double _srGrainOpacity = 0.055;
+const double _srGrainOpacity = 0.034;
 const Color _srGrainTint = Color.fromRGBO(203, 168, 106, 0.30);
 
 final ThemeShadows _srShadows = buildThemeShadows(accent: _srAcc, isDark: true);
