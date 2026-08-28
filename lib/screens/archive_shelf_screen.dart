@@ -30,13 +30,18 @@ class ArchiveShelfScreen extends ConsumerStatefulWidget {
 
 class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     with SingleTickerProviderStateMixin {
+  // ITEM-2 (dev feedback, 2026-08-27): reordered to the dev's specified
+  // chain (Watching <-> Watched <-> Watchlist <-> Saved <-> Lobby <-> Search
+  // <-> Calendar) -- On-Hold and Dropped are no longer part of the swipe
+  // sequence (not mentioned in the requested chain); both shelves are still
+  // reachable normally from the Archive hub, they just aren't swipe-linked
+  // to their neighbors anymore. Saved is now the sequence's outer boundary
+  // -- swiping past it exits to the Lobby tab (see _navigateToAdjacentShelf).
   static const _shelfSequence = [
     ArchiveShelfKind.watching,
+    ArchiveShelfKind.watched,
     ArchiveShelfKind.watchlist,
     ArchiveShelfKind.saved,
-    ArchiveShelfKind.onHold,
-    ArchiveShelfKind.dropped,
-    ArchiveShelfKind.watched,
   ];
 
   static const Duration _duration = Duration(milliseconds: 360);
@@ -83,14 +88,17 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
   }
 
   void _buildAnimations({required bool reverseDirection}) {
-    _fade = CurvedAnimation(parent: _transitionController, curve: Curves.easeOutCubic);
+    _fade = CurvedAnimation(
+        parent: _transitionController, curve: Curves.easeOutCubic);
     _scale = Tween<double>(begin: 0.985, end: 1.0).animate(
-      CurvedAnimation(parent: _transitionController, curve: AppPhysics.houseSpringCurve),
+      CurvedAnimation(
+          parent: _transitionController, curve: AppPhysics.houseSpringCurve),
     );
     _slide = Tween<Offset>(
       begin: Offset(reverseDirection ? -0.05 : 0.05, 0),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _transitionController, curve: AppPhysics.houseSpringCurve));
+    ).animate(CurvedAnimation(
+        parent: _transitionController, curve: AppPhysics.houseSpringCurve));
   }
 
   @override
@@ -125,11 +133,23 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
       _transitionController
         ..value = 0.0
         ..forward();
+      return;
+    }
+    // ITEM-2: swiping forward past the last shelf in the sequence (Saved)
+    // exits the shelf cluster entirely and lands on the Lobby tab -- the
+    // chain's outer boundary on this side. Swiping backward past the first
+    // shelf (Watching) is a no-op; Watching is the true start of the whole
+    // 7-screen chain, nothing precedes it.
+    if (nextIndex >= _shelfSequence.length &&
+        _currentKind == ArchiveShelfKind.saved) {
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      ref.read(navigationProvider.notifier).setTab(AppTab.lobby);
     }
   }
 
   ExpansibleController _watchedTileController(String key) {
-    return _watchedTileControllers.putIfAbsent(key, () => ExpansibleController());
+    return _watchedTileControllers.putIfAbsent(
+        key, () => ExpansibleController());
   }
 
   @override
@@ -147,8 +167,9 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     _watchedGroupByCollection = viewState.watchedGroupByCollection;
     final mediaState = ref.watch(mediaProvider);
     final navState = ref.watch(navigationProvider);
-    final activeType =
-        navState.activeMediaType == MediaTypeToggle.movies ? MediaType.movie : MediaType.tv;
+    final activeType = navState.activeMediaType == MediaTypeToggle.movies
+        ? MediaType.movie
+        : MediaType.tv;
 
     final items = _currentKind
         .mapFrom(mediaState)
@@ -208,9 +229,10 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
   /// [_sortAscending] reverses whichever result came out, uniformly for
   /// every shelf and every sort option.
   List<MediaItem> _sortedItems(List<MediaItem> items) {
-    final sorted = (_currentKind == ArchiveShelfKind.watched && _watchedSortByRating)
-        ? personalRatingSort(items, ref.read(mediaProvider).watchHistory)
-        : sortArchiveShelf(items, _sort);
+    final sorted =
+        (_currentKind == ArchiveShelfKind.watched && _watchedSortByRating)
+            ? personalRatingSort(items, ref.read(mediaProvider).watchHistory)
+            : sortArchiveShelf(items, _sort);
     return _sortAscending ? sorted.reversed.toList() : sorted;
   }
 
@@ -218,15 +240,17 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     final colors = context.ambianceColors;
     final isLarge = MediaQuery.of(context).size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
-    final banner =
-        _currentKind == ArchiveShelfKind.saved ? _buildCleanupBanner(context, items.length) : null;
+    final banner = _currentKind == ArchiveShelfKind.saved
+        ? _buildCleanupBanner(context, items.length)
+        : null;
     final isWatched = _currentKind == ArchiveShelfKind.watched;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: EdgeInsets.fromLTRB(paddingHorizontal, 8.0, paddingHorizontal, 8.0),
+          padding: EdgeInsets.fromLTRB(
+              paddingHorizontal, 8.0, paddingHorizontal, 8.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -319,16 +343,21 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
         icon: Icons.star_rounded,
         label: 'My Rating',
         isActive: _watchedSortByRating,
-        onTap: () => ref.read(archiveViewStateProvider.notifier).toggleWatchedSortByRating(),
+        onTap: () => ref
+            .read(archiveViewStateProvider.notifier)
+            .toggleWatchedSortByRating(),
         colors: colors,
       );
 
-  Widget _buildGroupByCollectionToggle(AmbianceColors colors) => _buildPillToggle(
+  Widget _buildGroupByCollectionToggle(AmbianceColors colors) =>
+      _buildPillToggle(
         key: const ValueKey('watched_group_by_collection_toggle'),
         icon: Icons.collections_bookmark_outlined,
         label: 'Group by Collection',
         isActive: _watchedGroupByCollection,
-        onTap: () => ref.read(archiveViewStateProvider.notifier).toggleWatchedGroupByCollection(),
+        onTap: () => ref
+            .read(archiveViewStateProvider.notifier)
+            .toggleWatchedGroupByCollection(),
         colors: colors,
       );
 
@@ -350,7 +379,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
   Widget _buildSortDirectionToggle(AmbianceColors colors) {
     return PressableScale(
       key: const ValueKey('archive_sort_direction_toggle'),
-      onTap: () => ref.read(archiveViewStateProvider.notifier).toggleSortAscending(),
+      onTap: () =>
+          ref.read(archiveViewStateProvider.notifier).toggleSortAscending(),
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -359,7 +389,9 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
           border: Border.all(color: colors.lineRgba),
         ),
         child: Icon(
-          _sortAscending ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+          _sortAscending
+              ? Icons.arrow_upward_rounded
+              : Icons.arrow_downward_rounded,
           size: 16,
           color: colors.acc,
         ),
@@ -380,7 +412,9 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                 .map((o) => LoungeDropdownItem(value: o, label: o.label))
                 .toList(),
             onChanged: (v) {
-              if (v != null) ref.read(archiveViewStateProvider.notifier).setSort(v);
+              if (v != null) {
+                ref.read(archiveViewStateProvider.notifier).setSort(v);
+              }
             },
           ),
         ),
@@ -398,7 +432,9 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                 .map((o) => LoungeDropdownItem(value: o, label: o.label))
                 .toList(),
             onChanged: (v) {
-              if (v != null) ref.read(archiveViewStateProvider.notifier).setGroup(v);
+              if (v != null) {
+                ref.read(archiveViewStateProvider.notifier).setGroup(v);
+              }
             },
           ),
         ),
@@ -407,7 +443,9 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
   }
 
   Widget? _buildCleanupBanner(BuildContext context, int savedCount) {
-    if (savedCount <= kArchiveCleanupThreshold || _cleanupBannerDismissed) return null;
+    if (savedCount <= kArchiveCleanupThreshold || _cleanupBannerDismissed) {
+      return null;
+    }
 
     final colors = context.ambianceColors;
     return Container(
@@ -430,7 +468,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
           PressableScale(
             key: const ValueKey('cleanup_banner_cta'),
             onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (context) => const CleanupSwipeScreen()),
+              MaterialPageRoute(
+                  builder: (context) => const CleanupSwipeScreen()),
             ),
             child: Padding(
               padding: const EdgeInsets.only(left: 8),
@@ -509,10 +548,12 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
               border: Border.all(color: colors.lineRgba),
             ),
             child: Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+              data:
+                  Theme.of(context).copyWith(dividerColor: Colors.transparent),
               child: ExpansionTile(
                 initiallyExpanded: true,
-                tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                tilePadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                 title: Row(
                   children: [
                     Text(
@@ -525,7 +566,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: colors.ph,
                         borderRadius: BorderRadius.circular(10),
@@ -547,7 +589,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                     child: GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                      gridDelegate:
+                          const SliverGridDelegateWithMaxCrossAxisExtent(
                         maxCrossAxisExtent: 110,
                         childAspectRatio: 2 / 3,
                         crossAxisSpacing: 10,
@@ -574,19 +617,23 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     );
   }
 
-  Widget _buildGrid(BuildContext context, List<MediaItem> items, {required String emptyLabel}) {
+  Widget _buildGrid(BuildContext context, List<MediaItem> items,
+      {required String emptyLabel}) {
     final isDark = context.ambianceColors.isDark;
     if (items.isEmpty) {
-      final allItems = _currentKind.mapFrom(ref.watch(mediaProvider)).values.toList();
+      final allItems =
+          _currentKind.mapFrom(ref.watch(mediaProvider)).values.toList();
       final otherTypeCount = allItems.length;
-      final activeType = ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
+      final activeType = ref.watch(navigationProvider).activeMediaType ==
+              MediaTypeToggle.movies
           ? MediaType.movie
           : MediaType.tv;
 
       final isWatched = _currentKind == ArchiveShelfKind.watched;
 
       if (otherTypeCount > 0) {
-        final otherTypeName = activeType == MediaType.movie ? 'TV Shows' : 'Movies';
+        final otherTypeName =
+            activeType == MediaType.movie ? 'TV Shows' : 'Movies';
         return AtmosphericEmptyState(
           icon: Icons.swap_horiz_rounded,
           title: isWatched
@@ -601,7 +648,9 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
       }
 
       return AtmosphericEmptyState(
-        icon: isWatched ? Icons.check_circle_outline_rounded : Icons.movie_creation_outlined,
+        icon: isWatched
+            ? Icons.check_circle_outline_rounded
+            : Icons.movie_creation_outlined,
         title: isWatched ? 'Nothing watched yet' : emptyLabel,
         message: isWatched
             ? 'Titles you mark as watched will show up here.'
@@ -617,8 +666,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     final isLarge = MediaQuery.of(context).size.width >= 600;
 
     return GridView.builder(
-      padding: EdgeInsets.fromLTRB(
-          isLarge ? 24.0 : 18.0, isLarge ? 12.0 : 8.0, isLarge ? 24.0 : 18.0, 18.0 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(isLarge ? 24.0 : 18.0, isLarge ? 12.0 : 8.0,
+          isLarge ? 24.0 : 18.0, 18.0 + MediaQuery.of(context).padding.bottom),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
         maxCrossAxisExtent: 120,
         childAspectRatio: 2 / 3,
@@ -633,10 +682,10 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
           item: item,
           isDark: isDark,
           borderRadius: 11,
-        ).animate().fade(duration: 250.ms).slideY(
-            begin: 0.1,
-            end: 0,
-            delay: (index.clamp(0, 5) * 40).ms);
+        )
+            .animate()
+            .fade(duration: 250.ms)
+            .slideY(begin: 0.1, end: 0, delay: (index.clamp(0, 5) * 40).ms);
       },
     );
   }
@@ -645,18 +694,23 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     final colors = context.ambianceColors;
 
     if (items.isEmpty) {
-      final allItems = _currentKind.mapFrom(ref.watch(mediaProvider)).values.toList();
+      final allItems =
+          _currentKind.mapFrom(ref.watch(mediaProvider)).values.toList();
       final otherTypeCount = allItems.length;
-      final activeType = ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
+      final activeType = ref.watch(navigationProvider).activeMediaType ==
+              MediaTypeToggle.movies
           ? MediaType.movie
           : MediaType.tv;
 
       if (otherTypeCount > 0) {
-        final otherTypeName = activeType == MediaType.movie ? 'TV Shows' : 'Movies';
+        final otherTypeName =
+            activeType == MediaType.movie ? 'TV Shows' : 'Movies';
         return AtmosphericEmptyState(
           icon: Icons.swap_horiz_rounded,
-          title: 'No watched ${activeType == MediaType.movie ? 'movies' : 'TV shows'}',
-          message: 'You have $otherTypeCount watched title${otherTypeCount == 1 ? '' : 's'} under $otherTypeName.',
+          title:
+              'No watched ${activeType == MediaType.movie ? 'movies' : 'TV shows'}',
+          message:
+              'You have $otherTypeCount watched title${otherTypeCount == 1 ? '' : 's'} under $otherTypeName.',
           ctaLabel: 'Switch to $otherTypeName',
           onCta: () => ref.read(navigationProvider.notifier).toggleMediaType(),
         );
@@ -696,7 +750,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
           ..clear()
           ..addAll(sorted);
       }
-      final sortedStandalone = personalRatingSort(standaloneItems, watchHistory);
+      final sortedStandalone =
+          personalRatingSort(standaloneItems, watchHistory);
       standaloneItems
         ..clear()
         ..addAll(sortedStandalone);
@@ -786,7 +841,9 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                       .toList(),
                   onChanged: (v) {
                     if (v != null) {
-                      ref.read(archiveViewStateProvider.notifier).setSortClearingRatingToggle(v);
+                      ref
+                          .read(archiveViewStateProvider.notifier)
+                          .setSortClearingRatingToggle(v);
                     }
                   },
                 ),
@@ -827,7 +884,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                     setState(() => _watchedAllCollapsed = collapseAll);
                   },
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     decoration: BoxDecoration(
                       color: colors.pill,
                       borderRadius: BorderRadius.circular(16),
@@ -837,7 +895,9 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          _watchedAllCollapsed ? Icons.unfold_more : Icons.unfold_less,
+                          _watchedAllCollapsed
+                              ? Icons.unfold_more
+                              : Icons.unfold_less,
                           size: 14,
                           color: colors.acc,
                         ),
@@ -871,7 +931,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                 borderRadius: BorderRadius.circular(14),
                 clipBehavior: Clip.antiAlias,
                 child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: Theme.of(context)
+                      .copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
                     key: PageStorageKey<String>('watched_col_$colName'),
                     controller: _watchedTileController('watched_col_$colName'),
@@ -880,7 +941,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                     collapsedIconColor: colors.sub,
                     title: Row(
                       children: [
-                        Icon(Icons.collections_bookmark_outlined, size: 18, color: colors.acc),
+                        Icon(Icons.collections_bookmark_outlined,
+                            size: 18, color: colors.acc),
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -893,7 +955,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: colors.acc.withAlpha(30),
                             borderRadius: BorderRadius.circular(12),
@@ -930,7 +993,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                 borderRadius: BorderRadius.circular(14),
                 clipBehavior: Clip.antiAlias,
                 child: Theme(
-                  data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                  data: Theme.of(context)
+                      .copyWith(dividerColor: Colors.transparent),
                   child: ExpansionTile(
                     key: const PageStorageKey<String>('watched_standalone'),
                     controller: _watchedTileController('watched_standalone'),
@@ -952,7 +1016,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
                           decoration: BoxDecoration(
                             color: colors.acc.withAlpha(30),
                             borderRadius: BorderRadius.circular(12),
@@ -981,7 +1046,8 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     );
   }
 
-  Widget _buildSubGrid(BuildContext context, List<MediaItem> items, String keySuffix) {
+  Widget _buildSubGrid(
+      BuildContext context, List<MediaItem> items, String keySuffix) {
     final isDark = context.ambianceColors.isDark;
     return GridView.builder(
       key: PageStorageKey<String>('watched_grid_$keySuffix'),

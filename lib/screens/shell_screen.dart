@@ -9,6 +9,7 @@ import 'discover_screen.dart';
 import 'search_screen.dart';
 import 'lounge_screen.dart';
 import 'calendar_screen.dart';
+import 'archive_shelf_screen.dart';
 
 class ShellScreen extends ConsumerWidget {
   final bool? enableAnimation;
@@ -51,7 +52,7 @@ class ShellScreen extends ConsumerWidget {
                   extendBody: true,
                   body: SafeArea(
                     bottom: false,
-                    child: _buildBody(ref, navigationState.currentTab),
+                    child: _buildBody(context, ref, navigationState.currentTab),
                   ),
                 ),
                 // FEAT-GRAIN-1: the grain overlay now lives once at the
@@ -82,7 +83,7 @@ class ShellScreen extends ConsumerWidget {
     }
   }
 
-  Widget _buildBody(WidgetRef ref, AppTab tab) {
+  Widget _buildBody(BuildContext context, WidgetRef ref, AppTab tab) {
     final index = _tabIndex(tab);
 
     VoidCallback? onSwipeLeft;
@@ -92,22 +93,36 @@ class ShellScreen extends ConsumerWidget {
     // 1. "The Lounge" is the elevated Sanctuary Gateway -- isolated with ZERO swipe navigation.
     // 2. "Discover" has dedicated 2D card deck gestures -- isolated with ZERO shell swipe interception.
     // 3. The Browse cycle forms an isolated 3-screen sequence: Lobby <-> Search <-> Calendar.
+    // ITEM-2 (dev feedback, 2026-08-27): Lobby is now also the tab-side
+    // boundary of the Archive shelf chain (Watching <-> Watched <->
+    // Watchlist <-> Saved) -- swiping right from Lobby enters that chain at
+    // Saved, its nearest neighbor. The reverse direction (Saved exiting back
+    // to Lobby) lives in archive_shelf_screen.dart's _navigateToAdjacentShelf.
     switch (tab) {
       case AppTab.lobby:
-        onSwipeLeft = () => ref.read(navigationProvider.notifier).setTab(AppTab.search);
-        onSwipeRight = null;
+        onSwipeLeft =
+            () => ref.read(navigationProvider.notifier).setTab(AppTab.search);
+        onSwipeRight = () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) =>
+                    const ArchiveShelfScreen(kind: ArchiveShelfKind.saved),
+              ),
+            );
         break;
       case AppTab.discover:
         onSwipeLeft = null;
         onSwipeRight = null;
         break;
       case AppTab.search:
-        onSwipeLeft = () => ref.read(navigationProvider.notifier).setTab(AppTab.calendar);
-        onSwipeRight = () => ref.read(navigationProvider.notifier).setTab(AppTab.lobby);
+        onSwipeLeft =
+            () => ref.read(navigationProvider.notifier).setTab(AppTab.calendar);
+        onSwipeRight =
+            () => ref.read(navigationProvider.notifier).setTab(AppTab.lobby);
         break;
       case AppTab.calendar:
         onSwipeLeft = null;
-        onSwipeRight = () => ref.read(navigationProvider.notifier).setTab(AppTab.search);
+        onSwipeRight =
+            () => ref.read(navigationProvider.notifier).setTab(AppTab.search);
         break;
       case AppTab.lounge:
         onSwipeLeft = null;
@@ -187,7 +202,8 @@ class _PersistentTabViewState extends State<_PersistentTabView>
     _slide = Tween<Offset>(
       begin: Offset(reverseDirection ? -0.05 : 0.05, 0),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: AppPhysics.houseSpringCurve));
+    ).animate(CurvedAnimation(
+        parent: _controller, curve: AppPhysics.houseSpringCurve));
   }
 
   @override
