@@ -154,19 +154,29 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
       children: [
         Column(
           children: [
-            // Top bar: undo (when there's a last swipe to reverse) + legend
-            // key (media toggle now lives in the floating navigation
-            // capsule, NAV-3). BUGFIX-5: undo used to live in the shared
+            // Top bar: legend key + undo (when there's a last swipe to
+            // reverse). BUGFIX-5: undo used to live in the shared
             // FloatingNavigationCapsule instead of scoped to this screen --
             // the one inconsistent placement among Discover/Rate
             // Titles/Cleanup Swipe's otherwise-matching per-screen undo
-            // buttons (dev feedback, 2026-08-26 item 13).
+            // buttons (dev feedback, 2026-08-26 item 13). Undo has since
+            // moved to the right (dev feedback, 2026-08-27 item 3): Rate
+            // Titles/Cleanup Swipe both place it in their AppBar's
+            // `actions`, which always renders top-right -- Discover's own
+            // top-left Undo was the one inconsistent placement, not those
+            // two. Legend takes the left slot Undo vacated.
             Padding(
               padding: EdgeInsets.fromLTRB(
                   isLarge ? 24 : 18, isLarge ? 0 : 2, isLarge ? 24 : 18, 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  _buildTopBarChip(
+                    icon: Icons.info_outline,
+                    label: 'Legend',
+                    subColor: subColor,
+                    onTap: () => setState(() => _showLegend = true),
+                  ),
                   if (deckState.lastSwipe != null)
                     _buildTopBarChip(
                       key: const ValueKey('discover_undo_button'),
@@ -184,12 +194,6 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                     )
                   else
                     const SizedBox.shrink(),
-                  _buildTopBarChip(
-                    icon: Icons.info_outline,
-                    label: 'Legend',
-                    subColor: subColor,
-                    onTap: () => setState(() => _showLegend = true),
-                  ),
                 ],
               ),
             ),
