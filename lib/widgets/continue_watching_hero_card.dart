@@ -186,6 +186,20 @@ class _ContinueWatchingHeroCardState
               ),
               child: PressableScale(
                 key: contentKey,
+                // ITEM-1 follow-up (dev feedback 2026-08-28): with >1 show,
+                // the outer GestureDetector's horizontal-drag recognizer
+                // competes in the same gesture arena as this PressableScale's
+                // own tap recognizer. onTapDown always fires eagerly on
+                // pointer-down (before the arena resolves), so every swipe
+                // briefly presses this content down, then onTapCancel fires
+                // once the drag wins -- springing back with the overshooting
+                // houseSpringCurve. That spring-back *was* the "content
+                // bounces on swipe" bug, independent of the slide fix above.
+                // Neutralizing the scale (not disabling the tap) keeps
+                // Quick-tap-to-detail working while removing the bounce;
+                // with a single show there's no competing drag recognizer at
+                // all, so normal press feedback is preserved.
+                scaleAmount: shows.length > 1 ? 1.0 : 0.96,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) =>
