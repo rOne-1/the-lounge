@@ -90,9 +90,11 @@ void main() {
           contains('Marcellus'));
     });
 
-    testWidgets('Verdant Manor uses Frank Ruhl Libre', (tester) async {
+    testWidgets('Verdant Manor uses Ibarra Real Nova, italic', (tester) async {
       expect(verdantManorTheme.themeData.textTheme.displayLarge?.fontFamily,
-          contains('FrankRuhlLibre'));
+          contains('IbarraRealNova'));
+      expect(verdantManorTheme.themeData.textTheme.displayLarge?.fontStyle,
+          FontStyle.italic);
     });
 
     testWidgets('all 8 themes have distinct display font families', (tester) async {

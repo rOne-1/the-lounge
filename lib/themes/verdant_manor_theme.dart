@@ -6,39 +6,52 @@ import 'shadow_tokens.dart';
 import 'typography.dart';
 
 // Replaces Amethyst Veil (2026-08-28, dev feedback: too close to Nebula
-// Tide once both were dark blue-violet). A different direction entirely --
-// a private estate deep inside old-growth rainforest: enormous dark
-// conifers, needle leaves, moss over decomposing wood, mist in the canopy
-// gaps, dew finding its way down through the branches. Deep jade/moss for
-// the forest itself, a warm stone-ivory for the architecture, and a soft
-// sage-mist glow for the fog -- deliberately kept off gold/brown surfaces
-// (Screening Room and Tuscany already own that territory); any warmth
-// lives in the small starRating accent only, same convention every other
-// theme follows.
+// Tide once both were dark blue-violet). A private estate deep inside
+// old-growth rainforest: enormous dark conifers, needle leaves, moss over
+// decomposing wood, mist in the canopy gaps, dew finding its way down
+// through the branches, mansion floorboards under it all.
+//
+// WOOD-PASS (2026-08-29, dev feedback): the first cut kept every surface in
+// one green/ivory/gray family and read as monotonous -- a forest needs
+// bark, soil, and timber alongside the leaves, not just leaves. Card2, the
+// divider line, the grain wash, and the middle stop of the background
+// gradient now carry a real walnut/umber wood tone (distinct from
+// Tuscany's dustier rose-terracotta -- this one's darker, cooler, more
+// "wet bark in shade" than "sun-baked clay"), and the primary button
+// gradient now runs jade leaf -> warm walnut floorboard instead of
+// jade -> olive, so the CTA itself carries both materials at once.
 const Color _vmBase = Color(0xFF0D1410); // forest shadow, near-black
 const Color _vmCard = Color(0xFF1B2A1F); // moss
-const Color _vmCard2 = Color(0xFF24352A); // wet bark
-const Color _vmLineRgba = Color.fromRGBO(237, 232, 220, 0.16);
-const Color _vmInk = Color(0xFFEDE8DC); // warm stone/mist ivory
-const Color _vmSub = Color.fromRGBO(237, 232, 220, 0.55);
+const Color _vmCard2 = Color(0xFF3B2A1C); // walnut bark
+const Color _vmLineRgba = Color.fromRGBO(233, 215, 168, 0.18); // wood grain
+// TYPE-PASS (2026-08-29, dev feedback): ink was a near-neutral cream --
+// read as the same generic "light text" every theme falls back to, not
+// this theme's own material. Warmed into an antique-gold parchment (the
+// mansion's brass/candlelight, not another shade of white/gray) and paired
+// with Ibarra Real Nova's italic -- a warmer, more characterful hand than
+// Frank Ruhl Libre's neutral gravity, closer to a hand-lettered estate
+// journal than a plain display serif.
+const Color _vmInk = Color(0xFFE9D7A8); // antique-gold parchment
+const Color _vmSub = Color.fromRGBO(233, 215, 168, 0.55);
 const Color _vmAcc = Color(0xFF1F7A52); // deep jade
-const Color _vmAccGradientEnd = Color(0xFF6B9C3F); // dappled canopy light
+const Color _vmAccGradientEnd = Color(0xFF8B5A2E); // walnut floorboard
 const Color _vmOnPrimary = Color(0xFFF3F1E6);
-const Color _vmPh = Color.fromRGBO(237, 232, 220, 0.07);
-const Color _vmPill = Color.fromRGBO(237, 232, 220, 0.08);
+const Color _vmPh = Color.fromRGBO(233, 215, 168, 0.07);
+const Color _vmPill = Color.fromRGBO(233, 215, 168, 0.08);
 
 const Color _vmGlow1 = Color(0xFF2F8F5B); // foliage
 const Color _vmGlow2 = Color(0xFFB9CBC0); // mist
+const Color _vmBark = Color(0xFF6B4A2E); // branch/stem wood -- motif-only
 
 const Color _vmStarRating = Color(0xFFD9A65C); // dappled sunlight, icon-only
-const Color _vmSurfaceHighlight = Color.fromRGBO(237, 232, 220, 0.08);
+const Color _vmSurfaceHighlight = Color.fromRGBO(233, 215, 168, 0.08);
 const Color _vmNavBarBg = Color.fromRGBO(13, 20, 16, 0.75);
 const Color _vmScrim = Color.fromRGBO(0, 0, 0, 0.85);
 const Color _vmDanger = Color(0xFFB4553F); // rust, decomposing wood
 const Color _vmSuccess = Color(0xFF4CAF6E); // living leaf
 
 const double _vmGrainOpacity = 0.029;
-const Color _vmGrainTint = Color.fromRGBO(31, 122, 82, 0.22);
+const Color _vmGrainTint = Color.fromRGBO(120, 80, 45, 0.20); // walnut wash
 
 final ThemeShadows _vmShadows = buildThemeShadows(accent: _vmAcc, isDark: true);
 
@@ -56,7 +69,7 @@ BoxDecoration verdantManorBackground() {
       radius: 1.3,
       colors: [
         Color(0xFF1E3A2A), // light breaking through the canopy
-        Color(0xFF142118),
+        Color(0xFF2A2015), // trunks and forest floor in shadow
         _vmBase,
       ],
       stops: [0.0, 0.45, 1.0],
@@ -64,12 +77,15 @@ BoxDecoration verdantManorBackground() {
   );
 }
 
-/// A pine-needle sprig with a single dew drop caught at the tip -- water
-/// finding its way down through the branches.
+/// A pine-needle sprig with a single dew drop caught at the tip -- the
+/// branch itself in bark, the needles in foliage green, water finding its
+/// way down through them.
 class _VerdantManorPainter extends CustomPainter {
+  final Color bark;
   final Color needle;
   final Color droplet;
-  const _VerdantManorPainter({required this.needle, required this.droplet});
+  const _VerdantManorPainter(
+      {required this.bark, required this.needle, required this.droplet});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -77,8 +93,8 @@ class _VerdantManorPainter extends CustomPainter {
     final midY = size.height / 2;
 
     final stemPaint = Paint()
-      ..color = needle
-      ..strokeWidth = 1.1
+      ..color = bark
+      ..strokeWidth = 1.4
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
     final stemStart = Offset(midX - 30, midY + 4);
@@ -122,7 +138,9 @@ class _VerdantManorPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _VerdantManorPainter oldDelegate) =>
-      oldDelegate.needle != needle || oldDelegate.droplet != droplet;
+      oldDelegate.bark != bark ||
+      oldDelegate.needle != needle ||
+      oldDelegate.droplet != droplet;
 }
 
 Widget verdantManorMotif(BuildContext context) {
@@ -133,6 +151,7 @@ Widget verdantManorMotif(BuildContext context) {
       height: 24,
       child: CustomPaint(
         painter: _VerdantManorPainter(
+          bark: _vmBark,
           needle: colors.glow1,
           droplet: colors.glow2,
         ),
@@ -177,7 +196,7 @@ final AppTheme verdantManorTheme = AppTheme(
   id: 'verdant_manor',
   displayName: 'Verdant Manor',
   description:
-      'A private estate deep in old-growth rainforest -- moss, mist, and dusk-lit jade.',
+      'A private estate deep in old-growth rainforest -- moss, bark, mist, and dusk-lit jade.',
   colors: vmAmbianceColors,
   signatureMotif: verdantManorMotif,
   isDark: true,
@@ -196,8 +215,8 @@ final AppTheme verdantManorTheme = AppTheme(
     dividerColor: _vmLineRgba,
     textTheme: buildTextTheme(
       textColor: _vmInk,
-      displayFont: GoogleFonts.frankRuhlLibre,
-      italicDisplay: false,
+      displayFont: GoogleFonts.ibarraRealNova,
+      italicDisplay: true,
     ),
     extensions: [vmAmbianceColors],
   ),
