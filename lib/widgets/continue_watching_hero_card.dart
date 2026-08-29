@@ -164,8 +164,19 @@ class _ContinueWatchingHeroCardState
           child: ClipRect(
             child: AnimatedSwitcher(
               duration: AppPhysics.houseSpringDuration,
-              switchInCurve: AppPhysics.houseSpringCurve,
-              switchOutCurve: AppPhysics.houseSpringCurve,
+              // ITEM-1 follow-up #2 (dev feedback 2026-08-29): houseSpringCurve
+              // is an underdamped spring (damping ratio ~0.52) -- it
+              // deliberately overshoots and settles back, which is exactly
+              // right for state-driven transitions (buttons, sheets, theme
+              // switches) but reads as wobbly/imprecise on a direct-
+              // manipulation swipe, where the content should land exactly
+              // where the gesture implies, not bounce past it. easeOutCubic
+              // keeps the same duration and a fast-then-settling feel without
+              // ever overshooting -- matches the non-spring fade curve
+              // archive_shelf_screen.dart already uses for its own swipe
+              // transition.
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeOutCubic,
               transitionBuilder: (child, animation) {
                 final isIncoming = child.key == contentKey;
                 final dir = _slideForward ? 1.0 : -1.0;
