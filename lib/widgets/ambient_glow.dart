@@ -194,8 +194,13 @@ class _OrganicNoisePainter extends CustomPainter {
     // Gradient expansion (~1.5 to 1.8 radius factor)
     final radius1 = 1.6 + 0.10 * math.sin(phase2);
 
+    // VISIBILITY-PASS (2026-08-29, dev feedback: glow "barely visible" on a
+    // real Android device, not just a per-theme color-contrast issue --
+    // bumped from 0.22/0.18 for more baseline presence everywhere. Still
+    // unverified live on-device this session; re-check once the phone
+    // reconnects and tune further if it's still too subtle in a real room).
     // Strictly constant brightness peak with zero phase-based alpha pulsing
-    final peak1 = isDark ? 0.22 : 0.18;
+    final peak1 = isDark ? 0.30 : 0.24;
     final paint1 = Paint()
       ..shader = RadialGradient(
         center: center1,
@@ -225,7 +230,8 @@ class _OrganicNoisePainter extends CustomPainter {
     final radius2 = 1.65 - 0.10 * math.cos(phase1);
 
     // Strictly constant brightness peak with zero phase-based alpha pulsing
-    final peak2 = isDark ? 0.19 : 0.15;
+    // (see VISIBILITY-PASS note above -- bumped from 0.19/0.15)
+    final peak2 = isDark ? 0.26 : 0.20;
     final paint2 = Paint()
       ..shader = RadialGradient(
         center: center2,

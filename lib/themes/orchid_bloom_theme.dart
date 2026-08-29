@@ -16,8 +16,16 @@ const Color _obAccGradientEnd = Color(0xFF2A123F); // Imperial Violet
 const Color _obPh = Color.fromRGBO(42, 18, 63, 0.07);
 const Color _obPill = Color.fromRGBO(42, 18, 63, 0.06);
 
+// GLOW-CONTRAST-FIX (2026-08-29, dev feedback): AmbientGlowWidget
+// (lib/widgets/ambient_glow.dart) animates glow1/glow2 at a constant, never-
+// pulsing alpha -- the only thing that reads as "flowing" is the two blobs'
+// hue differential as they drift past each other. Dusted Lavender sat only
+// ~19deg from Orchid Smoke on the wheel, so the animation was technically
+// running but nearly imperceptible. Swapped for a genuine rose-petal pink,
+// distinct enough to actually show the drift, and true to how real orchids
+// often blend violet into pink across one bloom.
 const Color _obGlow1 = Color(0xFFC686DD); // Orchid Smoke
-const Color _obGlow2 = Color(0xFF9C8CB9); // Dusted Lavender
+const Color _obGlow2 = Color(0xFFD996B0); // Blush Petal
 
 const Color _obStarRating = Color(0xFFC9962E);
 const Color _obSurfaceHighlight = Color.fromRGBO(255, 255, 255, 0.6);

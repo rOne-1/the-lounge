@@ -44,8 +44,16 @@ const Color _vmOnPrimary = Color(0xFFF3F1E6);
 const Color _vmPh = Color.fromRGBO(233, 215, 168, 0.07);
 const Color _vmPill = Color.fromRGBO(233, 215, 168, 0.08);
 
+// GLOW-CONTRAST-FIX (2026-08-29, dev feedback): AmbientGlowWidget
+// (lib/widgets/ambient_glow.dart) animates glow1/glow2 at a constant, never-
+// pulsing alpha -- the only thing that reads as "flowing" is the two blobs'
+// hue differential as they drift past each other. A sage-tinted mist sat in
+// the same green family as the foliage glow, so the animation ran but had
+// nothing to visibly shift between. Recast mist as a true cool blue-gray --
+// more accurate to actual rain/fog anyway -- so foliage green and mist
+// blue-gray genuinely cross hues as they drift.
 const Color _vmGlow1 = Color(0xFF2F8F5B); // foliage
-const Color _vmGlow2 = Color(0xFFB9CBC0); // mist
+const Color _vmGlow2 = Color(0xFF7FA3AE); // rain mist
 const Color _vmBark = Color(0xFF4A3420); // branch/stem wood -- motif-only
 const Color _vmRain = Color(0xFF9BB0A8); // rain streaks -- motif-only
 
