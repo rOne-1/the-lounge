@@ -10,7 +10,7 @@ import 'package:the_lounge/themes/violet_dusk_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
 import 'package:the_lounge/themes/glacier_dawn_theme.dart';
 import 'package:the_lounge/themes/nebula_tide_theme.dart';
-import 'package:the_lounge/themes/amethyst_veil_theme.dart';
+import 'package:the_lounge/themes/verdant_manor_theme.dart';
 
 // The per-theme widget-rendering checks below (real fonts, real TextTheme,
 // zero RenderFlex overflow) were present in the original THEME-DEPTH-1
@@ -38,7 +38,7 @@ Map<String, AppTheme> _getThemes() => {
       'Tuscany': tuscanyTheme,
       'Glacier Dawn': glacierDawnTheme,
       'Nebula Tide': nebulaTideTheme,
-      'Amethyst Veil': amethystVeilTheme,
+      'Verdant Manor': verdantManorTheme,
     };
 
 void main() {
@@ -90,11 +90,9 @@ void main() {
           contains('Marcellus'));
     });
 
-    testWidgets('Amethyst Veil uses Crimson Pro, italic', (tester) async {
-      expect(amethystVeilTheme.themeData.textTheme.displayLarge?.fontFamily,
-          contains('CrimsonPro'));
-      expect(amethystVeilTheme.themeData.textTheme.displayLarge?.fontStyle,
-          FontStyle.italic);
+    testWidgets('Verdant Manor uses Frank Ruhl Libre', (tester) async {
+      expect(verdantManorTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('FrankRuhlLibre'));
     });
 
     testWidgets('all 8 themes have distinct display font families', (tester) async {
@@ -116,7 +114,7 @@ void main() {
       'Tuscany',
       'Glacier Dawn',
       'Nebula Tide',
-      'Amethyst Veil',
+      'Verdant Manor',
     ]) {
       testWidgets('$entry renders every TextTheme style, including a long real-world title, without overflow',
           (tester) async {

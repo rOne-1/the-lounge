@@ -10,7 +10,7 @@ import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
 import 'package:the_lounge/themes/glacier_dawn_theme.dart';
 import 'package:the_lounge/themes/nebula_tide_theme.dart';
-import 'package:the_lounge/themes/amethyst_veil_theme.dart';
+import 'package:the_lounge/themes/verdant_manor_theme.dart';
 import 'package:the_lounge/widgets/noise_texture_overlay.dart';
 
 // THEME-DEPTH-2: grain opacity/tint now live per-theme (AmbianceColors)
@@ -41,7 +41,7 @@ void main() {
       'Tuscany': tsAmbianceColors,
       'Glacier Dawn': gdAmbianceColors,
       'Nebula Tide': ntAmbianceColors,
-      'Amethyst Veil': avAmbianceColors,
+      'Verdant Manor': vmAmbianceColors,
     };
 
     test('every theme declares its own grainOpacity and grainTint, not a shared default', () {

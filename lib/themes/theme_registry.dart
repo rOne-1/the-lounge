@@ -6,7 +6,7 @@ import 'orchid_bloom_theme.dart';
 import 'tuscany_theme.dart';
 import 'glacier_dawn_theme.dart';
 import 'nebula_tide_theme.dart';
-import 'amethyst_veil_theme.dart';
+import 'verdant_manor_theme.dart';
 
 final List<AppTheme> allThemes = [
   screeningRoomTheme,
@@ -16,7 +16,7 @@ final List<AppTheme> allThemes = [
   tuscanyTheme,
   glacierDawnTheme,
   nebulaTideTheme,
-  amethystVeilTheme,
+  verdantManorTheme,
 ];
 
 AppTheme getThemeById(String id) {

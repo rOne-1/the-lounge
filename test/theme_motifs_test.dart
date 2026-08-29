@@ -10,7 +10,7 @@ import 'package:the_lounge/themes/tuscany_theme.dart';
 import 'package:the_lounge/themes/violet_dusk_theme.dart';
 import 'package:the_lounge/themes/glacier_dawn_theme.dart';
 import 'package:the_lounge/themes/nebula_tide_theme.dart';
-import 'package:the_lounge/themes/amethyst_veil_theme.dart';
+import 'package:the_lounge/themes/verdant_manor_theme.dart';
 import 'package:the_lounge/widgets/atmospheric_empty_state.dart';
 import 'package:the_lounge/widgets/signature_motif.dart';
 
@@ -22,7 +22,7 @@ const _allThemeNames = [
   'Tuscany',
   'Glacier Dawn',
   'Nebula Tide',
-  'Amethyst Veil',
+  'Verdant Manor',
 ];
 
 void main() {
@@ -37,7 +37,7 @@ void main() {
         'Tuscany': tuscanyTheme,
         'Glacier Dawn': glacierDawnTheme,
         'Nebula Tide': nebulaTideTheme,
-        'Amethyst Veil': amethystVeilTheme,
+        'Verdant Manor': verdantManorTheme,
       };
 
   group('THEME-DEPTH-4: Signature motif token presence across all 8 themes', () {

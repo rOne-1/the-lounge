@@ -8,7 +8,7 @@ import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
 import 'package:the_lounge/themes/glacier_dawn_theme.dart';
 import 'package:the_lounge/themes/nebula_tide_theme.dart';
-import 'package:the_lounge/themes/amethyst_veil_theme.dart';
+import 'package:the_lounge/themes/verdant_manor_theme.dart';
 
 // Tests the AmbianceColors instances directly (not through AppTheme.themeData)
 // so this stays independent of google_fonts asset loading in the test sandbox.
@@ -26,7 +26,7 @@ void main() {
     'Tuscany': tsAmbianceColors,
     'Glacier Dawn': gdAmbianceColors,
     'Nebula Tide': ntAmbianceColors,
-    'Amethyst Veil': avAmbianceColors,
+    'Verdant Manor': vmAmbianceColors,
   };
 
   group('Semantic token coverage across all 8 themes', () {
