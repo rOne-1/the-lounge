@@ -8,6 +8,9 @@ import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/themes/violet_dusk_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
+import 'package:the_lounge/themes/opal_frost_theme.dart';
+import 'package:the_lounge/themes/cobalt_tide_theme.dart';
+import 'package:the_lounge/themes/amethyst_veil_theme.dart';
 
 // The per-theme widget-rendering checks below (real fonts, real TextTheme,
 // zero RenderFlex overflow) were present in the original THEME-DEPTH-1
@@ -33,6 +36,9 @@ Map<String, AppTheme> _getThemes() => {
       'Midnight Cinema': midnightCinemaTheme,
       'Orchid Bloom': orchidBloomTheme,
       'Tuscany': tuscanyTheme,
+      'Opal Frost': opalFrostTheme,
+      'Cobalt Tide': cobaltTideTheme,
+      'Amethyst Veil': amethystVeilTheme,
     };
 
 void main() {
@@ -74,12 +80,29 @@ void main() {
           contains('Lora'));
     });
 
-    testWidgets('all 5 themes have distinct display font families', (tester) async {
+    testWidgets('Opal Frost uses DM Serif Display', (tester) async {
+      expect(opalFrostTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('DMSerifDisplay'));
+    });
+
+    testWidgets('Cobalt Tide uses Marcellus', (tester) async {
+      expect(cobaltTideTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('Marcellus'));
+    });
+
+    testWidgets('Amethyst Veil uses Crimson Pro, italic', (tester) async {
+      expect(amethystVeilTheme.themeData.textTheme.displayLarge?.fontFamily,
+          contains('CrimsonPro'));
+      expect(amethystVeilTheme.themeData.textTheme.displayLarge?.fontStyle,
+          FontStyle.italic);
+    });
+
+    testWidgets('all 8 themes have distinct display font families', (tester) async {
       final displayFonts = _getThemes()
           .values
           .map((t) => t.themeData.textTheme.displayLarge?.fontFamily)
           .toSet();
-      expect(displayFonts.length, 5,
+      expect(displayFonts.length, 8,
           reason: 'every theme must have a distinct font family pairing');
     });
   });
@@ -91,6 +114,9 @@ void main() {
       'Midnight Cinema',
       'Orchid Bloom',
       'Tuscany',
+      'Opal Frost',
+      'Cobalt Tide',
+      'Amethyst Veil',
     ]) {
       testWidgets('$entry renders every TextTheme style, including a long real-world title, without overflow',
           (tester) async {

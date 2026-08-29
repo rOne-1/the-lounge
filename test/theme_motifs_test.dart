@@ -8,8 +8,22 @@ import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
 import 'package:the_lounge/themes/violet_dusk_theme.dart';
+import 'package:the_lounge/themes/opal_frost_theme.dart';
+import 'package:the_lounge/themes/cobalt_tide_theme.dart';
+import 'package:the_lounge/themes/amethyst_veil_theme.dart';
 import 'package:the_lounge/widgets/atmospheric_empty_state.dart';
 import 'package:the_lounge/widgets/signature_motif.dart';
+
+const _allThemeNames = [
+  'Screening Room',
+  'Midnight Cinema',
+  'Orchid Bloom',
+  'Violet Dusk',
+  'Tuscany',
+  'Opal Frost',
+  'Cobalt Tide',
+  'Amethyst Veil',
+];
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -21,10 +35,13 @@ void main() {
         'Orchid Bloom': orchidBloomTheme,
         'Violet Dusk': violetDuskTheme,
         'Tuscany': tuscanyTheme,
+        'Opal Frost': opalFrostTheme,
+        'Cobalt Tide': cobaltTideTheme,
+        'Amethyst Veil': amethystVeilTheme,
       };
 
-  group('THEME-DEPTH-4: Signature motif token presence across all 5 themes', () {
-    for (final themeName in ['Screening Room', 'Midnight Cinema', 'Orchid Bloom', 'Violet Dusk', 'Tuscany']) {
+  group('THEME-DEPTH-4: Signature motif token presence across all 8 themes', () {
+    for (final themeName in _allThemeNames) {
       testWidgets('$themeName provides non-null signatureMotif on AppTheme and AmbianceColors',
           (tester) async {
         final theme = getThemes()[themeName]!;
@@ -36,8 +53,8 @@ void main() {
     }
   });
 
-  group('THEME-DEPTH-4: SignatureMotif widget rendering across all 5 themes', () {
-    for (final themeName in ['Screening Room', 'Midnight Cinema', 'Orchid Bloom', 'Violet Dusk', 'Tuscany']) {
+  group('THEME-DEPTH-4: SignatureMotif widget rendering across all 8 themes', () {
+    for (final themeName in _allThemeNames) {
       testWidgets('SignatureMotif renders under $themeName without error or overflow',
           (tester) async {
         final theme = getThemes()[themeName]!;
@@ -84,7 +101,7 @@ void main() {
   });
 
   group('THEME-DEPTH-4: AtmosphericEmptyState integrates SignatureMotif', () {
-    for (final themeName in ['Screening Room', 'Midnight Cinema', 'Orchid Bloom', 'Violet Dusk', 'Tuscany']) {
+    for (final themeName in _allThemeNames) {
       testWidgets('AtmosphericEmptyState renders under $themeName with bespoke signature motif',
           (tester) async {
         final theme = getThemes()[themeName]!;

@@ -7,6 +7,9 @@ import 'package:the_lounge/themes/violet_dusk_theme.dart';
 import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
+import 'package:the_lounge/themes/opal_frost_theme.dart';
+import 'package:the_lounge/themes/cobalt_tide_theme.dart';
+import 'package:the_lounge/themes/amethyst_veil_theme.dart';
 import 'package:the_lounge/themes/shadow_tokens.dart';
 import 'package:the_lounge/widgets/frosted_glass_surface.dart';
 
@@ -54,6 +57,9 @@ void main() {
       'Midnight Cinema': mcAmbianceColors,
       'Orchid Bloom': obAmbianceColors,
       'Tuscany': tsAmbianceColors,
+      'Opal Frost': ofAmbianceColors,
+      'Cobalt Tide': ctAmbianceColors,
+      'Amethyst Veil': avAmbianceColors,
     };
 
     test('every theme declares non-empty cardShadow/ambientGlowShadow/dialogShadow', () {
@@ -82,6 +88,9 @@ void main() {
         midnightCinemaTheme,
         orchidBloomTheme,
         tuscanyTheme,
+        opalFrostTheme,
+        cobaltTideTheme,
+        amethystVeilTheme,
       ]) {
         await tester.pumpWidget(
           MaterialApp(

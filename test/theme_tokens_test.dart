@@ -6,6 +6,9 @@ import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/themes/violet_dusk_theme.dart';
 import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
+import 'package:the_lounge/themes/opal_frost_theme.dart';
+import 'package:the_lounge/themes/cobalt_tide_theme.dart';
+import 'package:the_lounge/themes/amethyst_veil_theme.dart';
 
 // Tests the AmbianceColors instances directly (not through AppTheme.themeData)
 // so this stays independent of google_fonts asset loading in the test sandbox.
@@ -21,9 +24,12 @@ void main() {
     'Violet Dusk': vdAmbianceColors,
     'Orchid Bloom': obAmbianceColors,
     'Tuscany': tsAmbianceColors,
+    'Opal Frost': ofAmbianceColors,
+    'Cobalt Tide': ctAmbianceColors,
+    'Amethyst Veil': avAmbianceColors,
   };
 
-  group('Semantic token coverage across all 5 themes', () {
+  group('Semantic token coverage across all 8 themes', () {
     for (final entry in allAmbianceColors.entries) {
       test('${entry.key} populates all new semantic tokens with non-transparent values', () {
         final colors = entry.value;
