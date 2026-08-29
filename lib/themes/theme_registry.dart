@@ -4,8 +4,8 @@ import 'violet_dusk_theme.dart';
 import 'midnight_cinema_theme.dart';
 import 'orchid_bloom_theme.dart';
 import 'tuscany_theme.dart';
-import 'opal_frost_theme.dart';
-import 'cobalt_tide_theme.dart';
+import 'glacier_dawn_theme.dart';
+import 'nebula_tide_theme.dart';
 import 'amethyst_veil_theme.dart';
 
 final List<AppTheme> allThemes = [
@@ -14,8 +14,8 @@ final List<AppTheme> allThemes = [
   midnightCinemaTheme,
   orchidBloomTheme,
   tuscanyTheme,
-  opalFrostTheme,
-  cobaltTideTheme,
+  glacierDawnTheme,
+  nebulaTideTheme,
   amethystVeilTheme,
 ];
 

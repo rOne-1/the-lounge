@@ -5,13 +5,20 @@ import 'ambiance_colors.dart';
 import 'shadow_tokens.dart';
 import 'typography.dart';
 
-const Color _avBase = Color(0xFF27153D); // Dark Amethyst
-const Color _avCard = Color(0xFF4A2B66);
-const Color _avCard2 = Color(0xFF5C3574);
+// AV-REDESIGN (2026-08-28, dev feedback): the original base/card leaned
+// magenta-purple, sitting too close to Violet Dusk's own warm plum-pink
+// identity and clashing with this theme's teal accent (cool teal against a
+// warm magenta base reads as dissonant, not complementary). Recast the
+// whole base/card ramp toward a cooler blue-violet indigo -- a different
+// amethyst, closer to the gem's blue-violet variety than its red-violet
+// one -- so the teal accent sits naturally instead of fighting the base.
+const Color _avBase = Color(0xFF1C1638); // cool indigo, not magenta-purple
+const Color _avCard = Color(0xFF2E2350);
+const Color _avCard2 = Color(0xFF3A2D66);
 const Color _avLineRgba = Color.fromRGBO(255, 235, 237, 0.16);
 const Color _avInk = Color(0xFFFFEBED); // Lavender Blush
 const Color _avSub = Color.fromRGBO(255, 235, 237, 0.55);
-const Color _avAcc = Color(0xFF3E828E); // Pacific Cyan
+const Color _avAcc = Color(0xFF4FA3AE); // brightened Pacific Cyan
 const Color _avOnPrimary = Color(0xFFFFEBED);
 const Color _avPh = Color.fromRGBO(255, 235, 237, 0.07);
 const Color _avPill = Color.fromRGBO(255, 235, 237, 0.08);
@@ -21,13 +28,13 @@ const Color _avGlow2 = Color(0xFFA6C9B6); // Muted Teal
 
 const Color _avStarRating = Color(0xFFF6B6B7); // Powder Blush
 const Color _avSurfaceHighlight = Color.fromRGBO(255, 235, 237, 0.08);
-const Color _avNavBarBg = Color.fromRGBO(39, 21, 61, 0.75);
+const Color _avNavBarBg = Color.fromRGBO(28, 22, 56, 0.75);
 const Color _avScrim = Color.fromRGBO(0, 0, 0, 0.85);
 const Color _avDanger = Color(0xFFC4536B);
 const Color _avSuccess = Color(0xFF4F9A82);
 
 const double _avGrainOpacity = 0.024;
-const Color _avGrainTint = Color.fromRGBO(62, 130, 142, 0.22);
+const Color _avGrainTint = Color.fromRGBO(79, 163, 174, 0.22);
 
 final ThemeShadows _avShadows = buildThemeShadows(accent: _avAcc, isDark: true);
 
@@ -36,19 +43,19 @@ BoxDecoration amethystVeilBackground() {
     color: _avBase,
     gradient: RadialGradient(
       center: Alignment(0, -1.16),
-      radius: 1.2,
+      radius: 1.3,
       colors: [
-        Color(0xFF4A2A52),
+        Color(0xFF2E4A52), // teal-indigo -- the veil parting to reveal teal
+        Color(0xFF241D42),
         _avBase,
       ],
-      stops: [0.0, 0.6],
+      stops: [0.0, 0.45, 1.0],
     ),
   );
 }
 
-/// Two soft draping arcs meeting at a small gem -- a veil parting to reveal
-/// a single teal jewel, echoing the source moodboard's blurred, dreamlike
-/// bokeh with a teal accent point breaking through.
+/// Two soft draping arcs meeting at a glowing gem -- a veil parting to
+/// reveal a single teal jewel.
 class _AmethystVeilPainter extends CustomPainter {
   final Color veil;
   final Color gem;
@@ -74,6 +81,14 @@ class _AmethystVeilPainter extends CustomPainter {
       ..moveTo(midX + 40, midY + 6)
       ..quadraticBezierTo(midX + 20, midY - 8, midX + 6, midY - 1);
     canvas.drawPath(rightPath, paint);
+
+    canvas.drawCircle(
+      Offset(midX, midY - 1),
+      6,
+      Paint()
+        ..color = gem.withValues(alpha: 0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
 
     final gemPaint = Paint()
       ..color = gem
@@ -143,7 +158,7 @@ final AmbianceColors avAmbianceColors = AmbianceColors(
 final AppTheme amethystVeilTheme = AppTheme(
   id: 'amethyst_veil',
   displayName: 'Amethyst Veil',
-  description: 'Deep amethyst dusk, parted by a single teal glow.',
+  description: 'Cool blue-violet dusk, parted by a single teal glow.',
   colors: avAmbianceColors,
   signatureMotif: amethystVeilMotif,
   isDark: true,

@@ -8,8 +8,8 @@ import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/themes/violet_dusk_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
-import 'package:the_lounge/themes/opal_frost_theme.dart';
-import 'package:the_lounge/themes/cobalt_tide_theme.dart';
+import 'package:the_lounge/themes/glacier_dawn_theme.dart';
+import 'package:the_lounge/themes/nebula_tide_theme.dart';
 import 'package:the_lounge/themes/amethyst_veil_theme.dart';
 
 // The per-theme widget-rendering checks below (real fonts, real TextTheme,
@@ -36,8 +36,8 @@ Map<String, AppTheme> _getThemes() => {
       'Midnight Cinema': midnightCinemaTheme,
       'Orchid Bloom': orchidBloomTheme,
       'Tuscany': tuscanyTheme,
-      'Opal Frost': opalFrostTheme,
-      'Cobalt Tide': cobaltTideTheme,
+      'Glacier Dawn': glacierDawnTheme,
+      'Nebula Tide': nebulaTideTheme,
       'Amethyst Veil': amethystVeilTheme,
     };
 
@@ -80,13 +80,13 @@ void main() {
           contains('Lora'));
     });
 
-    testWidgets('Opal Frost uses DM Serif Display', (tester) async {
-      expect(opalFrostTheme.themeData.textTheme.displayLarge?.fontFamily,
+    testWidgets('Glacier Dawn uses DM Serif Display', (tester) async {
+      expect(glacierDawnTheme.themeData.textTheme.displayLarge?.fontFamily,
           contains('DMSerifDisplay'));
     });
 
-    testWidgets('Cobalt Tide uses Marcellus', (tester) async {
-      expect(cobaltTideTheme.themeData.textTheme.displayLarge?.fontFamily,
+    testWidgets('Nebula Tide uses Marcellus', (tester) async {
+      expect(nebulaTideTheme.themeData.textTheme.displayLarge?.fontFamily,
           contains('Marcellus'));
     });
 
@@ -114,8 +114,8 @@ void main() {
       'Midnight Cinema',
       'Orchid Bloom',
       'Tuscany',
-      'Opal Frost',
-      'Cobalt Tide',
+      'Glacier Dawn',
+      'Nebula Tide',
       'Amethyst Veil',
     ]) {
       testWidgets('$entry renders every TextTheme style, including a long real-world title, without overflow',

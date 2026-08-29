@@ -7,8 +7,8 @@ import 'package:the_lounge/themes/violet_dusk_theme.dart';
 import 'package:the_lounge/themes/midnight_cinema_theme.dart';
 import 'package:the_lounge/themes/orchid_bloom_theme.dart';
 import 'package:the_lounge/themes/tuscany_theme.dart';
-import 'package:the_lounge/themes/opal_frost_theme.dart';
-import 'package:the_lounge/themes/cobalt_tide_theme.dart';
+import 'package:the_lounge/themes/glacier_dawn_theme.dart';
+import 'package:the_lounge/themes/nebula_tide_theme.dart';
 import 'package:the_lounge/themes/amethyst_veil_theme.dart';
 import 'package:the_lounge/themes/shadow_tokens.dart';
 import 'package:the_lounge/widgets/frosted_glass_surface.dart';
@@ -57,8 +57,8 @@ void main() {
       'Midnight Cinema': mcAmbianceColors,
       'Orchid Bloom': obAmbianceColors,
       'Tuscany': tsAmbianceColors,
-      'Opal Frost': ofAmbianceColors,
-      'Cobalt Tide': ctAmbianceColors,
+      'Glacier Dawn': gdAmbianceColors,
+      'Nebula Tide': ntAmbianceColors,
       'Amethyst Veil': avAmbianceColors,
     };
 
@@ -88,8 +88,8 @@ void main() {
         midnightCinemaTheme,
         orchidBloomTheme,
         tuscanyTheme,
-        opalFrostTheme,
-        cobaltTideTheme,
+        glacierDawnTheme,
+        nebulaTideTheme,
         amethystVeilTheme,
       ]) {
         await tester.pumpWidget(
