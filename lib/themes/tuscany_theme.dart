@@ -130,7 +130,7 @@ final AmbianceColors tsAmbianceColors = AmbianceColors(
   glow2: _tsGlow2,
   background: tuscanyBackground(),
   primaryButtonDecoration: BoxDecoration(
-    color: _tsAcc,
+    gradient: buildAccentButtonGradient(_tsAcc),
     borderRadius: BorderRadius.circular(999),
   ),
   grainOpacity: _tsGrainOpacity,

@@ -1,5 +1,28 @@
 import 'package:flutter/material.dart';
 
+/// BUTTON-DEPTH-FIX (2026-08-29, dev feedback): primaryButtonDecoration used
+/// to be either a flat single color (reads plasticky/monotonous -- Screening
+/// Room, Violet Dusk, Midnight Cinema, Tuscany, Verdant Manor) or a
+/// two-unrelated-hues diagonal gradient (reads like a generic modern-SaaS
+/// blend -- Orchid Bloom, Glacier Dawn, Nebula Tide). Neither is what a
+/// physical button material actually looks like. This derives a *tonal*
+/// gradient from a theme's own accent -- a highlight catching light at one
+/// corner, deepening to a richer shade of the *same* hue at the other --
+/// giving real dimension without ever introducing a second, unrelated
+/// color. Every theme's button now shares this one function; only the
+/// accent color varies.
+LinearGradient buildAccentButtonGradient(Color accent) {
+  final hsl = HSLColor.fromColor(accent);
+  final light = hsl.withLightness((hsl.lightness + 0.12).clamp(0.0, 1.0)).toColor();
+  final deep = hsl.withLightness((hsl.lightness - 0.16).clamp(0.0, 1.0)).toColor();
+  return LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [light, accent, deep],
+    stops: const [0.0, 0.5, 1.0],
+  );
+}
+
 /// THEME-DEPTH-3: the three shadow tiers every theme provides.
 class ThemeShadows {
   /// Elevation for card-like surfaces (MediaCard, Discover's swipe card).

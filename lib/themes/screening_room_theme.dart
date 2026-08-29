@@ -121,7 +121,7 @@ final AmbianceColors srAmbianceColors = AmbianceColors(
   glow2: _srGlow2,
   background: screeningRoomBackground(),
   primaryButtonDecoration: BoxDecoration(
-    color: _srAcc,
+    gradient: buildAccentButtonGradient(_srAcc),
     borderRadius: BorderRadius.circular(999),
   ),
   grainOpacity: _srGrainOpacity,

@@ -12,7 +12,6 @@ const Color _obLineRgba = Color.fromRGBO(42, 18, 63, 0.16);
 const Color _obInk = Color(0xFF2A123F); // Imperial Violet
 const Color _obSub = Color.fromRGBO(42, 18, 63, 0.55);
 const Color _obAcc = Color(0xFF4B1F6F); // Amethyst Noir
-const Color _obAccGradientEnd = Color(0xFF2A123F); // Imperial Violet
 const Color _obPh = Color.fromRGBO(42, 18, 63, 0.07);
 const Color _obPill = Color.fromRGBO(42, 18, 63, 0.06);
 
@@ -39,12 +38,6 @@ const Color _obGrainTint = Color.fromRGBO(75, 31, 111, 0.12);
 
 final ThemeShadows _obShadows =
     buildThemeShadows(accent: _obAcc, isDark: false);
-
-const LinearGradient _obPrimaryGradient = LinearGradient(
-  colors: [_obAcc, _obAccGradientEnd],
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-);
 
 BoxDecoration orchidBloomBackground() {
   return const BoxDecoration(
@@ -140,7 +133,7 @@ final AmbianceColors obAmbianceColors = AmbianceColors(
   glow2: _obGlow2,
   background: orchidBloomBackground(),
   primaryButtonDecoration: BoxDecoration(
-    gradient: _obPrimaryGradient,
+    gradient: buildAccentButtonGradient(_obAcc),
     borderRadius: BorderRadius.circular(999),
   ),
   grainOpacity: _obGrainOpacity,

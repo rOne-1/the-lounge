@@ -204,7 +204,7 @@ final AmbianceColors vmAmbianceColors = AmbianceColors(
   glow2: _vmGlow2,
   background: verdantManorBackground(),
   primaryButtonDecoration: BoxDecoration(
-    color: _vmAcc,
+    gradient: buildAccentButtonGradient(_vmAcc),
     borderRadius: BorderRadius.circular(999),
   ),
   grainOpacity: _vmGrainOpacity,

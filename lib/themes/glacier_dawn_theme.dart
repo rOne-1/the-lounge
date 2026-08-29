@@ -18,7 +18,6 @@ const Color _gdLineRgba = Color.fromRGBO(31, 58, 77, 0.16);
 const Color _gdInk = Color(0xFF1F3A4D); // cool slate-blue, not violet
 const Color _gdSub = Color.fromRGBO(31, 58, 77, 0.55);
 const Color _gdAcc = Color(0xFF1F6E96); // deep cerulean
-const Color _gdAccGradientEnd = Color(0xFFC06B3D); // burnt coral
 const Color _gdPh = Color.fromRGBO(31, 58, 77, 0.07);
 const Color _gdPill = Color.fromRGBO(31, 58, 77, 0.06);
 
@@ -38,12 +37,6 @@ const Color _gdGrainTint = Color.fromRGBO(31, 110, 150, 0.12);
 
 final ThemeShadows _gdShadows =
     buildThemeShadows(accent: _gdAcc, isDark: false);
-
-const LinearGradient _gdPrimaryGradient = LinearGradient(
-  colors: [_gdAcc, _gdAccGradientEnd],
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-);
 
 BoxDecoration glacierDawnBackground() {
   return const BoxDecoration(
@@ -143,7 +136,7 @@ final AmbianceColors gdAmbianceColors = AmbianceColors(
   glow2: _gdGlow2,
   background: glacierDawnBackground(),
   primaryButtonDecoration: BoxDecoration(
-    gradient: _gdPrimaryGradient,
+    gradient: buildAccentButtonGradient(_gdAcc),
     borderRadius: BorderRadius.circular(999),
   ),
   grainOpacity: _gdGrainOpacity,

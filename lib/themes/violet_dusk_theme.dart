@@ -127,7 +127,7 @@ final AmbianceColors vdAmbianceColors = AmbianceColors(
   glow2: _vdGlow2,
   background: violetDuskBackground(),
   primaryButtonDecoration: BoxDecoration(
-    color: _vdGlow1,
+    gradient: buildAccentButtonGradient(_vdGlow1),
     borderRadius: BorderRadius.circular(999),
   ),
   grainOpacity: _vdGrainOpacity,

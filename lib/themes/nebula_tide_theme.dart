@@ -39,12 +39,6 @@ const Color _ntGrainTint = Color.fromRGBO(84, 104, 224, 0.24);
 
 final ThemeShadows _ntShadows = buildThemeShadows(accent: _ntAcc, isDark: true);
 
-const LinearGradient _ntPrimaryGradient = LinearGradient(
-  colors: [_ntAcc, _ntGlow1],
-  begin: Alignment.topLeft,
-  end: Alignment.bottomRight,
-);
-
 BoxDecoration nebulaTideBackground() {
   return const BoxDecoration(
     color: _ntBase,
@@ -154,7 +148,7 @@ final AmbianceColors ntAmbianceColors = AmbianceColors(
   glow2: _ntGlow2,
   background: nebulaTideBackground(),
   primaryButtonDecoration: BoxDecoration(
-    gradient: _ntPrimaryGradient,
+    gradient: buildAccentButtonGradient(_ntAcc),
     borderRadius: BorderRadius.circular(999),
   ),
   grainOpacity: _ntGrainOpacity,

@@ -80,7 +80,7 @@ final AmbianceColors mcAmbianceColors = AmbianceColors(
   glow2: const Color(0xFFD6409F),
   background: midnightCinemaBackground(),
   primaryButtonDecoration: BoxDecoration(
-    color: const Color(0xFF00B4D8),
+    gradient: buildAccentButtonGradient(const Color(0xFF00B4D8)),
     borderRadius: BorderRadius.circular(999),
   ),
   grainOpacity: 0.022,
