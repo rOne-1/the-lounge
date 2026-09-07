@@ -6,10 +6,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/media_provider.dart';
 import '../providers/ambiance_provider.dart';
 import '../providers/hall_provider.dart';
+import '../providers/motion_intensity_provider.dart';
 import '../services/hall_storage_service.dart';
 import '../constants.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show saveJsonFile, shareJsonFile, pickJsonFile, HouseSpring, PressableScale;
+    show
+        saveJsonFile,
+        shareJsonFile,
+        pickJsonFile,
+        HouseSpring,
+        PressableScale,
+        SpringSegmentedControl;
 import '../widgets/lounge_dialog.dart';
 import '../widgets/lounge_toast.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
@@ -166,15 +173,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         ),
                         const SizedBox(height: 24),
 
-                        // Section 1b: Preferences -- BETA3-SETTINGS-1. Shown per
-                        // the mockup, but genuinely inert: none of these 3
-                        // toggles have real app-wide state to control yet
-                        // (ambient motion/haptics/glow intensity aren't gated
-                        // anywhere in the codebase). Shipping them as fake but
-                        // interactive switches would violate this project's
-                        // deep-wiring mandate; disabled + "coming soon" is the
-                        // honest middle ground between omitting them entirely
-                        // and pretending they work.
+                        // Section 1b: Preferences -- BETA3-SETTINGS-1. Shown
+                        // per the mockup; started genuinely inert (none of
+                        // the 3 toggles had real state), and shipping them as
+                        // fake but interactive switches would have violated
+                        // this project's deep-wiring mandate -- disabled +
+                        // "coming soon" was the honest middle ground. As of
+                        // CRAFT-MOTION-1, "Ambient motion" is real: it's a
+                        // 3-tier Off/Reduced/Full control gating every
+                        // decorative-motion surface via
+                        // motionIntensityProvider. Haptics and Reduce glow
+                        // below are still inert -- separate, unstarted work.
                         _buildSectionHeader('Preferences', subColor),
                         _buildCard(
                           context,
@@ -182,11 +191,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           isDark,
                           child: Column(
                             children: [
-                              _buildInertPreferenceRow(
-                                context,
-                                title: 'Ambient motion',
-                                subtitle: 'Breathing glow & spring animations',
-                              ),
+                              _buildMotionIntensityRow(context, ref),
                               Divider(
                                   color: context.ambianceColors.lineRgba,
                                   height: 1),
@@ -857,9 +862,54 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// CRAFT-MOTION-1: the first of the 3 BETA3-SETTINGS-1 preference rows to
+  /// get real state -- Off/Reduced/Full gates every decorative-motion
+  /// surface in the app (AuroraGlow's breathing glow, MediaCard's
+  /// Tilt3DCard tilt/glare) via [motionIntensityProvider]. Haptics and
+  /// Reduce glow below stay inert; wiring those is separate, unstarted work.
+  Widget _buildMotionIntensityRow(BuildContext context, WidgetRef ref) {
+    final ambiance = context.ambianceColors;
+    final intensity = ref.watch(motionIntensityProvider);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ambient motion',
+            style: AppThemes.safeGeist(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: ambiance.ink,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Breathing glow, poster tilt & spring animations',
+            style: AppThemes.safeGeist(fontSize: 12, color: ambiance.sub),
+          ),
+          const SizedBox(height: 10),
+          SpringSegmentedControl<MotionIntensity>(
+            items: MotionIntensity.values,
+            selectedItem: intensity,
+            labelBuilder: (tier) => tier.label,
+            onSelected: (tier) =>
+                ref.read(motionIntensityProvider.notifier).setIntensity(tier),
+            trackColor: ambiance.pill,
+            trackBorderColor: ambiance.lineRgba,
+            selectedPillColor: ambiance.acc,
+            selectedTextColor: Theme.of(context).colorScheme.onPrimary,
+            unselectedTextColor: ambiance.sub,
+          ),
+        ],
+      ),
+    );
+  }
+
   /// BETA3-SETTINGS-1: a visually-styled but genuinely disabled preference
-  /// row -- see the build()-site comment for why these 3 toggles (shown in
-  /// the locked mockup) aren't wired to real state yet.
+  /// row -- see the build()-site comment for why these 2 remaining toggles
+  /// (shown in the locked mockup) aren't wired to real state yet.
   Widget _buildInertPreferenceRow(
     BuildContext context, {
     required String title,

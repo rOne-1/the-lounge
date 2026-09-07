@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../constants.dart';
 import '../providers/ambiance_provider.dart';
+import '../providers/motion_intensity_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/hall_provider.dart';
 import '../screens/settings_screen.dart';
@@ -391,13 +392,14 @@ class _CollapsedContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final navState = ref.watch(navigationProvider);
     final ambiance = context.ambianceColors;
+    final motionIntensity = ref.watch(motionIntensityProvider);
     final icon = _iconForTab(navState.currentTab);
     final mediaIcon = navState.activeMediaType == MediaTypeToggle.movies
         ? Icons.movie_creation_outlined
         : Icons.live_tv_outlined;
 
     return AuroraGlow(
-      enableAnimation: enableAnimation,
+      enableAnimation: motionIntensity.gateAnimation(enableAnimation),
       borderRadius: BorderRadius.circular(999),
       color1: ambiance.glow1,
       color2: ambiance.glow2,

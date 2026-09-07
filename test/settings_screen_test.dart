@@ -10,6 +10,7 @@ import 'package:share_plus_platform_interface/share_plus_platform_interface.dart
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/hall_provider.dart';
+import 'package:the_lounge/providers/motion_intensity_provider.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/themes/orchid_bloom_theme.dart';
@@ -131,7 +132,9 @@ void main() {
     await tester.tap(finder);
   }
 
-  testWidgets('SettingsScreen renders correctly in light/dark themes and toggle updates ambianceProvider', (WidgetTester tester) async {
+  testWidgets(
+      'SettingsScreen renders correctly in light/dark themes and toggle updates ambianceProvider',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
 
@@ -145,7 +148,8 @@ void main() {
 
     // BETA3-SETTINGS-1: card-based theme selector replaced the segmented
     // control -- each theme card carries a stable key.
-    final readingCardFinder = find.byKey(const ValueKey('theme_card_orchid_bloom'));
+    final readingCardFinder =
+        find.byKey(const ValueKey('theme_card_orchid_bloom'));
     expect(readingCardFinder, findsOneWidget);
 
     await tester.tap(readingCardFinder);
@@ -169,7 +173,59 @@ void main() {
     expect(find.text('ABOUT'), findsOneWidget);
   });
 
-  testWidgets('E6: Debug section shows live TMDB call/failure counts', (WidgetTester tester) async {
+  group('CRAFT-MOTION-1: Ambient motion is a real Off/Reduced/Full control',
+      () {
+    testWidgets('defaults to Full and renders all 3 tier labels',
+        (WidgetTester tester) async {
+      final container = createContainer();
+      addTearDown(container.dispose);
+
+      expect(container.read(motionIntensityProvider), MotionIntensity.full);
+
+      await tester.pumpWidget(createSettingsScreen(container));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Off'), findsOneWidget);
+      expect(find.text('Reduced'), findsOneWidget);
+      expect(find.text('Full'), findsOneWidget);
+      expect(find.text('Ambient motion'), findsOneWidget);
+    });
+
+    testWidgets('tapping Reduced updates the provider and persists',
+        (WidgetTester tester) async {
+      final container = createContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(createSettingsScreen(container));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Reduced'));
+      await tester.pumpAndSettle();
+
+      expect(container.read(motionIntensityProvider), MotionIntensity.reduced);
+      expect(prefs.getString('motion_intensity'), 'reduced');
+    });
+
+    testWidgets('tapping Off then Full round-trips cleanly',
+        (WidgetTester tester) async {
+      final container = createContainer();
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(createSettingsScreen(container));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Off'));
+      await tester.pumpAndSettle();
+      expect(container.read(motionIntensityProvider), MotionIntensity.off);
+
+      await tester.tap(find.text('Full'));
+      await tester.pumpAndSettle();
+      expect(container.read(motionIntensityProvider), MotionIntensity.full);
+    });
+  });
+
+  testWidgets('E6: Debug section shows live TMDB call/failure counts',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
     addTearDown(ApiCallTracker.instance.reset);
@@ -198,7 +254,8 @@ void main() {
     expect(find.text('1'), findsOneWidget);
   });
 
-  testWidgets('Export Backup triggers file picker serialization and saves file', (WidgetTester tester) async {
+  testWidgets('Export Backup triggers file picker serialization and saves file',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
 
@@ -285,7 +342,8 @@ void main() {
     await tester.pumpWidget(createSettingsScreen(container));
     await tester.pumpAndSettle();
 
-    await scrollToAndTap(tester, find.byKey(const ValueKey('export_backup_button')));
+    await scrollToAndTap(
+        tester, find.byKey(const ValueKey('export_backup_button')));
     await tester.pumpAndSettle();
 
     final exportedJson = utf8.decode(mockFilePicker.savedBytes!);
@@ -299,7 +357,8 @@ void main() {
       equals('Grand Hall Movie'),
     );
     expect(
-      mezzanineHall['domains']['movies']['watchlist']['movie_mezzanine']['title'],
+      mezzanineHall['domains']['movies']['watchlist']['movie_mezzanine']
+          ['title'],
       equals('Mezzanine Hall Movie'),
     );
 
@@ -307,7 +366,8 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('Share Backup triggers SharePlatform serialization', (WidgetTester tester) async {
+  testWidgets('Share Backup triggers SharePlatform serialization',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
 
@@ -322,10 +382,12 @@ void main() {
     expect(mockSharePlatform.lastParams, isNotNull);
     expect(mockSharePlatform.lastParams!.files, isNotEmpty);
     expect(mockSharePlatform.lastParams!.fileNameOverrides, isNotEmpty);
-    expect(mockSharePlatform.lastParams!.fileNameOverrides!.first, equals('the_lounge_backup.json'));
+    expect(mockSharePlatform.lastParams!.fileNameOverrides!.first,
+        equals('the_lounge_backup.json'));
   });
 
-  testWidgets('Import Backup perform file selection and updates Riverpod state', (WidgetTester tester) async {
+  testWidgets('Import Backup perform file selection and updates Riverpod state',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
 
@@ -370,7 +432,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(LoungeDialog), findsNothing);
-    expect(container.read(mediaProvider).watchlist.containsKey('movie_imported'), isTrue);
+    expect(
+        container.read(mediaProvider).watchlist.containsKey('movie_imported'),
+        isTrue);
     expect(container.read(mediaProvider).watchProvidersCountry, equals('CA'));
     expect(container.read(ambianceProvider), equals(violetDuskTheme));
     expect(find.text('Backup imported successfully.'), findsOneWidget);
@@ -418,7 +482,8 @@ void main() {
           'iconKey': 'arch',
           'isCommon': true,
           'domains': {
-            'movies': minimalDomain({'movie_grand': movieItem('movie_grand', 'Grand Hall Movie')}),
+            'movies': minimalDomain(
+                {'movie_grand': movieItem('movie_grand', 'Grand Hall Movie')}),
             'tv': minimalDomain({}),
             'anime': minimalDomain({}),
           },
@@ -431,8 +496,10 @@ void main() {
           'iconKey': 'reel',
           'isCommon': false,
           'domains': {
-            'movies': minimalDomain(
-                {'movie_mezzanine': movieItem('movie_mezzanine', 'Mezzanine Hall Movie')}),
+            'movies': minimalDomain({
+              'movie_mezzanine':
+                  movieItem('movie_mezzanine', 'Mezzanine Hall Movie')
+            }),
             'tv': minimalDomain({}),
             'anime': minimalDomain({}),
           },
@@ -453,24 +520,30 @@ void main() {
     await tester.pumpWidget(createSettingsScreen(container));
     await tester.pumpAndSettle();
 
-    await scrollToAndTap(tester, find.byKey(const ValueKey('import_backup_button')));
+    await scrollToAndTap(
+        tester, find.byKey(const ValueKey('import_backup_button')));
     await tester.pumpAndSettle();
 
     expect(find.text('Backup imported successfully.'), findsOneWidget);
     // Still sitting in the Grand Hall right after import -- its own data
     // restored correctly.
-    expect(container.read(mediaProvider).watchlist.containsKey('movie_grand'), isTrue);
+    expect(container.read(mediaProvider).watchlist.containsKey('movie_grand'),
+        isTrue);
 
     // The regression: switching to the Mezzanine Hall must show ITS
     // imported data too, not an empty archive.
     await container.read(hallProvider.notifier).switchHall('custom_1');
-    expect(container.read(mediaProvider).watchlist.containsKey('movie_mezzanine'), isTrue);
+    expect(
+        container.read(mediaProvider).watchlist.containsKey('movie_mezzanine'),
+        isTrue);
 
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
   });
 
-  testWidgets('Import Backup with existing local data prompts for overwrite confirmation', (WidgetTester tester) async {
+  testWidgets(
+      'Import Backup with existing local data prompts for overwrite confirmation',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
 
@@ -524,14 +597,23 @@ void main() {
 
     expect(find.byType(LoungeDialog), findsOneWidget);
     expect(find.text('Overwrite current data?'), findsOneWidget);
-    expect(find.text('This will replace all your current watchlists, watch history, and settings. Are you sure you want to overwrite?'), findsOneWidget);
+    expect(
+        find.text(
+            'This will replace all your current watchlists, watch history, and settings. Are you sure you want to overwrite?'),
+        findsOneWidget);
 
     final cancelBtn = find.byKey(const ValueKey('cancel_overwrite_button'));
     await tester.tap(cancelBtn);
     await tester.pumpAndSettle();
 
-    expect(container.read(mediaProvider).watchlist.containsKey('movie_existing_movie'), isTrue);
-    expect(container.read(mediaProvider).watchlist.containsKey('new_movie'), isFalse);
+    expect(
+        container
+            .read(mediaProvider)
+            .watchlist
+            .containsKey('movie_existing_movie'),
+        isTrue);
+    expect(container.read(mediaProvider).watchlist.containsKey('new_movie'),
+        isFalse);
 
     await tester.tap(importBtn);
     await tester.pumpAndSettle();
@@ -540,8 +622,14 @@ void main() {
     await tester.tap(confirmBtn);
     await tester.pumpAndSettle();
 
-    expect(container.read(mediaProvider).watchlist.containsKey('movie_existing_movie'), isFalse);
-    expect(container.read(mediaProvider).watchlist.containsKey('new_movie'), isTrue);
+    expect(
+        container
+            .read(mediaProvider)
+            .watchlist
+            .containsKey('movie_existing_movie'),
+        isFalse);
+    expect(container.read(mediaProvider).watchlist.containsKey('new_movie'),
+        isTrue);
     expect(find.text('Backup imported successfully.'), findsOneWidget);
 
     // Let the LoungeToast's auto-dismiss timer fire before teardown.
@@ -549,7 +637,8 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('Reset Account prompts for confirmation and clears data (E8)', (WidgetTester tester) async {
+  testWidgets('Reset Account prompts for confirmation and clears data (E8)',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
 
@@ -596,7 +685,8 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  test('clearAllData refreshes the discover pool exclusion snapshot (B5)', () async {
+  test('clearAllData refreshes the discover pool exclusion snapshot (B5)',
+      () async {
     // Plain (non-widget) test, deliberately: this only needs
     // MediaNotifier.clearAllData() and the discover deck provider, neither
     // of which SettingsScreen's own widget tree watches -- driving it
@@ -606,7 +696,8 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        movieRepositoryProvider.overrideWithValue(_SingleMovieResetRepository()),
+        movieRepositoryProvider
+            .overrideWithValue(_SingleMovieResetRepository()),
       ],
     );
     addTearDown(container.dispose);
@@ -622,9 +713,14 @@ void main() {
             genres: [],
           ),
         );
-    await container.read(discoverMoviesDeckProvider.notifier).loadPool(isReload: false);
+    await container
+        .read(discoverMoviesDeckProvider.notifier)
+        .loadPool(isReload: false);
     expect(
-      container.read(discoverMoviesDeckProvider).pool.any((item) => item.id == '1'),
+      container
+          .read(discoverMoviesDeckProvider)
+          .pool
+          .any((item) => item.id == '1'),
       isFalse,
       reason: 'Precondition: movie_1 must be excluded (it is in the watchlist)',
     );
@@ -637,13 +733,19 @@ void main() {
     // The watchlist is now empty, so movie_1 must reappear in the pool --
     // this only happens if clearAllData() actually re-ran loadPool().
     expect(
-      container.read(discoverMoviesDeckProvider).pool.any((item) => item.id == '1'),
+      container
+          .read(discoverMoviesDeckProvider)
+          .pool
+          .any((item) => item.id == '1'),
       isTrue,
-      reason: 'movie_1 is no longer excluded after reset and must be back in the pool',
+      reason:
+          'movie_1 is no longer excluded after reset and must be back in the pool',
     );
   });
 
-  testWidgets('Export shows the blocking loading overlay while running, then clears it (E8)', (WidgetTester tester) async {
+  testWidgets(
+      'Export shows the blocking loading overlay while running, then clears it (E8)',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
 
@@ -655,7 +757,8 @@ void main() {
     await tester.pumpWidget(createSettingsScreen(container));
     await tester.pumpAndSettle();
 
-    await scrollToAndTap(tester, find.byKey(const ValueKey('export_backup_button')));
+    await scrollToAndTap(
+        tester, find.byKey(const ValueKey('export_backup_button')));
     await tester.pump();
     expect(find.text('Exporting your backup…'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsOneWidget);
@@ -669,7 +772,9 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('Import Backup with malformed/unsupported file shows error message', (WidgetTester tester) async {
+  testWidgets(
+      'Import Backup with malformed/unsupported file shows error message',
+      (WidgetTester tester) async {
     final container = createContainer();
     addTearDown(container.dispose);
 
@@ -693,7 +798,8 @@ void main() {
     await scrollToAndTap(tester, importBtn);
     await tester.pumpAndSettle();
 
-    expect(find.text('Import failed: Invalid backup file format.'), findsOneWidget);
+    expect(find.text('Import failed: Invalid backup file format.'),
+        findsOneWidget);
 
     // Let the LoungeToast's auto-dismiss timer fire before teardown.
     await tester.pump(const Duration(seconds: 5));
@@ -715,13 +821,19 @@ class _InstantEmptyRepository extends MockMovieRepository {
       [];
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getPopularMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTrendingMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
   Future<List<MediaItem>> getNowPlayingMovies({
@@ -732,13 +844,19 @@ class _InstantEmptyRepository extends MockMovieRepository {
       [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTrendingTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
   Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async =>
@@ -782,13 +900,19 @@ class _SingleMovieResetRepository extends MockMovieRepository {
   // proven _SingleMovieRepository pattern, keeps this test fast and
   // deterministic.
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getPopularMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTrendingMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 
   @override
   Future<List<MediaItem>> getNowPlayingMovies({
@@ -799,8 +923,12 @@ class _SingleMovieResetRepository extends MockMovieRepository {
       [];
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getUpcomingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      [];
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => [];
+  Future<List<MediaItem>> getTopRatedTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      [];
 }

@@ -5,6 +5,7 @@ import 'package:animations/animations.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
+import '../providers/motion_intensity_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../screens/detail_screen.dart';
 import 'media_image.dart';
@@ -88,9 +89,10 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
     final inkColor = context.ambianceColors.ink;
     final phColor = context.ambianceColors.ph;
     final accColor = context.ambianceColors.acc;
+    final motionIntensity = ref.watch(motionIntensityProvider);
 
     return AuroraGlow(
-      enableAnimation: widget.enableAnimation,
+      enableAnimation: motionIntensity.gateAnimation(widget.enableAnimation),
       padding: const EdgeInsets.all(16),
       borderRadius: BorderRadius.circular(18),
       baseColor: context.ambianceColors.card.withValues(alpha: 0.9),
@@ -323,9 +325,10 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
     final subColor = context.ambianceColors.sub;
     final inkColor = context.ambianceColors.ink;
     final accColor = context.ambianceColors.acc;
+    final motionIntensity = ref.watch(motionIntensityProvider);
 
     return AuroraGlow(
-      enableAnimation: widget.enableAnimation,
+      enableAnimation: motionIntensity.gateAnimation(widget.enableAnimation),
       padding: const EdgeInsets.all(18),
       borderRadius: BorderRadius.circular(18),
       baseColor: context.ambianceColors.card.withValues(alpha: 0.9),

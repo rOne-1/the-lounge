@@ -6,6 +6,7 @@ import '../providers/analytics_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/hall_provider.dart';
+import '../providers/motion_intensity_provider.dart';
 import '../constants.dart';
 import '../widgets/analytics_hero_card.dart';
 import '../widgets/continue_watching_hero_card.dart';
@@ -98,6 +99,7 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
     final hallState = ref.watch(hallProvider);
     final activeHall = hallState.activeHall;
     final colors = context.ambianceColors;
+    final motionIntensity = ref.watch(motionIntensityProvider);
     final mediaQuery = MediaQuery.of(context);
     final isLarge = mediaQuery.size.width >= 600;
     final paddingHorizontal = isLarge ? 24.0 : 18.0;
@@ -231,7 +233,8 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
               // 2. Centerpiece: AmbientGlowWidget radiating behind LoungeDoorwayEmblem
               Center(
                 child: AuroraGlow(
-                  enableAnimation: widget.enableAnimation,
+                  enableAnimation:
+                      motionIntensity.gateAnimation(widget.enableAnimation),
                   duration: const Duration(seconds: 15),
                   borderRadius: BorderRadius.circular(100),
                   padding: const EdgeInsets.all(36.0),

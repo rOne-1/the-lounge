@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../providers/hall_provider.dart';
+import '../providers/motion_intensity_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/media_provider.dart';
 import '../models/media_item.dart';
@@ -125,6 +126,7 @@ class LobbyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final navState = ref.watch(navigationProvider);
     final isMovies = navState.activeMediaType == MediaTypeToggle.movies;
+    final motionIntensity = ref.watch(motionIntensityProvider);
 
     final trendingAsync = isMovies
         ? ref.watch(trendingMoviesProvider)
@@ -496,7 +498,7 @@ class LobbyScreen extends ConsumerWidget {
             // Discover Invitation
             const SizedBox(height: 22),
             AuroraGlow(
-              enableAnimation: enableAnimation,
+              enableAnimation: motionIntensity.gateAnimation(enableAnimation),
               padding: const EdgeInsets.all(18),
               borderRadius: BorderRadius.circular(18),
               color1: context.ambianceColors.glow1,
@@ -914,6 +916,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
     final subColor = context.ambianceColors.sub;
     final inkColor = context.ambianceColors.ink;
     final phColor = context.ambianceColors.ph;
+    final motionIntensity = ref.watch(motionIntensityProvider);
 
     final seasonsAsync = ref.watch(tvShowSeasonsProvider(show));
 
@@ -946,7 +949,7 @@ class NextEpisodeBannerCard extends ConsumerWidget {
           ),
           onLongPress: () => showQuickStatusSheet(context, ref, show),
           child: AuroraGlow(
-            enableAnimation: enableAnimation,
+            enableAnimation: motionIntensity.gateAnimation(enableAnimation),
             padding: const EdgeInsets.all(14),
             borderRadius: BorderRadius.circular(16),
             color1: context.ambianceColors.glow1,
