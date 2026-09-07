@@ -8,7 +8,8 @@ import '../providers/ambiance_provider.dart';
 import '../providers/hall_provider.dart';
 import '../services/hall_storage_service.dart';
 import '../constants.dart';
-import '../utils/export_helper.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show saveJsonFile, shareJsonFile, pickJsonFile;
 import '../widgets/lounge_dialog.dart';
 import '../widgets/lounge_toast.dart';
 import '../widgets/pressable_scale.dart';
@@ -257,7 +258,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     final success = await _runBusy(
                                       'Exporting your backup…',
                                       () => saveJsonFile(
-                                          jsonString, 'the_lounge_backup.json'),
+                                          jsonString, 'the_lounge_backup.json',
+                                          dialogTitle: 'Save Backup'),
                                     );
                                     if (success && context.mounted) {
                                       LoungeToast.show(context,
@@ -308,7 +310,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                     await _runBusy(
                                       'Preparing your backup…',
                                       () => shareJsonFile(
-                                          jsonString, 'the_lounge_backup.json'),
+                                          jsonString, 'the_lounge_backup.json',
+                                          subject: 'The Lounge Backup'),
                                     );
                                   } catch (e) {
                                     if (context.mounted) {
@@ -472,7 +475,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                                 themeId: ambiance.id,
                                               );
                                               await saveJsonFile(jsonString,
-                                                  'the_lounge_backup.json');
+                                                  'the_lounge_backup.json',
+                                                  dialogTitle: 'Save Backup');
                                             },
                                           ),
                                           LoungeDialogAction(

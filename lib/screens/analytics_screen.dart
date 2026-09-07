@@ -7,7 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../providers/analytics_provider.dart';
 import '../providers/media_provider.dart';
-import '../utils/export_helper.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show shareImageFile, saveImageFile;
 import '../utils/relative_time.dart';
 import '../widgets/analytics/abandoned_shows_section.dart';
 import '../widgets/analytics/analytics_legend_sheet.dart';
@@ -605,7 +606,8 @@ class _AnalyticsResults extends StatelessWidget {
     try {
       final bytes = await _captureShareCardPng();
       if (bytes == null) return;
-      await shareImageFile(bytes, 'the_lounge_analytics.png');
+      await shareImageFile(bytes, 'the_lounge_analytics.png',
+          subject: 'The Lounge Analytics');
     } catch (_) {
       if (context.mounted) {
         LoungeToast.show(
@@ -625,7 +627,8 @@ class _AnalyticsResults extends StatelessWidget {
     try {
       final bytes = await _captureShareCardPng();
       if (bytes == null) return;
-      final saved = await saveImageFile(bytes, 'the_lounge_analytics.png');
+      final saved = await saveImageFile(bytes, 'the_lounge_analytics.png',
+          dialogTitle: 'Save Analytics Image');
       if (context.mounted && saved) {
         LoungeToast.show(context, 'Analytics image saved.',
             type: ToastType.success);
