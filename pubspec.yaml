@@ -26,7 +26,14 @@ dependencies:
   web: ^1.0.0
   fl_chart: ^1.2.0
 
-
+  # Reusable motion/FX/UI/utility toolkit, seeded from this app's own
+  # Organization & Modulation Sprint audit (see
+  # local-notes/completed pile/the_lounge_organization_modulation_sprint_triage.md).
+  # Scaffold only as of this line -- no modules migrated in yet, nothing in
+  # this app imports it. Path dependency for local development; the package
+  # itself has no separate remote yet either.
+  flutter_refined_kit:
+    path: ../flutter_refined_kit
 
 dev_dependencies:
   flutter_test:
