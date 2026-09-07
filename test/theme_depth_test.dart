@@ -11,16 +11,17 @@ import 'package:the_lounge/themes/tuscany_theme.dart';
 import 'package:the_lounge/themes/glacier_dawn_theme.dart';
 import 'package:the_lounge/themes/nebula_tide_theme.dart';
 import 'package:the_lounge/themes/verdant_manor_theme.dart';
-import 'package:the_lounge/widgets/noise_texture_overlay.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show NoiseGrainOverlay;
 
 // THEME-DEPTH-2: grain opacity/tint now live per-theme (AmbianceColors)
-// instead of one fixed global constant, and AppNoiseTexture reads them off
-// the active theme reactively. _NoiseTexturePainter itself is library-private
-// (by design -- it's an implementation detail, not part of the public
-// widget contract), so these tests verify the two things that actually
-// matter: every theme declares its own real grain configuration (not a
-// copy-pasted default), and AppNoiseTexture renders without error under
-// each theme and across a live theme switch.
+// instead of one fixed global constant; call sites read them off the
+// active theme and pass them explicitly to flutter_refined_kit's
+// NoiseGrainOverlay (which takes opacity/tint as required params, no
+// theme coupling of its own). These tests verify the two things that
+// actually matter: every theme declares its own real grain configuration
+// (not a copy-pasted default), and NoiseGrainOverlay renders without error
+// under each theme and across a live theme switch.
 //
 // The pure-data group below tests the AmbianceColors instances directly
 // (srAmbianceColors etc.), not `allThemes`/AppTheme -- referencing an
@@ -44,48 +45,71 @@ void main() {
       'Verdant Manor': vmAmbianceColors,
     };
 
-    test('every theme declares its own grainOpacity and grainTint, not a shared default', () {
+    test(
+        'every theme declares its own grainOpacity and grainTint, not a shared default',
+        () {
       for (final entry in allAmbianceColors.entries) {
         final colors = entry.value;
         expect(colors.grainOpacity, greaterThan(0),
             reason: '${entry.key} should have a visible grain');
         expect(colors.grainOpacity, lessThan(0.15),
-            reason: '${entry.key} grain should stay subtle, not overpower content');
+            reason:
+                '${entry.key} grain should stay subtle, not overpower content');
         expect(colors.grainTint.a, greaterThan(0),
-            reason: '${entry.key} grain tint should actually wash the grain, not be fully transparent');
+            reason:
+                '${entry.key} grain tint should actually wash the grain, not be fully transparent');
       }
 
       final tints = allAmbianceColors.values.map((c) => c.grainTint).toSet();
       expect(tints.length, allAmbianceColors.length,
           reason: 'grain tints should be distinct per theme, not copy-pasted');
 
-      final opacities = allAmbianceColors.values.map((c) => c.grainOpacity).toSet();
+      final opacities =
+          allAmbianceColors.values.map((c) => c.grainOpacity).toSet();
       expect(opacities.length, allAmbianceColors.length,
-          reason: 'grain opacities should be distinct per theme, not copy-pasted');
+          reason:
+              'grain opacities should be distinct per theme, not copy-pasted');
     });
 
-    test('the light theme carries a noticeably finer grain than the dark luxury themes', () {
-      expect(obAmbianceColors.grainOpacity, lessThan(srAmbianceColors.grainOpacity));
-      expect(obAmbianceColors.grainOpacity, lessThan(tsAmbianceColors.grainOpacity));
+    test(
+        'the light theme carries a noticeably finer grain than the dark luxury themes',
+        () {
+      expect(obAmbianceColors.grainOpacity,
+          lessThan(srAmbianceColors.grainOpacity));
+      expect(obAmbianceColors.grainOpacity,
+          lessThan(tsAmbianceColors.grainOpacity));
     });
   });
 
-  group('THEME-DEPTH-2: AppNoiseTexture reactivity', () {
+  group('THEME-DEPTH-2: NoiseGrainOverlay reactivity', () {
+    // The kit's NoiseGrainOverlay takes opacity/tint as required params (no
+    // theme coupling of its own) -- this app's call sites read the active
+    // theme's grainOpacity/grainTint and pass them explicitly, same pattern
+    // as main.dart's own single grain layer. Wrapping in a Builder here
+    // reproduces that same read-off-context step for these tests.
     Future<void> pumpWithTheme(WidgetTester tester, ThemeData theme) {
       return tester.pumpWidget(
         MaterialApp(
           theme: theme,
-          home: const Scaffold(body: AppNoiseTexture()),
+          home: Scaffold(
+            body: Builder(
+              builder: (context) => NoiseGrainOverlay(
+                opacity: context.ambianceColors.grainOpacity,
+                tint: context.ambianceColors.grainTint,
+              ),
+            ),
+          ),
         ),
       );
     }
 
-    testWidgets('renders without error under every theme\'s own grain configuration',
+    testWidgets(
+        'renders without error under every theme\'s own grain configuration',
         (tester) async {
       for (final theme in allThemes) {
         await pumpWithTheme(tester, theme.themeData);
         await tester.pump();
-        expect(find.byType(AppNoiseTexture), findsOneWidget);
+        expect(find.byType(NoiseGrainOverlay), findsOneWidget);
         expect(find.byType(CustomPaint), findsWidgets);
         expect(tester.takeException(), isNull);
       }
@@ -103,16 +127,16 @@ void main() {
       // Past the 550ms House Spring duration -- settled on the new theme.
       await tester.pump(const Duration(milliseconds: 400));
 
-      expect(find.byType(AppNoiseTexture), findsOneWidget);
+      expect(find.byType(NoiseGrainOverlay), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('explicit opacity/tint overrides still render without error', (tester) async {
+    testWidgets('explicit opacity/tint overrides still render without error',
+        (tester) async {
       await tester.pumpWidget(
-        MaterialApp(
-          theme: screeningRoomTheme.themeData,
-          home: const Scaffold(
-            body: AppNoiseTexture(
+        const MaterialApp(
+          home: Scaffold(
+            body: NoiseGrainOverlay(
               opacity: 0.1,
               tint: Color.fromRGBO(255, 0, 0, 0.5),
             ),
@@ -121,7 +145,7 @@ void main() {
       );
       await tester.pump();
 
-      expect(find.byType(AppNoiseTexture), findsOneWidget);
+      expect(find.byType(NoiseGrainOverlay), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

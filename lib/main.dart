@@ -9,11 +9,12 @@ import 'providers/navigation_provider.dart';
 import 'providers/repository_provider.dart';
 import 'screens/splash_screen.dart';
 import 'services/crash_reporting_service.dart';
+import 'themes/ambiance_colors.dart';
 import 'themes/screening_room_theme.dart';
 import 'widgets/fallback_widgets.dart';
 import 'widgets/floating_navigation_capsule.dart';
-import 'widgets/noise_texture_overlay.dart';
-import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, NoiseGrainOverlay;
 
 /// Shared with [GlobalCapsuleLayer]/[FloatingNavigationCapsule]: the capsule
 /// is drawn in [MyApp]'s `builder` as a Stack sibling of `child` (the actual
@@ -108,8 +109,11 @@ class MyApp extends ConsumerWidget {
               // pushed screen (Detail, Archive, Tools, Rate Titles,
               // Cleanup, Rewatch Vault, Folders, Collection, Analytics,
               // Settings) -- without each screen instantiating its own copy.
-              const Positioned.fill(
-                child: AppNoiseTexture(),
+              Positioned.fill(
+                child: NoiseGrainOverlay(
+                  opacity: context.ambianceColors.grainOpacity,
+                  tint: context.ambianceColors.grainTint,
+                ),
               ),
               GlobalCapsuleLayer(
                 enableAnimation: enableAnimation,

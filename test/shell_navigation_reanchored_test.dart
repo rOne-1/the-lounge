@@ -11,7 +11,8 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
-import 'package:the_lounge/widgets/noise_texture_overlay.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show NoiseGrainOverlay;
 
 void main() {
   setUp(() {
@@ -70,14 +71,20 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    for (final tab in [AppTab.lobby, AppTab.discover, AppTab.search, AppTab.calendar]) {
+    for (final tab in [
+      AppTab.lobby,
+      AppTab.discover,
+      AppTab.search,
+      AppTab.calendar
+    ]) {
       container.read(navigationProvider.notifier).setTab(tab);
       await tester.pumpAndSettle();
 
       final didPop = await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(didPop, isTrue, reason: 'back from $tab should be intercepted, not exit the app');
+      expect(didPop, isTrue,
+          reason: 'back from $tab should be intercepted, not exit the app');
       expect(container.read(navigationProvider).currentTab, AppTab.lounge);
     }
 
@@ -114,10 +121,10 @@ void main() {
       // Landing page (The Lounge, nothing pushed): grain is already present
       // -- it now lives once at the MaterialApp.builder level (main.dart),
       // not per-screen, so it covers the initial shell tabs too.
-      expect(find.byType(AppNoiseTexture), findsOneWidget);
+      expect(find.byType(NoiseGrainOverlay), findsOneWidget);
 
       // A real Navigator push while staying on the lounge tab -- before
-      // FEAT-GRAIN-1, AppNoiseTexture was drawn inside ShellScreen's own
+      // FEAT-GRAIN-1, NoiseGrainOverlay was drawn inside ShellScreen's own
       // Stack, which sits *underneath* whatever route the Navigator pushes
       // on top, so a pushed screen (Archive here) showed no grain at all.
       await tester.tap(find.text('Archive'));
@@ -125,7 +132,7 @@ void main() {
 
       // Still exactly one instance -- the same single overlay, not a second
       // copy instantiated by the pushed screen.
-      expect(find.byType(AppNoiseTexture), findsOneWidget);
+      expect(find.byType(NoiseGrainOverlay), findsOneWidget);
     });
   });
 }

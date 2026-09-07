@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'theme_registry.dart';
 
 extension AmbianceContext on BuildContext {
-  AmbianceColors get ambianceColors => Theme.of(this).extension<AmbianceColors>() ?? allThemes.first.colors;
+  AmbianceColors get ambianceColors =>
+      Theme.of(this).extension<AmbianceColors>() ?? allThemes.first.colors;
 }
 
 class AmbianceColors extends ThemeExtension<AmbianceColors> {
@@ -41,7 +42,7 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
   final BoxDecoration primaryButtonDecoration;
 
   /// THEME-DEPTH-2: base visibility of the procedural grain texture
-  /// (`AppNoiseTexture`) -- richer on velvet/luxury dark themes, barely
+  /// (`NoiseGrainOverlay`, from flutter_refined_kit) -- richer on velvet/luxury dark themes, barely
   /// there on airy light ones. Independent of [grainTint]'s own alpha.
   final double grainOpacity;
 
@@ -142,7 +143,8 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       glow1: glow1 ?? this.glow1,
       glow2: glow2 ?? this.glow2,
       background: background ?? this.background,
-      primaryButtonDecoration: primaryButtonDecoration ?? this.primaryButtonDecoration,
+      primaryButtonDecoration:
+          primaryButtonDecoration ?? this.primaryButtonDecoration,
       grainOpacity: grainOpacity ?? this.grainOpacity,
       grainTint: grainTint ?? this.grainTint,
       cardShadow: cardShadow ?? this.cardShadow,
@@ -154,7 +156,8 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
   }
 
   @override
-  ThemeExtension<AmbianceColors> lerp(ThemeExtension<AmbianceColors>? other, double t) {
+  ThemeExtension<AmbianceColors> lerp(
+      ThemeExtension<AmbianceColors>? other, double t) {
     if (other is! AmbianceColors) return this;
     final clampedT = t.clamp(0.0, 1.0);
     return AmbianceColors(
@@ -168,7 +171,8 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       ph: Color.lerp(ph, other.ph, clampedT)!,
       pill: Color.lerp(pill, other.pill, clampedT)!,
       starRating: Color.lerp(starRating, other.starRating, clampedT)!,
-      surfaceHighlight: Color.lerp(surfaceHighlight, other.surfaceHighlight, clampedT)!,
+      surfaceHighlight:
+          Color.lerp(surfaceHighlight, other.surfaceHighlight, clampedT)!,
       navBarBg: Color.lerp(navBarBg, other.navBarBg, clampedT)!,
       scrim: Color.lerp(scrim, other.scrim, clampedT)!,
       danger: Color.lerp(danger, other.danger, clampedT)!,
@@ -176,13 +180,20 @@ class AmbianceColors extends ThemeExtension<AmbianceColors> {
       glow1: Color.lerp(glow1, other.glow1, clampedT)!,
       glow2: Color.lerp(glow2, other.glow2, clampedT)!,
       background: BoxDecoration.lerp(background, other.background, clampedT)!,
-      primaryButtonDecoration: BoxDecoration.lerp(primaryButtonDecoration, other.primaryButtonDecoration, clampedT)!,
-      grainOpacity: (grainOpacity + (other.grainOpacity - grainOpacity) * clampedT).clamp(0.0, 1.0),
+      primaryButtonDecoration: BoxDecoration.lerp(
+          primaryButtonDecoration, other.primaryButtonDecoration, clampedT)!,
+      grainOpacity:
+          (grainOpacity + (other.grainOpacity - grainOpacity) * clampedT)
+              .clamp(0.0, 1.0),
       grainTint: Color.lerp(grainTint, other.grainTint, clampedT)!,
-      cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, clampedT) ?? cardShadow,
-      ambientGlowShadow:
-          BoxShadow.lerpList(ambientGlowShadow, other.ambientGlowShadow, clampedT) ?? ambientGlowShadow,
-      dialogShadow: BoxShadow.lerpList(dialogShadow, other.dialogShadow, clampedT) ?? dialogShadow,
+      cardShadow: BoxShadow.lerpList(cardShadow, other.cardShadow, clampedT) ??
+          cardShadow,
+      ambientGlowShadow: BoxShadow.lerpList(
+              ambientGlowShadow, other.ambientGlowShadow, clampedT) ??
+          ambientGlowShadow,
+      dialogShadow:
+          BoxShadow.lerpList(dialogShadow, other.dialogShadow, clampedT) ??
+              dialogShadow,
       signatureMotif: clampedT < 0.5 ? signatureMotif : other.signatureMotif,
       isDark: clampedT < 0.5 ? isDark : other.isDark,
     );
