@@ -10,11 +10,11 @@ import 'package:the_lounge/screens/archive_screen.dart';
 import 'package:the_lounge/screens/tools_screen.dart';
 import 'package:the_lounge/screens/settings_screen.dart';
 import 'package:the_lounge/widgets/lounge_doorway_emblem.dart';
-import 'package:the_lounge/widgets/ambient_glow.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/navigation_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show AuroraGlow;
 
 void main() {
   setUp(() {
@@ -48,7 +48,8 @@ void main() {
   }
 
   group('YSR-GATEWAY-1: Sanctuary Gateway structure', () {
-    testWidgets('renders Day overline, greeting, emblem centerpiece and 4 dock cards',
+    testWidgets(
+        'renders Day overline, greeting, emblem centerpiece and 4 dock cards',
         (tester) async {
       final container = await pumpLounge(tester);
       addTearDown(container.dispose);
@@ -60,7 +61,7 @@ void main() {
 
       // Centerpiece emblem + ambient glow
       expect(find.byType(LoungeDoorwayEmblem), findsOneWidget);
-      expect(find.byType(AmbientGlowWidget), findsOneWidget);
+      expect(find.byType(AuroraGlow), findsOneWidget);
 
       // 4 Dock Cards
       expect(find.text('Archive'), findsOneWidget);

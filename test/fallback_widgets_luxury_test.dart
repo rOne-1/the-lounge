@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
-import 'package:the_lounge/widgets/ambient_glow.dart';
 import 'package:the_lounge/widgets/fallback_widgets.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show PressableScale;
+    show PressableScale, AuroraGlow;
 
 void main() {
   Widget wrap(Widget home) {
@@ -22,7 +21,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byType(AmbientGlowWidget), findsOneWidget);
+      expect(find.byType(AuroraGlow), findsOneWidget);
       expect(find.text('Try again'), findsOneWidget);
       expect(find.text('Failed to load titles'), findsOneWidget);
 
@@ -54,7 +53,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
 
-      expect(find.byType(AmbientGlowWidget), findsOneWidget);
+      expect(find.byType(AuroraGlow), findsOneWidget);
       expect(find.text('Failed to load Trending titles'), findsOneWidget);
 
       await tester.tap(find.text('Retry'));
@@ -104,7 +103,7 @@ void main() {
       await tester.pumpWidget(wrap(
         FullScreenErrorWidget(message: 'Something broke', onRetry: () {}),
       ));
-      // Fails with a pumpAndSettle timeout if AmbientGlowWidget's animation
+      // Fails with a pumpAndSettle timeout if AuroraGlow's animation
       // is left running (its default is an infinite repeat).
       await tester.pumpAndSettle();
     });

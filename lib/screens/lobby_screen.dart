@@ -11,11 +11,10 @@ import 'media_list_screen.dart';
 import '../constants.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/media_card.dart';
-import '../widgets/ambient_glow.dart';
 import '../widgets/quick_status_sheet.dart';
 import '../widgets/pick_for_me_card.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, AuroraGlow;
 
 class DeduplicatedLobbyRails {
   final bool isMovies;
@@ -496,10 +495,15 @@ class LobbyScreen extends ConsumerWidget {
 
             // Discover Invitation
             const SizedBox(height: 22),
-            AmbientGlowWidget(
+            AuroraGlow(
               enableAnimation: enableAnimation,
               padding: const EdgeInsets.all(18),
               borderRadius: BorderRadius.circular(18),
+              color1: context.ambianceColors.glow1,
+              color2: context.ambianceColors.glow2,
+              baseColor: context.ambianceColors.card
+                  .withValues(alpha: isDark ? 0.65 : 0.75),
+              isDark: isDark,
               border: Border.all(
                 color: context.ambianceColors.acc
                     .withValues(alpha: isDark ? 0.4 : 0.36),
@@ -941,10 +945,15 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                 builder: (_) => DetailScreen(id: show.prefixedId)),
           ),
           onLongPress: () => showQuickStatusSheet(context, ref, show),
-          child: AmbientGlowWidget(
+          child: AuroraGlow(
             enableAnimation: enableAnimation,
             padding: const EdgeInsets.all(14),
             borderRadius: BorderRadius.circular(16),
+            color1: context.ambianceColors.glow1,
+            color2: context.ambianceColors.glow2,
+            baseColor: context.ambianceColors.card
+                .withValues(alpha: context.ambianceColors.isDark ? 0.65 : 0.75),
+            isDark: context.ambianceColors.isDark,
             border: Border.all(
               color: AppStatusColors.save.withValues(alpha: 0.42),
             ),

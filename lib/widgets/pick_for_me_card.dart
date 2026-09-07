@@ -7,11 +7,10 @@ import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../screens/detail_screen.dart';
-import 'ambient_glow.dart';
 import 'media_image.dart';
 import 'pick_for_me_roulette_sheet.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, AuroraGlow;
 
 /// A feature card styled with Screening Room aesthetics (champagne gold accent border,
 /// dark glass backdrop #161312, poster image, title, rating, tagline, and re-roll button)
@@ -90,11 +89,14 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
     final phColor = context.ambianceColors.ph;
     final accColor = context.ambianceColors.acc;
 
-    return AmbientGlowWidget(
+    return AuroraGlow(
       enableAnimation: widget.enableAnimation,
       padding: const EdgeInsets.all(16),
       borderRadius: BorderRadius.circular(18),
       baseColor: context.ambianceColors.card.withValues(alpha: 0.9),
+      color1: context.ambianceColors.glow1,
+      color2: context.ambianceColors.glow2,
+      isDark: isDark,
       border: Border.all(
         color:
             context.ambianceColors.acc.withValues(alpha: isDark ? 0.45 : 0.35),
@@ -322,11 +324,14 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
     final inkColor = context.ambianceColors.ink;
     final accColor = context.ambianceColors.acc;
 
-    return AmbientGlowWidget(
+    return AuroraGlow(
       enableAnimation: widget.enableAnimation,
       padding: const EdgeInsets.all(18),
       borderRadius: BorderRadius.circular(18),
       baseColor: context.ambianceColors.card.withValues(alpha: 0.9),
+      color1: context.ambianceColors.glow1,
+      color2: context.ambianceColors.glow2,
+      isDark: isDark,
       border: Border.all(
         color:
             context.ambianceColors.acc.withValues(alpha: isDark ? 0.45 : 0.35),

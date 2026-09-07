@@ -9,10 +9,9 @@ import '../providers/ambiance_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/hall_provider.dart';
 import '../screens/settings_screen.dart';
-import 'ambient_glow.dart';
 import 'hall_selector_sheet.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, OffsetSpringSimulation, PressableScale;
+    show HouseSpring, OffsetSpringSimulation, PressableScale, AuroraGlow;
 
 /// IA-1/NAV-3: the single floating, draggable, edge-snapping navigation
 /// capsule that replaces ShellScreen's fixed top bar and bottom nav bar.
@@ -397,10 +396,13 @@ class _CollapsedContent extends ConsumerWidget {
         ? Icons.movie_creation_outlined
         : Icons.live_tv_outlined;
 
-    return AmbientGlowWidget(
+    return AuroraGlow(
       enableAnimation: enableAnimation,
       borderRadius: BorderRadius.circular(999),
+      color1: ambiance.glow1,
+      color2: ambiance.glow2,
       baseColor: ambiance.card2.withValues(alpha: 0.72),
+      isDark: ambiance.isDark,
       child: Stack(
         alignment: Alignment.center,
         children: [

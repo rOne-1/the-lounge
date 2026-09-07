@@ -1,10 +1,9 @@
 import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'ambient_glow.dart';
 import '../constants.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, AuroraGlow;
 
 export 'media_image.dart';
 
@@ -100,10 +99,15 @@ class _LoungeFallbackCard extends StatelessWidget {
           padding: const EdgeInsets.all(24.0),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
-            child: AmbientGlowWidget(
+            child: AuroraGlow(
               enableAnimation:
                   false, // static glow: error states should stay calm, not perpetually animate
               borderRadius: BorderRadius.circular(20),
+              color1: ambiance.glow1,
+              color2: ambiance.glow2,
+              baseColor: ambiance.card
+                  .withValues(alpha: ambiance.isDark ? 0.65 : 0.75),
+              isDark: ambiance.isDark,
               border: Border.all(color: ambiance.lineRgba),
               boxShadow: [
                 BoxShadow(
@@ -244,7 +248,7 @@ class InlinePartialErrorWidget extends StatelessWidget {
       curve: HouseSpring.curve,
       builder: (context, opacity, child) =>
           Opacity(opacity: opacity.clamp(0.0, 1.0), child: child),
-      child: AmbientGlowWidget(
+      child: AuroraGlow(
         enableAnimation:
             false, // static glow: error states should stay calm, not perpetually animate
         borderRadius: BorderRadius.circular(12),
@@ -252,6 +256,7 @@ class InlinePartialErrorWidget extends StatelessWidget {
         baseColor: ambiance.danger.withValues(alpha: 0.10),
         color1: ambiance.danger,
         color2: ambiance.danger,
+        isDark: ambiance.isDark,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [

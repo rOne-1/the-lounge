@@ -7,7 +7,6 @@ import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../providers/hall_provider.dart';
 import '../constants.dart';
-import '../widgets/ambient_glow.dart';
 import '../widgets/analytics_hero_card.dart';
 import '../widgets/continue_watching_hero_card.dart';
 import '../widgets/lounge_doorway_emblem.dart';
@@ -18,7 +17,7 @@ import 'archive_screen.dart';
 import 'tools_screen.dart';
 import 'settings_screen.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, AuroraGlow;
 
 /// YSR-GATEWAY-1 / NAME-1: The Sanctuary Gateway (`The Lounge-selection.png`) - the
 /// elevated landing screen for The Lounge. Features the dynamic Day overline,
@@ -231,13 +230,16 @@ class _LoungeScreenState extends ConsumerState<LoungeScreen> {
 
               // 2. Centerpiece: AmbientGlowWidget radiating behind LoungeDoorwayEmblem
               Center(
-                child: AmbientGlowWidget(
+                child: AuroraGlow(
                   enableAnimation: widget.enableAnimation,
                   duration: const Duration(seconds: 15),
                   borderRadius: BorderRadius.circular(100),
                   padding: const EdgeInsets.all(36.0),
                   color1: colors.glow1,
                   color2: colors.glow2,
+                  baseColor: colors.card
+                      .withValues(alpha: colors.isDark ? 0.65 : 0.75),
+                  isDark: colors.isDark,
                   child: const LoungeDoorwayEmblem(size: 132.0),
                 ),
               ),

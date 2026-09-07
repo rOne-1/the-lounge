@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'ambient_glow.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show PressableScale;
+    show PressableScale, AuroraGlow;
 
 /// The app's atmospheric empty-state treatment: a frosted ambient card with
 /// an icon watermark and a Bodoni Moda headline, replacing plain
@@ -41,11 +40,16 @@ class AtmosphericEmptyState extends StatelessWidget {
         padding: const EdgeInsets.all(24.0),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 360),
-          child: AmbientGlowWidget(
+          child: AuroraGlow(
             // Static glow: an empty state is a resting/idle screen, not a
             // moment that should draw the eye with perpetual motion.
             enableAnimation: false,
             borderRadius: BorderRadius.circular(20),
+            color1: ambiance.glow1,
+            color2: ambiance.glow2,
+            baseColor:
+                ambiance.card.withValues(alpha: ambiance.isDark ? 0.65 : 0.75),
+            isDark: ambiance.isDark,
             border: Border.all(color: ambiance.lineRgba),
             boxShadow: [
               BoxShadow(
