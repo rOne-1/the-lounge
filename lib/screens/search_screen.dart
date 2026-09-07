@@ -8,7 +8,8 @@ import '../models/media_item.dart';
 import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
-import '../utils/scroll_chrome_tracker.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show ScrollChromeTracker;
 import '../utils/weighted_rating.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
