@@ -9,12 +9,16 @@ import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show ScrollChromeTracker, HouseSpring, PressableScale, DragToDismissSheet;
+    show
+        ScrollChromeTracker,
+        HouseSpring,
+        PressableScale,
+        DragToDismissSheet,
+        SpringFilterChip;
 import '../utils/weighted_rating.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/lounge_dropdown.dart';
-import '../widgets/lounge_filter_chip.dart';
 import '../widgets/lounge_slider.dart';
 import '../widgets/media_card.dart';
 import '../widgets/person_search_autocomplete.dart';
@@ -1485,6 +1489,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     final subColor = context.ambianceColors.sub;
     final lineRgba = context.ambianceColors.lineRgba;
     final pillColor = context.ambianceColors.pill;
+    final chipSelectedDecoration = context
+        .ambianceColors.primaryButtonDecoration
+        .copyWith(borderRadius: BorderRadius.circular(999))
+        .copyWith(
+            border: Border.all(color: context.ambianceColors.acc, width: 1.0));
+    final chipUnselectedDecoration = BoxDecoration(
+      color: pillColor,
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(color: lineRgba, width: 1.0),
+    );
+    final chipSelectedTextColor = Theme.of(context).colorScheme.onPrimary;
+    final chipUnselectedTextColor = context.ambianceColors.ink;
 
     final hasGenresOrKeywordsActive =
         (filterParams.genreName != null && filterParams.genreName != 'All') ||
@@ -1538,11 +1554,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           (filterParams.genreName == null ||
                               filterParams.genreName!.isEmpty)) ||
                       filterParams.genreName == genre;
-                  return LoungeFilterChip(
+                  return SpringFilterChip(
                     label: genre,
                     isSelected: isSelected,
-                    pillColor: pillColor,
-                    lineRgba: lineRgba,
+                    selectedDecoration: chipSelectedDecoration,
+                    unselectedDecoration: chipUnselectedDecoration,
+                    selectedTextColor: chipSelectedTextColor,
+                    unselectedTextColor: chipUnselectedTextColor,
                     onTap: () {
                       if (genre == 'All') {
                         filterNotifier.setGenre(genreId: null, genreName: null);
@@ -1654,11 +1672,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  LoungeFilterChip(
+                  SpringFilterChip(
                     label: 'Any Provider',
                     isSelected: filterParams.providerId == null,
-                    pillColor: pillColor,
-                    lineRgba: lineRgba,
+                    selectedDecoration: chipSelectedDecoration,
+                    unselectedDecoration: chipUnselectedDecoration,
+                    selectedTextColor: chipSelectedTextColor,
+                    unselectedTextColor: chipUnselectedTextColor,
                     onTap: () {
                       filterNotifier.setProvider(
                         providerId: null,
@@ -1669,11 +1689,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ),
                   ..._providers.map((p) {
                     final isSelected = filterParams.providerId == p['id'];
-                    return LoungeFilterChip(
+                    return SpringFilterChip(
                       label: p['name'] as String,
                       isSelected: isSelected,
-                      pillColor: pillColor,
-                      lineRgba: lineRgba,
+                      selectedDecoration: chipSelectedDecoration,
+                      unselectedDecoration: chipUnselectedDecoration,
+                      selectedTextColor: chipSelectedTextColor,
+                      unselectedTextColor: chipUnselectedTextColor,
                       onTap: () {
                         filterNotifier.setProvider(
                           providerId: p['id'] as int,
@@ -1753,11 +1775,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ].map((vc) {
                   final isSelected = filterParams.minVoteCount == vc;
                   final label = vc == null ? 'Any' : '$vc+';
-                  return LoungeFilterChip(
+                  return SpringFilterChip(
                     label: label,
                     isSelected: isSelected,
-                    pillColor: pillColor,
-                    lineRgba: lineRgba,
+                    selectedDecoration: chipSelectedDecoration,
+                    unselectedDecoration: chipUnselectedDecoration,
+                    selectedTextColor: chipSelectedTextColor,
+                    unselectedTextColor: chipUnselectedTextColor,
                     onTap: () => filterNotifier.setMinVoteCount(vc),
                   );
                 }).toList(),
@@ -1883,12 +1907,14 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 spacing: 6,
                 runSpacing: 6,
                 children: [
-                  LoungeFilterChip(
+                  SpringFilterChip(
                     label: 'Any Language',
                     isSelected: lockedLanguageCode == null &&
                         filterParams.originalLanguage == null,
-                    pillColor: pillColor,
-                    lineRgba: lineRgba,
+                    selectedDecoration: chipSelectedDecoration,
+                    unselectedDecoration: chipUnselectedDecoration,
+                    selectedTextColor: chipSelectedTextColor,
+                    unselectedTextColor: chipUnselectedTextColor,
                     onTap: lockedLanguageCode != null
                         ? null
                         : () => filterNotifier.setOriginalLanguage(null),
@@ -1897,11 +1923,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     final isSelected = lockedLanguageCode != null
                         ? lockedLanguageCode == lang['code']
                         : filterParams.originalLanguage == lang['code'];
-                    return LoungeFilterChip(
+                    return SpringFilterChip(
                       label: lang['name']!,
                       isSelected: isSelected,
-                      pillColor: pillColor,
-                      lineRgba: lineRgba,
+                      selectedDecoration: chipSelectedDecoration,
+                      unselectedDecoration: chipUnselectedDecoration,
+                      selectedTextColor: chipSelectedTextColor,
+                      unselectedTextColor: chipUnselectedTextColor,
                       onTap: lockedLanguageCode != null
                           ? null
                           : () =>
@@ -1942,11 +1970,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   ].map((status) {
                     final isSelected = filterParams.tvStatus == status;
                     final label = status ?? 'Any Status';
-                    return LoungeFilterChip(
+                    return SpringFilterChip(
                       label: label,
                       isSelected: isSelected,
-                      pillColor: pillColor,
-                      lineRgba: lineRgba,
+                      selectedDecoration: chipSelectedDecoration,
+                      unselectedDecoration: chipUnselectedDecoration,
+                      selectedTextColor: chipSelectedTextColor,
+                      unselectedTextColor: chipUnselectedTextColor,
                       onTap: () => filterNotifier.setTvStatus(status),
                     );
                   }).toList(),
@@ -1965,11 +1995,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   spacing: 6,
                   runSpacing: 6,
                   children: [
-                    LoungeFilterChip(
+                    SpringFilterChip(
                       label: 'Any Network',
                       isSelected: filterParams.tvNetworkId == null,
-                      pillColor: pillColor,
-                      lineRgba: lineRgba,
+                      selectedDecoration: chipSelectedDecoration,
+                      unselectedDecoration: chipUnselectedDecoration,
+                      selectedTextColor: chipSelectedTextColor,
+                      unselectedTextColor: chipUnselectedTextColor,
                       onTap: () {
                         filterNotifier.setTvNetwork(
                           tvNetworkId: null,
@@ -1979,11 +2011,13 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     ),
                     ..._tvNetworks.map((net) {
                       final isSelected = filterParams.tvNetworkId == net['id'];
-                      return LoungeFilterChip(
+                      return SpringFilterChip(
                         label: net['name'] as String,
                         isSelected: isSelected,
-                        pillColor: pillColor,
-                        lineRgba: lineRgba,
+                        selectedDecoration: chipSelectedDecoration,
+                        unselectedDecoration: chipUnselectedDecoration,
+                        selectedTextColor: chipSelectedTextColor,
+                        unselectedTextColor: chipUnselectedTextColor,
                         onTap: () {
                           filterNotifier.setTvNetwork(
                             tvNetworkId: net['id'] as int,
