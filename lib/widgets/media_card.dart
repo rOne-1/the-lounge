@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
+import '../providers/motion_intensity_provider.dart';
 import '../screens/detail_screen.dart';
 import 'media_image.dart';
 import 'quick_status_sheet.dart';
 import 'status_pulse_ring.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, Tilt3DCard;
 
 /// The single canonical media poster card used across Home, Browse, Your
 /// Space, Calendar, Media List, and Collection. Consolidates the gesture
@@ -70,6 +71,7 @@ class MediaCard extends ConsumerWidget {
 
     final mediaState = ref.watch(mediaProvider);
     final statusInfo = showStatusIndicator ? _resolveStatus(mediaState) : null;
+    final motionIntensity = ref.watch(motionIntensityProvider);
 
     final posterWidget = OpenContainer(
       transitionDuration: HouseSpring.duration,
@@ -98,70 +100,90 @@ class MediaCard extends ConsumerWidget {
         final semanticLabel =
             '${item.title}$yearStr, $typeStr$ratingStr$statusStr';
 
-        return PressableScale(
-          onTap: onTap ?? openContainer,
-          onLongPress: onLongPress ??
-              () {
-                // Long-pressing a card near an active text field (e.g.
-                // Search's query box) must not leave the keyboard open
-                // behind the status sheet -- unfocus unconditionally; a
-                // no-op when nothing is focused.
-                FocusScope.of(context).unfocus();
-                showQuickStatusSheet(context, ref, item);
-              },
-          child: Semantics(
-            label: semanticLabel,
-            excludeSemantics: true,
-            child: Container(
-              width: width,
-              height: height,
-              decoration: BoxDecoration(
-                color: phColor,
-                borderRadius: BorderRadius.circular(borderRadius),
-                border: Border.all(color: lineRgba),
-                boxShadow: [
-                  ...context.ambianceColors.cardShadow,
-                  BoxShadow(
-                    color: surfaceHighlight,
-                    blurRadius: 0,
-                    spreadRadius: 0,
-                    offset: const Offset(0, 1),
-                    blurStyle: BlurStyle.inner,
-                  ),
-                ],
-              ),
-              clipBehavior: Clip.antiAlias,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  MediaImage(
-                    item: item,
-                    fit: fit,
-                    showFallbackTitle: !showTitle,
-                  ),
-                  if (showRatingBadge && item.rating > 0)
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: _RatingBadge(rating: item.rating),
+        // CRAFT-TILT-1: Tilt3DCard wraps PressableScale (not the reverse) so
+        // both transforms compose visually -- the card tilts in 3D on
+        // hover/drag, and independently scales down on tap-press -- without
+        // either widget's own decoration duplicating the Container's below.
+        // Tilt3DCard.onTap is deliberately left null: PressableScale already
+        // owns the tap/long-press recognizers, and an unset onTap means
+        // Tilt3DCard's GestureDetector never registers a competing Tap
+        // recognizer, only the Pan one it needs for touch-driven tilt.
+        // maxTiltAngle/glareIntensity are kept restrained (a dense grid of
+        // MediaCards tilting at the kit's full ~14° default would be a lot
+        // of simultaneous motion) and both scale to zero at
+        // MotionIntensity.off, matching the reduced-motion setting in
+        // Settings -- Preferences.
+        return Tilt3DCard(
+          enableTilt: motionIntensity.animates,
+          enableGlare: motionIntensity.animates,
+          maxTiltAngle: 0.12 * motionIntensity.scale,
+          glareIntensity: 0.18 * motionIntensity.scale,
+          borderRadius: BorderRadius.circular(borderRadius),
+          child: PressableScale(
+            onTap: onTap ?? openContainer,
+            onLongPress: onLongPress ??
+                () {
+                  // Long-pressing a card near an active text field (e.g.
+                  // Search's query box) must not leave the keyboard open
+                  // behind the status sheet -- unfocus unconditionally; a
+                  // no-op when nothing is focused.
+                  FocusScope.of(context).unfocus();
+                  showQuickStatusSheet(context, ref, item);
+                },
+            child: Semantics(
+              label: semanticLabel,
+              excludeSemantics: true,
+              child: Container(
+                width: width,
+                height: height,
+                decoration: BoxDecoration(
+                  color: phColor,
+                  borderRadius: BorderRadius.circular(borderRadius),
+                  border: Border.all(color: lineRgba),
+                  boxShadow: [
+                    ...context.ambianceColors.cardShadow,
+                    BoxShadow(
+                      color: surfaceHighlight,
+                      blurRadius: 0,
+                      spreadRadius: 0,
+                      offset: const Offset(0, 1),
+                      blurStyle: BlurStyle.inner,
                     ),
-                  if (statusInfo != null)
-                    Positioned(
-                      top: 6,
-                      left: 6,
-                      child: StatusPulseRing(
-                        isSelected: true,
-                        accentColor: statusInfo.color,
-                        borderRadius: 8,
-                        child: _StatusChip(
-                          icon: statusInfo.icon,
-                          color: statusInfo.color,
-                          isPending: statusInfo.isPending,
+                  ],
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    MediaImage(
+                      item: item,
+                      fit: fit,
+                      showFallbackTitle: !showTitle,
+                    ),
+                    if (showRatingBadge && item.rating > 0)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: _RatingBadge(rating: item.rating),
+                      ),
+                    if (statusInfo != null)
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: StatusPulseRing(
+                          isSelected: true,
+                          accentColor: statusInfo.color,
+                          borderRadius: 8,
+                          child: _StatusChip(
+                            icon: statusInfo.icon,
+                            color: statusInfo.color,
+                            isPending: statusInfo.isPending,
+                          ),
                         ),
                       ),
-                    ),
-                  if (badge != null) badge!,
-                ],
+                    if (badge != null) badge!,
+                  ],
+                ),
               ),
             ),
           ),

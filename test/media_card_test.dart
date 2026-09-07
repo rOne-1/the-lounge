@@ -6,10 +6,11 @@ import 'package:the_lounge/constants.dart';
 import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
+import 'package:the_lounge/providers/motion_intensity_provider.dart';
 import 'package:the_lounge/widgets/media_card.dart';
 import 'package:the_lounge/widgets/status_pulse_ring.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, Tilt3DCard;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +59,19 @@ void main() {
         sharedPreferencesProvider.overrideWithValue(prefs),
         mediaProvider
             .overrideWith(() => _WatchlistedMediaNotifier(watchlistedItem)),
+      ],
+      child: MaterialApp(
+        home: Scaffold(body: Center(child: child)),
+      ),
+    );
+  }
+
+  Widget wrapWithMotionIntensity(Widget child, MotionIntensity intensity) {
+    return ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        motionIntensityProvider
+            .overrideWith(() => _FixedMotionIntensityNotifier(intensity)),
       ],
       child: MaterialApp(
         home: Scaffold(body: Center(child: child)),
@@ -291,6 +305,109 @@ void main() {
       handle.dispose();
     });
   });
+
+  group('CRAFT-TILT-1: MediaCard tilt/glare, gated by MotionIntensity', () {
+    testWidgets('wraps its poster in a Tilt3DCard', (tester) async {
+      await tester.pumpWidget(wrap(
+        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180),
+      ));
+
+      expect(find.byType(Tilt3DCard), findsOneWidget);
+      // PressableScale must still be nested inside it, not replaced.
+      expect(find.byType(PressableScale), findsOneWidget);
+    });
+
+    testWidgets('tap still opens/fires through the nested PressableScale',
+        (tester) async {
+      var tapped = false;
+      await tester.pumpWidget(wrap(
+        MediaCard(
+          item: ratedItem,
+          isDark: true,
+          width: 120,
+          height: 180,
+          onTap: () => tapped = true,
+        ),
+      ));
+
+      await tester.tap(find.byType(MediaCard));
+      await tester.pump();
+
+      expect(tapped, isTrue);
+    });
+
+    testWidgets('MotionIntensity.full enables tilt and glare at full magnitude',
+        (tester) async {
+      await tester.pumpWidget(wrapWithMotionIntensity(
+        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180),
+        MotionIntensity.full,
+      ));
+
+      final tilt = tester.widget<Tilt3DCard>(find.byType(Tilt3DCard));
+      expect(tilt.enableTilt, isTrue);
+      expect(tilt.enableGlare, isTrue);
+      expect(tilt.maxTiltAngle, 0.12);
+      expect(tilt.glareIntensity, 0.18);
+    });
+
+    testWidgets(
+        'MotionIntensity.reduced scales tilt/glare down without disabling them',
+        (tester) async {
+      await tester.pumpWidget(wrapWithMotionIntensity(
+        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180),
+        MotionIntensity.reduced,
+      ));
+
+      final tilt = tester.widget<Tilt3DCard>(find.byType(Tilt3DCard));
+      expect(tilt.enableTilt, isTrue);
+      expect(tilt.enableGlare, isTrue);
+      expect(tilt.maxTiltAngle, lessThan(0.12));
+      expect(tilt.maxTiltAngle, greaterThan(0.0));
+      expect(tilt.glareIntensity, lessThan(0.18));
+      expect(tilt.glareIntensity, greaterThan(0.0));
+    });
+
+    testWidgets('MotionIntensity.off disables tilt and glare entirely',
+        (tester) async {
+      await tester.pumpWidget(wrapWithMotionIntensity(
+        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180),
+        MotionIntensity.off,
+      ));
+
+      final tilt = tester.widget<Tilt3DCard>(find.byType(Tilt3DCard));
+      expect(tilt.enableTilt, isFalse);
+      expect(tilt.enableGlare, isFalse);
+      expect(tilt.maxTiltAngle, 0.0);
+      expect(tilt.glareIntensity, 0.0);
+    });
+
+    testWidgets('MotionIntensity.off still allows tap through', (tester) async {
+      var tapped = false;
+      await tester.pumpWidget(wrapWithMotionIntensity(
+        MediaCard(
+          item: ratedItem,
+          isDark: true,
+          width: 120,
+          height: 180,
+          onTap: () => tapped = true,
+        ),
+        MotionIntensity.off,
+      ));
+
+      await tester.tap(find.byType(MediaCard));
+      await tester.pump();
+
+      expect(tapped, isTrue);
+    });
+  });
+}
+
+class _FixedMotionIntensityNotifier extends MotionIntensityNotifier {
+  final MotionIntensity fixed;
+  _FixedMotionIntensityNotifier(this.fixed);
+
+  @override
+  MotionIntensity build() => fixed;
 }
 
 class _WatchlistedMediaNotifier extends MediaNotifier {
