@@ -26,12 +26,14 @@ dependencies:
   web: ^1.0.0
   fl_chart: ^1.2.0
 
-  # Reusable motion/FX/UI/utility toolkit -- see documentation/
+  # Reusable motion/FX/UI/theming/utility toolkit -- see documentation/
   # modular_reusability_report.md for the reusability blueprint this was
-  # seeded from. Path dependency for local development; the package itself
-  # has no separate remote yet.
+  # seeded from. Path dependency for local development. Now also published
+  # at https://github.com/rOne-1/flutter-refined-kit (repo is kebab-case;
+  # the Dart package name below stays snake_case, since pub package names
+  # can't contain hyphens).
   flutter_refined_kit:
-    path: ../flutter_refined_kit
+    path: ../flutter-refined-kit
 
 dev_dependencies:
   flutter_test:
