@@ -11,8 +11,6 @@ import 'package:the_lounge/screens/shell_screen.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
 import 'package:the_lounge/widgets/whats_new_dialog.dart';
-import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show LiquidGlassSurface;
 
 void main() {
   setUp(() {
@@ -33,17 +31,6 @@ void main() {
         expect(find.text(item), findsOneWidget);
       }
     }
-  });
-
-  testWidgets('CRAFT-GLASS-1: renders its content inside a LiquidGlassSurface',
-      (tester) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: WhatsNewDialog())),
-    );
-    await tester.pump();
-
-    expect(find.byType(LiquidGlassSurface), findsOneWidget);
-    expect(tester.takeException(), isNull);
   });
 
   testWidgets('tapping Got it dismisses the dialog', (tester) async {
@@ -108,8 +95,7 @@ void main() {
       return container;
     }
 
-    testWidgets(
-        'enableAnimation: false suppresses the automatic show (test convention)',
+    testWidgets('enableAnimation: false suppresses the automatic show (test convention)',
         (tester) async {
       final container = await pumpShell(tester, enableAnimation: false);
       addTearDown(container.dispose);
@@ -117,8 +103,7 @@ void main() {
       expect(find.byType(WhatsNewDialog), findsNothing);
     });
 
-    testWidgets(
-        'shows automatically on first launch and persists the shown version',
+    testWidgets('shows automatically on first launch and persists the shown version',
         (tester) async {
       final container = await pumpShell(tester, enableAnimation: null);
       addTearDown(container.dispose);
@@ -126,12 +111,10 @@ void main() {
       expect(find.byType(WhatsNewDialog), findsOneWidget);
 
       final prefs = container.read(sharedPreferencesProvider);
-      expect(prefs.getString('whats_new_last_shown_version'),
-          equals(kWhatsNewVersion));
+      expect(prefs.getString('whats_new_last_shown_version'), equals(kWhatsNewVersion));
     });
 
-    testWidgets(
-        'does not show again once the current version was already recorded',
+    testWidgets('does not show again once the current version was already recorded',
         (tester) async {
       SharedPreferences.setMockInitialValues({
         'whats_new_last_shown_version': kWhatsNewVersion,

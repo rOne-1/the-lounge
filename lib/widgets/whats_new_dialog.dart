@@ -4,26 +4,13 @@ import '../constants.dart';
 import '../constants/whats_new.dart';
 import '../providers/ambiance_provider.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale, LiquidGlassSurface;
+    show HouseSpring, PressableScale, FrostedGlassSurface;
 
 /// One-shot "What's New" changelog dialog, shown after an app update so
 /// testers see a plain-language summary of what changed since their last
-/// install. Matches LoungeDialog's visual language (ambient hairline
-/// border, Bodoni Moda header, house-spring entrance) but adds a scrollable
-/// body, since a changelog is longer than a confirmation message.
-///
-/// CRAFT-GLASS-1: pilot surface for `LiquidGlassSurface` (flutter_refined_kit)
-/// as a considered evolution of `FrostedGlassSurface` -- convex-lens
-/// refraction, chromatic-aberration edge fringing, and specular Fresnel rim
-/// lighting on top of the same backdrop blur, `RepaintBoundary`-isolated by
-/// the widget itself (the exact isolation `FrostedGlassSurface` needed for
-/// the Impeller BackdropFilter blackout bug hit in beta -- see
-/// EnableImpeller=false in AndroidManifest.xml and outstanding_issues_notepad
-/// item 64). Deliberately scoped to this one dialog, not a blanket swap --
-/// see outstanding_issues_notepad for the open question on wider rollout.
-/// `tintColor` is intentionally more translucent than FrostedGlassSurface's
-/// old near-opaque fill (0.55 vs. 0.9 alpha) so the refraction/blur is
-/// actually visible to evaluate, not hidden behind a solid-reading panel.
+/// install. Matches LoungeDialog's visual language (frosted glass, ambient
+/// hairline border, Bodoni Moda header, house-spring entrance) but adds a
+/// scrollable body, since a changelog is longer than a confirmation message.
 class WhatsNewDialog extends StatelessWidget {
   const WhatsNewDialog({super.key});
 
@@ -61,11 +48,12 @@ class WhatsNewDialog extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 28),
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: maxHeight, maxWidth: 440),
-          child: LiquidGlassSurface(
+          child: FrostedGlassSurface(
             borderRadius: 22,
-            tintColor: ambiance.card2.withValues(alpha: 0.55),
+            backgroundColor: ambiance.card2.withValues(alpha: 0.9),
             borderColor: ambiance.lineRgba,
             outerShadow: ambiance.dialogShadow,
+            innerHighlightColor: ambiance.surfaceHighlight,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
