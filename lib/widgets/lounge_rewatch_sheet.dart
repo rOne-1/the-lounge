@@ -6,7 +6,8 @@ import '../providers/media_provider.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'lounge_date_picker.dart';
 import 'media_image.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// PERS-REWATCH-1: opens the rewatch quick-log sheet as a themed,
 /// drag-to-dismiss bottom sheet.
@@ -53,14 +54,25 @@ class _LoungeRewatchSheetState extends ConsumerState<LoungeRewatchSheet> {
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 
   Future<void> _pickDate() async {
-    final picked = await showLoungeDatePicker(context, initialDate: _selectedDate);
+    final picked =
+        await showLoungeDatePicker(context, initialDate: _selectedDate);
     if (picked != null && mounted) {
       setState(() => _selectedDate = picked);
     }
@@ -113,7 +125,10 @@ class _LoungeRewatchSheetState extends ConsumerState<LoungeRewatchSheet> {
                 child: SizedBox(
                   width: 44,
                   height: 64,
-                  child: MediaImage(item: widget.item, fit: BoxFit.cover, showFallbackTitle: false),
+                  child: MediaImage(
+                      item: widget.item,
+                      fit: BoxFit.cover,
+                      showFallbackTitle: false),
                 ),
               ),
               const SizedBox(width: 14),
@@ -134,7 +149,8 @@ class _LoungeRewatchSheetState extends ConsumerState<LoungeRewatchSheet> {
                     const SizedBox(height: 4),
                     Text(
                       'Log a rewatch',
-                      style: AppThemes.safeGeist(fontSize: 12, color: colors.sub),
+                      style:
+                          AppThemes.safeGeist(fontSize: 12, color: colors.sub),
                     ),
                   ],
                 ),
@@ -163,7 +179,8 @@ class _LoungeRewatchSheetState extends ConsumerState<LoungeRewatchSheet> {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_today_outlined, size: 16, color: colors.sub),
+                  Icon(Icons.calendar_today_outlined,
+                      size: 16, color: colors.sub),
                   const SizedBox(width: 10),
                   Text(
                     _formatDate(_selectedDate),
@@ -198,11 +215,14 @@ class _LoungeRewatchSheetState extends ConsumerState<LoungeRewatchSheet> {
                   _selectedRating = isSelected ? null : rating;
                 }),
                 child: AnimatedContainer(
-                  duration: AppPhysics.houseSpringDuration,
-                  curve: AppPhysics.houseSpringCurve,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  duration: HouseSpring.duration,
+                  curve: HouseSpring.curve,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: isSelected ? tierColor.withValues(alpha: 0.18) : colors.pill,
+                    color: isSelected
+                        ? tierColor.withValues(alpha: 0.18)
+                        : colors.pill,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: isSelected ? tierColor : colors.lineRgba,
@@ -213,7 +233,8 @@ class _LoungeRewatchSheetState extends ConsumerState<LoungeRewatchSheet> {
                     rating.label,
                     style: AppThemes.safeGeist(
                       fontSize: 12.5,
-                      fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight:
+                          isSelected ? FontWeight.w700 : FontWeight.w500,
                       color: isSelected ? tierColor : colors.ink,
                     ),
                   ),

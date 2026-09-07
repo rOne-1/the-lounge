@@ -1,8 +1,8 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import '../constants/app_physics.dart';
 import '../themes/ambiance_colors.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// Alias for [AppNoiseTexture] for convenience.
 typedef NoiseTextureOverlay = AppNoiseTexture;
@@ -114,13 +114,13 @@ class _AppNoiseTextureState extends State<AppNoiseTexture> {
     return IgnorePointer(
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: targetOpacity, end: targetOpacity),
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         builder: (context, animatedOpacity, _) {
           return TweenAnimationBuilder<Color?>(
             tween: ColorTween(begin: targetTint, end: targetTint),
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
+            duration: HouseSpring.duration,
+            curve: HouseSpring.curve,
             builder: (context, animatedTint, __) {
               return CustomPaint(
                 painter: _NoiseTexturePainter(

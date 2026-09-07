@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import 'frosted_glass_surface.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 enum LoungeDialogActionStyle { neutral, primary, destructive }
 
@@ -50,12 +51,13 @@ class LoungeDialog extends StatelessWidget {
       barrierDismissible: barrierDismissible,
       barrierLabel: title,
       barrierColor: ambiance.scrim,
-      transitionDuration: AppPhysics.houseSpringDuration,
+      transitionDuration: HouseSpring.duration,
       pageBuilder: (context, animation, secondaryAnimation) {
         return LoungeDialog(title: title, message: message, actions: actions);
       },
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: AppPhysics.houseSpringCurve);
+        final curved =
+            CurvedAnimation(parent: animation, curve: HouseSpring.curve);
         return FadeTransition(
           opacity: curved,
           child: ScaleTransition(
@@ -106,7 +108,9 @@ class LoungeDialog extends StatelessWidget {
                 alignment: WrapAlignment.end,
                 spacing: 10,
                 runSpacing: 8,
-                children: actions.map((action) => _LoungeDialogActionButton(action: action)).toList(),
+                children: actions
+                    .map((action) => _LoungeDialogActionButton(action: action))
+                    .toList(),
               ),
             ],
           ),

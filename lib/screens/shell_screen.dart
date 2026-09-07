@@ -10,6 +10,7 @@ import 'search_screen.dart';
 import 'lounge_screen.dart';
 import 'calendar_screen.dart';
 import 'archive_shelf_screen.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 class ShellScreen extends ConsumerWidget {
   final bool? enableAnimation;
@@ -38,11 +39,11 @@ class ShellScreen extends ConsumerWidget {
       // drawn as a free-floating overlay on top of full-bleed content.
       child: SizedBox.expand(
         child: AnimatedContainer(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           decoration: context.ambianceColors.background,
           child: AnimatedTheme(
-            duration: AppPhysics.houseSpringDuration,
+            duration: HouseSpring.duration,
             curve: Curves.easeInOutCubic,
             data: ambiance.themeData,
             child: Stack(
@@ -197,13 +198,12 @@ class _PersistentTabViewState extends State<_PersistentTabView>
   void _buildAnimations({required bool reverseDirection}) {
     _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
     _scale = Tween<double>(begin: 0.985, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: AppPhysics.houseSpringCurve),
+      CurvedAnimation(parent: _controller, curve: HouseSpring.curve),
     );
     _slide = Tween<Offset>(
       begin: Offset(reverseDirection ? -0.05 : 0.05, 0),
       end: Offset.zero,
-    ).animate(CurvedAnimation(
-        parent: _controller, curve: AppPhysics.houseSpringCurve));
+    ).animate(CurvedAnimation(parent: _controller, curve: HouseSpring.curve));
   }
 
   @override

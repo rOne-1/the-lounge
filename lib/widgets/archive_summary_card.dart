@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// YSR-COMP-3: A 2x2 grid summary card representing an archive shelf.
 /// Features a status icon badge, a prominent Bodoni Moda italic count numeral,
@@ -46,8 +47,8 @@ class ArchiveSummaryCard extends StatelessWidget {
         button: true,
         excludeSemantics: true,
         child: AnimatedContainer(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           padding: const EdgeInsets.all(16.0),
           decoration: BoxDecoration(
             color: colors.card,

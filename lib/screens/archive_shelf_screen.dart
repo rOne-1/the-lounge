@@ -11,8 +11,9 @@ import '../utils/archive_sort_group.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/lounge_dropdown.dart';
 import '../widgets/media_card.dart';
-import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 export '../models/hall_space.dart' show ArchiveShelfKind;
 
@@ -91,14 +92,13 @@ class _ArchiveShelfScreenState extends ConsumerState<ArchiveShelfScreen>
     _fade = CurvedAnimation(
         parent: _transitionController, curve: Curves.easeOutCubic);
     _scale = Tween<double>(begin: 0.985, end: 1.0).animate(
-      CurvedAnimation(
-          parent: _transitionController, curve: AppPhysics.houseSpringCurve),
+      CurvedAnimation(parent: _transitionController, curve: HouseSpring.curve),
     );
     _slide = Tween<Offset>(
       begin: Offset(reverseDirection ? -0.05 : 0.05, 0),
       end: Offset.zero,
     ).animate(CurvedAnimation(
-        parent: _transitionController, curve: AppPhysics.houseSpringCurve));
+        parent: _transitionController, curve: HouseSpring.curve));
   }
 
   @override

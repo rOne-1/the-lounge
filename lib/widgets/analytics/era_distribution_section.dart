@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../constants.dart';
 import '../../utils/analytics_engine.dart';
 import '../archive_summary_card.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// EXP-ERA-1/2: release-decade breakdown of watched titles, plus the
 /// average delta between release and when a title was actually watched.
@@ -137,8 +138,8 @@ class EraDistributionSection extends StatelessWidget {
                   ),
               ],
             ),
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
+            duration: HouseSpring.duration,
+            curve: HouseSpring.curve,
           ),
         ),
       ],

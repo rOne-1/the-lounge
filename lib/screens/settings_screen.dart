@@ -9,10 +9,9 @@ import '../providers/hall_provider.dart';
 import '../services/hall_storage_service.dart';
 import '../constants.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show saveJsonFile, shareJsonFile, pickJsonFile;
+    show saveJsonFile, shareJsonFile, pickJsonFile, HouseSpring, PressableScale;
 import '../widgets/lounge_dialog.dart';
 import '../widgets/lounge_toast.dart';
-import '../widgets/pressable_scale.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import '../services/api_call_tracker.dart';
 
@@ -773,8 +772,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       key: ValueKey('theme_card_${theme.id}'),
       onTap: () => ref.read(ambianceProvider.notifier).setAmbiance(theme),
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         width: 128,
         padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
@@ -1017,8 +1016,8 @@ class _BlockingLoadingOverlay extends StatelessWidget {
       child: AbsorbPointer(
         child: AnimatedOpacity(
           opacity: 1.0,
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           child: Container(
             decoration: ambianceColors.background.copyWith(
               color: ambianceColors.base,

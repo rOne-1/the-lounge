@@ -4,7 +4,8 @@ import '../constants.dart';
 import '../providers/media_provider.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'lounge_text_field.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 
 /// PERS-FOLDERS-1: opens the "Add to Folder" picker as a themed,
 /// drag-to-dismiss bottom sheet.
@@ -143,9 +144,12 @@ class _FolderPickerSheetState extends ConsumerState<FolderPickerSheet> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12),
                       decoration: BoxDecoration(
-                        color: isIn ? colors.acc.withValues(alpha: 0.12) : colors.pill,
+                        color: isIn
+                            ? colors.acc.withValues(alpha: 0.12)
+                            : colors.pill,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: isIn ? colors.acc : colors.lineRgba,
@@ -159,7 +163,8 @@ class _FolderPickerSheetState extends ConsumerState<FolderPickerSheet> {
                               folder.name,
                               style: AppThemes.safeGeist(
                                 fontSize: 14,
-                                fontWeight: isIn ? FontWeight.w700 : FontWeight.w500,
+                                fontWeight:
+                                    isIn ? FontWeight.w700 : FontWeight.w500,
                                 color: colors.ink,
                               ),
                               maxLines: 1,
@@ -167,7 +172,9 @@ class _FolderPickerSheetState extends ConsumerState<FolderPickerSheet> {
                             ),
                           ),
                           Icon(
-                            isIn ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                            isIn
+                                ? Icons.check_circle_rounded
+                                : Icons.add_circle_outline_rounded,
                             size: 20,
                             color: isIn ? colors.acc : colors.sub,
                           ),

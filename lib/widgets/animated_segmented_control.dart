@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 class AnimatedSegmentedControl<T> extends StatelessWidget {
   final List<T> items;
@@ -20,7 +21,8 @@ class AnimatedSegmentedControl<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final count = items.length;
     final selectedIndex = items.indexOf(selectedItem);
-    final alignmentX = count <= 1 ? -1.0 : -1.0 + (selectedIndex / (count - 1)) * 2.0;
+    final alignmentX =
+        count <= 1 ? -1.0 : -1.0 + (selectedIndex / (count - 1)) * 2.0;
 
     return Container(
       height: 38,
@@ -33,8 +35,8 @@ class AnimatedSegmentedControl<T> extends StatelessWidget {
       child: Stack(
         children: [
           AnimatedAlign(
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
+            duration: HouseSpring.duration,
+            curve: HouseSpring.curve,
             alignment: Alignment(alignmentX, 0.0),
             child: FractionallySizedBox(
               widthFactor: count > 0 ? 1.0 / count : 1.0,
@@ -64,13 +66,13 @@ class AnimatedSegmentedControl<T> extends StatelessWidget {
                     alignment: Alignment.center,
                     color: Colors.transparent,
                     child: AnimatedDefaultTextStyle(
-                      duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
+                      duration: HouseSpring.duration,
+                      curve: HouseSpring.curve,
                       style: AppThemes.safeGeist(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
-                        color: isSelected 
-                            ? Theme.of(context).colorScheme.onPrimary 
+                        color: isSelected
+                            ? Theme.of(context).colorScheme.onPrimary
                             : context.ambianceColors.sub,
                       ),
                       child: Text(

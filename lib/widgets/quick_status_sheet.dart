@@ -9,6 +9,7 @@ import 'drag_to_dismiss_sheet.dart';
 import 'lounge_folder_picker_sheet.dart';
 import 'lounge_toast.dart';
 import 'media_image.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// Helper function to open the [QuickStatusSheet] bottom sheet modal.
 Future<void> showQuickStatusSheet(
@@ -90,7 +91,8 @@ class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
     // existing shelf placement, so every tap there is a plain "place it on
     // this shelf", not a toggle, followed by a confirmation toast naming
     // the Hall it went to.
-    void handleStatusTap(ArchiveShelfKind shelf, VoidCallback activeHallToggle) {
+    void handleStatusTap(
+        ArchiveShelfKind shelf, VoidCallback activeHallToggle) {
       if (isCrossHall) {
         final targetHallName =
             hallState.halls.firstWhere((h) => h.id == _targetHallId).name;
@@ -121,12 +123,16 @@ class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
     // real shelf placement without loading it, so no pill shows as active
     // and every tap is a plain "add to this shelf there" rather than a
     // toggle.
-    final inWatchlist = !isCrossHall && mediaState.watchlist.containsKey(item.id);
+    final inWatchlist =
+        !isCrossHall && mediaState.watchlist.containsKey(item.id);
     final inSaved = !isCrossHall && mediaState.maybeList.containsKey(item.id);
-    final inWatching = !isCrossHall && mediaState.watchingList.containsKey(item.id);
+    final inWatching =
+        !isCrossHall && mediaState.watchingList.containsKey(item.id);
     final inOnHold = !isCrossHall && mediaState.onHoldList.containsKey(item.id);
-    final inDropped = !isCrossHall && mediaState.droppedList.containsKey(item.id);
-    final inWatched = !isCrossHall && mediaState.watchedList.containsKey(item.id);
+    final inDropped =
+        !isCrossHall && mediaState.droppedList.containsKey(item.id);
+    final inWatched =
+        !isCrossHall && mediaState.watchedList.containsKey(item.id);
     // Item 1: an optimistic TV Watched/Watching placement not yet
     // confirmed by real per-episode data.
     final isPendingConfirmation =
@@ -359,9 +365,10 @@ class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
                     onTap: () => setState(() => _targetHallId = hall.id),
                     borderRadius: BorderRadius.circular(999),
                     child: AnimatedContainer(
-                      duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      duration: HouseSpring.duration,
+                      curve: HouseSpring.curve,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
                         color: isSelected
                             ? context.ambianceColors.acc.withValues(alpha: 0.15)
@@ -378,7 +385,8 @@ class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
                         hall.name,
                         style: AppThemes.safeGeist(
                           fontSize: 12,
-                          fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                          fontWeight:
+                              isSelected ? FontWeight.w700 : FontWeight.w500,
                           color: isSelected
                               ? context.ambianceColors.acc
                               : context.ambianceColors.sub,
@@ -412,16 +420,16 @@ class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
                     : Icons.bookmark_outline_rounded,
                 isActive: inWatchlist,
                 activeColor: AppStatusColors.watchlist,
-                onTap: () => handleStatusTap(
-                    ArchiveShelfKind.watchlist, () => mediaNotifier.toggleWatchlist(item)),
+                onTap: () => handleStatusTap(ArchiveShelfKind.watchlist,
+                    () => mediaNotifier.toggleWatchlist(item)),
               ),
               _StatusPill(
                 label: 'Saved',
                 icon: inSaved ? Icons.archive_rounded : Icons.archive_outlined,
                 isActive: inSaved,
                 activeColor: AppStatusColors.save,
-                onTap: () => handleStatusTap(
-                    ArchiveShelfKind.saved, () => mediaNotifier.toggleMaybe(item)),
+                onTap: () => handleStatusTap(ArchiveShelfKind.saved,
+                    () => mediaNotifier.toggleMaybe(item)),
               ),
               _StatusPill(
                 label: inWatching && isPendingConfirmation
@@ -432,8 +440,8 @@ class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
                     : Icons.play_circle_outline_rounded,
                 isActive: inWatching,
                 activeColor: AppStatusColors.watching,
-                onTap: () => handleStatusTap(
-                    ArchiveShelfKind.watching, () => mediaNotifier.toggleWatching(item)),
+                onTap: () => handleStatusTap(ArchiveShelfKind.watching,
+                    () => mediaNotifier.toggleWatching(item)),
               ),
               _StatusPill(
                 label: 'On-Hold',
@@ -442,8 +450,8 @@ class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
                     : Icons.pause_circle_outline_rounded,
                 isActive: inOnHold,
                 activeColor: AppStatusColors.onHold,
-                onTap: () => handleStatusTap(
-                    ArchiveShelfKind.onHold, () => mediaNotifier.toggleOnHold(item)),
+                onTap: () => handleStatusTap(ArchiveShelfKind.onHold,
+                    () => mediaNotifier.toggleOnHold(item)),
               ),
               _StatusPill(
                 label: 'Dropped',
@@ -452,8 +460,8 @@ class _QuickStatusSheetState extends ConsumerState<QuickStatusSheet> {
                     : Icons.remove_circle_outline_rounded,
                 isActive: inDropped,
                 activeColor: AppStatusColors.dropped,
-                onTap: () => handleStatusTap(
-                    ArchiveShelfKind.dropped, () => mediaNotifier.toggleDropped(item)),
+                onTap: () => handleStatusTap(ArchiveShelfKind.dropped,
+                    () => mediaNotifier.toggleDropped(item)),
               ),
               _StatusPill(
                 label: inWatched && isPendingConfirmation
@@ -560,8 +568,8 @@ class _StatusPill extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           splashColor: context.ambianceColors.acc.withValues(alpha: 0.2),
           child: AnimatedContainer(
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
+            duration: HouseSpring.duration,
+            curve: HouseSpring.curve,
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: bgColor,

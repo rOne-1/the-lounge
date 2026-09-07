@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// A reusable physics-driven bottom sheet wrapper supporting swipe-down drag to dismiss
-/// with a visible drag handle and spring snap-back using [AppPhysics.houseSpringCurve].
+/// with a visible drag handle and spring snap-back using [HouseSpring.curve].
 class DragToDismissSheet extends StatefulWidget {
   final Widget child;
   final VoidCallback onDismiss;
@@ -34,7 +35,7 @@ class _DragToDismissSheetState extends State<DragToDismissSheet>
     super.initState();
     _snapController = AnimationController(
       vsync: this,
-      duration: AppPhysics.houseSpringDuration,
+      duration: HouseSpring.duration,
     );
     _snapController.addListener(() {
       setState(() {
@@ -53,7 +54,7 @@ class _DragToDismissSheetState extends State<DragToDismissSheet>
     _snapAnimation = Tween<double>(begin: _dragY, end: 0.0).animate(
       CurvedAnimation(
         parent: _snapController,
-        curve: AppPhysics.houseSpringCurve,
+        curve: HouseSpring.curve,
       ),
     );
     _snapController.forward(from: 0.0);

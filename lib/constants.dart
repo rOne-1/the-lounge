@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'themes/typography.dart';
 
-export 'constants/app_physics.dart';
 export 'constants/app_status_colors.dart';
 export 'constants/app_rating_colors.dart';
 export 'themes/ambiance_colors.dart';
@@ -44,7 +43,8 @@ class AppThemes {
     double? height,
     double? letterSpacing,
   }) {
-    final base = Theme.of(context).textTheme.headlineMedium ?? const TextStyle();
+    final base =
+        Theme.of(context).textTheme.headlineMedium ?? const TextStyle();
     return base.copyWith(
       fontSize: fontSize,
       fontWeight: fontWeight,

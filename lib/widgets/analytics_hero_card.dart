@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import '../utils/relative_time.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// ANLY-HUB-1: full-width hero banner on the Lounge landing screen, the
 /// entry point into the Analytics epic. Deliberately a sibling to
@@ -36,8 +37,8 @@ class AnalyticsHeroCard extends StatelessWidget {
     return PressableScale(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
         decoration: BoxDecoration(
           color: colors.card,
@@ -51,11 +52,13 @@ class AnalyticsHeroCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-                    Color.alphaBlend(accent.withValues(alpha: 0.16), colors.card),
+                    Color.alphaBlend(
+                        accent.withValues(alpha: 0.16), colors.card),
                     colors.card,
                   ]
                 : [
-                    Color.alphaBlend(accent.withValues(alpha: 0.08), colors.card),
+                    Color.alphaBlend(
+                        accent.withValues(alpha: 0.08), colors.card),
                     colors.card,
                   ],
           ),

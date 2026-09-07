@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../constants.dart';
 import '../../utils/analytics_engine.dart';
 import '../archive_summary_card.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// ANLY-TEMPORAL-3: average days to complete a TV season, plus a bar chart
 /// of the fastest individual binges. Seasons missing either half of the
@@ -49,8 +50,12 @@ class BingeVelocitySection extends StatelessWidget {
     // real boundary instead.
     final rawMaxDays = topShows.isEmpty
         ? 1.0
-        : topShows.map((s) => s.days).reduce((a, b) => a > b ? a : b).clamp(1.0, double.infinity);
-    final tickInterval = (rawMaxDays / 4).ceilToDouble().clamp(1.0, double.infinity);
+        : topShows
+            .map((s) => s.days)
+            .reduce((a, b) => a > b ? a : b)
+            .clamp(1.0, double.infinity);
+    final tickInterval =
+        (rawMaxDays / 4).ceilToDouble().clamp(1.0, double.infinity);
     final chartMaxY = tickInterval * 4;
 
     return Column(
@@ -61,8 +66,12 @@ class BingeVelocitySection extends StatelessWidget {
           subtitle: hasNoMeaningfulAverage
               ? 'Log season progress to calculate'
               : showAverageInHours
-                  ? (averageDisplayValue == 1 ? 'avg. hour per season' : 'avg. hours per season')
-                  : (averageDisplayValue == 1 ? 'avg. day per season' : 'avg. days per season'),
+                  ? (averageDisplayValue == 1
+                      ? 'avg. hour per season'
+                      : 'avg. hours per season')
+                  : (averageDisplayValue == 1
+                      ? 'avg. day per season'
+                      : 'avg. days per season'),
           count: averageDisplayValue,
           countLabelOverride: hasNoMeaningfulAverage ? '—' : null,
           icon: Icons.speed_rounded,
@@ -98,7 +107,8 @@ class BingeVelocitySection extends StatelessWidget {
                       interval: tickInterval,
                       getTitlesWidget: (value, meta) => Text(
                         value.toInt().toString(),
-                        style: AppThemes.safeGeist(fontSize: 10, color: colors.sub),
+                        style: AppThemes.safeGeist(
+                            fontSize: 10, color: colors.sub),
                       ),
                     ),
                   ),
@@ -112,19 +122,24 @@ class BingeVelocitySection extends StatelessWidget {
                           return const SizedBox.shrink();
                         }
                         final title = topShows[idx].showTitle;
-                        final short = title.length > 10 ? '${title.substring(0, 9)}…' : title;
+                        final short = title.length > 10
+                            ? '${title.substring(0, 9)}…'
+                            : title;
                         return Padding(
                           padding: const EdgeInsets.only(top: 6),
                           child: Text(
                             short,
-                            style: AppThemes.safeGeist(fontSize: 9, color: colors.sub),
+                            style: AppThemes.safeGeist(
+                                fontSize: 9, color: colors.sub),
                           ),
                         );
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(
+                      sideTitles: SideTitles(showTitles: false)),
                 ),
                 gridData: FlGridData(
                   show: true,
@@ -148,8 +163,8 @@ class BingeVelocitySection extends StatelessWidget {
                     ),
                 ],
               ),
-              duration: AppPhysics.houseSpringDuration,
-              curve: AppPhysics.houseSpringCurve,
+              duration: HouseSpring.duration,
+              curve: HouseSpring.curve,
             ),
           ),
         ],

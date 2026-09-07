@@ -12,7 +12,8 @@ import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/models/media_collection_detail.dart';
 import 'package:the_lounge/models/discover_filter_params.dart';
 import 'package:the_lounge/repositories/mock_movie_repository.dart';
-import 'package:the_lounge/widgets/pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 import 'package:the_lounge/widgets/status_pulse_ring.dart';
 import 'package:the_lounge/widgets/trailer_player.dart';
 
@@ -22,37 +23,57 @@ class MockDetailRepository extends MockMovieRepository {
   MockDetailRepository(this.items);
 
   @override
-  Future<List<MediaItem>> getTrendingMovies({int page = 1, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getTrendingMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<List<MediaItem>> getPopularMovies({int page = 1, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getPopularMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTrendingTvShows({int page = 1, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getTrendingTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTopRatedMovies({int page = 1, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getTopRatedMovies(
+          {int page = 1, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<List<MediaItem>> getTopRatedTvShows({int page = 1, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getTopRatedTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<List<MediaItem>> getNowPlayingMovies({int page = 1, String? region, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getNowPlayingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<List<MediaItem>> getAiringTodayTvShows({int page = 1, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getAiringTodayTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<List<MediaItem>> getUpcomingMovies({int page = 1, String? region, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getUpcomingMovies(
+          {int page = 1, String? region, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<List<MediaItem>> getOnTheAirTvShows({int page = 1, String? originalLanguage}) async => items.values.toList();
+  Future<List<MediaItem>> getOnTheAirTvShows(
+          {int page = 1, String? originalLanguage}) async =>
+      items.values.toList();
 
   @override
-  Future<MediaItem?> getMediaDetails(String id, {String? region}) async => items[id];
+  Future<MediaItem?> getMediaDetails(String id, {String? region}) async =>
+      items[id];
 
   @override
-  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async => null;
+  Future<TvSeason?> getTvSeasonDetails(String tvId, int seasonNumber) async =>
+      null;
 
   @override
   Future<List<MediaItem>> searchMedia(String query) async => [];
@@ -154,7 +175,8 @@ void main() {
       expect(state.watchProvidersCountry, equals('GB'));
     });
 
-    test('setWatchProvidersCountry updates state and saves to SharedPreferences',
+    test(
+        'setWatchProvidersCountry updates state and saves to SharedPreferences',
         () async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -175,7 +197,8 @@ void main() {
   });
 
   group('DetailScreen UI and Metadata Tests', () {
-    testWidgets('displays movie rating badge, genres, runtime, and release date',
+    testWidgets(
+        'displays movie rating badge, genres, runtime, and release date',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -220,7 +243,8 @@ void main() {
       expect(find.text('Amazon Prime'), findsOneWidget);
     });
 
-    testWidgets('tapping a genre chip updates searchGenreProvider and navigates to SearchScreen',
+    testWidgets(
+        'tapping a genre chip updates searchGenreProvider and navigates to SearchScreen',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -251,7 +275,8 @@ void main() {
       );
       expect(genreChip, findsOneWidget);
 
-      await tester.scrollUntilVisible(genreChip, 100, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(genreChip, 100,
+          scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();
       await tester.tap(genreChip);
       await tester.pumpAndSettle();
@@ -299,7 +324,8 @@ void main() {
       expect(find.text('Jul 15, 2016'), findsOneWidget);
     });
 
-    testWidgets('TV Detail Screen displays Seasons & Episodes section with interactive episode watched checkmark toggle',
+    testWidgets(
+        'TV Detail Screen displays Seasons & Episodes section with interactive episode watched checkmark toggle',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -334,7 +360,8 @@ void main() {
       final firstEpisodeBadge = find.text('E1');
       expect(firstEpisodeBadge, findsOneWidget);
 
-      await tester.scrollUntilVisible(firstEpisodeBadge, 100, scrollable: find.byType(Scrollable).first);
+      await tester.scrollUntilVisible(firstEpisodeBadge, 100,
+          scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();
       await tester.tap(firstEpisodeBadge);
       await tester.pump();
@@ -346,7 +373,8 @@ void main() {
       expect(mediaState.watchedEpisodes['tv_tv-1']?.contains('S1E1'), isTrue);
     });
 
-    testWidgets('country selector dropdown updates provider state and preferences',
+    testWidgets(
+        'country selector dropdown updates provider state and preferences',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -487,7 +515,8 @@ void main() {
       watchProviders: const ['Netflix'],
     );
 
-    testWidgets('Section 4: StatusPulseRing animates when status toggles are activated',
+    testWidgets(
+        'Section 4: StatusPulseRing animates when status toggles are activated',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -539,7 +568,8 @@ void main() {
       await tester.pumpAndSettle();
     });
 
-    testWidgets('Section 5: ExpandableOverviewText expands/collapses with AnimatedSize and AnimatedRotation',
+    testWidgets(
+        'Section 5: ExpandableOverviewText expands/collapses with AnimatedSize and AnimatedRotation',
         (WidgetTester tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
@@ -664,7 +694,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       // Tagline
-      expect(find.text('"Your mind is the scene of the crime"'), findsOneWidget);
+      expect(
+          find.text('"Your mind is the scene of the crime"'), findsOneWidget);
 
       // Certification
       expect(find.text('PG-13'), findsOneWidget);
@@ -808,7 +839,8 @@ void main() {
       debugDefaultTargetPlatformOverride = TargetPlatform.windows;
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final mockRepo = MockDetailRepository({'movie-trailers-1': movieWithTrailers});
+      final mockRepo =
+          MockDetailRepository({'movie-trailers-1': movieWithTrailers});
 
       await tester.pumpWidget(
         ProviderScope(
@@ -960,6 +992,3 @@ class _CountingCollectionRepository extends MockDetailRepository {
     );
   }
 }
-
-
-

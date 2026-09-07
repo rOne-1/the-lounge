@@ -7,10 +7,12 @@ import '../models/media_collection_detail.dart';
 import '../providers/media_provider.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/media_card.dart';
-import '../widgets/pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 
 final collectionDetailsProvider =
-    FutureProvider.family<MediaCollectionDetail?, int>((ref, collectionId) async {
+    FutureProvider.family<MediaCollectionDetail?, int>(
+        (ref, collectionId) async {
   final repo = ref.watch(movieRepositoryProvider);
   return repo.getCollectionDetails(collectionId);
 });
@@ -151,7 +153,8 @@ class CollectionScreen extends ConsumerWidget {
                         Image.network(
                           imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(color: phColor),
+                          errorBuilder: (_, __, ___) =>
+                              Container(color: phColor),
                         )
                       else
                         Container(color: phColor),
@@ -184,11 +187,13 @@ class CollectionScreen extends ConsumerWidget {
                       Row(
                         children: [
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: accColor.withAlpha(30),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: accColor.withAlpha(100)),
+                              border:
+                                  Border.all(color: accColor.withAlpha(100)),
                             ),
                             child: Text(
                               'FRANCHISE COLLECTION',
@@ -221,10 +226,11 @@ class CollectionScreen extends ConsumerWidget {
                             height: 5,
                             child: Stack(
                               children: [
-                                Container(color: context.ambianceColors.lineRgba),
+                                Container(
+                                    color: context.ambianceColors.lineRgba),
                                 FractionallySizedBox(
-                                  widthFactor:
-                                      (watchedCount / totalCount).clamp(0.0, 1.0),
+                                  widthFactor: (watchedCount / totalCount)
+                                      .clamp(0.0, 1.0),
                                   child: Container(color: accColor),
                                 ),
                               ],
@@ -232,7 +238,8 @@ class CollectionScreen extends ConsumerWidget {
                           ),
                         ),
                       ],
-                      if (collection.overview != null && collection.overview!.trim().isNotEmpty) ...[
+                      if (collection.overview != null &&
+                          collection.overview!.trim().isNotEmpty) ...[
                         const SizedBox(height: 12),
                         Text(
                           collection.overview!,
@@ -267,7 +274,8 @@ class CollectionScreen extends ConsumerWidget {
                     child: Center(
                       child: Text(
                         'No titles listed in this collection.',
-                        style: AppThemes.safeGeist(color: subColor, fontSize: 13),
+                        style:
+                            AppThemes.safeGeist(color: subColor, fontSize: 13),
                       ),
                     ),
                   ),

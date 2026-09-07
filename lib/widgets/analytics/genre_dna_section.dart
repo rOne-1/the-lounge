@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import '../../constants.dart';
 import '../../constants/analytics_constants.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// ANLY-TASTE-3: radar chart of genre frequency across completed watch
 /// history, capped to the top N genres for axis legibility.
@@ -92,8 +93,8 @@ class GenreDnaSection extends StatelessWidget {
             ],
             radarTouchData: RadarTouchData(enabled: true),
           ),
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
         ),
       ),
     );

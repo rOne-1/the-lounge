@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'constants.dart';
 import 'providers/ambiance_provider.dart';
 import 'providers/navigation_provider.dart';
 import 'providers/repository_provider.dart';
@@ -14,6 +13,7 @@ import 'themes/screening_room_theme.dart';
 import 'widgets/fallback_widgets.dart';
 import 'widgets/floating_navigation_capsule.dart';
 import 'widgets/noise_texture_overlay.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// Shared with [GlobalCapsuleLayer]/[FloatingNavigationCapsule]: the capsule
 /// is drawn in [MyApp]'s `builder` as a Stack sibling of `child` (the actual
@@ -59,7 +59,8 @@ void main() async {
     SharedPreferences.getInstance(),
   ]);
 
-  developer.log('Startup initialization took: ${stopwatch.elapsedMilliseconds}ms',
+  developer.log(
+      'Startup initialization took: ${stopwatch.elapsedMilliseconds}ms',
       name: 'main');
 
   await CrashReportingService.init();
@@ -95,7 +96,7 @@ class MyApp extends ConsumerWidget {
       navigatorObservers: [routeObserver],
       builder: (context, child) {
         return AnimatedTheme(
-          duration: AppPhysics.houseSpringDuration,
+          duration: HouseSpring.duration,
           curve: Curves.easeInOutCubic,
           data: ambiance.themeData,
           child: Stack(

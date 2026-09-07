@@ -4,7 +4,8 @@ import '../constants.dart';
 import '../constants/whats_new.dart';
 import '../providers/ambiance_provider.dart';
 import 'frosted_glass_surface.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// One-shot "What's New" changelog dialog, shown after an app update so
 /// testers see a plain-language summary of what changed since their last
@@ -21,10 +22,12 @@ class WhatsNewDialog extends StatelessWidget {
       barrierDismissible: true,
       barrierLabel: "What's New",
       barrierColor: ambiance.scrim,
-      transitionDuration: AppPhysics.houseSpringDuration,
-      pageBuilder: (context, animation, secondaryAnimation) => const WhatsNewDialog(),
+      transitionDuration: HouseSpring.duration,
+      pageBuilder: (context, animation, secondaryAnimation) =>
+          const WhatsNewDialog(),
       transitionBuilder: (context, animation, secondaryAnimation, child) {
-        final curved = CurvedAnimation(parent: animation, curve: AppPhysics.houseSpringCurve);
+        final curved =
+            CurvedAnimation(parent: animation, curve: HouseSpring.curve);
         return FadeTransition(
           opacity: curved,
           child: ScaleTransition(
@@ -96,7 +99,8 @@ class WhatsNewDialog extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          for (final item in section.items) _WhatsNewItem(text: item),
+                          for (final item in section.items)
+                            _WhatsNewItem(text: item),
                           const SizedBox(height: 18),
                         ],
                       ],
@@ -111,7 +115,8 @@ class WhatsNewDialog extends StatelessWidget {
                       key: const ValueKey('whats_new_dismiss_button'),
                       onTap: () => Navigator.of(context).maybePop(),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 10),
                         decoration: ambiance.primaryButtonDecoration,
                         child: Text(
                           'Got it',
@@ -151,7 +156,8 @@ class _WhatsNewItem extends StatelessWidget {
             child: Container(
               width: 4,
               height: 4,
-              decoration: BoxDecoration(color: ambiance.acc, shape: BoxShape.circle),
+              decoration:
+                  BoxDecoration(color: ambiance.acc, shape: BoxShape.circle),
             ),
           ),
           const SizedBox(width: 10),

@@ -8,7 +8,8 @@ import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/media_card.dart';
-import '../widgets/pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 
 typedef RailFullListScreen = MediaListScreen;
 

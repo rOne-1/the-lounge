@@ -10,8 +10,9 @@ import '../providers/navigation_provider.dart';
 import '../providers/hall_provider.dart';
 import '../screens/settings_screen.dart';
 import 'ambient_glow.dart';
-import 'pressable_scale.dart';
 import 'hall_selector_sheet.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, OffsetSpringSimulation, PressableScale;
 
 /// IA-1/NAV-3: the single floating, draggable, edge-snapping navigation
 /// capsule that replaces ShellScreen's fixed top bar and bottom nav bar.
@@ -210,9 +211,8 @@ class _FloatingNavigationCapsuleState
             maxExpandedTop.clamp(0.0, double.infinity));
 
     final bool isSettling = _motionController.isAnimating;
-    final Duration positionDuration = (_dragging || isSettling)
-        ? Duration.zero
-        : AppPhysics.houseSpringDuration;
+    final Duration positionDuration =
+        (_dragging || isSettling) ? Duration.zero : HouseSpring.duration;
 
     final scrimColor = context.ambianceColors.scrim;
 
@@ -229,8 +229,8 @@ class _FloatingNavigationCapsuleState
             ignoring: !_expanded,
             child: AnimatedOpacity(
               opacity: _expanded ? 1 : 0,
-              duration: AppPhysics.houseSpringDuration,
-              curve: AppPhysics.houseSpringCurve,
+              duration: HouseSpring.duration,
+              curve: HouseSpring.curve,
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: _collapse,
@@ -241,7 +241,7 @@ class _FloatingNavigationCapsuleState
         ),
         AnimatedPositioned(
           duration: positionDuration,
-          curve: AppPhysics.houseSpringCurve,
+          curve: HouseSpring.curve,
           left: _expanded ? expandedLeft : topLeft.dx,
           top: _expanded ? expandedTop : topLeft.dy,
           child: GestureDetector(
@@ -302,9 +302,8 @@ class _CapsuleBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final ambiance = context.ambianceColors;
-    final animDuration = (enableAnimation ?? true)
-        ? AppPhysics.houseSpringDuration
-        : Duration.zero;
+    final animDuration =
+        (enableAnimation ?? true) ? HouseSpring.duration : Duration.zero;
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(
@@ -312,7 +311,7 @@ class _CapsuleBody extends ConsumerWidget {
         end: expanded ? 1.0 : 0.0,
       ),
       duration: animDuration,
-      curve: AppPhysics.houseSpringCurve,
+      curve: HouseSpring.curve,
       builder: (context, expandProgress, child) {
         final currentWidth =
             lerpDouble(collapsedSize, expandedWidth, expandProgress)!;
@@ -342,7 +341,7 @@ class _CapsuleBody extends ConsumerWidget {
             type: MaterialType.transparency,
             child: AnimatedSwitcher(
               duration: animDuration,
-              switchInCurve: AppPhysics.houseSpringCurve,
+              switchInCurve: HouseSpring.curve,
               switchOutCurve: Curves.easeOut,
               child: expanded
                   ? OverflowBox(
@@ -589,8 +588,8 @@ class _DestinationPill extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedContainer(
-              duration: AppPhysics.houseSpringDuration,
-              curve: AppPhysics.houseSpringCurve,
+              duration: HouseSpring.duration,
+              curve: HouseSpring.curve,
               width: 38,
               height: 38,
               decoration: BoxDecoration(
@@ -640,8 +639,8 @@ class _MediaTypeRow extends StatelessWidget {
           child: PressableScale(
             onTap: onTap,
             child: AnimatedContainer(
-              duration: AppPhysics.houseSpringDuration,
-              curve: AppPhysics.houseSpringCurve,
+              duration: HouseSpring.duration,
+              curve: HouseSpring.curve,
               height: 34,
               alignment: Alignment.center,
               decoration: BoxDecoration(
@@ -721,8 +720,8 @@ class _UtilityAction extends StatelessWidget {
                 const SizedBox(width: 4),
                 Flexible(
                   child: AnimatedSwitcher(
-                    duration: AppPhysics.houseSpringDuration,
-                    switchInCurve: AppPhysics.houseSpringCurve,
+                    duration: HouseSpring.duration,
+                    switchInCurve: HouseSpring.curve,
                     switchOutCurve: Curves.easeOut,
                     child: Text(
                       label,

@@ -8,7 +8,8 @@ import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/lounge_dialog.dart';
 import '../widgets/lounge_folder_name_sheet.dart';
 import '../widgets/media_image.dart';
-import '../widgets/pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 import 'detail_screen.dart';
 
 MediaItem? _findKnownItem(MediaState state, String id) {
@@ -30,7 +31,8 @@ class FolderDetailScreen extends ConsumerWidget {
 
   const FolderDetailScreen({super.key, required this.folderId});
 
-  Future<void> _rename(BuildContext context, WidgetRef ref, String currentName) async {
+  Future<void> _rename(
+      BuildContext context, WidgetRef ref, String currentName) async {
     final name = await showFolderNamePrompt(
       context,
       sheetTitle: 'Rename Folder',
@@ -41,11 +43,13 @@ class FolderDetailScreen extends ConsumerWidget {
     ref.read(mediaProvider.notifier).renameFolder(folderId, name);
   }
 
-  Future<void> _delete(BuildContext context, WidgetRef ref, String folderName) async {
+  Future<void> _delete(
+      BuildContext context, WidgetRef ref, String folderName) async {
     final confirmed = await LoungeDialog.show<bool>(
       context,
       title: 'Delete "$folderName"?',
-      message: 'This removes the folder itself. Titles inside it are not affected -- '
+      message:
+          'This removes the folder itself. Titles inside it are not affected -- '
           'they stay in whatever status piles they already belong to.',
       actions: [
         LoungeDialogAction(
@@ -68,7 +72,8 @@ class FolderDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.ambianceColors;
-    final folder = ref.watch(mediaProvider.select((s) => s.customFolders[folderId]));
+    final folder =
+        ref.watch(mediaProvider.select((s) => s.customFolders[folderId]));
 
     if (folder == null) {
       // Deleted from elsewhere (or a stale route) -- pop back rather than
@@ -98,13 +103,15 @@ class FolderDetailScreen extends ConsumerWidget {
                   border: Border.all(color: colors.lineRgba),
                   boxShadow: [
                     BoxShadow(
-                      color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                      color: colors.scrim
+                          .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Icon(Icons.chevron_left_rounded, color: colors.ink, size: 22),
+                child: Icon(Icons.chevron_left_rounded,
+                    color: colors.ink, size: 22),
               ),
             ),
           ),
@@ -152,7 +159,8 @@ class FolderDetailScreen extends ConsumerWidget {
                     shape: BoxShape.circle,
                     border: Border.all(color: colors.lineRgba),
                   ),
-                  child: Icon(Icons.delete_outline_rounded, color: colors.danger, size: 18),
+                  child: Icon(Icons.delete_outline_rounded,
+                      color: colors.danger, size: 18),
                 ),
               ),
             ),
@@ -164,7 +172,8 @@ class FolderDetailScreen extends ConsumerWidget {
             ? AtmosphericEmptyState(
                 icon: Icons.folder_open_outlined,
                 title: 'This folder is empty',
-                message: 'Use "Add to Folder" from any title to start curating this playlist.',
+                message:
+                    'Use "Add to Folder" from any title to start curating this playlist.',
                 ctaLabel: 'Discover Titles',
                 onCta: () {
                   Navigator.of(context).popUntil((route) => route.isFirst);
@@ -182,7 +191,9 @@ class FolderDetailScreen extends ConsumerWidget {
                   final newOrder = List<String>.from(folder.mediaIds);
                   final id = newOrder.removeAt(oldIndex);
                   newOrder.insert(newIndex, id);
-                  ref.read(mediaProvider.notifier).reorderFolderItems(folderId, newOrder);
+                  ref
+                      .read(mediaProvider.notifier)
+                      .reorderFolderItems(folderId, newOrder);
                 },
                 itemBuilder: (context, index) {
                   final mediaId = folder.mediaIds[index];
@@ -190,8 +201,9 @@ class FolderDetailScreen extends ConsumerWidget {
                     key: ValueKey('folder_item_$mediaId'),
                     mediaId: mediaId,
                     index: index,
-                    onRemove: () =>
-                        ref.read(mediaProvider.notifier).removeFromFolder(folderId, mediaId),
+                    onRemove: () => ref
+                        .read(mediaProvider.notifier)
+                        .removeFromFolder(folderId, mediaId),
                   );
                 },
               ),
@@ -237,7 +249,8 @@ class _FolderItemTile extends ConsumerWidget {
       child: PressableScale(
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute(
-            builder: (context) => DetailScreen(id: item.prefixedId, initialItem: item),
+            builder: (context) =>
+                DetailScreen(id: item.prefixedId, initialItem: item),
           ),
         ),
         child: Container(
@@ -254,7 +267,8 @@ class _FolderItemTile extends ConsumerWidget {
                 child: SizedBox(
                   width: 44,
                   height: 64,
-                  child: MediaImage(item: item, fit: BoxFit.cover, showFallbackTitle: false),
+                  child: MediaImage(
+                      item: item, fit: BoxFit.cover, showFallbackTitle: false),
                 ),
               ),
               const SizedBox(width: 12),
@@ -275,7 +289,8 @@ class _FolderItemTile extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       item.type == MediaType.movie ? 'Movie' : 'TV Show',
-                      style: AppThemes.safeGeist(fontSize: 11, color: colors.sub),
+                      style:
+                          AppThemes.safeGeist(fontSize: 11, color: colors.sub),
                     ),
                   ],
                 ),
@@ -287,7 +302,8 @@ class _FolderItemTile extends ConsumerWidget {
               const SizedBox(width: 12),
               ReorderableDragStartListener(
                 index: index,
-                child: Icon(Icons.drag_handle_rounded, size: 20, color: colors.sub),
+                child: Icon(Icons.drag_handle_rounded,
+                    size: 20, color: colors.sub),
               ),
             ],
           ),

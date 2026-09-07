@@ -7,7 +7,8 @@ import '../providers/media_provider.dart';
 import '../utils/app_haptics.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'media_image.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// Resolves the "primary" [WatchRecord] for [mediaId]/[seasonNumber] -- the
 /// first-watch record in that scope, which is what the rating badge/pill and
@@ -266,8 +267,8 @@ class _RatingTierRow extends StatelessWidget {
     return PressableScale(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         height: 52,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
@@ -360,8 +361,8 @@ class PersonalRatingPill extends ConsumerWidget {
       return PressableScale(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: rating != null
@@ -401,8 +402,8 @@ class PersonalRatingPill extends ConsumerWidget {
         key: const ValueKey('rate_it_banner'),
         onTap: onTap,
         child: AnimatedContainer(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           width: double.infinity,
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: 14),

@@ -6,7 +6,8 @@ import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import '../screens/detail_screen.dart';
 import 'media_image.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// CRAFT-HERO-1: full-width hero banner on the Lounge landing screen
 /// surfacing the user's in-progress TV show(s) with instant one-tap watch
@@ -163,7 +164,7 @@ class _ContinueWatchingHeroCardState
               : null,
           child: ClipRect(
             child: AnimatedSwitcher(
-              duration: AppPhysics.houseSpringDuration,
+              duration: HouseSpring.duration,
               // ITEM-1 follow-up #2 (dev feedback 2026-08-29): houseSpringCurve
               // is an underdamped spring (damping ratio ~0.52) -- it
               // deliberately overshoots and settles back, which is exactly
@@ -323,8 +324,8 @@ class _ContinueWatchingHeroCardState
                             children: [
                               Container(color: colors.lineRgba),
                               AnimatedFractionallySizedBox(
-                                duration: AppPhysics.houseSpringDuration,
-                                curve: AppPhysics.houseSpringCurve,
+                                duration: HouseSpring.duration,
+                                curve: HouseSpring.curve,
                                 widthFactor: (watchedCount / releasedCount)
                                     .clamp(0.0, 1.0),
                                 child: Container(color: accent),
@@ -393,8 +394,8 @@ class _ContinueWatchingHeroCardState
                                       'continue_watching_dot_${shows[i].id}'),
                                   onTap: () => _goToIndex(i, index),
                                   child: AnimatedContainer(
-                                    duration: AppPhysics.houseSpringDuration,
-                                    curve: AppPhysics.houseSpringCurve,
+                                    duration: HouseSpring.duration,
+                                    curve: HouseSpring.curve,
                                     margin: const EdgeInsets.symmetric(
                                         horizontal: 2),
                                     width: i == index ? 16 : 6,

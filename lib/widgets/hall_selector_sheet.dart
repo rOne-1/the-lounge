@@ -7,7 +7,8 @@ import '../models/media_item.dart';
 import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
 import 'drag_to_dismiss_sheet.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// PROF-3 / NOMEN-1 / FIX-2: Bottom sheet for selecting, renaming, and managing Screening Halls.
 class HallSelectorSheet extends ConsumerWidget {
@@ -187,8 +188,8 @@ class HallSelectorSheet extends ConsumerWidget {
                     Navigator.of(context).pop();
                   },
                   child: AnimatedContainer(
-                    duration: AppPhysics.houseSpringDuration,
-                    curve: AppPhysics.houseSpringCurve,
+                    duration: HouseSpring.duration,
+                    curve: HouseSpring.curve,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 16, vertical: 14),
                     decoration: BoxDecoration(

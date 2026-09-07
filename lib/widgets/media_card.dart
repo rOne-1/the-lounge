@@ -6,9 +6,10 @@ import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import '../screens/detail_screen.dart';
 import 'media_image.dart';
-import 'pressable_scale.dart';
 import 'quick_status_sheet.dart';
 import 'status_pulse_ring.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// The single canonical media poster card used across Home, Browse, Your
 /// Space, Calendar, Media List, and Collection. Consolidates the gesture
@@ -71,7 +72,7 @@ class MediaCard extends ConsumerWidget {
     final statusInfo = showStatusIndicator ? _resolveStatus(mediaState) : null;
 
     final posterWidget = OpenContainer(
-      transitionDuration: AppPhysics.houseSpringDuration,
+      transitionDuration: HouseSpring.duration,
       closedElevation: 0,
       openElevation: 0,
       closedColor: Colors.transparent,

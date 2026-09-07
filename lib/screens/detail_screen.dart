@@ -14,7 +14,6 @@ import '../widgets/lounge_folder_picker_sheet.dart';
 import '../widgets/lounge_rating_sheet.dart';
 import '../widgets/lounge_rewatch_sheet.dart';
 import '../widgets/lounge_toast.dart';
-import '../widgets/pressable_scale.dart';
 import '../widgets/quick_status_sheet.dart';
 import '../widgets/seasonal_rating_bar.dart';
 import '../widgets/status_pulse_ring.dart';
@@ -22,6 +21,8 @@ import '../widgets/watch_history_timeline.dart';
 import '../constants.dart';
 import 'search_screen.dart';
 import 'collection_screen.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 class DetailScreen extends ConsumerStatefulWidget {
   final String id;
@@ -337,7 +338,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
                   begin: 0.08,
                   end: 0,
-                  curve: AppPhysics.houseSpringCurve,
+                  curve: HouseSpring.curve,
                 ),
           ),
         ),
@@ -439,7 +440,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                     ).animate(delay: 100.ms).fade(duration: 250.ms).slideY(
                           begin: 0.08,
                           end: 0,
-                          curve: AppPhysics.houseSpringCurve,
+                          curve: HouseSpring.curve,
                         ),
                   ),
                 ),
@@ -815,8 +816,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           const Spacer(),
           AnimatedRotation(
             turns: expanded ? 0.5 : 0,
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
+            duration: HouseSpring.duration,
+            curve: HouseSpring.curve,
             child: Icon(Icons.expand_more_rounded, color: colors.sub),
           ),
         ],
@@ -857,8 +858,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           onToggle: () => setState(() => _reviewsExpanded = !_reviewsExpanded),
         ),
         AnimatedSize(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           alignment: Alignment.topCenter,
           child: !_reviewsExpanded
               ? const SizedBox(width: double.infinity)
@@ -1324,8 +1325,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                             () => _directorsExpanded = !_directorsExpanded),
                       ),
                       AnimatedSize(
-                        duration: AppPhysics.houseSpringDuration,
-                        curve: AppPhysics.houseSpringCurve,
+                        duration: HouseSpring.duration,
+                        curve: HouseSpring.curve,
                         alignment: Alignment.topCenter,
                         child: !_directorsExpanded
                             ? const SizedBox(width: double.infinity)
@@ -1460,8 +1461,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
             onToggle: () => setState(() => _crewExpanded = !_crewExpanded),
           ),
           AnimatedSize(
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
+            duration: HouseSpring.duration,
+            curve: HouseSpring.curve,
             alignment: Alignment.topCenter,
             child: !_crewExpanded
                 ? const SizedBox(width: double.infinity)
@@ -1501,8 +1502,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     final lineRgba = context.ambianceColors.lineRgba;
 
     return AnimatedSwitcher(
-      duration: AppPhysics.houseSpringDuration,
-      switchInCurve: AppPhysics.houseSpringCurve,
+      duration: HouseSpring.duration,
+      switchInCurve: HouseSpring.curve,
       switchOutCurve: Curves.easeOut,
       child: items.isEmpty
           ? const SizedBox.shrink(key: ValueKey('similar_titles_empty'))
@@ -1879,8 +1880,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     return PressableScale(
       onTap: () => _playTrailer(context, item),
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         height: 44,
         decoration: BoxDecoration(
           color: context.ambianceColors.card2,
@@ -1935,8 +1936,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         mediaTitle: item.title,
       ),
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         height: 44,
         decoration: BoxDecoration(
           color: context.ambianceColors.card2,
@@ -2093,8 +2094,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
       child: PressableScale(
         onTap: onTap,
         child: AnimatedContainer(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           height: 44,
           decoration: decoration,
           alignment: Alignment.center,
@@ -2105,8 +2106,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 AnimatedSwitcher(
-                  duration: AppPhysics.houseSpringDuration,
-                  switchInCurve: AppPhysics.houseSpringCurve,
+                  duration: HouseSpring.duration,
+                  switchInCurve: HouseSpring.curve,
                   switchOutCurve: Curves.easeOut,
                   transitionBuilder: (child, animation) => ScaleTransition(
                     scale: animation,
@@ -2121,8 +2122,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 ),
                 const SizedBox(width: 5),
                 AnimatedDefaultTextStyle(
-                  duration: AppPhysics.houseSpringDuration,
-                  curve: AppPhysics.houseSpringCurve,
+                  duration: HouseSpring.duration,
+                  curve: HouseSpring.curve,
                   style: AppThemes.safeGeist(
                     fontSize: 12.5,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
@@ -2192,9 +2193,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         ),
         const SizedBox(height: 12),
         AnimatedSwitcher(
-          duration: AppPhysics.houseSpringDuration,
-          switchInCurve: AppPhysics.houseSpringCurve,
-          switchOutCurve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          switchInCurve: HouseSpring.curve,
+          switchOutCurve: HouseSpring.curve,
           transitionBuilder: (child, animation) =>
               FadeTransition(opacity: animation, child: child),
           child: SizedBox(
@@ -2816,7 +2817,7 @@ class _ClearLogoTitleState extends State<_ClearLogoTitle> {
           imageUrl: logoUrl,
           fit: BoxFit.contain,
           alignment: Alignment.centerLeft,
-          fadeInDuration: AppPhysics.houseSpringDuration,
+          fadeInDuration: HouseSpring.duration,
           errorWidget: (context, url, error) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               if (mounted && !_logoFailed) setState(() => _logoFailed = true);
@@ -2871,7 +2872,7 @@ class _ExpandableOverviewTextState extends State<ExpandableOverviewText> {
           children: [
             AnimatedSize(
               duration: const Duration(milliseconds: 300),
-              curve: AppPhysics.houseSpringCurve,
+              curve: HouseSpring.curve,
               alignment: Alignment.topCenter,
               child: Text(
                 widget.text,
@@ -2906,7 +2907,7 @@ class _ExpandableOverviewTextState extends State<ExpandableOverviewText> {
                       AnimatedRotation(
                         turns: _isExpanded ? 0.5 : 0.0,
                         duration: const Duration(milliseconds: 300),
-                        curve: AppPhysics.houseSpringCurve,
+                        curve: HouseSpring.curve,
                         child: Icon(
                           Icons.keyboard_arrow_down,
                           size: 16,
@@ -3394,8 +3395,8 @@ class _EpisodeCard extends StatelessWidget {
                           top: 8,
                           right: 8,
                           child: AnimatedContainer(
-                            duration: AppPhysics.houseSpringDuration,
-                            curve: AppPhysics.houseSpringCurve,
+                            duration: HouseSpring.duration,
+                            curve: HouseSpring.curve,
                             padding: const EdgeInsets.all(4),
                             decoration: BoxDecoration(
                               color: colors.starRating,

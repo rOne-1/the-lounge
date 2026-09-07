@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import 'frosted_glass_surface.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 enum ToastType { info, success, danger }
 
@@ -59,15 +60,17 @@ class _LoungeToastWidget extends StatefulWidget {
   State<_LoungeToastWidget> createState() => _LoungeToastWidgetState();
 }
 
-class _LoungeToastWidgetState extends State<_LoungeToastWidget> with SingleTickerProviderStateMixin {
+class _LoungeToastWidgetState extends State<_LoungeToastWidget>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _curved;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: AppPhysics.houseSpringDuration);
-    _curved = CurvedAnimation(parent: _controller, curve: AppPhysics.houseSpringCurve);
+    _controller =
+        AnimationController(vsync: this, duration: HouseSpring.duration);
+    _curved = CurvedAnimation(parent: _controller, curve: HouseSpring.curve);
     _controller.forward();
     Future.delayed(widget.duration, _dismiss);
   }
@@ -106,7 +109,8 @@ class _LoungeToastWidgetState extends State<_LoungeToastWidget> with SingleTicke
       right: 16,
       bottom: bottomInset + 24,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(_curved),
+        position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+            .animate(_curved),
         child: FadeTransition(
           opacity: _curved,
           child: Material(
@@ -122,7 +126,8 @@ class _LoungeToastWidgetState extends State<_LoungeToastWidget> with SingleTicke
                   Container(
                     width: 8,
                     height: 8,
-                    decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                    decoration:
+                        BoxDecoration(color: accent, shape: BoxShape.circle),
                   ),
                   const SizedBox(width: 10),
                   Flexible(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// YSR-COMP-3: A full-width hero banner highlighting active viewing ("Watching").
 /// Features a luxury gradient background, 2-line electric blue overline badge,
@@ -27,8 +28,8 @@ class WatchingHeroCard extends StatelessWidget {
     return PressableScale(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         padding: const EdgeInsets.symmetric(horizontal: 22.0, vertical: 20.0),
         decoration: BoxDecoration(
           color: colors.card,
@@ -42,11 +43,13 @@ class WatchingHeroCard extends StatelessWidget {
             end: Alignment.bottomRight,
             colors: isDark
                 ? [
-                    Color.alphaBlend(accentBlue.withValues(alpha: 0.16), colors.card),
+                    Color.alphaBlend(
+                        accentBlue.withValues(alpha: 0.16), colors.card),
                     colors.card,
                   ]
                 : [
-                    Color.alphaBlend(accentBlue.withValues(alpha: 0.08), colors.card),
+                    Color.alphaBlend(
+                        accentBlue.withValues(alpha: 0.08), colors.card),
                     colors.card,
                   ],
           ),
@@ -80,7 +83,8 @@ class WatchingHeroCard extends StatelessWidget {
                         width: 28,
                         height: 28,
                         decoration: BoxDecoration(
-                          color: accentBlue.withValues(alpha: isDark ? 0.22 : 0.18),
+                          color: accentBlue.withValues(
+                              alpha: isDark ? 0.22 : 0.18),
                           borderRadius: BorderRadius.circular(8.0),
                           border: Border.all(
                             color: accentBlue.withValues(alpha: 0.40),
@@ -130,7 +134,10 @@ class WatchingHeroCard extends StatelessWidget {
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      subtitle ?? (count == 1 ? '1 title in progress' : '$count titles in progress'),
+                      subtitle ??
+                          (count == 1
+                              ? '1 title in progress'
+                              : '$count titles in progress'),
                       style: AppThemes.safeGeist(
                         fontSize: 13.5,
                         color: colors.sub,

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../constants.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// A brief outward pulse-ring flash around [child] when [isSelected] flips
 /// from false to true — used to punctuate status toggles (watchlist, saved,
@@ -22,7 +22,8 @@ class StatusPulseRing extends StatefulWidget {
   State<StatusPulseRing> createState() => _StatusPulseRingState();
 }
 
-class _StatusPulseRingState extends State<StatusPulseRing> with SingleTickerProviderStateMixin {
+class _StatusPulseRingState extends State<StatusPulseRing>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseScale;
   late Animation<double> _pulseOpacity;
@@ -32,13 +33,13 @@ class _StatusPulseRingState extends State<StatusPulseRing> with SingleTickerProv
     super.initState();
     _pulseController = AnimationController(
       vsync: this,
-      duration: AppPhysics.houseSpringDuration,
+      duration: HouseSpring.duration,
     );
     _pulseScale = Tween<double>(begin: 1.0, end: 1.35).animate(
-      CurvedAnimation(parent: _pulseController, curve: AppPhysics.houseSpringCurve),
+      CurvedAnimation(parent: _pulseController, curve: HouseSpring.curve),
     );
     _pulseOpacity = Tween<double>(begin: 0.7, end: 0.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: AppPhysics.houseSpringCurve),
+      CurvedAnimation(parent: _pulseController, curve: HouseSpring.curve),
     );
   }
 
@@ -74,8 +75,10 @@ class _StatusPulseRingState extends State<StatusPulseRing> with SingleTickerProv
                       opacity: _pulseOpacity.value.clamp(0.0, 1.0),
                       child: DecoratedBox(
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(widget.borderRadius),
-                          border: Border.all(color: widget.accentColor, width: 2),
+                          borderRadius:
+                              BorderRadius.circular(widget.borderRadius),
+                          border:
+                              Border.all(color: widget.accentColor, width: 2),
                         ),
                       ),
                     ),

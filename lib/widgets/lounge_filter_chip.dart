@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// D-2: shared selection-chip pill used by Search's filter panels (Genre,
 /// Provider, Network, Language) -- `PressableScale -> AnimatedContainer`
@@ -45,8 +46,8 @@ class LoungeFilterChip extends StatelessWidget {
     return PressableScale(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: decoration,
         child: Text(
@@ -54,7 +55,9 @@ class LoungeFilterChip extends StatelessWidget {
           style: AppThemes.safeGeist(
             fontSize: 12,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-            color: isSelected ? Theme.of(context).colorScheme.onPrimary : ambiance.ink,
+            color: isSelected
+                ? Theme.of(context).colorScheme.onPrimary
+                : ambiance.ink,
           ),
         ),
       ),

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:the_lounge/constants.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/widgets/lounge_dialog.dart';
-import 'package:the_lounge/widgets/pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 void main() {
   Widget wrap(Widget home) {
@@ -11,7 +11,8 @@ void main() {
   }
 
   group('LoungeDialog (DS-1)', () {
-    testWidgets('show() renders title, message, and theme-token styling', (tester) async {
+    testWidgets('show() renders title, message, and theme-token styling',
+        (tester) async {
       await tester.pumpWidget(wrap(
         Scaffold(
           body: Builder(
@@ -30,14 +31,16 @@ void main() {
 
       await tester.tap(find.text('Open'));
       await tester.pump();
-      await tester.pump(AppPhysics.houseSpringDuration);
+      await tester.pump(HouseSpring.duration);
 
       expect(find.byType(LoungeDialog), findsOneWidget);
       expect(find.text('Reset everything?'), findsOneWidget);
       expect(find.text('This cannot be undone.'), findsOneWidget);
     });
 
-    testWidgets('house-spring entrance: fully transparent at animation start, opaque once settled', (tester) async {
+    testWidgets(
+        'house-spring entrance: fully transparent at animation start, opaque once settled',
+        (tester) async {
       await tester.pumpWidget(wrap(
         Scaffold(
           body: Builder(
@@ -57,16 +60,19 @@ void main() {
       await tester.tap(find.text('Open'));
       await tester.pump();
 
-      final fadeFinder = find.ancestor(of: find.byType(LoungeDialog), matching: find.byType(FadeTransition));
+      final fadeFinder = find.ancestor(
+          of: find.byType(LoungeDialog), matching: find.byType(FadeTransition));
       final fadeTransition = tester.widget<FadeTransition>(fadeFinder);
       expect(fadeTransition.opacity.value, equals(0.0));
 
-      await tester.pump(AppPhysics.houseSpringDuration);
+      await tester.pump(HouseSpring.duration);
       final settled = tester.widget<FadeTransition>(fadeFinder);
       expect(settled.opacity.value, equals(1.0));
     });
 
-    testWidgets('neutral, primary, and destructive actions render with distinct styling', (tester) async {
+    testWidgets(
+        'neutral, primary, and destructive actions render with distinct styling',
+        (tester) async {
       var neutralTapped = false;
       var primaryTapped = false;
       var destructiveTapped = false;
@@ -77,7 +83,8 @@ void main() {
             title: 'Title',
             message: 'Message',
             actions: [
-              LoungeDialogAction(label: 'Cancel', onPressed: () => neutralTapped = true),
+              LoungeDialogAction(
+                  label: 'Cancel', onPressed: () => neutralTapped = true),
               LoungeDialogAction(
                 label: 'Confirm',
                 style: LoungeDialogActionStyle.primary,
@@ -105,7 +112,8 @@ void main() {
       expect(destructiveTapped, isTrue);
     });
 
-    testWidgets('destructive action pill uses ambiance.danger background', (tester) async {
+    testWidgets('destructive action pill uses ambiance.danger background',
+        (tester) async {
       await tester.pumpWidget(wrap(
         Scaffold(
           body: LoungeDialog(
@@ -123,7 +131,9 @@ void main() {
       ));
 
       final container = tester.widget<Container>(
-        find.ancestor(of: find.text('Delete'), matching: find.byType(Container)).first,
+        find
+            .ancestor(of: find.text('Delete'), matching: find.byType(Container))
+            .first,
       );
       final decoration = container.decoration as BoxDecoration;
       expect(decoration.color, equals(srAmbianceColors.danger));

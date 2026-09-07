@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../providers/media_provider.dart';
-import '../widgets/pressable_scale.dart';
 import 'cleanup_swipe_screen.dart';
 import 'folders_screen.dart';
 import 'rate_titles_screen.dart';
 import 'rewatch_vault_screen.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// YSR-HUB-2: The Tools Hub (`tools.png`) - a dedicated 2x2 curation tools
 /// matrix providing access to batch rating, custom folders, cleanup swipe,
@@ -128,7 +129,8 @@ class ToolsScreen extends ConsumerWidget {
               border: Border.all(color: colors.lineRgba),
               boxShadow: [
                 BoxShadow(
-                  color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                  color: colors.scrim
+                      .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -212,14 +214,15 @@ class _ToolCard extends StatelessWidget {
     final borderAlpha =
         isQuiet ? (isDark ? 0.14 : 0.18) : (isDark ? 0.28 : 0.35);
     final gradientAlpha = isQuiet ? 0.04 : (isDark ? 0.12 : 0.08);
-    final iconBgAlpha = isQuiet ? (isDark ? 0.10 : 0.08) : (isDark ? 0.18 : 0.14);
+    final iconBgAlpha =
+        isQuiet ? (isDark ? 0.10 : 0.08) : (isDark ? 0.18 : 0.14);
     final iconColor = isQuiet ? colors.sub : accent;
 
     return PressableScale(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         padding: const EdgeInsets.all(16.0),
         decoration: BoxDecoration(
           color: colors.card,
@@ -278,8 +281,8 @@ class _ToolCard extends StatelessWidget {
                 ),
                 if (isActive == true && badgeCount != null)
                   AnimatedContainer(
-                    duration: AppPhysics.houseSpringDuration,
-                    curve: AppPhysics.houseSpringCurve,
+                    duration: HouseSpring.duration,
+                    curve: HouseSpring.curve,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(

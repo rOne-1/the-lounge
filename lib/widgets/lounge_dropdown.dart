@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import 'frosted_glass_surface.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 class LoungeDropdownItem<T> {
   final T? value;
@@ -79,10 +80,12 @@ class _LoungeDropdownState<T> extends State<LoungeDropdown<T>> {
     // Keep the popover fully on-screen: right-align to the trigger when
     // left-aligning would push it past the screen edge (e.g. a compact
     // trigger sitting near the right edge, like the country selector).
-    final wantsLeftAligned = triggerTopLeft.dx + popoverWidth <= screenSize.width - 8;
+    final wantsLeftAligned =
+        triggerTopLeft.dx + popoverWidth <= screenSize.width - 8;
     final left = wantsLeftAligned
         ? triggerTopLeft.dx
-        : (triggerTopLeft.dx + triggerSize.width - popoverWidth).clamp(8.0, screenSize.width - popoverWidth - 8);
+        : (triggerTopLeft.dx + triggerSize.width - popoverWidth)
+            .clamp(8.0, screenSize.width - popoverWidth - 8);
     final top = triggerTopLeft.dy + triggerSize.height + 6;
 
     _entry = OverlayEntry(
@@ -99,7 +102,9 @@ class _LoungeDropdownState<T> extends State<LoungeDropdown<T>> {
             Positioned(
               left: left,
               top: top,
-              width: popoverWidth < triggerSize.width ? triggerSize.width : popoverWidth,
+              width: popoverWidth < triggerSize.width
+                  ? triggerSize.width
+                  : popoverWidth,
               child: _LoungePopover(
                 items: widget.items,
                 selected: widget.value,
@@ -125,65 +130,70 @@ class _LoungeDropdownState<T> extends State<LoungeDropdown<T>> {
     final isOpen = _entry != null;
 
     return Builder(
-        builder: (triggerContext) {
-          if (widget.dense) {
-            return PressableScale(
-              onTap: () => _toggle(triggerContext),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _currentLabel,
-                    style: AppThemes.safeGeist(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: ambiance.ink,
-                    ),
-                  ),
-                  const SizedBox(width: 2),
-                  Icon(
-                    isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                    color: ambiance.sub,
-                    size: 20,
-                  ),
-                ],
-              ),
-            );
-          }
-
+      builder: (triggerContext) {
+        if (widget.dense) {
           return PressableScale(
             onTap: () => _toggle(triggerContext),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: widget.isActive ? ambiance.acc.withValues(alpha: 0.14) : ambiance.pill,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: widget.isActive ? ambiance.acc : ambiance.lineRgba,
-                  width: widget.isActive ? 1.5 : 1.0,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _currentLabel,
+                  style: AppThemes.safeGeist(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: ambiance.ink,
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      _currentLabel.isEmpty ? (widget.hintText ?? '') : _currentLabel,
-                      style: AppThemes.safeGeist(
-                        fontSize: 13,
-                        color: _currentLabel.isEmpty ? ambiance.sub : ambiance.ink,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Icon(
-                    isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
-                    color: ambiance.sub,
-                  ),
-                ],
-              ),
+                const SizedBox(width: 2),
+                Icon(
+                  isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                  color: ambiance.sub,
+                  size: 20,
+                ),
+              ],
             ),
           );
-        },
+        }
+
+        return PressableScale(
+          onTap: () => _toggle(triggerContext),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: widget.isActive
+                  ? ambiance.acc.withValues(alpha: 0.14)
+                  : ambiance.pill,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: widget.isActive ? ambiance.acc : ambiance.lineRgba,
+                width: widget.isActive ? 1.5 : 1.0,
+              ),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    _currentLabel.isEmpty
+                        ? (widget.hintText ?? '')
+                        : _currentLabel,
+                    style: AppThemes.safeGeist(
+                      fontSize: 13,
+                      color:
+                          _currentLabel.isEmpty ? ambiance.sub : ambiance.ink,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(
+                  isOpen ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+                  color: ambiance.sub,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -205,15 +215,17 @@ class _LoungePopover<T> extends StatefulWidget {
   State<_LoungePopover<T>> createState() => _LoungePopoverState<T>();
 }
 
-class _LoungePopoverState<T> extends State<_LoungePopover<T>> with SingleTickerProviderStateMixin {
+class _LoungePopoverState<T> extends State<_LoungePopover<T>>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   late final Animation<double> _curved;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: AppPhysics.houseSpringDuration);
-    _curved = CurvedAnimation(parent: _controller, curve: AppPhysics.houseSpringCurve);
+    _controller =
+        AnimationController(vsync: this, duration: HouseSpring.duration);
+    _curved = CurvedAnimation(parent: _controller, curve: HouseSpring.curve);
     _controller.forward();
   }
 
@@ -253,13 +265,17 @@ class _LoungePopoverState<T> extends State<_LoungePopover<T>> with SingleTickerP
                       onTap: () => widget.onSelected(item.value),
                       child: Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                        color: isSelected ? ambiance.acc.withValues(alpha: 0.12) : Colors.transparent,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        color: isSelected
+                            ? ambiance.acc.withValues(alpha: 0.12)
+                            : Colors.transparent,
                         child: Text(
                           item.label,
                           style: AppThemes.safeGeist(
                             fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w400,
                             color: isSelected ? ambiance.acc : ambiance.ink,
                           ),
                         ),

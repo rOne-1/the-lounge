@@ -11,10 +11,11 @@ import 'media_list_screen.dart';
 import '../constants.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/media_card.dart';
-import '../widgets/pressable_scale.dart';
 import '../widgets/ambient_glow.dart';
 import '../widgets/quick_status_sheet.dart';
 import '../widgets/pick_for_me_card.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 class DeduplicatedLobbyRails {
   final bool isMovies;
@@ -101,7 +102,8 @@ final deduplicatedLobbyRailsProvider = Provider.autoDispose
     return fresh.isNotEmpty ? fresh : list;
   }
 
-  final topRatedDeduplicated = input.topRatedAsync.whenData(deduplicateRailList);
+  final topRatedDeduplicated =
+      input.topRatedAsync.whenData(deduplicateRailList);
   final rail4Deduplicated = input.rail4Async.whenData(deduplicateRailList);
   final rail5Deduplicated = input.rail5Async?.whenData(deduplicateRailList);
 
@@ -149,9 +151,8 @@ class LobbyScreen extends ConsumerWidget {
     // E12: same source and ordering as LoungeScreen's own Watchlist tab
     // (insertion order, no re-sort) so "See all" doesn't reorder things
     // relative to what was just shown in the carousel.
-    final watchlistItems = mediaState.watchlist.values
-        .where((m) => m.type == activeType)
-        .toList();
+    final watchlistItems =
+        mediaState.watchlist.values.where((m) => m.type == activeType).toList();
 
     final railsInput = LobbyRailsInput(
       isMovies: isMovies,
@@ -167,7 +168,6 @@ class LobbyScreen extends ConsumerWidget {
     final rail4Deduplicated = lobbyRails.rail4Deduplicated;
     final rail5Deduplicated = lobbyRails.rail5Deduplicated;
 
-
     String greeting() {
       final now = DateTime.now();
       const dayNames = [
@@ -180,9 +180,8 @@ class LobbyScreen extends ConsumerWidget {
         'Sunday',
       ];
       final dayName = dayNames[now.weekday - 1];
-      final timeOfDay = now.hour < 12
-          ? 'morning'
-          : (now.hour < 17 ? 'afternoon' : 'evening');
+      final timeOfDay =
+          now.hour < 12 ? 'morning' : (now.hour < 17 ? 'afternoon' : 'evening');
       return '$dayName $timeOfDay';
     }
 
@@ -214,11 +213,10 @@ class LobbyScreen extends ConsumerWidget {
 
     final isLarge = MediaQuery.of(context).size.width >= 600;
 
-
     return SingleChildScrollView(
       child: Padding(
-        padding: EdgeInsets.fromLTRB(
-            isLarge ? 24.0 : 18.0, 4.0, isLarge ? 24.0 : 18.0, 4.0 + bottomPadding),
+        padding: EdgeInsets.fromLTRB(isLarge ? 24.0 : 18.0, 4.0,
+            isLarge ? 24.0 : 18.0, 4.0 + bottomPadding),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -313,11 +311,12 @@ class LobbyScreen extends ConsumerWidget {
               ),
               const SizedBox(height: 12),
               AnimatedSwitcher(
-                duration: AppPhysics.houseSpringDuration,
-                switchInCurve: AppPhysics.houseSpringCurve,
-                switchOutCurve: AppPhysics.houseSpringCurve,
+                duration: HouseSpring.duration,
+                switchInCurve: HouseSpring.curve,
+                switchOutCurve: HouseSpring.curve,
                 child: SizedBox(
-                  key: ValueKey('continue_watching_${isMovies}_${rail1Items.length}'),
+                  key: ValueKey(
+                      'continue_watching_${isMovies}_${rail1Items.length}'),
                   // LAYOUT-1: 140px cramped the 85px TvContinueWatchingCard
                   // against its own title/subtitle text with almost no
                   // breathing room.
@@ -330,7 +329,8 @@ class LobbyScreen extends ConsumerWidget {
                             final item = rail1Items[index];
                             return Padding(
                               padding: const EdgeInsets.only(right: 12.0),
-                              child: TvContinueWatchingCard(item: item, isDark: isDark),
+                              child: TvContinueWatchingCard(
+                                  item: item, isDark: isDark),
                             ).animate().fade(duration: 250.ms).slideY(
                                 begin: 0.1,
                                 end: 0,
@@ -354,12 +354,12 @@ class LobbyScreen extends ConsumerWidget {
               // Next episode highlight banner (TV Mode)
               AnimatedSize(
                 duration: const Duration(milliseconds: 350),
-                curve: AppPhysics.houseSpringCurve,
+                curve: HouseSpring.curve,
                 child: AnimatedCrossFade(
                   duration: const Duration(milliseconds: 350),
                   firstCurve: Curves.easeInOutCubic,
                   secondCurve: Curves.easeInOutCubic,
-                  sizeCurve: AppPhysics.houseSpringCurve,
+                  sizeCurve: HouseSpring.curve,
                   crossFadeState: (!isMovies && rail1Items.isNotEmpty)
                       ? CrossFadeState.showFirst
                       : CrossFadeState.showSecond,
@@ -370,7 +370,8 @@ class LobbyScreen extends ConsumerWidget {
                           enableAnimation: enableAnimation,
                         )
                       : const SizedBox(width: double.infinity, height: 0),
-                  secondChild: const SizedBox(width: double.infinity, height: 0),
+                  secondChild:
+                      const SizedBox(width: double.infinity, height: 0),
                 ),
               ),
             ],
@@ -416,7 +417,8 @@ class LobbyScreen extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => MediaListScreen(
-                      title: isMovies ? 'Top Rated Movies' : 'Top Rated TV Shows',
+                      title:
+                          isMovies ? 'Top Rated Movies' : 'Top Rated TV Shows',
                       itemsProvider: isMovies
                           ? topRatedMoviesProvider
                           : topRatedTvShowsProvider,
@@ -452,12 +454,15 @@ class LobbyScreen extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => MediaListScreen(
-                      title: isMovies ? 'Now Playing in Theaters' : 'Airing Today',
+                      title:
+                          isMovies ? 'Now Playing in Theaters' : 'Airing Today',
                       itemsProvider: isMovies
                           ? nowPlayingMoviesProvider
                           : airingTodayTvShowsProvider,
                       fetchPage: isMovies
-                          ? (page) => ref.read(movieRepositoryProvider).getNowPlayingMovies(
+                          ? (page) => ref
+                              .read(movieRepositoryProvider)
+                              .getNowPlayingMovies(
                                 page: page,
                                 region: country,
                                 originalLanguage: lockedLanguageCode,
@@ -496,7 +501,8 @@ class LobbyScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(18),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: context.ambianceColors.acc.withValues(alpha: isDark ? 0.4 : 0.36),
+                color: context.ambianceColors.acc
+                    .withValues(alpha: isDark ? 0.4 : 0.36),
               ),
               boxShadow: [
                 BoxShadow(
@@ -535,7 +541,8 @@ class LobbyScreen extends ConsumerWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 9),
-                      decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
+                      decoration: context.ambianceColors.primaryButtonDecoration
+                          .copyWith(borderRadius: BorderRadius.circular(999)),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -591,7 +598,8 @@ class TvContinueWatchingCard extends ConsumerWidget {
     final String subtitle;
     final String badgeText;
     if (nextEp != null) {
-      subtitle = 'Next: S${nextEp.seasonNumber} E${nextEp.episodeNumber} · ${nextEp.name}';
+      subtitle =
+          'Next: S${nextEp.seasonNumber} E${nextEp.episodeNumber} · ${nextEp.name}';
       badgeText = 'S${nextEp.seasonNumber} · E${nextEp.episodeNumber}';
     } else {
       subtitle = 'All episodes watched';
@@ -713,8 +721,8 @@ class MediaRail extends ConsumerWidget {
         ),
         const SizedBox(height: 12),
         AnimatedSwitcher(
-          duration: AppPhysics.houseSpringDuration,
-          switchInCurve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          switchInCurve: HouseSpring.curve,
           switchOutCurve: Curves.easeOut,
           child: SizedBox(
             key: ValueKey('${title}_${itemsAsync.isLoading}'),
@@ -929,7 +937,8 @@ class NextEpisodeBannerCard extends ConsumerWidget {
 
         return PressableScale(
           onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => DetailScreen(id: show.prefixedId)),
+            MaterialPageRoute(
+                builder: (_) => DetailScreen(id: show.prefixedId)),
           ),
           onLongPress: () => showQuickStatusSheet(context, ref, show),
           child: AmbientGlowWidget(
@@ -961,7 +970,8 @@ class NextEpisodeBannerCard extends ConsumerWidget {
                   clipBehavior: Clip.antiAlias,
                   child: MediaImage(
                     item: show,
-                    imageUrl: nextEp.stillUrl ?? show.posterUrl ?? show.backdropUrl,
+                    imageUrl:
+                        nextEp.stillUrl ?? show.posterUrl ?? show.backdropUrl,
                     fit: BoxFit.cover,
                     showFallbackTitle: false,
                   ),
@@ -1039,7 +1049,20 @@ class NextEpisodeBannerCard extends ConsumerWidget {
   }
 
   String _formatEpisodeDate(DateTime dt) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     const weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     final w = weekdays[dt.weekday - 1];
     final m = months[dt.month - 1];

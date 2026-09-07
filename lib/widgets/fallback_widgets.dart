@@ -2,8 +2,9 @@ import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'ambient_glow.dart';
-import 'pressable_scale.dart';
 import '../constants.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 export 'media_image.dart';
 
@@ -59,7 +60,8 @@ class _LoungeFallbackButton extends StatelessWidget {
             const SizedBox(width: 8),
             Text(
               label,
-              style: AppThemes.safeGeist(fontSize: 14, fontWeight: FontWeight.w600, color: foreground),
+              style: AppThemes.safeGeist(
+                  fontSize: 14, fontWeight: FontWeight.w600, color: foreground),
             ),
           ],
         ),
@@ -89,16 +91,18 @@ class _LoungeFallbackCard extends StatelessWidget {
 
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: 1.0),
-      duration: AppPhysics.houseSpringDuration,
-      curve: AppPhysics.houseSpringCurve,
-      builder: (context, opacity, child) => Opacity(opacity: opacity.clamp(0.0, 1.0), child: child),
+      duration: HouseSpring.duration,
+      curve: HouseSpring.curve,
+      builder: (context, opacity, child) =>
+          Opacity(opacity: opacity.clamp(0.0, 1.0), child: child),
       child: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: AmbientGlowWidget(
-              enableAnimation: false, // static glow: error states should stay calm, not perpetually animate
+              enableAnimation:
+                  false, // static glow: error states should stay calm, not perpetually animate
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: ambiance.lineRgba),
               boxShadow: [
@@ -130,10 +134,15 @@ class _LoungeFallbackCard extends StatelessWidget {
                   Text(
                     message,
                     textAlign: TextAlign.center,
-                    style: AppThemes.safeGeist(fontSize: 13.5, height: 1.4, color: ambiance.sub),
+                    style: AppThemes.safeGeist(
+                        fontSize: 13.5, height: 1.4, color: ambiance.sub),
                   ),
                   const SizedBox(height: 24),
-                  Wrap(alignment: WrapAlignment.center, spacing: 12, runSpacing: 10, children: actions),
+                  Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 12,
+                      runSpacing: 10,
+                      children: actions),
                 ],
               ),
             ),
@@ -231,11 +240,13 @@ class InlinePartialErrorWidget extends StatelessWidget {
     final ambiance = context.ambianceColors;
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(begin: 0.0, end: 1.0),
-      duration: AppPhysics.houseSpringDuration,
-      curve: AppPhysics.houseSpringCurve,
-      builder: (context, opacity, child) => Opacity(opacity: opacity.clamp(0.0, 1.0), child: child),
+      duration: HouseSpring.duration,
+      curve: HouseSpring.curve,
+      builder: (context, opacity, child) =>
+          Opacity(opacity: opacity.clamp(0.0, 1.0), child: child),
       child: AmbientGlowWidget(
-              enableAnimation: false, // static glow: error states should stay calm, not perpetually animate
+        enableAnimation:
+            false, // static glow: error states should stay calm, not perpetually animate
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: ambiance.danger.withValues(alpha: 0.35)),
         baseColor: ambiance.danger.withValues(alpha: 0.10),
@@ -256,7 +267,10 @@ class InlinePartialErrorWidget extends StatelessWidget {
               onTap: onRetry,
               child: Text(
                 'Retry',
-                style: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w700, color: ambiance.danger),
+                style: AppThemes.safeGeist(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: ambiance.danger),
               ),
             ),
           ],
@@ -295,9 +309,10 @@ class PlaybackUnavailableWidget extends StatelessWidget {
       ),
       body: TweenAnimationBuilder<double>(
         tween: Tween<double>(begin: 0.0, end: 1.0),
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
-        builder: (context, opacity, child) => Opacity(opacity: opacity.clamp(0.0, 1.0), child: child),
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
+        builder: (context, opacity, child) =>
+            Opacity(opacity: opacity.clamp(0.0, 1.0), child: child),
         child: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -320,7 +335,8 @@ class PlaybackUnavailableWidget extends StatelessWidget {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: AppThemes.safeGeist(fontSize: 14, height: 1.4, color: ambiance.sub),
+                  style: AppThemes.safeGeist(
+                      fontSize: 14, height: 1.4, color: ambiance.sub),
                 ),
                 const SizedBox(height: 32),
                 if (onWatchOnYouTube != null) ...[
@@ -330,7 +346,9 @@ class PlaybackUnavailableWidget extends StatelessWidget {
                     icon: Icons.open_in_new_rounded,
                     label: 'Watch on YouTube',
                     onPressed: onWatchOnYouTube,
-                    decoration: BoxDecoration(color: Colors.red.shade700, borderRadius: BorderRadius.circular(999)),
+                    decoration: BoxDecoration(
+                        color: Colors.red.shade700,
+                        borderRadius: BorderRadius.circular(999)),
                     foreground: Colors.white,
                   ),
                   const SizedBox(height: 12),
@@ -368,12 +386,13 @@ class ConfigurationErrorScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: ambianceColors.base,
       body: Container(
-        decoration: ambianceColors.background.copyWith(color: ambianceColors.base),
+        decoration:
+            ambianceColors.background.copyWith(color: ambianceColors.base),
         child: Center(
           child: TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0.0, end: 1.0),
-            duration: AppPhysics.houseSpringDuration,
-            curve: AppPhysics.houseSpringCurve,
+            duration: HouseSpring.duration,
+            curve: HouseSpring.curve,
             builder: (context, opacity, child) {
               return Opacity(opacity: opacity.clamp(0.0, 1.0), child: child);
             },

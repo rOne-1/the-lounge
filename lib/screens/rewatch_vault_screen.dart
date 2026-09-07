@@ -7,7 +7,8 @@ import '../providers/navigation_provider.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/lounge_dropdown.dart';
 import '../widgets/media_image.dart';
-import '../widgets/pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 import 'detail_screen.dart';
 
 /// FEAT-REWATCH-1: secondary sort applied to the (type-filtered) rewatch
@@ -104,7 +105,8 @@ class RewatchVaultScreen extends ConsumerStatefulWidget {
 class _RewatchVaultScreenState extends ConsumerState<RewatchVaultScreen> {
   RewatchSortOption _sort = RewatchSortOption.mostRecent;
 
-  List<_RewatchSummary> _computeSummaries(MediaState state, MediaType activeType) {
+  List<_RewatchSummary> _computeSummaries(
+      MediaState state, MediaType activeType) {
     final summaries = <_RewatchSummary>[];
     state.watchHistory.forEach((mediaId, records) {
       final rewatches = records.where((r) => !r.isFirstWatch).toList();
@@ -127,7 +129,8 @@ class _RewatchVaultScreenState extends ConsumerState<RewatchVaultScreen> {
       case RewatchSortOption.mostRewatched:
         summaries.sort((a, b) => b.count.compareTo(a.count));
       case RewatchSortOption.titleAZ:
-        summaries.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        summaries.sort(
+            (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
     }
     return summaries;
   }
@@ -136,9 +139,10 @@ class _RewatchVaultScreenState extends ConsumerState<RewatchVaultScreen> {
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
     final state = ref.watch(mediaProvider);
-    final activeType = ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
-        ? MediaType.movie
-        : MediaType.tv;
+    final activeType =
+        ref.watch(navigationProvider).activeMediaType == MediaTypeToggle.movies
+            ? MediaType.movie
+            : MediaType.tv;
     final summaries = _computeSummaries(state, activeType);
     final topEntry = _mostRewatchedEntry(state);
 
@@ -161,13 +165,15 @@ class _RewatchVaultScreenState extends ConsumerState<RewatchVaultScreen> {
                   border: Border.all(color: colors.lineRgba),
                   boxShadow: [
                     BoxShadow(
-                      color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                      color: colors.scrim
+                          .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Icon(Icons.chevron_left_rounded, color: colors.ink, size: 22),
+                child: Icon(Icons.chevron_left_rounded,
+                    color: colors.ink, size: 22),
               ),
             ),
           ),
@@ -189,7 +195,9 @@ class _RewatchVaultScreenState extends ConsumerState<RewatchVaultScreen> {
                 title: 'No rewatches yet',
                 message: 'Titles you log a rewatch for will show up here.',
                 ctaLabel: 'Discover Titles',
-                onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
+                onCta: () => ref
+                    .read(navigationProvider.notifier)
+                    .setTab(AppTab.discover),
               )
             : Column(
                 children: [
@@ -212,7 +220,8 @@ class _RewatchVaultScreenState extends ConsumerState<RewatchVaultScreen> {
                           hintText: 'Sort',
                           isActive: _sort != RewatchSortOption.mostRecent,
                           items: RewatchSortOption.values
-                              .map((o) => LoungeDropdownItem(value: o, label: o.label))
+                              .map((o) =>
+                                  LoungeDropdownItem(value: o, label: o.label))
                               .toList(),
                           onChanged: (v) {
                             if (v != null) setState(() => _sort = v);
@@ -226,7 +235,8 @@ class _RewatchVaultScreenState extends ConsumerState<RewatchVaultScreen> {
                       padding: const EdgeInsets.all(18),
                       itemCount: summaries.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, index) => _RewatchRow(summary: summaries[index]),
+                      itemBuilder: (context, index) =>
+                          _RewatchRow(summary: summaries[index]),
                     ),
                   ),
                 ],
@@ -341,8 +351,18 @@ class _RewatchRow extends ConsumerWidget {
 
   String _formatDate(DateTime dt) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
@@ -354,7 +374,8 @@ class _RewatchRow extends ConsumerWidget {
 
     final asyncItem = ref.watch(mediaDetailsProvider(summary.mediaId));
     return asyncItem.when(
-      data: (item) => item != null ? _buildRow(context, item) : const SizedBox.shrink(),
+      data: (item) =>
+          item != null ? _buildRow(context, item) : const SizedBox.shrink(),
       loading: () => _buildLoadingRow(context),
       error: (_, __) => const SizedBox.shrink(),
     );
@@ -364,7 +385,9 @@ class _RewatchRow extends ConsumerWidget {
     final colors = context.ambianceColors;
     return PressableScale(
       onTap: () => Navigator.of(context).push(
-        MaterialPageRoute(builder: (context) => DetailScreen(id: item.prefixedId, initialItem: item)),
+        MaterialPageRoute(
+            builder: (context) =>
+                DetailScreen(id: item.prefixedId, initialItem: item)),
       ),
       child: Container(
         padding: const EdgeInsets.all(12),

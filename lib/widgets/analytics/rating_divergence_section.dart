@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../constants.dart';
 import '../../utils/analytics_engine.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// ANLY-TASTE-2: compares personal rating (mapped onto weightedRatingOf's
 /// 0-10 scale via AnalyticsConstants.personalRatingPoints) against the
@@ -49,15 +50,15 @@ class RatingDivergenceSection extends StatelessWidget {
           )
               .animate()
               .fadeIn(
-                duration: AppPhysics.houseSpringDuration,
-                curve: AppPhysics.houseSpringCurve,
+                duration: HouseSpring.duration,
+                curve: HouseSpring.curve,
                 delay: (i.clamp(0, 6) * 40).ms,
               )
               .slideX(
                 begin: -0.06,
                 end: 0,
-                duration: AppPhysics.houseSpringDuration,
-                curve: AppPhysics.houseSpringCurve,
+                duration: HouseSpring.duration,
+                curve: HouseSpring.curve,
                 delay: (i.clamp(0, 6) * 40).ms,
               ),
       ],
@@ -111,8 +112,12 @@ class _DivergenceRow extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: colors.acc,
                           borderRadius: BorderRadius.horizontal(
-                            left: isPositive ? Radius.zero : const Radius.circular(4),
-                            right: isPositive ? const Radius.circular(4) : Radius.zero,
+                            left: isPositive
+                                ? Radius.zero
+                                : const Radius.circular(4),
+                            right: isPositive
+                                ? const Radius.circular(4)
+                                : Radius.zero,
                           ),
                         ),
                       ),

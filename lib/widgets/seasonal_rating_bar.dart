@@ -5,6 +5,7 @@ import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import 'lounge_rating_sheet.dart' show findPrimaryWatchRecord;
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// PERS-DIFF-1: horizontal segmented bar on `DetailScreen` showing each
 /// season's personal rating as a color-coded tier fill (e.g. S1: Loved,
@@ -96,10 +97,10 @@ class SeasonalRatingBar extends ConsumerWidget {
         )
             .animate()
             .fadeIn(
-              duration: AppPhysics.houseSpringDuration,
-              curve: AppPhysics.houseSpringCurve,
+              duration: HouseSpring.duration,
+              curve: HouseSpring.curve,
             )
-            .scaleX(begin: 0.92, end: 1, curve: AppPhysics.houseSpringCurve),
+            .scaleX(begin: 0.92, end: 1, curve: HouseSpring.curve),
         const SizedBox(height: 8),
         Wrap(
           spacing: 12,

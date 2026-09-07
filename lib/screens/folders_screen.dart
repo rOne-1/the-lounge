@@ -4,7 +4,8 @@ import '../constants.dart';
 import '../providers/media_provider.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/lounge_folder_name_sheet.dart';
-import '../widgets/pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 import 'folder_detail_screen.dart';
 
 /// PERS-FOLDERS-1: lists every custom folder with a create action. Tapping
@@ -48,13 +49,15 @@ class FoldersScreen extends ConsumerWidget {
                   border: Border.all(color: colors.lineRgba),
                   boxShadow: [
                     BoxShadow(
-                      color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                      color: colors.scrim
+                          .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Icon(Icons.chevron_left_rounded, color: colors.ink, size: 22),
+                child: Icon(Icons.chevron_left_rounded,
+                    color: colors.ink, size: 22),
               ),
             ),
           ),
@@ -84,7 +87,8 @@ class FoldersScreen extends ConsumerWidget {
                     border: Border.all(color: colors.lineRgba),
                     boxShadow: [
                       BoxShadow(
-                        color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                        color: colors.scrim
+                            .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -102,7 +106,8 @@ class FoldersScreen extends ConsumerWidget {
             ? AtmosphericEmptyState(
                 icon: Icons.folder_outlined,
                 title: 'No folders yet',
-                message: 'Create a folder to start curating your own playlists of titles.',
+                message:
+                    'Create a folder to start curating your own playlists of titles.',
                 ctaLabel: 'New Folder',
                 onCta: () => _createFolder(context, ref),
               )
@@ -116,11 +121,13 @@ class FoldersScreen extends ConsumerWidget {
                   return PressableScale(
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(
-                        builder: (context) => FolderDetailScreen(folderId: folder.id),
+                        builder: (context) =>
+                            FolderDetailScreen(folderId: folder.id),
                       ),
                     ),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
                         color: colors.card,
                         borderRadius: BorderRadius.circular(18),

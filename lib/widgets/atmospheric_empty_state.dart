@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
 import 'ambient_glow.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 
 /// The app's atmospheric empty-state treatment: a frosted ambient card with
 /// an icon watermark and a Bodoni Moda headline, replacing plain
@@ -58,7 +59,8 @@ class AtmosphericEmptyState extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, size: 44, color: ambiance.sub.withValues(alpha: 0.5)),
+                Icon(icon,
+                    size: 44, color: ambiance.sub.withValues(alpha: 0.5)),
                 const SizedBox(height: 18),
                 Text(
                   title,
@@ -75,7 +77,8 @@ class AtmosphericEmptyState extends StatelessWidget {
                   Text(
                     message!,
                     textAlign: TextAlign.center,
-                    style: AppThemes.safeGeist(fontSize: 13, height: 1.4, color: ambiance.sub),
+                    style: AppThemes.safeGeist(
+                        fontSize: 13, height: 1.4, color: ambiance.sub),
                   ),
                 ],
                 if (ambiance.signatureMotif != null) ...[
@@ -95,7 +98,8 @@ class AtmosphericEmptyState extends StatelessWidget {
                   PressableScale(
                     onTap: onCta,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 22, vertical: 12),
                       decoration: ambiance.primaryButtonDecoration,
                       child: Text(
                         ctaLabel!,

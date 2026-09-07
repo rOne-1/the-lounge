@@ -4,13 +4,24 @@ import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import 'lounge_rating_sheet.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 String _formatHistoryDate(DateTime? dt) {
   if (dt == null) return 'No date logged';
   const months = [
-    'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
   return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
 }
@@ -25,7 +36,8 @@ class WatchHistoryTimeline extends ConsumerStatefulWidget {
   const WatchHistoryTimeline({super.key, required this.item});
 
   @override
-  ConsumerState<WatchHistoryTimeline> createState() => _WatchHistoryTimelineState();
+  ConsumerState<WatchHistoryTimeline> createState() =>
+      _WatchHistoryTimelineState();
 }
 
 class _WatchHistoryTimelineState extends ConsumerState<WatchHistoryTimeline> {
@@ -47,7 +59,8 @@ class _WatchHistoryTimelineState extends ConsumerState<WatchHistoryTimeline> {
     if (records == null || records.isEmpty) return const SizedBox.shrink();
 
     final sorted = List<WatchRecord>.from(records)
-      ..sort((a, b) => (a.date ?? a.recordedAt).compareTo(b.date ?? b.recordedAt));
+      ..sort(
+          (a, b) => (a.date ?? a.recordedAt).compareTo(b.date ?? b.recordedAt));
 
     // Rewatch numbering follows chronological order, scoped separately for
     // the overall-item timeline vs. each season's own timeline.
@@ -87,16 +100,16 @@ class _WatchHistoryTimelineState extends ConsumerState<WatchHistoryTimeline> {
               const Spacer(),
               AnimatedRotation(
                 turns: _expanded ? 0.5 : 0,
-                duration: AppPhysics.houseSpringDuration,
-                curve: AppPhysics.houseSpringCurve,
+                duration: HouseSpring.duration,
+                curve: HouseSpring.curve,
                 child: Icon(Icons.expand_more_rounded, color: colors.sub),
               ),
             ],
           ),
         ),
         AnimatedSize(
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           alignment: Alignment.topCenter,
           child: _expanded
               ? Padding(
@@ -161,7 +174,8 @@ class _HistoryRow extends StatelessWidget {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: tierColor),
+                decoration:
+                    BoxDecoration(shape: BoxShape.circle, color: tierColor),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -179,7 +193,8 @@ class _HistoryRow extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       _formatHistoryDate(record.date),
-                      style: AppThemes.safeGeist(fontSize: 11, color: colors.sub),
+                      style:
+                          AppThemes.safeGeist(fontSize: 11, color: colors.sub),
                     ),
                   ],
                 ),

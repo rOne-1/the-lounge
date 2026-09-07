@@ -7,7 +7,8 @@ import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../widgets/dashed_border_card.dart';
 import '../widgets/archive_summary_card.dart';
-import '../widgets/pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 import '../widgets/watching_hero_card.dart';
 import 'archive_shelf_screen.dart';
 
@@ -28,10 +29,13 @@ class ArchiveScreen extends ConsumerWidget {
 
     final activeMediaType = ref.watch(navigationProvider).activeMediaType;
     final activeDomain = MediumDomain.fromMediaTypeToggle(activeMediaType);
-    final targetType = activeMediaType == MediaTypeToggle.movies ? MediaType.movie : MediaType.tv;
+    final targetType = activeMediaType == MediaTypeToggle.movies
+        ? MediaType.movie
+        : MediaType.tv;
 
-    int countForType(Map<String, dynamic> itemsMap) =>
-        itemsMap.values.where((m) => m is MediaItem && m.type == targetType).length;
+    int countForType(Map<String, dynamic> itemsMap) => itemsMap.values
+        .where((m) => m is MediaItem && m.type == targetType)
+        .length;
 
     final watchlistCount = countForType(mediaState.watchlist);
     final savedCount = countForType(mediaState.maybeList);
@@ -61,13 +65,19 @@ class ArchiveScreen extends ConsumerWidget {
     String watchingSubtitle;
     switch (activeDomain) {
       case MediumDomain.movies:
-        watchingSubtitle = watchingCount == 1 ? '1 movie in progress' : '$watchingCount movies in progress';
+        watchingSubtitle = watchingCount == 1
+            ? '1 movie in progress'
+            : '$watchingCount movies in progress';
         break;
       case MediumDomain.tv:
-        watchingSubtitle = watchingCount == 1 ? '1 show in progress' : '$watchingCount shows in progress';
+        watchingSubtitle = watchingCount == 1
+            ? '1 show in progress'
+            : '$watchingCount shows in progress';
         break;
       case MediumDomain.anime:
-        watchingSubtitle = watchingCount == 1 ? '1 series in progress' : '$watchingCount series in progress';
+        watchingSubtitle = watchingCount == 1
+            ? '1 series in progress'
+            : '$watchingCount series in progress';
         break;
     }
 
@@ -77,13 +87,16 @@ class ArchiveScreen extends ConsumerWidget {
     } else {
       switch (activeDomain) {
         case MediumDomain.movies:
-          droppedSubtitle = '$droppedCount ${droppedCount == 1 ? "movie" : "movies"}';
+          droppedSubtitle =
+              '$droppedCount ${droppedCount == 1 ? "movie" : "movies"}';
           break;
         case MediumDomain.tv:
-          droppedSubtitle = '$droppedCount ${droppedCount == 1 ? "TV show" : "TV shows"}';
+          droppedSubtitle =
+              '$droppedCount ${droppedCount == 1 ? "TV show" : "TV shows"}';
           break;
         case MediumDomain.anime:
-          droppedSubtitle = '$droppedCount ${droppedCount == 1 ? "anime" : "anime series"}';
+          droppedSubtitle =
+              '$droppedCount ${droppedCount == 1 ? "anime" : "anime series"}';
           break;
       }
     }
@@ -91,13 +104,16 @@ class ArchiveScreen extends ConsumerWidget {
     String topBarSubtitle;
     switch (activeDomain) {
       case MediumDomain.movies:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "movie" : "movies"} · 6 shelves';
+        topBarSubtitle =
+            '$totalTitles ${totalTitles == 1 ? "movie" : "movies"} · 6 shelves';
         break;
       case MediumDomain.tv:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "TV show" : "TV shows"} · 6 shelves';
+        topBarSubtitle =
+            '$totalTitles ${totalTitles == 1 ? "TV show" : "TV shows"} · 6 shelves';
         break;
       case MediumDomain.anime:
-        topBarSubtitle = '$totalTitles ${totalTitles == 1 ? "anime" : "anime series"} · 6 shelves';
+        topBarSubtitle =
+            '$totalTitles ${totalTitles == 1 ? "anime" : "anime series"} · 6 shelves';
         break;
     }
 
@@ -145,7 +161,8 @@ class ArchiveScreen extends ConsumerWidget {
                         count: watchedCount,
                         icon: Icons.check_rounded,
                         statusColor: ArchiveShelfKind.watched.statusColor,
-                        onTap: () => _openShelf(context, ArchiveShelfKind.watched),
+                        onTap: () =>
+                            _openShelf(context, ArchiveShelfKind.watched),
                       ),
                       ArchiveSummaryCard(
                         label: ArchiveShelfKind.watchlist.label,
@@ -153,7 +170,8 @@ class ArchiveScreen extends ConsumerWidget {
                         count: watchlistCount,
                         icon: Icons.bookmark_rounded,
                         statusColor: ArchiveShelfKind.watchlist.statusColor,
-                        onTap: () => _openShelf(context, ArchiveShelfKind.watchlist),
+                        onTap: () =>
+                            _openShelf(context, ArchiveShelfKind.watchlist),
                       ),
                       ArchiveSummaryCard(
                         label: ArchiveShelfKind.saved.label,
@@ -161,7 +179,8 @@ class ArchiveScreen extends ConsumerWidget {
                         count: savedCount,
                         icon: Icons.favorite_rounded,
                         statusColor: ArchiveShelfKind.saved.statusColor,
-                        onTap: () => _openShelf(context, ArchiveShelfKind.saved),
+                        onTap: () =>
+                            _openShelf(context, ArchiveShelfKind.saved),
                       ),
                       ArchiveSummaryCard(
                         label: ArchiveShelfKind.onHold.label,
@@ -169,7 +188,8 @@ class ArchiveScreen extends ConsumerWidget {
                         count: onHoldCount,
                         icon: Icons.pause_rounded,
                         statusColor: ArchiveShelfKind.onHold.statusColor,
-                        onTap: () => _openShelf(context, ArchiveShelfKind.onHold),
+                        onTap: () =>
+                            _openShelf(context, ArchiveShelfKind.onHold),
                       ),
                     ],
                   ),
@@ -177,10 +197,13 @@ class ArchiveScreen extends ConsumerWidget {
 
                   // 3. Dropped Shelf Card (Full-width dashed card)
                   DashedBorderCard(
-                    borderColor: AppStatusColors.dropped.withValues(alpha: 0.32),
-                    backgroundColor: AppStatusColors.dropped.withValues(alpha: 0.06),
+                    borderColor:
+                        AppStatusColors.dropped.withValues(alpha: 0.32),
+                    backgroundColor:
+                        AppStatusColors.dropped.withValues(alpha: 0.06),
                     borderRadius: const BorderRadius.all(Radius.circular(22.0)),
-                    padding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 16.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18.0, vertical: 16.0),
                     onTap: () => _openShelf(context, ArchiveShelfKind.dropped),
                     child: Row(
                       children: [
@@ -188,7 +211,8 @@ class ArchiveScreen extends ConsumerWidget {
                           width: 32,
                           height: 32,
                           decoration: BoxDecoration(
-                            color: AppStatusColors.dropped.withValues(alpha: 0.16),
+                            color:
+                                AppStatusColors.dropped.withValues(alpha: 0.16),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(
@@ -227,7 +251,8 @@ class ArchiveScreen extends ConsumerWidget {
                             context,
                             fontSize: 22,
                             fontWeight: FontWeight.w400,
-                            color: AppStatusColors.dropped.withValues(alpha: 0.85),
+                            color:
+                                AppStatusColors.dropped.withValues(alpha: 0.85),
                           ),
                         ),
                       ],
@@ -258,7 +283,8 @@ class ArchiveScreen extends ConsumerWidget {
               border: Border.all(color: colors.lineRgba),
               boxShadow: [
                 BoxShadow(
-                  color: colors.scrim.withValues(alpha: colors.isDark ? 0.25 : 0.06),
+                  color: colors.scrim
+                      .withValues(alpha: colors.isDark ? 0.25 : 0.06),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),

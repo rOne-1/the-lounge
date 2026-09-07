@@ -7,7 +7,8 @@ import '../providers/media_provider.dart';
 import '../screens/detail_screen.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'media_image.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// CRAFT-ROULETTE-1: opens the constraint-based "Pick For Me" roulette as a
 /// themed drag-to-dismiss sheet, the same convention every other focused
@@ -60,10 +61,10 @@ class _PickForMeRouletteSheetState extends ConsumerState<PickForMeRouletteSheet>
     super.initState();
     _curtainController = AnimationController(
       vsync: this,
-      duration: AppPhysics.houseSpringDuration,
+      duration: HouseSpring.duration,
     );
-    _curtainAnim = CurvedAnimation(
-        parent: _curtainController, curve: AppPhysics.houseSpringCurve);
+    _curtainAnim =
+        CurvedAnimation(parent: _curtainController, curve: HouseSpring.curve);
   }
 
   @override
@@ -325,8 +326,8 @@ class _FilterRow<T> extends StatelessWidget {
                   child: PressableScale(
                     onTap: () => onChanged(option.$1),
                     child: AnimatedContainer(
-                      duration: AppPhysics.houseSpringDuration,
-                      curve: AppPhysics.houseSpringCurve,
+                      duration: HouseSpring.duration,
+                      curve: HouseSpring.curve,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 7),
                       decoration: BoxDecoration(

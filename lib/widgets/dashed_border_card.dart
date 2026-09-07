@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 
 /// YSR-COMP-2: A versatile card container with a smooth dashed outline painted
 /// via path metrics. Supports theme tokens, custom corner radius, and [PressableScale].
@@ -32,7 +33,8 @@ class DashedBorderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.ambianceColors;
     final resolvedBorderColor = borderColor ?? colors.lineRgba;
-    final resolvedBgColor = backgroundColor ?? colors.card.withValues(alpha: 0.5);
+    final resolvedBgColor =
+        backgroundColor ?? colors.card.withValues(alpha: 0.5);
 
     Widget content = Container(
       decoration: BoxDecoration(

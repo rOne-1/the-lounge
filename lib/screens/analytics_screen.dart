@@ -8,7 +8,7 @@ import '../constants.dart';
 import '../providers/analytics_provider.dart';
 import '../providers/media_provider.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show shareImageFile, saveImageFile;
+    show shareImageFile, saveImageFile, HouseSpring, PressableScale;
 import '../utils/relative_time.dart';
 import '../widgets/analytics/abandoned_shows_section.dart';
 import '../widgets/analytics/analytics_legend_sheet.dart';
@@ -29,7 +29,6 @@ import '../widgets/analytics/watchlist_funnel_section.dart';
 import '../widgets/archive_summary_card.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/lounge_toast.dart';
-import '../widgets/pressable_scale.dart';
 
 /// ANLY-SHARE-1: stable across the screen's lifetime (a plain top-level
 /// GlobalKey, not per-build) so the offscreen [AnalyticsShareCard]'s
@@ -225,8 +224,8 @@ class _AnalyticsResults extends StatelessWidget {
         TweenAnimationBuilder<double>(
           key: ValueKey(state.generatedAt),
           tween: Tween(begin: 0.0, end: 1.0),
-          duration: AppPhysics.houseSpringDuration,
-          curve: AppPhysics.houseSpringCurve,
+          duration: HouseSpring.duration,
+          curve: HouseSpring.curve,
           builder: (context, t, child) {
             return Opacity(
               opacity: t.clamp(0.0, 1.0),

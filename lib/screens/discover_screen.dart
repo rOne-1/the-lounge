@@ -12,12 +12,13 @@ import '../providers/navigation_provider.dart';
 import '../models/media_item.dart';
 import '../utils/app_haptics.dart';
 import '../widgets/fallback_widgets.dart';
-import '../widgets/pressable_scale.dart';
 import 'detail_screen.dart';
 
 import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/lounge_toast.dart';
 import '../widgets/quick_status_sheet.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, OffsetSpringSimulation, PressableScale;
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -1458,7 +1459,7 @@ class _SwipeCardState extends ConsumerState<SwipeCard>
             flyOff('Up', () => widget.onSwipe('Up')),
       },
       child: OpenContainer(
-        transitionDuration: AppPhysics.houseSpringDuration,
+        transitionDuration: HouseSpring.duration,
         closedElevation: 0,
         openElevation: 0,
         closedColor: Colors.transparent,

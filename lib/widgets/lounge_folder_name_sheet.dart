@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../constants.dart';
 import 'drag_to_dismiss_sheet.dart';
 import 'lounge_text_field.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// PERS-FOLDERS-1: themed bottom-sheet prompt for a folder name -- shared by
 /// "create folder" (FoldersScreen) and "rename folder" (FolderDetailScreen)
@@ -45,7 +46,8 @@ class _FolderNameSheetContent extends StatefulWidget {
   });
 
   @override
-  State<_FolderNameSheetContent> createState() => _FolderNameSheetContentState();
+  State<_FolderNameSheetContent> createState() =>
+      _FolderNameSheetContentState();
 }
 
 class _FolderNameSheetContentState extends State<_FolderNameSheetContent> {
@@ -56,7 +58,8 @@ class _FolderNameSheetContentState extends State<_FolderNameSheetContent> {
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialValue);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _focusNode.requestFocus());
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _focusNode.requestFocus());
   }
 
   @override
@@ -81,7 +84,7 @@ class _FolderNameSheetContentState extends State<_FolderNameSheetContent> {
     return AnimatedPadding(
       padding: EdgeInsets.only(bottom: viewInsets.bottom),
       duration: const Duration(milliseconds: 200),
-      curve: AppPhysics.houseSpringCurve,
+      curve: HouseSpring.curve,
       child: Container(
         decoration: BoxDecoration(
           color: colors.base,

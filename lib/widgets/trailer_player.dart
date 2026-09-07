@@ -10,7 +10,8 @@ import '../models/media_item.dart';
 import 'fallback_widgets.dart';
 import 'lounge_slider.dart';
 import 'lounge_toast.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/media_provider.dart';
 

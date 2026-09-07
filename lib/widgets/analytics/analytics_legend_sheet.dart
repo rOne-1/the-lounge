@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../constants.dart';
 import '../drag_to_dismiss_sheet.dart';
-import '../pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show PressableScale;
 
 /// A quick-reference glossary explaining every metric on the Analytics
 /// screen, matching the app's established "Legend" bottom-sheet convention

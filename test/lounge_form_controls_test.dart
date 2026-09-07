@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:the_lounge/constants.dart';
 import 'package:the_lounge/themes/screening_room_theme.dart';
 import 'package:the_lounge/widgets/lounge_slider.dart';
 import 'package:the_lounge/widgets/lounge_dropdown.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 void main() {
   Widget wrap(Widget home) {
-    return MaterialApp(theme: screeningRoomTheme.themeData, home: Scaffold(body: Center(child: home)));
+    return MaterialApp(
+        theme: screeningRoomTheme.themeData,
+        home: Scaffold(body: Center(child: home)));
   }
 
   group('LoungeSlider (FC-1)', () {
@@ -44,13 +46,16 @@ void main() {
       await tester.pumpWidget(wrap(
         SizedBox(
           width: 300,
-          child: LoungeSlider(value: 5.0, min: 0.0, max: 10.0, onChanged: (_) {}),
+          child:
+              LoungeSlider(value: 5.0, min: 0.0, max: 10.0, onChanged: (_) {}),
         ),
       ));
 
-      final sliderTheme = tester.widget<SliderTheme>(find.byType(SliderTheme).first);
+      final sliderTheme =
+          tester.widget<SliderTheme>(find.byType(SliderTheme).first);
       expect(sliderTheme.data.activeTrackColor, equals(srAmbianceColors.acc));
-      expect(sliderTheme.data.inactiveTrackColor, equals(srAmbianceColors.card2));
+      expect(
+          sliderTheme.data.inactiveTrackColor, equals(srAmbianceColors.card2));
     });
   });
 
@@ -76,8 +81,10 @@ void main() {
 
   group('LoungeDropdown (FC-1)', () {
     const items = [
-      LoungeDropdownItem<String>(value: 'popularity.desc', label: 'Most Popular'),
-      LoungeDropdownItem<String>(value: 'vote_average.desc', label: 'Highest Rated'),
+      LoungeDropdownItem<String>(
+          value: 'popularity.desc', label: 'Most Popular'),
+      LoungeDropdownItem<String>(
+          value: 'vote_average.desc', label: 'Highest Rated'),
     ];
 
     testWidgets('shows the selected item label on the trigger', (tester) async {
@@ -92,7 +99,9 @@ void main() {
       expect(find.text('Highest Rated'), findsOneWidget);
     });
 
-    testWidgets('tapping the trigger opens a popover and selecting an item fires onChanged', (tester) async {
+    testWidgets(
+        'tapping the trigger opens a popover and selecting an item fires onChanged',
+        (tester) async {
       String? selected;
       await tester.pumpWidget(wrap(
         LoungeDropdown<String>(
@@ -106,7 +115,7 @@ void main() {
 
       await tester.tap(find.text('Most Popular'));
       await tester.pump();
-      await tester.pump(AppPhysics.houseSpringDuration);
+      await tester.pump(HouseSpring.duration);
 
       // Popover now shows both items; tap the not-yet-selected one.
       expect(find.text('Highest Rated'), findsOneWidget);
@@ -116,7 +125,8 @@ void main() {
       expect(selected, equals('vote_average.desc'));
     });
 
-    testWidgets('dense variant renders without a fill/border container', (tester) async {
+    testWidgets('dense variant renders without a fill/border container',
+        (tester) async {
       await tester.pumpWidget(wrap(
         LoungeDropdown<String>(
           value: 'popularity.desc',

@@ -5,8 +5,9 @@ import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../widgets/media_image.dart';
-import '../widgets/pressable_scale.dart';
 import 'detail_screen.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// PERS-SORT-1: the archive shelf size that triggers the (non-blocking, dismissible)
 /// cleanup prompt.
@@ -320,11 +321,11 @@ class _CleanupCardState extends State<_CleanupCard>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-        vsync: this, duration: AppPhysics.houseSpringDuration)
-      ..addListener(() {
-        setState(() => _dragOffset = _animation!.value);
-      });
+    _controller =
+        AnimationController(vsync: this, duration: HouseSpring.duration)
+          ..addListener(() {
+            setState(() => _dragOffset = _animation!.value);
+          });
   }
 
   @override
@@ -335,7 +336,7 @@ class _CleanupCardState extends State<_CleanupCard>
 
   void _snapBack() {
     _animation = Tween<Offset>(begin: _dragOffset, end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: AppPhysics.houseSpringCurve),
+      CurvedAnimation(parent: _controller, curve: HouseSpring.curve),
     );
     _controller.forward(from: 0.0);
   }
@@ -349,7 +350,7 @@ class _CleanupCardState extends State<_CleanupCard>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.duration = const Duration(milliseconds: 250);
     await _controller.forward(from: 0.0);
-    _controller.duration = AppPhysics.houseSpringDuration;
+    _controller.duration = HouseSpring.duration;
     onComplete();
   }
 

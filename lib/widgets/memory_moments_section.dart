@@ -7,7 +7,8 @@ import '../providers/media_provider.dart';
 import '../screens/detail_screen.dart';
 import '../utils/memory_differentiation.dart';
 import 'media_card.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 MediaItem? _findKnownItem(MediaState state, String id) {
   return state.watchlist[id] ??
@@ -84,7 +85,8 @@ class _OnThisDayCard extends ConsumerWidget {
 
     final asyncItem = ref.watch(mediaDetailsProvider(memory.mediaId));
     return asyncItem.when(
-      data: (item) => item != null ? _build(context, item) : const SizedBox.shrink(),
+      data: (item) =>
+          item != null ? _build(context, item) : const SizedBox.shrink(),
       loading: () => const SizedBox.shrink(),
       error: (_, __) => const SizedBox.shrink(),
     );
@@ -95,7 +97,8 @@ class _OnThisDayCard extends ConsumerWidget {
     return PressableScale(
       onTap: () => Navigator.of(context).push(
         MaterialPageRoute(
-          builder: (context) => DetailScreen(id: item.prefixedId, initialItem: item),
+          builder: (context) =>
+              DetailScreen(id: item.prefixedId, initialItem: item),
         ),
       ),
       child: Container(
@@ -103,16 +106,19 @@ class _OnThisDayCard extends ConsumerWidget {
         decoration: BoxDecoration(
           color: colors.card,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppRatingColors.loved.withValues(alpha: 0.4)),
+          border:
+              Border.all(color: AppRatingColors.loved.withValues(alpha: 0.4)),
         ),
         child: Row(
           children: [
-            const Icon(Icons.auto_awesome_rounded, color: AppRatingColors.loved, size: 20),
+            const Icon(Icons.auto_awesome_rounded,
+                color: AppRatingColors.loved, size: 20),
             const SizedBox(width: 12),
             Expanded(
               child: RichText(
                 text: TextSpan(
-                  style: AppThemes.safeGeist(fontSize: 13, color: colors.ink, height: 1.3),
+                  style: AppThemes.safeGeist(
+                      fontSize: 13, color: colors.ink, height: 1.3),
                   children: [
                     TextSpan(
                       text:
@@ -131,8 +137,8 @@ class _OnThisDayCard extends ConsumerWidget {
       ),
     )
         .animate()
-        .fadeIn(duration: AppPhysics.houseSpringDuration, curve: AppPhysics.houseSpringCurve)
-        .slideY(begin: 0.08, end: 0, curve: AppPhysics.houseSpringCurve);
+        .fadeIn(duration: HouseSpring.duration, curve: HouseSpring.curve)
+        .slideY(begin: 0.08, end: 0, curve: HouseSpring.curve);
   }
 }
 
@@ -148,7 +154,8 @@ class _ForgottenFavoriteTile extends ConsumerWidget {
 
     final asyncItem = ref.watch(mediaDetailsProvider(favorite.mediaId));
     return asyncItem.when(
-      data: (item) => item != null ? _build(context, item) : const SizedBox.shrink(),
+      data: (item) =>
+          item != null ? _build(context, item) : const SizedBox.shrink(),
       loading: () => SizedBox(
         width: 104,
         child: Container(

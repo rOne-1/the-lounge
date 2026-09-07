@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants.dart';
 import 'shell_screen.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
 
 /// A splash screen displayed during app launch.
 /// Reflects the app's Screening Room visual identity (champagne gold accents,
@@ -55,18 +56,19 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller = AnimationController(
       vsync: this,
-      duration: shouldAnimate ? const Duration(milliseconds: 800) : Duration.zero,
+      duration:
+          shouldAnimate ? const Duration(milliseconds: 800) : Duration.zero,
     );
 
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
-      curve: AppPhysics.houseSpringCurve,
+      curve: HouseSpring.curve,
     );
 
     _scaleAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
       CurvedAnimation(
         parent: _controller,
-        curve: AppPhysics.houseSpringCurve,
+        curve: HouseSpring.curve,
       ),
     );
 
@@ -98,7 +100,7 @@ class _SplashScreenState extends State<SplashScreen>
           );
         },
         transitionDuration: (widget.enableAnimation ?? true)
-            ? AppPhysics.houseSpringDuration
+            ? HouseSpring.duration
             : Duration.zero,
       ),
     );
@@ -119,10 +121,13 @@ class _SplashScreenState extends State<SplashScreen>
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
-        statusBarIconBrightness: ambianceColors.isDark ? Brightness.light : Brightness.dark,
-        statusBarBrightness: ambianceColors.isDark ? Brightness.dark : Brightness.light,
+        statusBarIconBrightness:
+            ambianceColors.isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness:
+            ambianceColors.isDark ? Brightness.dark : Brightness.light,
         systemNavigationBarColor: baseColor,
-        systemNavigationBarIconBrightness: ambianceColors.isDark ? Brightness.light : Brightness.dark,
+        systemNavigationBarIconBrightness:
+            ambianceColors.isDark ? Brightness.light : Brightness.dark,
       ),
       child: Scaffold(
         backgroundColor: baseColor,

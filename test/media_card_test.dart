@@ -7,8 +7,9 @@ import 'package:the_lounge/models/media_item.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/widgets/media_card.dart';
-import 'package:the_lounge/widgets/pressable_scale.dart';
 import 'package:the_lounge/widgets/status_pulse_ring.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -55,7 +56,8 @@ void main() {
     return ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        mediaProvider.overrideWith(() => _WatchlistedMediaNotifier(watchlistedItem)),
+        mediaProvider
+            .overrideWith(() => _WatchlistedMediaNotifier(watchlistedItem)),
       ],
       child: MaterialApp(
         home: Scaffold(body: Center(child: child)),
@@ -64,21 +66,36 @@ void main() {
   }
 
   group('MediaCard — canonical card (UC-1)', () {
-    testWidgets('wraps its poster in a house-spring PressableScale', (tester) async {
+    testWidgets('wraps its poster in a house-spring PressableScale',
+        (tester) async {
       await tester.pumpWidget(wrap(
-        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180, onTap: () {}),
+        MediaCard(
+            item: ratedItem,
+            isDark: true,
+            width: 120,
+            height: 180,
+            onTap: () {}),
       ));
 
-      final pressable = tester.widget<PressableScale>(find.byType(PressableScale));
-      expect(pressable.curve, equals(AppPhysics.houseSpringCurve));
-      expect(pressable.releaseDuration, equals(AppPhysics.houseSpringDuration));
-      expect(pressable.pressDuration, equals(const Duration(milliseconds: 120)));
+      final pressable =
+          tester.widget<PressableScale>(find.byType(PressableScale));
+      expect(pressable.curve, equals(HouseSpring.curve));
+      expect(pressable.releaseDuration, equals(HouseSpring.duration));
+      expect(
+          pressable.pressDuration, equals(const Duration(milliseconds: 120)));
     });
 
-    testWidgets('custom onTap fires instead of the default open-container navigation', (tester) async {
+    testWidgets(
+        'custom onTap fires instead of the default open-container navigation',
+        (tester) async {
       var tapped = false;
       await tester.pumpWidget(wrap(
-        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180, onTap: () => tapped = true),
+        MediaCard(
+            item: ratedItem,
+            isDark: true,
+            width: 120,
+            height: 180,
+            onTap: () => tapped = true),
       ));
 
       await tester.tap(find.byType(MediaCard));
@@ -87,9 +104,15 @@ void main() {
       expect(tapped, isTrue);
     });
 
-    testWidgets('shows the starRating rating badge for a rated item', (tester) async {
+    testWidgets('shows the starRating rating badge for a rated item',
+        (tester) async {
       await tester.pumpWidget(wrap(
-        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180, onTap: () {}),
+        MediaCard(
+            item: ratedItem,
+            isDark: true,
+            width: 120,
+            height: 180,
+            onTap: () {}),
       ));
 
       expect(find.byIcon(Icons.star), findsOneWidget);
@@ -102,13 +125,20 @@ void main() {
 
     testWidgets('hides the rating badge for an unrated item', (tester) async {
       await tester.pumpWidget(wrap(
-        MediaCard(item: unratedItem, isDark: true, width: 120, height: 180, onTap: () {}),
+        MediaCard(
+            item: unratedItem,
+            isDark: true,
+            width: 120,
+            height: 180,
+            onTap: () {}),
       ));
 
       expect(find.byIcon(Icons.star), findsNothing);
     });
 
-    testWidgets('showRatingBadge: false suppresses the badge even for a rated item', (tester) async {
+    testWidgets(
+        'showRatingBadge: false suppresses the badge even for a rated item',
+        (tester) async {
       await tester.pumpWidget(wrap(
         MediaCard(
           item: ratedItem,
@@ -123,9 +153,16 @@ void main() {
       expect(find.byIcon(Icons.star), findsNothing);
     });
 
-    testWidgets('shows a pulse-ringed status indicator when the item is watchlisted', (tester) async {
+    testWidgets(
+        'shows a pulse-ringed status indicator when the item is watchlisted',
+        (tester) async {
       await tester.pumpWidget(wrapWatchlisted(
-        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180, onTap: () {}),
+        MediaCard(
+            item: ratedItem,
+            isDark: true,
+            width: 120,
+            height: 180,
+            onTap: () {}),
         ratedItem,
       ));
       await tester.pump();
@@ -134,15 +171,23 @@ void main() {
       expect(find.byIcon(Icons.bookmark_rounded), findsOneWidget);
     });
 
-    testWidgets('no status indicator when the item has no tracked status', (tester) async {
+    testWidgets('no status indicator when the item has no tracked status',
+        (tester) async {
       await tester.pumpWidget(wrap(
-        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180, onTap: () {}),
+        MediaCard(
+            item: ratedItem,
+            isDark: true,
+            width: 120,
+            height: 180,
+            onTap: () {}),
       ));
 
       expect(find.byType(StatusPulseRing), findsNothing);
     });
 
-    testWidgets('showStatusIndicator: false suppresses the indicator even when tracked', (tester) async {
+    testWidgets(
+        'showStatusIndicator: false suppresses the indicator even when tracked',
+        (tester) async {
       await tester.pumpWidget(wrapWatchlisted(
         MediaCard(
           item: ratedItem,
@@ -176,11 +221,18 @@ void main() {
       expect(find.text('Action'), findsOneWidget);
     });
 
-    testWidgets('BETA3-A11Y-2: announces title, year, medium type, rating, and status as one label', (tester) async {
+    testWidgets(
+        'BETA3-A11Y-2: announces title, year, medium type, rating, and status as one label',
+        (tester) async {
       final handle = tester.ensureSemantics();
 
       await tester.pumpWidget(wrapWatchlisted(
-        MediaCard(item: ratedItem, isDark: true, width: 120, height: 180, onTap: () {}),
+        MediaCard(
+            item: ratedItem,
+            isDark: true,
+            width: 120,
+            height: 180,
+            onTap: () {}),
         ratedItem,
       ));
       await tester.pump();
@@ -196,7 +248,9 @@ void main() {
       handle.dispose();
     });
 
-    testWidgets('item 1: shows a pending/confirming indicator for an unconfirmed Watched TV show', (tester) async {
+    testWidgets(
+        'item 1: shows a pending/confirming indicator for an unconfirmed Watched TV show',
+        (tester) async {
       final tvItem = MediaItem(
         id: 'tv-pending',
         title: 'Pending Show',
@@ -210,12 +264,18 @@ void main() {
       await tester.pumpWidget(ProviderScope(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
-          mediaProvider.overrideWith(() => _PendingWatchedMediaNotifier(tvItem)),
+          mediaProvider
+              .overrideWith(() => _PendingWatchedMediaNotifier(tvItem)),
         ],
         child: MaterialApp(
           home: Scaffold(
             body: Center(
-              child: MediaCard(item: tvItem, isDark: true, width: 120, height: 180, onTap: () {}),
+              child: MediaCard(
+                  item: tvItem,
+                  isDark: true,
+                  width: 120,
+                  height: 180,
+                  onTap: () {}),
             ),
           ),
         ),

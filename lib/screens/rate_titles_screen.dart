@@ -6,17 +6,20 @@ import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import '../widgets/lounge_rating_sheet.dart';
 import '../widgets/media_image.dart';
-import '../widgets/pressable_scale.dart';
 import 'detail_screen.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// PERS-RATE-2: all watched titles that have no overall personal rating yet.
 /// [typeFilter], when given, scopes the queue to just that media type --
 /// mirrors the Movies/TV toggle every Piles screen already respects, which
 /// the Tools screens previously ignored entirely.
-List<MediaItem> unratedWatchedTitles(MediaState state, {MediaType? typeFilter}) {
+List<MediaItem> unratedWatchedTitles(MediaState state,
+    {MediaType? typeFilter}) {
   return state.watchedList.values
       .where((item) => typeFilter == null || item.type == typeFilter)
-      .where((item) => findPrimaryWatchRecord(state.watchHistory, item.id, null) == null)
+      .where((item) =>
+          findPrimaryWatchRecord(state.watchHistory, item.id, null) == null)
       .toList();
 }
 
@@ -46,16 +49,19 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
   @override
   void initState() {
     super.initState();
-    _activeType = ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies
-        ? MediaType.movie
-        : MediaType.tv;
-    _queue = unratedWatchedTitles(ref.read(mediaProvider), typeFilter: _activeType);
+    _activeType =
+        ref.read(navigationProvider).activeMediaType == MediaTypeToggle.movies
+            ? MediaType.movie
+            : MediaType.tv;
+    _queue =
+        unratedWatchedTitles(ref.read(mediaProvider), typeFilter: _activeType);
   }
 
   void _rate(PersonalRating rating) {
     if (_queue.isEmpty) return;
     final item = _queue.first;
-    final record = WatchRecord(rating: rating, date: DateTime.now(), isFirstWatch: true);
+    final record =
+        WatchRecord(rating: rating, date: DateTime.now(), isFirstWatch: true);
     ref.read(mediaProvider.notifier).addWatchRecord(item.id, record);
     setState(() {
       _queue.removeAt(0);
@@ -80,7 +86,9 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
     final item = _lastActionItem;
     if (item == null) return;
     if (!_lastActionWasSkip && _lastActionRecordedAt != null) {
-      ref.read(mediaProvider.notifier).deleteWatchRecord(item.id, _lastActionRecordedAt!);
+      ref
+          .read(mediaProvider.notifier)
+          .deleteWatchRecord(item.id, _lastActionRecordedAt!);
     }
     setState(() {
       _queue.remove(item);
@@ -114,13 +122,15 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
                   border: Border.all(color: colors.lineRgba),
                   boxShadow: [
                     BoxShadow(
-                      color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                      color: colors.scrim
+                          .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                       blurRadius: 6,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
-                child: Icon(Icons.chevron_left_rounded, color: colors.ink, size: 22),
+                child: Icon(Icons.chevron_left_rounded,
+                    color: colors.ink, size: 22),
               ),
             ),
           ),
@@ -151,13 +161,15 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
                       border: Border.all(color: colors.lineRgba),
                       boxShadow: [
                         BoxShadow(
-                          color: colors.scrim.withValues(alpha: colors.isDark ? 0.2 : 0.06),
+                          color: colors.scrim
+                              .withValues(alpha: colors.isDark ? 0.2 : 0.06),
                           blurRadius: 6,
                           offset: const Offset(0, 2),
                         ),
                       ],
                     ),
-                    child: Icon(Icons.undo_rounded, color: colors.ink, size: 20),
+                    child:
+                        Icon(Icons.undo_rounded, color: colors.ink, size: 20),
                   ),
                 ),
               ),
@@ -176,7 +188,8 @@ class _RateTitlesScreenState extends ConsumerState<RateTitlesScreen> {
                   children: [
                     Text(
                       '${_queue.length} title${_queue.length == 1 ? '' : 's'} left to rate',
-                      style: AppThemes.safeGeist(fontSize: 13, color: colors.sub),
+                      style:
+                          AppThemes.safeGeist(fontSize: 13, color: colors.sub),
                     ),
                     const SizedBox(height: 16),
                     Expanded(
@@ -243,7 +256,7 @@ class _RateTitleCardState extends State<_RateTitleCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: AppPhysics.houseSpringDuration,
+      duration: HouseSpring.duration,
     )..addListener(() {
         setState(() => _dragOffset = _animation!.value);
       });
@@ -257,7 +270,7 @@ class _RateTitleCardState extends State<_RateTitleCard>
 
   void _snapBack() {
     _animation = Tween<Offset>(begin: _dragOffset, end: Offset.zero).animate(
-      CurvedAnimation(parent: _controller, curve: AppPhysics.houseSpringCurve),
+      CurvedAnimation(parent: _controller, curve: HouseSpring.curve),
     );
     _controller.forward(from: 0.0);
   }
@@ -270,7 +283,7 @@ class _RateTitleCardState extends State<_RateTitleCard>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.duration = const Duration(milliseconds: 250);
     await _controller.forward(from: 0.0);
-    _controller.duration = AppPhysics.houseSpringDuration;
+    _controller.duration = HouseSpring.duration;
     widget.onSkip();
   }
 
@@ -310,14 +323,20 @@ class _RateTitleCardState extends State<_RateTitleCard>
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: colors.lineRgba),
               boxShadow: const [
-                BoxShadow(color: Color.fromRGBO(0, 0, 0, 0.35), blurRadius: 24, offset: Offset(0, 10)),
+                BoxShadow(
+                    color: Color.fromRGBO(0, 0, 0, 0.35),
+                    blurRadius: 24,
+                    offset: Offset(0, 10)),
               ],
             ),
             clipBehavior: Clip.antiAlias,
             child: Stack(
               fit: StackFit.expand,
               children: [
-                MediaImage(item: widget.item, fit: BoxFit.cover, showFallbackTitle: false),
+                MediaImage(
+                    item: widget.item,
+                    fit: BoxFit.cover,
+                    showFallbackTitle: false),
                 Positioned(
                   left: 0,
                   right: 0,
@@ -328,7 +347,10 @@ class _RateTitleCardState extends State<_RateTitleCard>
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.85)],
+                        colors: [
+                          Colors.transparent,
+                          Color.fromRGBO(0, 0, 0, 0.85)
+                        ],
                       ),
                     ),
                     child: Column(

@@ -10,7 +10,8 @@ import '../screens/detail_screen.dart';
 import 'ambient_glow.dart';
 import 'media_image.dart';
 import 'pick_for_me_roulette_sheet.dart';
-import 'pressable_scale.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// A feature card styled with Screening Room aesthetics (champagne gold accent border,
 /// dark glass backdrop #161312, poster image, title, rating, tagline, and re-roll button)
@@ -158,7 +159,7 @@ class _PickForMeCardState extends ConsumerState<PickForMeCard> {
 
           // Main Card Content
           OpenContainer(
-            transitionDuration: AppPhysics.houseSpringDuration,
+            transitionDuration: HouseSpring.duration,
             closedElevation: 0,
             openElevation: 0,
             closedColor: Colors.transparent,

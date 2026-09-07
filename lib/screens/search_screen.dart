@@ -9,7 +9,7 @@ import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show ScrollChromeTracker;
+    show ScrollChromeTracker, HouseSpring, PressableScale;
 import '../utils/weighted_rating.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/drag_to_dismiss_sheet.dart';
@@ -19,7 +19,6 @@ import '../widgets/lounge_filter_chip.dart';
 import '../widgets/lounge_slider.dart';
 import '../widgets/media_card.dart';
 import '../widgets/person_search_autocomplete.dart';
-import '../widgets/pressable_scale.dart';
 
 int? getGenreIdForName(String name) {
   final lower = name.toLowerCase().trim();
@@ -195,9 +194,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       ...mediaState.onHoldList,
     }.values;
 
-    final alreadyPresentIds = results
-        .expand((item) => [item.id, item.prefixedId])
-        .toSet();
+    final alreadyPresentIds =
+        results.expand((item) => [item.id, item.prefixedId]).toSet();
     final lowerQuery = query.toLowerCase();
 
     final altMatches = libraryItems.where((item) {
@@ -222,7 +220,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   Future<void> _loadMorePage(bool isMovies) async {
     if (_isLoadingMore || !_hasMore) return;
-    if (_currentPage >= _maxPages || _accumulatedItems.length >= _maxAccumulatedItems) {
+    if (_currentPage >= _maxPages ||
+        _accumulatedItems.length >= _maxAccumulatedItems) {
       setState(() {
         _hasMore = false;
       });
@@ -234,8 +233,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     try {
       final repo = ref.read(movieRepositoryProvider);
       final filterParams = ref.read(discoverFilterProvider);
-      final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
-      final effectiveParams = applyHallLanguageLock(filterParams, lockedLanguageCode);
+      final lockedLanguageCode =
+          ref.read(activeHallSpaceProvider).lockedLanguageCode;
+      final effectiveParams =
+          applyHallLanguageLock(filterParams, lockedLanguageCode);
       final nextPage = _currentPage + 1;
       final newItems = await repo.discoverMedia(
         isMovies: isMovies,
@@ -244,14 +245,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       );
       if (mounted) {
         final existingIds = _accumulatedItems.map((e) => e.id).toSet();
-        final fresh = newItems.where((e) => !existingIds.contains(e.id)).toList();
+        final fresh =
+            newItems.where((e) => !existingIds.contains(e.id)).toList();
         setState(() {
           if (fresh.isEmpty) {
             _hasMore = false;
           } else {
             _currentPage = nextPage;
             _accumulatedItems.addAll(fresh);
-            if (_accumulatedItems.length >= _maxAccumulatedItems || _currentPage >= _maxPages) {
+            if (_accumulatedItems.length >= _maxAccumulatedItems ||
+                _currentPage >= _maxPages) {
               _hasMore = false;
             }
           }
@@ -362,7 +365,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     _showChrome();
   }
 
-  void _showFilterBottomSheet(BuildContext context, bool isDark, bool isMovies) {
+  void _showFilterBottomSheet(
+      BuildContext context, bool isDark, bool isMovies) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -389,7 +393,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 decoration: BoxDecoration(
                   color: cardBg,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(24)),
                   border: Border(
                     top: BorderSide(
                       color: context.ambianceColors.lineRgba,
@@ -421,7 +426,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     const SizedBox(height: 12),
                     Expanded(
                       child: SingleChildScrollView(
-                        child: _buildAccordionFilterPanel(isDark, isMovies, sheetRef),
+                        child: _buildAccordionFilterPanel(
+                            isDark, isMovies, sheetRef),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -430,7 +436,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(12),
-                        decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(12)),
+                        decoration: context
+                            .ambianceColors.primaryButtonDecoration
+                            .copyWith(borderRadius: BorderRadius.circular(12)),
                         alignment: Alignment.center,
                         child: Text(
                           'Apply Filters',
@@ -594,7 +602,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       }
     });
 
-    ref.listen(navigationProvider.select((s) => s.activeMediaType), (previous, next) {
+    ref.listen(navigationProvider.select((s) => s.activeMediaType),
+        (previous, next) {
       if (previous != next && mounted) {
         setState(() {
           _currentPage = 1;
@@ -605,7 +614,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       }
     });
 
-    ref.listen(activeHallSpaceProvider.select((h) => h.lockedLanguageCode), (previous, next) {
+    ref.listen(activeHallSpaceProvider.select((h) => h.lockedLanguageCode),
+        (previous, next) {
       if (previous != next && mounted) {
         setState(() {
           _currentPage = 1;
@@ -725,7 +735,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   height: 16,
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(context.ambianceColors.acc),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                        context.ambianceColors.acc),
                   ),
                 ),
               )
@@ -801,7 +812,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             child: AnimatedSlide(
               offset: _isChromeVisible ? Offset.zero : const Offset(0, -1.0),
               duration: const Duration(milliseconds: 320),
-              curve: AppPhysics.houseSpringCurve,
+              curve: HouseSpring.curve,
               child: AnimatedOpacity(
                 opacity: _isChromeVisible ? 1.0 : 0.0,
                 duration: const Duration(milliseconds: 250),
@@ -811,7 +822,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     color: colors.base.withValues(alpha: isDark ? 0.95 : 0.98),
                     border: Border(
                       bottom: BorderSide(
-                        color: colors.lineRgba.withValues(alpha: isDark ? 0.5 : 0.3),
+                        color: colors.lineRgba
+                            .withValues(alpha: isDark ? 0.5 : 0.3),
                       ),
                     ),
                   ),
@@ -835,8 +847,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                 ),
                               ),
                               PressableScale(
-                                onTap: () =>
-                                    _showFilterBottomSheet(context, isDark, isMovies),
+                                onTap: () => _showFilterBottomSheet(
+                                    context, isDark, isMovies),
                                 child: Padding(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8.0,
@@ -845,7 +857,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.filter_list, color: inkColor, size: 20),
+                                      Icon(Icons.filter_list,
+                                          color: inkColor, size: 20),
                                       const SizedBox(width: 4),
                                       Text(
                                         'Filters',
@@ -863,7 +876,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           ),
                         ),
                         _buildTopSearchBar(isDark),
-                        if (_searchQuery.isNotEmpty) _buildSearchModeBadge(isDark),
+                        if (_searchQuery.isNotEmpty)
+                          _buildSearchModeBadge(isDark),
                         _buildActiveFilterChipBar(isDark),
                       ],
                     ),
@@ -949,7 +963,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
   }
 
-  Widget _buildSearchModeBody(bool isDark, bool isMovies, {double topPadding = 0.0}) {
+  Widget _buildSearchModeBody(bool isDark, bool isMovies,
+      {double topPadding = 0.0}) {
     final inkColor = context.ambianceColors.ink;
     final filterParams = ref.watch(discoverFilterProvider);
 
@@ -1000,7 +1015,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             PressableScale(
               onTap: _resetAllFilters,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
                 decoration: BoxDecoration(
                   color: context.ambianceColors.pill,
                   borderRadius: BorderRadius.circular(999),
@@ -1008,7 +1024,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
                 child: Text(
                   'Reset All Filters',
-                  style: AppThemes.safeGeist(fontSize: 13, fontWeight: FontWeight.w600, color: inkColor),
+                  style: AppThemes.safeGeist(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: inkColor),
                 ),
               ),
             ),
@@ -1038,7 +1057,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-  Widget _buildDiscoverModeBody(bool isDark, bool isMovies, {double topPadding = 0.0}) {
+  Widget _buildDiscoverModeBody(bool isDark, bool isMovies,
+      {double topPadding = 0.0}) {
     final subColor = context.ambianceColors.sub;
     final filterParams = ref.watch(discoverFilterProvider);
 
@@ -1091,7 +1111,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       horizontal: 16,
                       vertical: 8,
                     ),
-                    decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
+                    decoration: context.ambianceColors.primaryButtonDecoration
+                        .copyWith(borderRadius: BorderRadius.circular(999)),
                     child: Text(
                       'Reset All Filters',
                       style: AppThemes.safeGeist(
@@ -1310,9 +1331,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     if (filterParams.minRuntime != null || filterParams.maxRuntime != null) {
       final minR = filterParams.minRuntime ?? 0;
-      final maxR = filterParams.maxRuntime != null
-          ? '${filterParams.maxRuntime}m'
-          : '∞';
+      final maxR =
+          filterParams.maxRuntime != null ? '${filterParams.maxRuntime}m' : '∞';
       chips.add(_buildChip(
         label: 'Runtime: ${minR}m - $maxR',
         onDelete: () {
@@ -1424,7 +1444,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: context.ambianceColors.primaryButtonDecoration.copyWith(borderRadius: BorderRadius.circular(999)),
+      decoration: context.ambianceColors.primaryButtonDecoration
+          .copyWith(borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1450,8 +1471,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     );
   }
 
-
-  Widget _buildAccordionFilterPanel(bool isDark, bool isMovies, [WidgetRef? externalRef]) {
+  Widget _buildAccordionFilterPanel(bool isDark, bool isMovies,
+      [WidgetRef? externalRef]) {
     final activeRef = externalRef ?? ref;
     final filterParams = activeRef.watch(discoverFilterProvider);
     final filterNotifier = activeRef.read(discoverFilterProvider.notifier);
@@ -1460,15 +1481,16 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     // actual query call sites) -- the chips below reflect that by locking
     // onto the Hall's language and disabling the other options, rather than
     // silently ignoring a selection the user can still see and tap.
-    final lockedLanguageCode = activeRef.watch(activeHallSpaceProvider).lockedLanguageCode;
+    final lockedLanguageCode =
+        activeRef.watch(activeHallSpaceProvider).lockedLanguageCode;
     final subColor = context.ambianceColors.sub;
     final lineRgba = context.ambianceColors.lineRgba;
     final pillColor = context.ambianceColors.pill;
 
-    final hasGenresOrKeywordsActive = (filterParams.genreName != null &&
-            filterParams.genreName != 'All') ||
-        (filterParams.keywordName != null &&
-            filterParams.keywordName!.isNotEmpty);
+    final hasGenresOrKeywordsActive =
+        (filterParams.genreName != null && filterParams.genreName != 'All') ||
+            (filterParams.keywordName != null &&
+                filterParams.keywordName!.isNotEmpty);
     final hasCastCrewActive =
         filterParams.personName != null && filterParams.personName!.isNotEmpty;
     final hasWhereToWatchActive = filterParams.providerId != null ||
@@ -1482,9 +1504,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         filterParams.maxRuntime != null ||
         (filterParams.originalLanguage != null &&
             filterParams.originalLanguage!.isNotEmpty);
-    final hasTvSpecificsActive = (filterParams.tvStatus != null &&
-            filterParams.tvStatus!.isNotEmpty) ||
-        filterParams.tvNetworkId != null;
+    final hasTvSpecificsActive =
+        (filterParams.tvStatus != null && filterParams.tvStatus!.isNotEmpty) ||
+            filterParams.tvNetworkId != null;
 
     return Theme(
       data: Theme.of(context).copyWith(
@@ -1528,7 +1550,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         ref.read(searchGenreProvider.notifier).setGenre('All');
                       } else {
                         final genreId = getGenreIdForName(genre);
-                        filterNotifier.setGenre(genreId: genreId, genreName: genre);
+                        filterNotifier.setGenre(
+                            genreId: genreId, genreName: genre);
                         ref.read(searchGenreProvider.notifier).setGenre(genre);
                       }
                     },
@@ -1550,7 +1573,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 _buildChip(
                   label: '#${filterParams.keywordName}',
                   onDelete: () {
-                    filterNotifier.setKeyword(keywordId: null, keywordName: null);
+                    filterNotifier.setKeyword(
+                        keywordId: null, keywordName: null);
                     ref.read(searchKeywordProvider.notifier).clearKeyword();
                   },
                   isDark: isDark,
@@ -1591,13 +1615,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
               const SizedBox(height: 8),
               Builder(
                 builder: (context) {
-                  final isRegionActive = filterParams.watchRegion != null && filterParams.watchRegion!.isNotEmpty;
+                  final isRegionActive = filterParams.watchRegion != null &&
+                      filterParams.watchRegion!.isNotEmpty;
                   return LoungeDropdown<String>(
                     value: filterParams.watchRegion,
                     isActive: isRegionActive,
                     hintText: 'Select Region (Default: US)',
                     items: [
-                      const LoungeDropdownItem<String>(value: null, label: 'Any Region'),
+                      const LoungeDropdownItem<String>(
+                          value: null, label: 'Any Region'),
                       ..._regions.map(
                         (r) => LoungeDropdownItem<String>(
                           value: r['code'],
@@ -1702,8 +1728,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 max: 10.0,
                 divisions: 20,
                 onChanged: (val) {
-                  filterNotifier
-                      .setMinRating(val == 0.0 ? null : (val * 10).round() / 10);
+                  filterNotifier.setMinRating(
+                      val == 0.0 ? null : (val * 10).round() / 10);
                 },
               ),
               const SizedBox(height: 12),
@@ -1754,13 +1780,18 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     value: filterParams.sortBy,
                     isActive: isSortActive,
                     items: [
-                      const LoungeDropdownItem(value: 'popularity.desc', label: 'Most Popular'),
-                      const LoungeDropdownItem(value: 'vote_average.desc', label: 'Highest Rated'),
+                      const LoungeDropdownItem(
+                          value: 'popularity.desc', label: 'Most Popular'),
+                      const LoungeDropdownItem(
+                          value: 'vote_average.desc', label: 'Highest Rated'),
                       LoungeDropdownItem(
-                        value: isMovies ? 'primary_release_date.desc' : 'first_air_date.desc',
+                        value: isMovies
+                            ? 'primary_release_date.desc'
+                            : 'first_air_date.desc',
                         label: 'Release Date (Newest)',
                       ),
-                      const LoungeDropdownItem(value: 'revenue.desc', label: 'Highest Revenue'),
+                      const LoungeDropdownItem(
+                          value: 'revenue.desc', label: 'Highest Revenue'),
                     ],
                     onChanged: (val) {
                       if (val != null) {
@@ -1813,7 +1844,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 max: 240.0,
                 divisions: 24,
                 onChanged: (values) {
-                  final minR = values.start == 0.0 ? null : values.start.toInt();
+                  final minR =
+                      values.start == 0.0 ? null : values.start.toInt();
                   final maxR = values.end == 240.0 ? null : values.end.toInt();
                   filterNotifier.setRuntime(
                     minRuntime: minR,
@@ -1873,7 +1905,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       lineRgba: lineRgba,
                       onTap: lockedLanguageCode != null
                           ? null
-                          : () => filterNotifier.setOriginalLanguage(lang['code']),
+                          : () =>
+                              filterNotifier.setOriginalLanguage(lang['code']),
                     );
                   }),
                 ],
@@ -1946,8 +1979,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                       },
                     ),
                     ..._tvNetworks.map((net) {
-                      final isSelected =
-                          filterParams.tvNetworkId == net['id'];
+                      final isSelected = filterParams.tvNetworkId == net['id'];
                       return LoungeFilterChip(
                         label: net['name'] as String,
                         isSelected: isSelected,
@@ -2000,13 +2032,15 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           key: PageStorageKey<String>('filter_accordion_$title'),
           initiallyExpanded: initiallyExpanded,
           iconColor: hasActiveFilter ? accColor : inkColor,
-          collapsedIconColor: hasActiveFilter ? accColor : (context.ambianceColors.sub),
+          collapsedIconColor:
+              hasActiveFilter ? accColor : (context.ambianceColors.sub),
           title: Row(
             children: [
               Icon(
                 icon,
                 size: 18,
-                color: hasActiveFilter ? accColor : (context.ambianceColors.acc),
+                color:
+                    hasActiveFilter ? accColor : (context.ambianceColors.acc),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -2014,7 +2048,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                   title,
                   style: AppThemes.safeGeist(
                     fontSize: 14,
-                    fontWeight: hasActiveFilter ? FontWeight.w700 : FontWeight.w600,
+                    fontWeight:
+                        hasActiveFilter ? FontWeight.w700 : FontWeight.w600,
                     color: hasActiveFilter ? accColor : inkColor,
                   ),
                 ),

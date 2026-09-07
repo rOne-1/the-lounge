@@ -12,12 +12,13 @@ import '../widgets/analytics_hero_card.dart';
 import '../widgets/continue_watching_hero_card.dart';
 import '../widgets/lounge_doorway_emblem.dart';
 import '../widgets/memory_moments_section.dart';
-import '../widgets/pressable_scale.dart';
 import '../widgets/hall_selector_sheet.dart';
 import 'analytics_screen.dart';
 import 'archive_screen.dart';
 import 'tools_screen.dart';
 import 'settings_screen.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 /// YSR-GATEWAY-1 / NAME-1: The Sanctuary Gateway (`The Lounge-selection.png`) - the
 /// elevated landing screen for The Lounge. Features the dynamic Day overline,
@@ -344,8 +345,8 @@ class _DockCard extends StatelessWidget {
     return PressableScale(
       onTap: onTap,
       child: AnimatedContainer(
-        duration: AppPhysics.houseSpringDuration,
-        curve: AppPhysics.houseSpringCurve,
+        duration: HouseSpring.duration,
+        curve: HouseSpring.curve,
         height: 94,
         padding: const EdgeInsets.symmetric(vertical: 14.0, horizontal: 4.0),
         decoration: BoxDecoration(

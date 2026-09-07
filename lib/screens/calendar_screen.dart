@@ -10,8 +10,9 @@ import 'detail_screen.dart';
 import '../constants.dart';
 import '../widgets/atmospheric_empty_state.dart';
 import '../widgets/media_image.dart';
-import '../widgets/pressable_scale.dart';
 import '../widgets/quick_status_sheet.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, PressableScale;
 
 class CalendarScreen extends ConsumerStatefulWidget {
   const CalendarScreen({super.key});
@@ -60,14 +61,16 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     // MovieRepository's originalLanguage param) -- a plain single-page
     // fetch-then-filter left the agenda near-empty for a locked regional
     // language with few/no matches in the raw global chart.
-    final lockedLanguageCode = ref.read(activeHallSpaceProvider).lockedLanguageCode;
+    final lockedLanguageCode =
+        ref.read(activeHallSpaceProvider).lockedLanguageCode;
     // BETA3-NET-2: same watchProvidersCountry region source used
     // app-wide for region-tailored TMDB lists.
     final country =
         ref.read(mediaProvider.select((s) => s.watchProvidersCountry));
     final movies = await repo.getUpcomingMovies(
         region: country, originalLanguage: lockedLanguageCode);
-    final tvShows = await repo.getOnTheAirTvShows(originalLanguage: lockedLanguageCode);
+    final tvShows =
+        await repo.getOnTheAirTvShows(originalLanguage: lockedLanguageCode);
 
     // Belt-and-suspenders (matches getUpcomingMovies' own "server-side
     // filter already excludes released titles, but keep the client-side
@@ -130,21 +133,21 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (grouped.isEmpty) {
       return AtmosphericEmptyState(
         icon: Icons.calendar_month_outlined,
-        title: isMovies ? 'No upcoming movie premieres' : 'No upcoming TV episodes',
+        title: isMovies
+            ? 'No upcoming movie premieres'
+            : 'No upcoming TV episodes',
         message: 'Releases for anything you\'ve watchlisted will show up here.',
         ctaLabel: 'Discover Titles',
-        onCta: () => ref.read(navigationProvider.notifier).setTab(AppTab.discover),
+        onCta: () =>
+            ref.read(navigationProvider.notifier).setTab(AppTab.discover),
       );
     }
 
     final sortedDates = grouped.keys.toList()..sort();
 
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(
-          isLarge ? 24.0 : 18.0,
-          isLarge ? 4.0 : 12.0,
-          isLarge ? 24.0 : 18.0,
-          18.0 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(isLarge ? 24.0 : 18.0, isLarge ? 4.0 : 12.0,
+          isLarge ? 24.0 : 18.0, 18.0 + MediaQuery.of(context).padding.bottom),
       itemCount: sortedDates.length,
       itemBuilder: (context, index) {
         final dateIndex = index;
@@ -174,8 +177,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                     fontWeight: FontWeight.w600,
                     letterSpacing: 1.1,
                     color: subColor,
-                    textStyle: const TextStyle(
-                        textBaseline: TextBaseline.alphabetic)),
+                    textStyle:
+                        const TextStyle(textBaseline: TextBaseline.alphabetic)),
               ),
             ),
             ...items.asMap().entries.map((entry) => _buildAgendaCard(
@@ -192,12 +195,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     );
   }
 
-  Widget _buildAgendaCard(MediaItem item, bool isDark, Color inkColor, Color subColor, {required int index}) {
+  Widget _buildAgendaCard(
+      MediaItem item, bool isDark, Color inkColor, Color subColor,
+      {required int index}) {
     final phColor = context.ambianceColors.ph;
     final lineRgba = context.ambianceColors.lineRgba;
 
     return OpenContainer(
-      transitionDuration: AppPhysics.houseSpringDuration,
+      transitionDuration: HouseSpring.duration,
       closedElevation: 0,
       openElevation: 0,
       closedColor: Colors.transparent,
@@ -211,51 +216,63 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
           onTap: openContainer,
           onLongPress: () => showQuickStatusSheet(context, ref, item),
           child: Container(
-              margin: const EdgeInsets.only(bottom: 8.0),
-              padding: const EdgeInsets.all(14.0),
-              decoration: BoxDecoration(
-                color: phColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: lineRgba),
-                boxShadow: [
-                  BoxShadow(color: context.ambianceColors.surfaceHighlight, blurRadius: 0, spreadRadius: 0, offset: const Offset(0, 1), blurStyle: BlurStyle.inner)
-                ],
-              ),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: SizedBox(
-                      width: 40,
-                      height: 60,
-                      child: MediaImage(
-                        imageUrl: item.posterUrl,
-                        type: item.type,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(item.title, style: AppThemes.safeGeist(fontSize: 14, fontWeight: FontWeight.w600, color: inkColor)),
-                        const SizedBox(height: 3),
-                        Text(item.type == MediaType.movie ? 'Movie Premiere' : 'New Episode', style: AppThemes.safeGeist(fontSize: 12, color: subColor)),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right, color: subColor, size: 20),
-                ],
-              ),
+            margin: const EdgeInsets.only(bottom: 8.0),
+            padding: const EdgeInsets.all(14.0),
+            decoration: BoxDecoration(
+              color: phColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: lineRgba),
+              boxShadow: [
+                BoxShadow(
+                    color: context.ambianceColors.surfaceHighlight,
+                    blurRadius: 0,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 1),
+                    blurStyle: BlurStyle.inner)
+              ],
             ),
-          );
-        },
-        openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
-    ).animate(key: ValueKey(item.prefixedId))
-        .fade(duration: 250.ms)
-        .slideY(
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: 40,
+                    height: 60,
+                    child: MediaImage(
+                      imageUrl: item.posterUrl,
+                      type: item.type,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.title,
+                          style: AppThemes.safeGeist(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: inkColor)),
+                      const SizedBox(height: 3),
+                      Text(
+                          item.type == MediaType.movie
+                              ? 'Movie Premiere'
+                              : 'New Episode',
+                          style: AppThemes.safeGeist(
+                              fontSize: 12, color: subColor)),
+                    ],
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: subColor, size: 20),
+              ],
+            ),
+          ),
+        );
+      },
+      openBuilder: (context, _) => DetailScreen(id: item.prefixedId),
+    ).animate(key: ValueKey(item.prefixedId)).fade(duration: 250.ms).slideY(
           begin: 0.1,
           end: 0,
           delay: (index.clamp(0, 5) * 40).ms,
@@ -263,7 +280,20 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   }
 
   String _monthName(int month) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec'
+    ];
     return months[month - 1];
   }
 }
