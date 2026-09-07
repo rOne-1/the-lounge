@@ -6,9 +6,8 @@ import '../models/hall_space.dart';
 import '../models/media_item.dart';
 import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
-import 'drag_to_dismiss_sheet.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, DragToDismissSheet;
 
 /// PROF-3 / NOMEN-1 / FIX-2: Bottom sheet for selecting, renaming, and managing Screening Halls.
 class HallSelectorSheet extends ConsumerWidget {
@@ -65,7 +64,7 @@ class HallSelectorSheet extends ConsumerWidget {
             .length;
 
     return DragToDismissSheet(
-      isDark: isDark,
+      handleColor: colors.sub.withValues(alpha: 0.25),
       onDismiss: () => Navigator.of(context).pop(),
       child: Container(
         padding: EdgeInsets.fromLTRB(

@@ -5,11 +5,11 @@ import '../models/hall_space.dart';
 import '../models/media_item.dart';
 import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
-import 'drag_to_dismiss_sheet.dart';
 import 'lounge_folder_picker_sheet.dart';
 import 'lounge_toast.dart';
 import 'media_image.dart';
-import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, DragToDismissSheet;
 
 /// Helper function to open the [QuickStatusSheet] bottom sheet modal.
 Future<void> showQuickStatusSheet(
@@ -23,7 +23,7 @@ Future<void> showQuickStatusSheet(
     backgroundColor: Colors.transparent,
     barrierColor: context.ambianceColors.scrim,
     builder: (context) => DragToDismissSheet(
-      isDark: context.ambianceColors.isDark,
+      handleColor: context.ambianceColors.sub.withValues(alpha: 0.25),
       onDismiss: () => Navigator.of(context).pop(),
       child: QuickStatusSheet(item: item),
     ),

@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../constants/whats_new.dart';
 import '../providers/ambiance_provider.dart';
-import 'frosted_glass_surface.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, FrostedGlassSurface;
 
 /// One-shot "What's New" changelog dialog, shown after an app update so
 /// testers see a plain-language summary of what changed since their last
@@ -53,6 +52,8 @@ class WhatsNewDialog extends StatelessWidget {
             borderRadius: 22,
             backgroundColor: ambiance.card2.withValues(alpha: 0.9),
             borderColor: ambiance.lineRgba,
+            outerShadow: ambiance.dialogShadow,
+            innerHighlightColor: ambiance.surfaceHighlight,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,

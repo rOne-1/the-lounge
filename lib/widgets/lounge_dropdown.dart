@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'frosted_glass_surface.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, FrostedGlassSurface;
 
 class LoungeDropdownItem<T> {
   final T? value;
@@ -254,6 +253,8 @@ class _LoungePopoverState<T> extends State<_LoungePopover<T>>
                 borderRadius: 14,
                 backgroundColor: ambiance.card2.withValues(alpha: 0.92),
                 borderColor: ambiance.acc.withValues(alpha: 0.35),
+                outerShadow: ambiance.dialogShadow,
+                innerHighlightColor: ambiance.surfaceHighlight,
                 child: ListView.builder(
                   shrinkWrap: true,
                   padding: const EdgeInsets.symmetric(vertical: 6),

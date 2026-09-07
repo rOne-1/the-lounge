@@ -3,11 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
-import 'drag_to_dismiss_sheet.dart';
 import 'lounge_date_picker.dart';
 import 'media_image.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, DragToDismissSheet;
 
 /// PERS-REWATCH-1: opens the rewatch quick-log sheet as a themed,
 /// drag-to-dismiss bottom sheet.
@@ -22,7 +21,7 @@ Future<void> showLoungeRewatchSheet(
     backgroundColor: Colors.transparent,
     barrierColor: context.ambianceColors.scrim,
     builder: (sheetContext) => DragToDismissSheet(
-      isDark: context.ambianceColors.isDark,
+      handleColor: context.ambianceColors.sub.withValues(alpha: 0.25),
       onDismiss: () => Navigator.of(sheetContext).pop(),
       child: LoungeRewatchSheet(item: item),
     ),

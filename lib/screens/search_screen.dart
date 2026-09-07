@@ -9,10 +9,9 @@ import '../providers/hall_provider.dart';
 import '../providers/media_provider.dart';
 import '../providers/navigation_provider.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show ScrollChromeTracker, HouseSpring, PressableScale;
+    show ScrollChromeTracker, HouseSpring, PressableScale, DragToDismissSheet;
 import '../utils/weighted_rating.dart';
 import '../widgets/atmospheric_empty_state.dart';
-import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/fallback_widgets.dart';
 import '../widgets/lounge_dropdown.dart';
 import '../widgets/lounge_filter_chip.dart';
@@ -377,7 +376,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         final subColor = context.ambianceColors.sub;
 
         return DragToDismissSheet(
-          isDark: isDark,
+          handleColor: subColor.withValues(alpha: 0.25),
           onDismiss: () => Navigator.pop(context),
           child: Consumer(
             builder: (context, sheetRef, child) {

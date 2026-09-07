@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'frosted_glass_surface.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, FrostedGlassSurface;
 
 enum LoungeDialogActionStyle { neutral, primary, destructive }
 
@@ -80,6 +79,8 @@ class LoungeDialog extends StatelessWidget {
           borderRadius: 20,
           backgroundColor: ambiance.card2.withValues(alpha: 0.88),
           borderColor: ambiance.lineRgba,
+          outerShadow: ambiance.dialogShadow,
+          innerHighlightColor: ambiance.surfaceHighlight,
           padding: const EdgeInsets.fromLTRB(24, 26, 24, 18),
           child: Column(
             mainAxisSize: MainAxisSize.min,

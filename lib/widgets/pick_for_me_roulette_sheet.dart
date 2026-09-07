@@ -5,10 +5,9 @@ import '../constants.dart';
 import '../models/media_item.dart';
 import '../providers/media_provider.dart';
 import '../screens/detail_screen.dart';
-import 'drag_to_dismiss_sheet.dart';
 import 'media_image.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, DragToDismissSheet;
 
 /// CRAFT-ROULETTE-1: opens the constraint-based "Pick For Me" roulette as a
 /// themed drag-to-dismiss sheet, the same convention every other focused
@@ -22,7 +21,7 @@ Future<void> showPickForMeRouletteSheet(BuildContext context) {
     backgroundColor: Colors.transparent,
     barrierColor: context.ambianceColors.scrim,
     builder: (sheetContext) => DragToDismissSheet(
-      isDark: context.ambianceColors.isDark,
+      handleColor: context.ambianceColors.sub.withValues(alpha: 0.25),
       onDismiss: () => Navigator.of(sheetContext).pop(),
       child: const PickForMeRouletteSheet(),
     ),

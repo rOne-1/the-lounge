@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../constants.dart';
-import '../drag_to_dismiss_sheet.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show PressableScale;
+    show PressableScale, DragToDismissSheet;
 
 /// A quick-reference glossary explaining every metric on the Analytics
 /// screen, matching the app's established "Legend" bottom-sheet convention
@@ -15,7 +14,7 @@ Future<void> showAnalyticsLegendSheet(BuildContext context) {
     backgroundColor: Colors.transparent,
     barrierColor: context.ambianceColors.scrim,
     builder: (context) => DragToDismissSheet(
-      isDark: context.ambianceColors.isDark,
+      handleColor: context.ambianceColors.sub.withValues(alpha: 0.25),
       onDismiss: () => Navigator.of(context).pop(),
       child: const _AnalyticsLegendContent(),
     ),

@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants.dart';
 import '../providers/media_provider.dart';
-import 'drag_to_dismiss_sheet.dart';
 import 'lounge_text_field.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show PressableScale;
+    show PressableScale, DragToDismissSheet;
 
 /// PERS-FOLDERS-1: opens the "Add to Folder" picker as a themed,
 /// drag-to-dismiss bottom sheet.
@@ -21,7 +20,7 @@ Future<void> showFolderPickerSheet(
     backgroundColor: Colors.transparent,
     barrierColor: context.ambianceColors.scrim,
     builder: (sheetContext) => DragToDismissSheet(
-      isDark: context.ambianceColors.isDark,
+      handleColor: context.ambianceColors.sub.withValues(alpha: 0.25),
       onDismiss: () => Navigator.of(sheetContext).pop(),
       child: FolderPickerSheet(mediaId: mediaId, mediaTitle: mediaTitle),
     ),

@@ -11,7 +11,8 @@ import 'package:the_lounge/themes/glacier_dawn_theme.dart';
 import 'package:the_lounge/themes/nebula_tide_theme.dart';
 import 'package:the_lounge/themes/verdant_manor_theme.dart';
 import 'package:the_lounge/themes/shadow_tokens.dart';
-import 'package:the_lounge/widgets/frosted_glass_surface.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show FrostedGlassSurface;
 
 // THEME-DEPTH-3: cardShadow/ambientGlowShadow/dialogShadow now live per
 // theme (AmbianceColors), replacing scattered hardcoded black-alpha
@@ -28,24 +29,38 @@ void main() {
   });
 
   group('THEME-DEPTH-3: buildThemeShadows', () {
-    test('dark themes get a colored glow layer plus a grounding contact shadow', () {
-      final shadows = buildThemeShadows(accent: const Color(0xFF00B4D8), isDark: true);
+    test('dark themes get a colored glow layer plus a grounding contact shadow',
+        () {
+      final shadows =
+          buildThemeShadows(accent: const Color(0xFF00B4D8), isDark: true);
 
-      for (final tier in [shadows.cardShadow, shadows.ambientGlowShadow, shadows.dialogShadow]) {
-        expect(tier.length, 2, reason: 'dark themes should layer a colored glow + contact shadow');
+      for (final tier in [
+        shadows.cardShadow,
+        shadows.ambientGlowShadow,
+        shadows.dialogShadow
+      ]) {
+        expect(tier.length, 2,
+            reason: 'dark themes should layer a colored glow + contact shadow');
         expect(tier[0].color.withValues(alpha: 1.0), const Color(0xFF00B4D8),
             reason: 'first layer should bleed the theme\'s own accent hue');
       }
     });
 
     test('light themes get a single, softer accent-tinted diffuse shadow', () {
-      final shadows = buildThemeShadows(accent: const Color(0xFF4B1F6F), isDark: false);
+      final shadows =
+          buildThemeShadows(accent: const Color(0xFF4B1F6F), isDark: false);
 
-      for (final tier in [shadows.cardShadow, shadows.ambientGlowShadow, shadows.dialogShadow]) {
+      for (final tier in [
+        shadows.cardShadow,
+        shadows.ambientGlowShadow,
+        shadows.dialogShadow
+      ]) {
         expect(tier.length, 1,
-            reason: 'light themes should use a single diffuse shadow, not a stacked glow');
+            reason:
+                'light themes should use a single diffuse shadow, not a stacked glow');
         expect(tier[0].color.a, lessThan(0.15),
-            reason: 'light-theme shadows must stay soft, not read as a solid colored block');
+            reason:
+                'light-theme shadows must stay soft, not read as a solid colored block');
       }
     });
   });
@@ -62,12 +77,17 @@ void main() {
       'Verdant Manor': vmAmbianceColors,
     };
 
-    test('every theme declares non-empty cardShadow/ambientGlowShadow/dialogShadow', () {
+    test(
+        'every theme declares non-empty cardShadow/ambientGlowShadow/dialogShadow',
+        () {
       for (final entry in allAmbianceColors.entries) {
         final colors = entry.value;
-        expect(colors.cardShadow, isNotEmpty, reason: '${entry.key}.cardShadow');
-        expect(colors.ambientGlowShadow, isNotEmpty, reason: '${entry.key}.ambientGlowShadow');
-        expect(colors.dialogShadow, isNotEmpty, reason: '${entry.key}.dialogShadow');
+        expect(colors.cardShadow, isNotEmpty,
+            reason: '${entry.key}.cardShadow');
+        expect(colors.ambientGlowShadow, isNotEmpty,
+            reason: '${entry.key}.ambientGlowShadow');
+        expect(colors.dialogShadow, isNotEmpty,
+            reason: '${entry.key}.dialogShadow');
       }
     });
 
@@ -75,12 +95,16 @@ void main() {
       final cardShadowColors =
           allAmbianceColors.values.map((c) => c.cardShadow.first.color).toSet();
       expect(cardShadowColors.length, allAmbianceColors.length,
-          reason: 'each theme\'s card shadow should bleed its own accent, not a shared default');
+          reason:
+              'each theme\'s card shadow should bleed its own accent, not a shared default');
     });
   });
 
-  group('THEME-DEPTH-3: FrostedGlassSurface renders with the new dialogShadow layer', () {
-    testWidgets('renders without error under every theme, dialogShadow applied alongside the inner highlight',
+  group(
+      'THEME-DEPTH-3: FrostedGlassSurface renders with the new dialogShadow layer',
+      () {
+    testWidgets(
+        'renders without error under every theme, dialogShadow applied alongside the inner highlight',
         (tester) async {
       for (final theme in [
         screeningRoomTheme,
@@ -100,6 +124,8 @@ void main() {
                 borderRadius: 16,
                 backgroundColor: theme.colors.card,
                 borderColor: theme.colors.lineRgba,
+                outerShadow: theme.colors.dialogShadow,
+                innerHighlightColor: theme.colors.surfaceHighlight,
                 child: const Text('content'),
               ),
             ),
@@ -113,7 +139,8 @@ void main() {
         ));
         final decoration = container.decoration as BoxDecoration;
         expect(decoration.boxShadow!.length, greaterThanOrEqualTo(2),
-            reason: '${theme.displayName}: dialogShadow layer(s) + the existing inner highlight');
+            reason:
+                '${theme.displayName}: dialogShadow layer(s) + the existing inner highlight');
         expect(tester.takeException(), isNull);
       }
     });

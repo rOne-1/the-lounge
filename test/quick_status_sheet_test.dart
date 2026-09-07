@@ -9,8 +9,9 @@ import 'package:the_lounge/providers/media_provider.dart';
 import 'package:the_lounge/providers/ambiance_provider.dart';
 import 'package:the_lounge/services/hall_storage_service.dart';
 import 'package:the_lounge/widgets/quick_status_sheet.dart';
-import 'package:the_lounge/widgets/drag_to_dismiss_sheet.dart';
 import 'package:the_lounge/widgets/media_card.dart';
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show DragToDismissSheet;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -27,13 +28,15 @@ void main() {
     title: 'Inception',
     type: MediaType.movie,
     rating: 8.8,
-    overview: 'A thief who steals corporate secrets through the use of dream-sharing technology...',
+    overview:
+        'A thief who steals corporate secrets through the use of dream-sharing technology...',
     genres: const ['Action', 'Sci-Fi'],
     releaseOrAirDate: DateTime(2010),
   );
 
   group('QuickStatusSheet Widget Tests', () {
-    testWidgets('displays all 6 status options and current active status badge', (WidgetTester tester) async {
+    testWidgets('displays all 6 status options and current active status badge',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -45,7 +48,8 @@ void main() {
                 builder: (context) => Consumer(
                   builder: (context, ref, child) {
                     return ElevatedButton(
-                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      onPressed: () =>
+                          showQuickStatusSheet(context, ref, testItem),
                       child: const Text('Open Sheet'),
                     );
                   },
@@ -73,7 +77,8 @@ void main() {
       expect(find.text('Watched'), findsOneWidget);
     });
 
-    testWidgets('HALL-SAVE-1: shows a chip per Hall, defaulting to the active one selected',
+    testWidgets(
+        'HALL-SAVE-1: shows a chip per Hall, defaulting to the active one selected',
         (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
@@ -84,7 +89,8 @@ void main() {
                 builder: (context) => Consumer(
                   builder: (context, ref, child) {
                     return ElevatedButton(
-                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      onPressed: () =>
+                          showQuickStatusSheet(context, ref, testItem),
                       child: const Text('Open Sheet'),
                     );
                   },
@@ -98,7 +104,8 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const ValueKey('quick_status_hall_picker')), findsOneWidget);
+      expect(find.byKey(const ValueKey('quick_status_hall_picker')),
+          findsOneWidget);
       expect(find.text('The Grand Hall'), findsOneWidget);
       expect(find.text('The Mezzanine Hall'), findsOneWidget);
       expect(find.text('The Private Screening Hall'), findsOneWidget);
@@ -121,7 +128,8 @@ void main() {
                 builder: (context) => Consumer(
                   builder: (context, ref, child) {
                     return ElevatedButton(
-                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      onPressed: () =>
+                          showQuickStatusSheet(context, ref, testItem),
                       child: const Text('Open Sheet'),
                     );
                   },
@@ -135,7 +143,8 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('quick_status_hall_custom_1')));
+      await tester
+          .tap(find.byKey(const ValueKey('quick_status_hall_custom_1')));
       await tester.pumpAndSettle();
 
       await tester.tap(find.text('Watchlist'));
@@ -156,7 +165,8 @@ void main() {
       final grandHallRaw = prefs.getString(
         HallStorageService.domainStorageKey('common', MediumDomain.movies),
       );
-      expect(grandHallRaw == null || !grandHallRaw.contains('movie_101'), isTrue);
+      expect(
+          grandHallRaw == null || !grandHallRaw.contains('movie_101'), isTrue);
 
       // HALL-SYNC-1: since the active Hall is the Grand Hall (which
       // aggregates every other Hall), the save is immediately visible --
@@ -166,7 +176,9 @@ void main() {
       expect(state.readOnlyMediaIds.contains('movie_101'), isTrue);
     });
 
-    testWidgets('BETA3-A11Y-1: status pills expose a button role, correct label, and selected state', (WidgetTester tester) async {
+    testWidgets(
+        'BETA3-A11Y-1: status pills expose a button role, correct label, and selected state',
+        (WidgetTester tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -184,7 +196,8 @@ void main() {
                 builder: (context) => Consumer(
                   builder: (context, ref, child) {
                     return ElevatedButton(
-                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      onPressed: () =>
+                          showQuickStatusSheet(context, ref, testItem),
                       child: const Text('Open Sheet'),
                     );
                   },
@@ -202,7 +215,8 @@ void main() {
       expect(watchlistLabel, findsOneWidget);
       var watchlistSemantics = tester.getSemantics(watchlistLabel);
       expect(watchlistSemantics.flagsCollection.isButton, isTrue);
-      expect(watchlistSemantics.flagsCollection.isSelected, isNot(Tristate.isTrue));
+      expect(watchlistSemantics.flagsCollection.isSelected,
+          isNot(Tristate.isTrue));
 
       await tester.tap(find.text('Watchlist'));
       await tester.pumpAndSettle();
@@ -210,13 +224,16 @@ void main() {
       await tester.tap(find.text('Open Sheet'));
       await tester.pumpAndSettle();
 
-      watchlistSemantics = tester.getSemantics(find.bySemanticsLabel('Watchlist'));
+      watchlistSemantics =
+          tester.getSemantics(find.bySemanticsLabel('Watchlist'));
       expect(watchlistSemantics.flagsCollection.isSelected, Tristate.isTrue);
 
       handle.dispose();
     });
 
-    testWidgets('is wrapped in DragToDismissSheet and a fling-down dismisses it (DS-3)', (WidgetTester tester) async {
+    testWidgets(
+        'is wrapped in DragToDismissSheet and a fling-down dismisses it (DS-3)',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -228,7 +245,8 @@ void main() {
                 builder: (context) => Consumer(
                   builder: (context, ref, child) {
                     return ElevatedButton(
-                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      onPressed: () =>
+                          showQuickStatusSheet(context, ref, testItem),
                       child: const Text('Open Sheet'),
                     );
                   },
@@ -245,13 +263,15 @@ void main() {
       expect(find.byType(DragToDismissSheet), findsOneWidget);
       expect(find.byType(QuickStatusSheet), findsOneWidget);
 
-      await tester.fling(find.byType(QuickStatusSheet), const Offset(0, 300), 1000);
+      await tester.fling(
+          find.byType(QuickStatusSheet), const Offset(0, 300), 1000);
       await tester.pumpAndSettle();
 
       expect(find.byType(QuickStatusSheet), findsNothing);
     });
 
-    testWidgets('tapping status option updates provider state and active badge', (WidgetTester tester) async {
+    testWidgets('tapping status option updates provider state and active badge',
+        (WidgetTester tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -268,7 +288,8 @@ void main() {
                 builder: (context) => Consumer(
                   builder: (context, ref, child) {
                     return ElevatedButton(
-                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      onPressed: () =>
+                          showQuickStatusSheet(context, ref, testItem),
                       child: const Text('Open Sheet'),
                     );
                   },
@@ -298,7 +319,8 @@ void main() {
       expect(find.text('Watching'), findsNWidgets(2)); // Badge + Pill
     });
 
-    testWidgets('tapping Watched status toggles watchedList state', (WidgetTester tester) async {
+    testWidgets('tapping Watched status toggles watchedList state',
+        (WidgetTester tester) async {
       final container = ProviderContainer(
         overrides: [
           sharedPreferencesProvider.overrideWithValue(prefs),
@@ -315,7 +337,8 @@ void main() {
                 builder: (context) => Consumer(
                   builder: (context, ref, child) {
                     return ElevatedButton(
-                      onPressed: () => showQuickStatusSheet(context, ref, testItem),
+                      onPressed: () =>
+                          showQuickStatusSheet(context, ref, testItem),
                       child: const Text('Open Sheet'),
                     );
                   },
@@ -333,7 +356,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify in watchedList
-      expect(container.read(mediaProvider).watchedList.containsKey(testItem.id), isTrue);
+      expect(container.read(mediaProvider).watchedList.containsKey(testItem.id),
+          isTrue);
 
       // Open sheet & tap Watched again to remove
       await tester.tap(find.text('Open Sheet'));
@@ -342,12 +366,14 @@ void main() {
       await tester.pumpAndSettle();
 
       // Verify removed from watchedList
-      expect(container.read(mediaProvider).watchedList.containsKey(testItem.id), isFalse);
+      expect(container.read(mediaProvider).watchedList.containsKey(testItem.id),
+          isFalse);
     });
   });
 
   group('MediaCard Widget Tests', () {
-    testWidgets('long press opens QuickStatusSheet without navigating', (WidgetTester tester) async {
+    testWidgets('long press opens QuickStatusSheet without navigating',
+        (WidgetTester tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [

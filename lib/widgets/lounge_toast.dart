@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'frosted_glass_surface.dart';
-import 'package:flutter_refined_kit/flutter_refined_kit.dart' show HouseSpring;
+import 'package:flutter_refined_kit/flutter_refined_kit.dart'
+    show HouseSpring, FrostedGlassSurface;
 
 enum ToastType { info, success, danger }
 
@@ -119,6 +119,8 @@ class _LoungeToastWidgetState extends State<_LoungeToastWidget>
               borderRadius: 999,
               backgroundColor: ambiance.card2.withValues(alpha: 0.9),
               borderColor: accent.withValues(alpha: 0.4),
+              outerShadow: ambiance.dialogShadow,
+              innerHighlightColor: ambiance.surfaceHighlight,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 mainAxisSize: MainAxisSize.min,

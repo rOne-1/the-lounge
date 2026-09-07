@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../constants.dart';
-import 'drag_to_dismiss_sheet.dart';
 import 'lounge_text_field.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, PressableScale;
+    show HouseSpring, PressableScale, DragToDismissSheet;
 
 /// PERS-FOLDERS-1: themed bottom-sheet prompt for a folder name -- shared by
 /// "create folder" (FoldersScreen) and "rename folder" (FolderDetailScreen)
@@ -23,7 +22,7 @@ Future<String?> showFolderNamePrompt(
     backgroundColor: Colors.transparent,
     barrierColor: colors.scrim,
     builder: (sheetContext) => DragToDismissSheet(
-      isDark: colors.isDark,
+      handleColor: colors.sub.withValues(alpha: 0.25),
       onDismiss: () => Navigator.of(sheetContext).pop(),
       child: _FolderNameSheetContent(
         sheetTitle: sheetTitle,

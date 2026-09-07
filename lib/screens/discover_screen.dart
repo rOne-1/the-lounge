@@ -14,11 +14,14 @@ import '../utils/app_haptics.dart';
 import '../widgets/fallback_widgets.dart';
 import 'detail_screen.dart';
 
-import '../widgets/drag_to_dismiss_sheet.dart';
 import '../widgets/lounge_toast.dart';
 import '../widgets/quick_status_sheet.dart';
 import 'package:flutter_refined_kit/flutter_refined_kit.dart'
-    show HouseSpring, OffsetSpringSimulation, PressableScale;
+    show
+        HouseSpring,
+        OffsetSpringSimulation,
+        PressableScale,
+        DragToDismissSheet;
 
 class DiscoverScreen extends ConsumerStatefulWidget {
   const DiscoverScreen({super.key});
@@ -681,7 +684,8 @@ class _DiscoverScreenState extends ConsumerState<DiscoverScreen> {
                 curve: Curves.easeOutCubic,
                 opacity: _showLegend ? 1.0 : 0.0,
                 child: DragToDismissSheet(
-                  isDark: isDark,
+                  handleColor:
+                      context.ambianceColors.sub.withValues(alpha: 0.25),
                   onDismiss: () => setState(() => _showLegend = false),
                   child: Container(
                     padding: EdgeInsets.fromLTRB(
